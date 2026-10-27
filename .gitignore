@@ -1,0 +1,41 @@
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# --- Generated / runtime artifacts (keep the directories, ignore their contents) ---
+data/corpus/*
+!data/corpus/.gitkeep
+data/index/*
+!data/index/.gitkeep
+data/caches/*
+!data/caches/.gitkeep
+logs/
+slurm_log/
+*.log
+examples/output/
+tmp/
+scratch/
+
+# --- Editors ---
+.idea/
+.vscode/
+*.swp

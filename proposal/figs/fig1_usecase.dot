@@ -1,0 +1,26 @@
+digraph usecase {
+  graph [rankdir=LR, splines=line, nodesep=0.22, ranksep=0.30, fontname="Helvetica", fontsize=8,
+         bgcolor="white", pad=0.04, size="6.1,2.0"];
+  node [fontname="Helvetica", fontsize=7.5, margin="0.04,0.02"];
+  edge [fontname="Helvetica", fontsize=6.5, color="#333333", arrowsize=0.5];
+
+  student [label="Student", shape=box, style="rounded,filled", fillcolor="#e6e6e6", width=0.8, height=0.28];
+  ta      [label="Instructor / TA", shape=box, style="rounded,filled", fillcolor="#e6e6e6", width=0.95, height=0.28];
+
+  subgraph cluster_sys {
+    label="Course-Grounded Tutoring Agent"; fontsize=8.5; style="rounded,dashed"; color="#555555"; margin=8;
+    ask      [label="Ask course\nquestion", shape=ellipse];
+    answer   [label="Get cited\nanswer", shape=ellipse];
+    study    [label="Review outline /\nself-test quiz", shape=ellipse];
+    practice [label="Practise at\nassignment scale", shape=ellipse];
+    explain  [label="Explain provided\nsolution", shape=ellipse];
+    registry [label="Maintain deadline\nregistry", shape=ellipse];
+  }
+
+  student -> ask;
+  student -> study;
+  student -> practice;
+  student -> explain;
+  ta -> registry;
+  ask -> answer [style=dashed, arrowhead=onormal, label="«include»"];
+}
