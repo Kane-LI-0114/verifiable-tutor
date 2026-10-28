@@ -4,7 +4,7 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Current state
 
-- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), and the setup docs under `docs/agents/`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
+- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, and the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md). Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
 - Every other directory is a `.gitkeep` placeholder: `benchmarks/`, `config/`, `data/`, `examples/`, `scripts/`, `src/`, `tacc/`, `tests/`, and `docs/figures/`.
 - There is no application code, no `__init__.py`, no `pyproject.toml` or `requirements.txt`, no CI, no `LICENSE`, no test framework, and no benchmark input or result data.
 - Do not assume a module, entry point, test runner, or benchmark result exists because a directory is named after it. The first code change creates the package and records the packaging decision.
@@ -104,6 +104,7 @@ This repository is a standalone Git repository nested inside the course workspac
 - The Qwen service is a GPU job in `tacc/serve/`: vLLM serving model `qwen3.8-27b` on port 8000, 32K context, at most 4 concurrent requests, 2x RTX 3090, tensor parallel 2. The agent backend or client is a separate CPU job in `tacc/client/`.
 - The service is ready only when its log contains `Application startup complete`. The log then prints `SERVICE_BASE_URL=http://NODE:8000/v1`; the client writes that value into its `server-url.txt` before submission. The address expires when the job ends.
 - Hard constraints: cancel GPU jobs when finished; `/mnt/home/public/course-envs/CSIT6000V/` is read-only, so never install dependencies into it or modify it; on the `tacc` partition, Slurm exports host-global CUDA device indices while the container enumerates devices from zero, so CUDA jobs must `unset CUDA_VISIBLE_DEVICES` or CUDA reports no CUDA-capable device.
+- Staff clarifications received on 2026-10-28 and the resulting job and storage budgets are recorded in [docs/tacc-notes.md](docs/tacc-notes.md); that file owns them. Verify the real job time limit on the first service submission and update that file with the result.
 
 ## Before claiming a change is done
 
