@@ -2,7 +2,7 @@
 
 A course-grounded agent with evidence-checked answers, executable practice labs, and enforced course policy
 
-LI Jinchuan · TIAN Yujia · XIE Yifeng · October 27, 2026
+LI Jinchuan (21188271) · TIAN Yujia (21201619) · XIE Yifeng (21322152) · October 27, 2026
 
 CSIT6000V — Advanced AI Computing and Systems · Fall 2026
 

@@ -250,7 +250,7 @@ para(doc, "A course-grounded agent with evidence-checked answers,",
      size=10, italic=True, align="center", after=0)
 para(doc, "executable practice labs, and enforced course policy",
      size=10, italic=True, align="center", after=3)
-para(doc, "LI Jinchuan \u00b7 TIAN Yujia \u00b7 XIE Yifeng \u00b7 October 27, 2026", size=9.5,
+para(doc, "LI Jinchuan (21188271) \u00b7 TIAN Yujia (21201619) \u00b7 XIE Yifeng (21322152) \u00b7 October 27, 2026", size=9.5,
      align="center", after=4)
 
 # 1 Motivation
@@ -319,7 +319,7 @@ for i, ref in enumerate(REFS, start=1):
 
 cp = doc.core_properties
 cp.title = TITLE
-cp.author = "LI Jinchuan; TIAN Yujia; XIE Yifeng"
+cp.author = "LI Jinchuan (21188271); TIAN Yujia (21201619); XIE Yifeng (21322152)"
 cp.subject = "CSIT6000V Project Proposal (Topic Selection)"
 cp.comments = "Course project proposal, Fall 2026"
 doc.save(DOCX)
@@ -328,7 +328,7 @@ print("saved", DOCX)
 # ---------------------------------------------------------------- md master
 with open(MD, "w", encoding="utf-8") as f:
     f.write(f"# {TITLE}\n\n{SUBTITLE}\n\n")
-    f.write("LI Jinchuan · TIAN Yujia · XIE Yifeng · October 27, 2026\n\n")
+    f.write("LI Jinchuan (21188271) · TIAN Yujia (21201619) · XIE Yifeng (21322152) · October 27, 2026\n\n")
     f.write("CSIT6000V — Advanced AI Computing and Systems · Fall 2026\n\n")
     f.write("## 1. Motivation and Problem\n\n" + MOTIVATION + "\n\n")
     f.write("![Figure 1](figs/fig1_usecase.png)\n\n")
