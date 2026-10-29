@@ -97,9 +97,41 @@ A registered user identified by a student email address.
 _Avoid_: User, member, customer
 
 **Instructor account**:
-The seeded role that owns the deadline registry and can read policy state.
+The seeded role that owns the deadline registry, reads policy state, and runs the grading assistant.
 _Avoid_: Admin, teacher, TA account
 
 **Model profile**:
 A selectable combination of provider, tier, and thinking level, such as DeepSeek Flash with thinking off or MiMo Pro with thinking high.
 _Avoid_: Model, backend, provider
+
+**Assignment package**:
+The TA-authored bundle for one assignment: the statement, the rubric, the tests or reference solution, and the runtime image.
+_Avoid_: Assignment, exercise, task
+
+**Rubric**:
+The ordered list of grading criteria with maximum points used to score a submission.
+_Avoid_: Grading scheme, checklist
+
+**Criterion**:
+One rubric item with its maximum points and the evidence accepted for it.
+_Avoid_: Item, category
+
+**Submission**:
+One student's uploaded work for one assignment, identified by a student identifier and stored for TA review.
+_Avoid_: Answer, solution, upload
+
+**Grade recommendation**:
+The assistant's per-criterion score, evidence, feedback draft, and confidence for one submission. It becomes a grade only after TA approval.
+_Avoid_: Grade, score, mark
+
+**Grading run**:
+One execution of the grading assistant over one assignment batch, identified by a run id and recorded with the package, image, model, and prompt versions.
+_Avoid_: Batch, job, evaluation
+
+**TA workbench**:
+The instructor-side interface for reviewing, editing, and approving grade recommendations and exporting results.
+_Avoid_: Admin panel, dashboard
+
+**Audit log**:
+The append-only record of every grading suggestion, edit, approval, and export, with the acting account and time.
+_Avoid_: History, changelog
