@@ -83,6 +83,47 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 - The OCR job is now part of the plan, not a stretch goal: the corpus is produced by a TACC OCR job whose model and output contract are recorded in [tech-selection.md](tech-selection.md) and [ADR-0002](adr/0002-ocr-on-tacc-with-paddleocr-vl.md). The existing transcripts are only a human quality reference.
 - Dependency installation follows the pinned project layer described in [ADR-0001](adr/0001-pinned-python-environment-without-docker.md): a cached install under `$HOME`, never a modification of the read-only public environment.
 
+## Verification spike results (2026-10-29)
+
+The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the GPU OCR smoke job (27879). Both passed every exit criterion. Raw artifacts are in `USERDIR/env-spike/` and `USERDIR/ocr-smoke/`; the scripts are [tacc/env-spike/](../tacc/env-spike/) and [tacc/ocr-smoke/](../tacc/ocr-smoke/).
+
+### Cluster availability
+
+- From 2026-10-28 18:11 to 2026-10-29 17:17 HKT the whole `tacc` partition was unschedulable: `sinfo` reported 0 idle, 6 nodes `drain*` and 4 `down*`, where the asterisk means not responding to the controller. Seven jobs from four accounts stayed queued for the entire window and none started.
+- Two nodes returned at 17:17 HKT and ran both spike jobs at once, on 10-0-3-10 and 10-0-3-11.
+- Consequence: the demo and the evaluation windows must tolerate a queue outage of a day or more. Submit early, keep replay ready, and never assume a node on demand.
+
+### Node and job envelope
+
+- `scontrol show job` accepted `time=00:59:00`; the partition reports `MaxTime=01:00:00` and jobs observe `TimeLimit=00:59:00`.
+- A `cpus-per-task=4` request was reported as `NumCPUs=20` and `TRES=cpu=20`, so the job effectively holds the whole 20 CPU node. Node RAM is 251 GB.
+- `/mnt/home` is 7.3 TB with about 8 percent used. The container overlay is 916 GB and was 88 to 92 percent used, leaving 75 to 113 GB of job-local scratch.
+- PRoot userland: 286 MB unpacked, Ubuntu 22.04.5, kernel 5.4.0-150-generic, glibc 2.35. Versions confirmed inside it: Python 3.12.14, vLLM 0.26.0, PyTorch 2.11.0+cu128, Transformers 5.10.4.
+- MPI toolchain: `/mnt/home/public/course-envs/CSIT6000V/assignment1/mpi-gemm-v1/bin/` provides gcc, mpicc, mpiexec and make; a compile and `mpiexec -n 2` hello world succeed in a job.
+- GPUs are 2x RTX 3090 per node. Drivers 560.35.05 and 530.30.02 both ran vLLM successfully.
+
+### Project environment bootstrap
+
+- The first install of [requirements-tacc.txt](../scripts/tacc/requirements-tacc.txt) with `uv pip install --target` took 1957 s (32.6 minutes) for 105 distributions and 1.4 GB. Most of that time was PyPI retries (the paddlex wheel failed several times) plus writing many small files to NFS.
+- A second bootstrap call in the same job took 32 ms, and the OCR job then started with a cache hit and 0 s of install time. The cache key was `991ab0a1a749-1c681929e3bd-r1`.
+- Imports after install: pypdfium2 5.6.0, pytest 9.0.3, paddlepaddle 3.2.1 (CPU, no CUDA), paddleocr 3.7.0, paddlex 3.7.2, opencv 4.10.0. `paddle`, `paddleocr`, `cv2` and `pypdfium2` all import under PRoot.
+- `cv2` needed the headless overlay: the mandated `opencv-contrib-python` wheel links libGL, which the userland lacks. The bootstrap detects the failed import and replaces the package with `opencv-python-headless` 4.10.0.84.
+- SQLite 3.53.1 in the public interpreter has FTS5 enabled; creating an FTS5 table, inserting rows and ordering by `bm25` works.
+- pypdfium2 renders a 16:9 slide at 200 DPI to 2667x1500 in 0.6 to 1.1 s inside PRoot.
+- `PaddleOCRVL` exposes 29 constructor parameters. `pipeline_version` defaults to `v1.6`, and the server-mode parameters (`vl_rec_backend`, `vl_rec_server_url`, `vl_rec_api_model_name`, `vl_rec_max_concurrency`, `layout_detection_model_name`, `layout_detection_model_dir`) are present.
+- Weights: `PaddleOCR-VL-1.6` is 1.8 GB (1917 MB of safetensors) and `PP-DocLayoutV2` is 212 MB. `hf download` against the HF mirror is unreliable inside PRoot (TLS certificate verification errors and stalls), while the PaddleX download path through modelscope worked and fetched PP-DocLayoutV2 into `$HOME/models/paddlex/official_models/` in about 110 s.
+- Layout detection on CPU works: PP-DocLayoutV2 found 5 blocks on a rendered Lecture 1 page (paragraph_title, text, footer_image, footer) with plausible pixel boxes.
+
+### OCR smoke
+
+- vLLM 0.26.0 serves the local PaddleOCR-VL-1.6 checkpoint with `--trust-remote-code --served-model-name PaddleOCR-VL-1.6-0.9B --max-model-len 32768`. `/v1/models` returns that id, and the loader reports 1.82 GiB of weights in 32.6 s. Startup to a healthy `/health` took 281 s at `--gpu-memory-utilization 0.85` and 354 s at 0.90, because torch.compile and CUDA graph capture run in the job-local cache on every job.
+- Peak GPU memory was 22,913 MiB at 0.85 and 24,009 MiB at 0.90 of 24,576 MiB, so 0.85 is the safer setting.
+- A single page request through the OpenAI endpoint returned 457 characters in 2.4 to 3.4 s (1,235 prompt tokens and 105 completion tokens).
+- The full pipeline ran 10 selected pages with PP-DocLayoutV2 on CPU and recognition on the server: 171 blocks, 10,776 characters, page markdown for 10 of 10 pages, and zero bbox, label or reading-order validation problems. The table page produced a `table` block, the formula pages `display_formula` blocks, and the two image-only Tutorial PDFs, which have no text layer, produced 910 and 1,698 characters.
+- Per-page time had a median of 4.26 s. The first page took 25.7 s (layout model load and cold requests), and the remaining pages took 3.5 to 4.6 s. Render contributed 0.575 s per page.
+- Projection including setup: 342 pages take about 1,934 s (32 minutes), so one 59-minute corpus job covers the corpus with margin. Keep the resumable design anyway.
+- The whole OCR job body (bootstrap cache hit, render, server start, probe, 10 pages, teardown) took 421 s.
+
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
@@ -92,3 +133,4 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 - tcloud SDK 0.4.1 job schema: https://github.com/turingaicloud/tcloud-sdk/blob/master/cli/tcloudcli/tuxivconfig.go
 - tcloud quickstart configuration guide and FAQ: https://github.com/turingaicloud/quickstart
 - SDK client cluster configuration, `~/.tcloud/.clusterconfig`, read on 2026-10-28.
+- Spike jobs 27872 and 27879, 2026-10-29: Slurm logs in `USERDIR/slurm_log/`, summaries and JSONL in `USERDIR/env-spike/` and `USERDIR/ocr-smoke/`.

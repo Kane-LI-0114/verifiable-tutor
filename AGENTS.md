@@ -157,7 +157,7 @@ Open decisions, not settled by this repository:
 - The allowed registration domains and the email verification flow are defaults recorded in the open questions of [docs/prd.md](docs/prd.md); confirm them before implementation.
 - Self-test generation and TACC execution are P0 while answer grading is P1; code answers use per-request TACC jobs under the team account with two to three trusted demo users. Confirm the split and the acceptable queue latency.
 - The proposal PDF export remains a manual step outside this repository; it is not a project dependency.
-- The verification spikes listed in [docs/tech-selection.md#verification-spikes](docs/tech-selection.md#verification-spikes) are unrun. Record their platform findings in [docs/tacc-notes.md](docs/tacc-notes.md) when they happen.
+- Spikes 1 and 2 in [docs/tech-selection.md#verification-spikes](docs/tech-selection.md#verification-spikes) ran on 2026-10-29 and passed. Their measurements are in [docs/tacc-notes.md](docs/tacc-notes.md#verification-spike-results-2026-10-29); the raw artifacts are in `USERDIR/env-spike/` and `USERDIR/ocr-smoke/` on TACC. Spikes 3 to 9 are unrun; record their findings in the same file when they happen.
 
 ## Agent skills
 

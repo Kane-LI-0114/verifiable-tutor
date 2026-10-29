@@ -46,7 +46,7 @@ The bootstrap is idempotent and cached in persistent storage:
 2. If `$HOME/vt-deps/<key>/.ready` exists, prepend `$HOME/vt-deps/<key>` to `PYTHONPATH` and continue in about a second.
 3. Otherwise download the `uv` static binary into `$HOME/bin` if missing, run `uv pip install --python <public python> --target "$HOME/vt-deps/<key>" -r requirements.txt`, write `.ready`, and continue.
 
-The first job on a fresh account pays the install and download cost; later jobs do not. The cache survives because `$HOME` and `USERDIR` persist across jobs while `TACC_WORKDIR` does not. If a target directory turns out to be unreliable under the PRoot runtime, the fallback is a virtual environment created from the public interpreter, with the same key and marker logic.
+The first job on a fresh account pays the install and download cost; later jobs do not. Measured on 2026-10-29: the first install took 1957 s for 105 distributions and 1.4 GB, and the next job hit the cache in 32 ms, so the first run belongs in a dedicated warmup job. The cache survives because `$HOME` and `USERDIR` persist across jobs while `TACC_WORKDIR` does not. If a target directory turns out to be unreliable under the PRoot runtime, the fallback is a virtual environment created from the public interpreter, with the same key and marker logic.
 
 ### Data staging
 
@@ -174,10 +174,10 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 
 ## Verification spikes
 
-No job has been submitted yet. These run in week one, in this order, and each has an exit criterion. They respect the fairness rule: one job at a time and no repeated short submissions.
+Spikes 1 and 2 ran on 2026-10-29 and passed every exit criterion; the measurements are in [tacc-notes.md](tacc-notes.md#verification-spike-results-2026-10-29). The remaining spikes are unrun. These run in this order, and each has an exit criterion. They respect the fairness rule: one job at a time and no repeated short submissions.
 
-1. **CPU mechanics job** (4 CPUs, about 15 minutes). In one job: download `uv`, install the project delta into `$HOME/vt-deps/<key>`, import pypdfium2, create an FTS5 table, print `scontrol show job "$SLURM_JOB_ID"`, `df -h /mnt/home`, and the MPI toolchain paths. Exit criterion: the environment is reusable by a second job without reinstall.
-2. **GPU OCR smoke job** (1 GPU, about 20 minutes). Serve PaddleOCR-VL-1.6 through vLLM, process 10 representative pages (table, formula, two-column, figure-only), and write the JSONL schema. Exit criterion: page records validate, block boxes look sane, and the measured startup plus per-page time fits a one-hour budget for 342 pages.
+1. **CPU mechanics job** (4 CPUs, about 15 minutes). In one job: download `uv`, install the project delta into `$HOME/vt-deps/<key>`, import pypdfium2, create an FTS5 table, print `scontrol show job "$SLURM_JOB_ID"`, `df -h /mnt/home`, and the MPI toolchain paths. Exit criterion: the environment is reusable by a second job without reinstall. Status: passed on 2026-10-29 as job 27872 with 11 of 11 checks. The first install took 1957 s and later jobs hit the cache in 32 ms, so a first-run warmup job is mandatory before any GPU work.
+2. **GPU OCR smoke job** (1 GPU, about 20 minutes). Serve PaddleOCR-VL-1.6 through vLLM, process 10 representative pages (table, formula, two-column, figure-only), and write the JSONL schema. Exit criterion: page records validate, block boxes look sane, and the measured startup plus per-page time fits a one-hour budget for 342 pages. Status: passed on 2026-10-29 as job 27879 with 8 of 8 checks: 10 of 10 pages and 171 blocks without validation problems, median 4.26 s per page, vLLM startup 281 s, and a projected 1,934 s for 342 pages.
 3. **Corpus job** (1 GPU, 59 minutes, resumable). Run the full 342 pages; if it does not finish, run a second job and confirm resume without duplicates. Exit criterion: all pages have records and images in `USERDIR`.
 4. **Index job** (1 GPU, 59 minutes). Embed the chunks with BGE-M3, build the FTS5 table, and run the 50-question bake-off over BM25, dense, and hybrid. Exit criterion: page-hit@5 and nDCG are recorded and the primary model choice is confirmed or overturned.
 5. **Tunnel job** (4 CPUs, about 20 minutes). Serve a stub page on port 8080. First check from the login node whether the gateway can reach `<node>:8080`; then forward `127.0.0.1:8080` to the node and load the page in a browser, including one refresh. Exit criterion: the page loads through the tunnel, a killed and restarted tunnel recovers, and the demo mode is fixed afterwards. Ask the TA about the forwarding policy before the demo.
@@ -188,8 +188,9 @@ No job has been submitted yet. These run in week one, in this order, and each ha
 
 ## Risks and open questions
 
-- `uv` and a target install under PRoot are the largest environment risk. Fallbacks: a virtual environment from the public interpreter, then the SDK conda environment.
-- The PaddlePaddle CPU wheel may fail to install. Fallback: pure vLLM whole-page prompts, page-level citations only.
+- `uv` and a target install under PRoot are verified (2026-10-29): the target install works and imports all four project packages, but the first install takes about 33 minutes and PyPI needed retries. The bootstrap retries, sets a longer HTTP timeout, and serialises concurrent installs. Fallbacks: a virtual environment from the public interpreter, then the SDK conda environment.
+- The PaddlePaddle CPU wheel installs and imports under PRoot (2026-10-29, paddle 3.2.1), and PP-DocLayoutV2 runs on CPU. The remaining fallback is pure vLLM whole-page prompts with page-level citations only.
+- Two PRoot network quirks are recorded on 2026-10-29: `hf download` against the HF mirror hits TLS certificate verification errors, so layout weights come through the PaddleX modelscope path, and the first install must not be combined with GPU work because it can consume most of a one-hour job.
 - Gateway to job-container port reachability is unverified; the SSH forward plumbing works and arbitrary target ports are not restricted. No document addresses student forwarding to a web port directly; the general prohibition and the model-service instruction conflict. If the TA disallows it or the spike fails, the demo uses the local backend and UI with text generation through the external API and a local or cached embedding path.
 - Cluster capacity was tight on 2026-10-28: no idle nodes, several drain and down. Start the service and backend jobs early and keep replay ready; do not assume a node on demand.
 - External model APIs add an outage, cost, and data-egress risk. Every call is cached and labelled; evaluation must run from cache, and a benchmark run needs an explicit paid-call budget. A local demo needs an embedding path for BGE-M3: a local copy of the model or cached query vectors.

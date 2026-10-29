@@ -64,3 +64,4 @@ We ship two reproducible layers and no image.
 - Platform mechanics and budgets: [../tacc-notes.md](../tacc-notes.md)
 - Public environment versions and entry points: course workspace `tacc-env-docs/`, outside this repository
 - Verification items: [../tech-selection.md](../tech-selection.md#verification-spikes)
+- Verified on 2026-10-29 (job 27872): the target install and all four project imports work under PRoot; the first install took 1957 s and a later job reused the cache in 32 ms. Measurements: [../tacc-notes.md](../tacc-notes.md#verification-spike-results-2026-10-29).
