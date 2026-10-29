@@ -20,7 +20,27 @@ PUBLIC_ROOT="${PUBLIC_ROOT:-/mnt/home/public/course-envs/CSIT6000V/project/qwen3
 JOB="${SLURM_JOB_ID:-manual}"
 VLLM_PORT="${VLLM_PORT:-8000}"
 SERVED_NAME="${SERVED_NAME:-PaddleOCR-VL-1.6-0.9B}"
+
+# A demo request can override the PDF, its directory, the output directory and
+# the page subset through request.json next to this script (written by the local
+# interface). Absent that file the job keeps the batch defaults above.
+REQUEST_FILE="$HERE/request.json"
+REQ_PAGES=""
+if [ -f "$REQUEST_FILE" ]; then
+    REQ_PDF=$(sed -n 's/.*"pdf_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$REQUEST_FILE")
+    REQ_DIR=$(sed -n 's/.*"pdf_dir"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$REQUEST_FILE")
+    REQ_OUT=$(sed -n 's/.*"out_dir"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$REQUEST_FILE")
+    REQ_DOC_ID=$(sed -n 's/.*"doc_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$REQUEST_FILE")
+    REQ_PAGES=$(sed -n 's/.*"pages"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$REQUEST_FILE")
+    if [ -z "$REQ_PAGES" ]; then
+        REQ_PAGES=$(sed -n 's/.*"pages"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' "$REQUEST_FILE" | tr -d ' ')
+    fi
+    [ -n "$REQ_PDF" ] && PDF_NAME="$REQ_PDF"
+    [ -n "$REQ_DIR" ] && PDF_DIR="$REQ_DIR"
+    [ -n "$REQ_OUT" ] && OUT="${TACC_USERDIR:-$HOME}/$REQ_OUT"
+fi
 DOC_ID="${PDF_NAME%.pdf}"
+if [ -n "${REQ_DOC_ID:-}" ]; then DOC_ID="$REQ_DOC_ID"; fi
 VRAM_CSV="$OUT/logs/vram-${JOB}.csv"
 
 mkdir -p "$OUT" "$OUT/logs" "$OUT/records" "$OUT/pages" "$OUT/images" "$OUT/input" "$OUT/document"
@@ -128,7 +148,9 @@ fi
 PAGE_COUNT=0
 ENUM_RC=1
 if [ -n "${VT_PYTHON:-}" ] && [ -f "$INPUT_PDF" ]; then
-    run_proot_timed 300 "$VT_PYTHON" "$HERE/enumerate_pages.py" --pdf "$INPUT_PDF" --out "$OUT/doc-pages.json"
+    ENUM_ARGS=(--pdf "$INPUT_PDF" --out "$OUT/doc-pages.json")
+    if [ -n "$REQ_PAGES" ]; then ENUM_ARGS+=(--pages "$REQ_PAGES"); fi
+    run_proot_timed 300 "$VT_PYTHON" "$HERE/enumerate_pages.py" "${ENUM_ARGS[@]}"
     ENUM_RC=$?
 fi
 if [ "$ENUM_RC" -eq 0 ] && [ -s "$OUT/doc-pages.json" ]; then
@@ -383,6 +405,7 @@ cat > "$OUT/summary-${JOB}.json" <<EOF
   "generated_at": "${NOW}",
   "pdf_name": "${PDF_NAME}",
   "pdf_sha256": "${PDF_SHA:-}",
+  "requested_pages": "${REQ_PAGES:-all}",
   "pages": ${PAGE_COUNT},
   "pages_ok": "${RECORDED_OK}",
   "blocks_total": "${TOTAL_BLOCKS}",

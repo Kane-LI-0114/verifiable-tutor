@@ -25,10 +25,27 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+def parse_pages(spec, page_count):
+    if not spec:
+        return list(range(1, page_count + 1))
+    wanted = set()
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            start, end = part.split("-", 1)
+            wanted.update(range(int(start), int(end) + 1))
+        else:
+            wanted.add(int(part))
+    return sorted(page for page in wanted if 1 <= page <= page_count)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pdf", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--pages", default="", help="page subset, for example 1-3 or 1,2,5")
     args = parser.parse_args()
 
     import pypdfium2  # noqa: PLC0415
@@ -42,21 +59,25 @@ def main():
     document.close()
 
     doc_id = pdf_path.stem
+    selected = parse_pages(args.pages, page_count)
+    if not selected:
+        raise SystemExit(f"page subset {args.pages!r} selects no page from 1..{page_count}")
     entries = [
         {
             "doc_id": doc_id,
             "pdf": pdf_path.name,
             "page_no": page_no,
             "tags": [],
-            "rationale": "whole document parse",
+            "rationale": "demo request parse",
         }
-        for page_no in range(1, page_count + 1)
+        for page_no in selected
     ]
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(entries, indent=2), encoding="utf-8")
     print(
-        f"[enumerate] pdf={pdf_path.name} pages={page_count} sha256={sha256_file(pdf_path)[:16]} out={out}",
+        f"[enumerate] pdf={pdf_path.name} pages_total={page_count} selected={len(selected)} "
+        f"sha256={sha256_file(pdf_path)[:16]} out={out}",
         flush=True,
     )
     return 0
