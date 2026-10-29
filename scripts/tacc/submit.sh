@@ -18,6 +18,13 @@ esac
 mkdir -p "$TASK_DIR/_staged"
 cp "$REPO_ROOT/scripts/tacc/bootstrap.sh" "$TASK_DIR/_staged/bootstrap.sh"
 cp "$REPO_ROOT/scripts/tacc/requirements-tacc.txt" "$TASK_DIR/_staged/requirements.txt"
+# Shared OCR stage helpers: a single source under scripts/tacc/ is staged into
+# every task directory that runs render, layout or recognition.
+for helper in render_pages.py ocr_pages.py assemble_document.py recognition_probe.py; do
+    if [ -f "$REPO_ROOT/scripts/tacc/$helper" ]; then
+        cp "$REPO_ROOT/scripts/tacc/$helper" "$TASK_DIR/_staged/$helper"
+    fi
+done
 printf 'staged %s\n' "$TASK_DIR/_staged"
 
 if [ "${2:-}" = "--no-submit" ]; then

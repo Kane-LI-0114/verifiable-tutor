@@ -161,7 +161,7 @@ RENDER_RC=1
 if [ "$PREFLIGHT_OK" -eq 1 ] && [ -n "${VT_PYTHON:-}" ]; then
     RENDER_TIMEOUT=$(( $(time_left) - 1500 ))
     [ "$RENDER_TIMEOUT" -gt 300 ] && RENDER_TIMEOUT=300
-    timeout "$RENDER_TIMEOUT" bash "$PUBLIC_ROOT/runtime.sh" "$VT_PYTHON" "$HERE/render_pages.py" \
+    timeout "$RENDER_TIMEOUT" bash "$PUBLIC_ROOT/runtime.sh" "$VT_PYTHON" "$HERE/_staged/render_pages.py" \
         --pages "$HERE/selected-pages.json" \
         --pdf-root "$PDF_DIR" \
         --out-dir "$OUT" \
@@ -307,7 +307,7 @@ fi
 # ------------------------------------------------------- 5. recognition probe
 echo; echo "===== 5. recognition-only probe ====="
 if [ "$VLLM_OK" -eq 1 ] && [ -n "$PROBE_IMAGE" ]; then
-    timeout 300 env -u PYTHONPATH bash "$PUBLIC_ROOT/runtime.sh" "$PUBLIC_ROOT/vllm-env/bin/python" "$HERE/recognition_probe.py" \
+    timeout 300 env -u PYTHONPATH bash "$PUBLIC_ROOT/runtime.sh" "$PUBLIC_ROOT/vllm-env/bin/python" "$HERE/_staged/recognition_probe.py" \
         --image "$PROBE_IMAGE" \
         --server-url "http://127.0.0.1:${VLLM_PORT}/v1" \
         --model "$SERVED_NAME" \
@@ -325,7 +325,7 @@ CLIENT_TIMEOUT=$(( $(time_left) - 120 ))
 [ "$CLIENT_TIMEOUT" -gt 1800 ] && CLIENT_TIMEOUT=1800
 [ "$CLIENT_TIMEOUT" -lt 180 ] && CLIENT_TIMEOUT=180
 if [ "$VLLM_OK" -eq 1 ] && [ "$RENDERED_PAGES" -ge 1 ] && [ -s "$OUT/render-manifest.json" ]; then
-    timeout "$CLIENT_TIMEOUT" bash "$PUBLIC_ROOT/runtime.sh" "$VT_PYTHON" "$HERE/ocr_pages.py" \
+    timeout "$CLIENT_TIMEOUT" bash "$PUBLIC_ROOT/runtime.sh" "$VT_PYTHON" "$HERE/_staged/ocr_pages.py" \
         --manifest "$OUT/render-manifest.json" \
         --server-url "http://127.0.0.1:${VLLM_PORT}/v1" \
         --api-model-name "$SERVED_NAME" \
