@@ -90,6 +90,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `GLOSSARY.md` | Domain vocabulary used across the docs and code | present: glossary |
 | `docs/tech-selection.md`, `docs/adr/` | Technology decisions and the ADRs that argue them | present: decisions |
 | `docs/corpus-schema.md` | Field-level contract for page, block, document and chunk records | present: schema |
+| `docs/paddleocr-vl-api.md` | PaddleOCR-VL request and response construction across the local, serving, and hosted paths | present: API notes |
 | `docs/langfuse-local.md` | Local development tracing runbook | present: runbook |
 | `docs/email-local.md` | Registration and reset email runbook | present: runbook |
 | `docs/tacc-notes.md` | Platform constraints, budgets, and mechanics | present: notes |
@@ -135,6 +136,7 @@ Multi-course support is out of scope for this deliverable and is recorded as fut
 - [docs/figures/](docs/figures/): PRD diagram sources (`.dot`) and rendered PNGs: use cases, containers, sequence examples, and the entity relationship model.
 - [docs/tech-selection.md](docs/tech-selection.md): technology choices, job topology, demo modes, and the week-one verification spikes.
 - [docs/corpus-schema.md](docs/corpus-schema.md): page, block, document and chunk record fields produced by the OCR pipeline.
+- [docs/paddleocr-vl-api.md](docs/paddleocr-vl-api.md): PaddleOCR-VL request and response construction for the local pipeline, the recognition service, the self-hosted parsing service, and the hosted official API.
 - [docs/model-providers.md](docs/model-providers.md): agent-facing API notes for DeepSeek and Xiaomi MiMo, model switching, image and audio input, thinking control, web search, JSON output, and tool calling.
 - [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, and typed agent tools.
 - [docs/langfuse-local.md](docs/langfuse-local.md): runbook for the optional local Langfuse instance used for development tracing.
