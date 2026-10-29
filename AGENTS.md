@@ -4,9 +4,9 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Current state
 
-- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), six decision records under `docs/adr/`, the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, the model provider configuration in `config/models.yaml` with the committed `.env.example` template, and the implemented model layer: `src/verifiable_tutor/llm/config.py`, `src/verifiable_tutor/llm/adapter.py` (chat, streaming with replay, ASR, TTS, MiMo audio-file routing, DeepSeek search and fetch, file-backed response cache), the `tests/llm/` suite, `pyproject.toml`, `uv.lock`, and `scripts/smoke_model_adapter.py`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
+- Substantive content: the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), nine decision records under `docs/adr/`, the local tracing and email runbooks in [docs/langfuse-local.md](docs/langfuse-local.md) and [docs/email-local.md](docs/email-local.md), the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, the model provider configuration in `config/models.yaml` with the committed `.env.example` template, and the implemented model layer: `src/verifiable_tutor/llm/config.py`, `src/verifiable_tutor/llm/adapter.py` (chat, streaming with replay, ASR, TTS, MiMo audio-file routing, DeepSeek search and fetch, file-backed response cache), the `tests/llm/` suite, `pyproject.toml`, `uv.lock`, and `scripts/smoke_model_adapter.py`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
 - The remaining directories are still `.gitkeep` placeholders: `benchmarks/`, `data/`, `examples/`, `docs/figures/`, `tacc/serve/`, `tacc/client/`, and the unbuilt `src/verifiable_tutor/` subpackages (`policy/`, `orchestrator/`, `evidence/`, `practice/`, `teaching/`, `eval/`, `ui/`).
-- The model layer is implemented and tested locally. No other application code exists yet, and there is no CI, no `LICENSE`, and no benchmark input or result data. pytest is the chosen framework and `tests/llm/` is the first suite.
+- The model layer is implemented and tested locally. LangGraph is the decided orchestration runtime, Langfuse the decided local tracing layer, and the typed tool runner the decided execution boundary; all three are pending implementation ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md), [ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [ADR-0009](docs/adr/0009-typed-agent-tools-instead-of-a-shell.md)). The product requirements are in [docs/prd.md](docs/prd.md) and the vocabulary in [GLOSSARY.md](GLOSSARY.md); the auth, UI, policy, evidence, practice, teaching, and evaluation packages are still `.gitkeep` placeholders. No other application code exists yet, and there is no CI, no `LICENSE`, and no benchmark input or result data. pytest is the chosen framework and `tests/llm/` is the first suite.
 - Do not assume a module, entry point, test runner, or benchmark result exists because a directory is named after it. The package, packaging files, and test runner are recorded in [Toolchain and commands](#toolchain-and-commands).
 
 ## Sources of truth
@@ -18,8 +18,12 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 | Proposal PDF | The `.docx` | Manual export outside this repository; no script here produces it |
 | Page previews | The exported PDF | Manual export; no script in this repository renders them |
 | Project description and directory roles | [README.md](README.md) | Edit by hand |
+| Product requirements and acceptance | [docs/prd.md](docs/prd.md) | Edit by hand; the proposal stays frozen and this file owns what ships |
+| Domain vocabulary | [GLOSSARY.md](GLOSSARY.md) | Edit by hand when a term is resolved |
 | Technology decisions | [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/` | Edit by hand; append a new ADR to supersede a decision |
 | Model providers and request parameters | `config/models.yaml` (no secrets); keys only in the ignored `.env` | Edit by hand; `.env.example` is the committed template |
+| Local development tracing procedure | [docs/langfuse-local.md](docs/langfuse-local.md); the decision is [ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md) | Edit by hand |
+| Registration and reset email procedure | [docs/email-local.md](docs/email-local.md) | Edit by hand |
 | Agent rules | This file | Edit by hand |
 
 - Edit the constants in `proposal/build_proposal.py`, then rerun the script. Never hand-edit `proposal/proposal.md` or the `.docx`: the next build overwrites both.
@@ -38,6 +42,7 @@ Verified locally on 2026-10-28 and 2026-10-29:
 - Create the local application environment: `uv venv .venv --python 3.12` then `uv pip install -e '.[dev]'`. The application targets Python 3.12 and `pyproject.toml` is the packaging source.
 - Run the test suite: `.venv/bin/python -m pytest`. The first suite is `tests/llm/` (configuration, chat, streaming, ASR, TTS, audio-file routing, search, fetch, cache); the runner is recorded here as the TDD change required.
 - Run the live model smoke: `.venv/bin/python scripts/smoke_model_adapter.py`. It makes real DeepSeek and MiMo calls with the keys in `.env`, including audio-file input and TTS, is not part of pytest, and exits non-zero on a failed step (verified 2026-10-29, ten steps).
+- Start the optional local Langfuse stack only when tracing is needed; the steps are in [docs/langfuse-local.md](docs/langfuse-local.md). Neither pytest nor any TACC job depends on it.
 - There is no application build or server run command yet, and no UI build command. [docs/tech-selection.md](docs/tech-selection.md) lists the planned commands and the verification spikes; record any new command here in the change that adds it.
 
 ## Where new work goes
@@ -45,7 +50,9 @@ Verified locally on 2026-10-28 and 2026-10-29:
 | Change | Location |
 |---|---|
 | Disclosure gate and deadline registry | `src/verifiable_tutor/policy/` |
-| Workflow and context budget | `src/verifiable_tutor/orchestrator/` |
+| Accounts, authentication, sessions, and roles | `src/verifiable_tutor/auth/` |
+| LangGraph workflow, state schema, and context budget | `src/verifiable_tutor/orchestrator/` |
+| Typed tools and the restricted execution runner | `src/verifiable_tutor/orchestrator/` and `src/verifiable_tutor/practice/` |
 | Hybrid retrieval (BM25 plus dense) and span verifier | `src/verifiable_tutor/evidence/` |
 | Practice pack generation and executable tests | `src/verifiable_tutor/practice/` |
 | Line-anchored explainer | `src/verifiable_tutor/teaching/` |
@@ -59,7 +66,7 @@ Verified locally on 2026-10-28 and 2026-10-29:
 | Model provider config, adapter, and response cache (implemented); replay and mock backends, token accounting (pending) | `src/verifiable_tutor/llm/` |
 | Course questions and policy scenarios | `benchmarks/questions/`, `benchmarks/policy_scenarios/` |
 | Generated benchmark results | `benchmarks/results/` |
-| Configuration such as the deadline registry, model providers, and request parameters | `config/` |
+| Configuration such as the deadline registry, model providers, request parameters, and the local tracing settings | `config/` |
 | OCR output and page images, retrieval index, embedding and response caches | `data/corpus/`, `data/index/`, `data/caches/` |
 | Helper scripts | `scripts/` |
 | Report figures | `docs/figures/` |
@@ -137,10 +144,14 @@ Known gaps:
 - No script exports the proposal PDF or the page previews; both are manual steps outside this repository.
 - `benchmarks/results/` is not gitignored, so large run outputs can be committed by accident.
 - There is no `LICENSE` and no CI workflow.
+- LangGraph and its dependency group are decided but not installed; the graph topology, the TACC import spike, and the SQLite checkpointer fallback are pending ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)).
+- Langfuse is local only; TACC runs emit no traces by design, so evaluation evidence comes from JSONL and job logs ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)).
 
 Open decisions, not settled by this repository:
 
-- The technology choices are settled in [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/`: packaging and dependency pinning, test framework, OCR pipeline, embedding model, UI stack, and model backend. Do not reopen them in code; supersede a decision with a new ADR.
+- The technology choices are settled in [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/`: packaging and dependency pinning, test framework, OCR pipeline, embedding model, UI stack, model backend, retry behavior, local tracing, and the orchestration runtime. Do not reopen them in code; supersede a decision with a new ADR.
+- The command execution boundary is settled in [ADR-0009](docs/adr/0009-typed-agent-tools-instead-of-a-shell.md); implement it before any user-supplied code runs.
+- The allowed registration domains and the email verification flow are defaults recorded in the open questions of [docs/prd.md](docs/prd.md); confirm them before implementation.
 - The proposal PDF export remains a manual step outside this repository; it is not a project dependency.
 - The verification spikes listed in [docs/tech-selection.md#verification-spikes](docs/tech-selection.md#verification-spikes) are unrun. Record their platform findings in [docs/tacc-notes.md](docs/tacc-notes.md) when they happen.
 

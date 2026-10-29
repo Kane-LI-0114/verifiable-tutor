@@ -39,3 +39,21 @@ The deployed service must not switch models behind the user's back. A fallback f
 
 - The UI maps `reason` to localized copy and exposes a retry action; it should not show a raw provider error.
 - Revisit the retry count and any backoff once real latency is measured on TACC.
+
+## Alternatives considered
+
+**Automatic cross-model fallback (the previous behaviour).** For: a request succeeds when one provider has an outage or a bad key. Against: the answer's origin becomes unclear, cost and quality change without the user's consent, and the failure is hidden; the lead replaced it with same-model retries.
+
+**Retry with exponential backoff and `Retry-After` handling.** For: gentler on rate limits and provider-side congestion. Against: the timeout budget is 60 seconds per call and the worst case already multiplies by the attempt count, so whether backoff pays is unmeasured. Kept as a follow-up once real latency is measured, not part of the first version.
+
+**Prompt-level retry (ask the model to answer again).** For: no transport-level machinery. Against: it does not address timeouts, connection errors, or provider failures, and it adds cost; not chosen.
+
+**No retries.** For: the fastest failure and no multiplied wait. Against: transient 408, 429, and 5xx responses would surface as failures without a second chance; not chosen.
+
+## References
+
+- Retry and timeout defaults: [../../config/models.yaml](../../config/models.yaml)
+- Retry implementation: [../../src/verifiable_tutor/llm/adapter.py](../../src/verifiable_tutor/llm/adapter.py)
+- Retry tests: [../../tests/llm/test_chat.py](../../tests/llm/test_chat.py) and [../../tests/llm/test_stream.py](../../tests/llm/test_stream.py)
+- Replaced decision: [ADR-0005](0005-external-model-apis-as-primary.md)
+- Model provider notes: [../model-providers.md](../model-providers.md)

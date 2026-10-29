@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted; superseded in part by [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) |
 | **Date** | 2026-10-29 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
@@ -15,7 +15,7 @@ The frozen proposal commits to the course Qwen service on TACC as the primary mo
 - The staff clarification of 2026-10-28 says that TACC and the provided Qwen model are not mandatory, and that external LLM APIs and external computing resources are acceptable ([../tacc-notes.md](../tacc-notes.md)). It also says the course may not reimburse external API costs, so every external result must be cached.
 - Text generation is the highest-latency and highest-cost step of the agent. Pinning it to a shared Qwen job means every iteration waits on a queue, a 12 minute 40 second cold start, and an address that changes per job. The team wants faster iteration and a provider that can be swapped from configuration.
 
-Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSeek at `https://api.deepseek.com/v1` with models `deepseek-flash` and `deepseek-v4-pro`, and Xiaomi MiMo at `https://api.xiaomimimo.com/v1` with models `mimo-v2.6-flash` and `mimo-v2.6-pro`. The model ids were read from the local client configuration and must be confirmed at the first live call. Embeddings stay local: BGE-M3 on TACC was already chosen in [ADR-0004](0004-hybrid-retrieval-with-bge-m3.md), and keeping them local makes retrieval reproducible and free.
+Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSeek at `https://api.deepseek.com` with the model `deepseek-flash` (the project uses only the Flash tier), and Xiaomi MiMo at `https://api.xiaomimimo.com/v1` with models `mimo-v2.6-flash` and `mimo-v2.6-pro`. The model ids were read from the local client configuration and must be confirmed at the first live call. Embeddings stay local: BGE-M3 on TACC was already chosen in [ADR-0004](0004-hybrid-retrieval-with-bge-m3.md), and keeping them local makes retrieval reproducible and free.
 
 ## Decision
 
@@ -36,7 +36,7 @@ Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSee
 - Retrieval remains free and reproducible because embeddings are local and cached.
 
 **Negative:**
-- The system now depends on two external providers for its most important step; an outage or a key problem stops generation unless the fallback is healthy.
+- The system now depends on external providers for its most important step; an outage or a key problem stops that request, because [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) removes automatic cross-model fallback.
 - The course does not reimburse external calls, so evaluation must run from cache and the paid-call budget must stay small; a careless benchmark run costs money.
 - Provider model ids and behaviour change over time, so the report and the cache key must record the exact provider and model.
 - Course material excerpts leave the platform as prompts to a third party. This is acceptable for a course project with public course material, but it must be stated in the report.
@@ -50,7 +50,7 @@ Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSee
 
 **Keep the Qwen service as primary.** For: exact alignment with the frozen proposal, no API cost, and a model the course has already validated and provided. Against: queue, cold start, address churn, and shared GPU contention limit iteration and demo reliability. Why not chosen: speed of iteration and independence matter more for a four-week project, and the staff clarification permits external APIs.
 
-**Use a single external provider.** For: one endpoint, one key, and the simplest configuration. Against: no fallback when the provider has an outage or a key problem. Why not chosen: two providers were already available and the config makes the fallback cheap.
+**Use a single external provider.** For: one endpoint, one key, and the simplest configuration. Against: only one provider for the provider-specific roles and for comparing answers. Why not chosen: two providers were already available, and the per-role configuration keeps both available without code changes. [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) removes automatic fallback between them.
 
 **Run text generation on a self-hosted model on TACC.** For: no external cost and no data leaving the platform. Against: the one-hour job cap, the read-only public environment, and the cold start make it the slowest path for the chat loop. Why not chosen: it reproduces the problem the team is trying to escape, and the provided Qwen service already covers the optional baseline.
 

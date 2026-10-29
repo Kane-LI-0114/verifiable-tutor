@@ -17,6 +17,8 @@ Yijun Sun (course TA) answered our questions about allowed model usage and the T
 
 The reply also notes that at this stage the proposal should focus on the idea and the overall approach, with implementation details refined as the project progresses.
 
+Status note (2026-10-29): the two follow-up questions below, whether SSH forwarding may reach a student-run web port and whether the final demo must run the backend on TACC, were sent to the TA by email. No reply is recorded yet.
+
 ## Discrepancy: job time limit
 
 The course documentation states two hours per job in two places: the public environment guide says the service job requests 2 GPUs, 8 CPUs, and 2 hours, and its `serve.slurm` template encodes that request; the TACC tutorial example uses `time=02:00:00`. The TA states that each job may run for at most one hour.
@@ -52,7 +54,7 @@ Facts below were read from the tcloud SDK 0.4.1 source, the live cluster configu
   - "All users cannot ssh to our server. If you have special needs, please feel free to contact us." (tcloud quickstart FAQ, item 4)
   - Term of Service usage rules: "Do not run any application that performs a security intrusion", "Do not run any application that could be interpreted as a privacy violation", "Do not hold TACC resources when they are not actively used", "Do not access resources that are not allocated to you", "Do not make hacking attempts to the TACC infrastructure". Violations can lead to account disabling, notifying the supervisor, or legal action.
   - Reading: the model-service forward has specific textual support; forwarding to our own web port has none. Treat the web-port use as an authorization question for the TA, not as documented permission.
-- **Capability versus permission.** The SSH plumbing works; the only explicit text about off-platform access is the model-service forward. Ask the TA before relying on a student-run tunnel to a web port for the demo.
+- **Capability versus permission.** The SSH plumbing works; the only explicit text about off-platform access is the model-service forward. The follow-up email of 2026-10-29 asks whether forwarding to a student-run web port is permitted; until the TA replies, treat the web-port demo as unauthorized and use the local backend mode instead ([tech-selection.md](tech-selection.md#jobs-and-demo-modes)).
 - **No per-job public URL was found.** The web console shows job history and status; the platform's HAProxy port-exposure mechanism for Jupyter-style access is not documented for student jobs through the course SDK.
 - **Capacity is tight.** Measured on 2026-10-28: 10 nodes, `MaxNodes=2`, 20 CPUs per node, 2 GPUs per node, with 0 idle, 6 drain, 4 down, and 3 jobs pending from another account. Queueing, not concurrency, is the demo risk; keep replay and start service jobs early.
 
@@ -64,7 +66,7 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 - The service address (`SERVICE_BASE_URL=http://NODE:8000/v1`) changes with every job, and the client must read it from the log of the current job each time. The address stops working when the job ends.
 - Evaluation must fit the usable window: split the 50-question benchmark and the ablations into batches that complete in under 45 minutes, and cache retrieval snapshots and model responses so a rerun does not need a fresh service.
 - Use one service job per evaluation window instead of short repeated submissions; this respects both the one-hour cap and the fairness rule.
-- The demo should have a replay mode that reads cached responses, so the presentation does not depend on a live GPU job.
+- The demo should have a replay mode that reads cached responses, so the presentation does not depend on a live GPU job. The current demo mode is the local backend and UI; the TACC-hosted mode stays open until the TA replies to the 2026-10-29 email.
 
 ## Storage budget
 

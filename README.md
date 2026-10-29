@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Technology selected, model layer implemented.** The substantive content is the course project proposal, the project documentation, the technology selection record, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`.
+**Technology selected, model layer implemented, PRD drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`.
 
 ## What it is
 
@@ -38,13 +38,14 @@ The gate is code, not a prompt: a versioned registry of release and due dates wi
 
 ## Architecture
 
-The planned system has three moving parts: a React browser UI served by the agent backend, the agent backend submitted as a TACC CPU job, and a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), with the course Qwen service kept as an optional TACC baseline. Embeddings run locally on TACC with BGE-M3 ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
+The planned system has three moving parts: a React browser UI served by the agent backend, the agent backend (run locally for the current demo and submitted as a TACC CPU job for evaluation evidence), and a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), with the course Qwen service kept as an optional TACC baseline. The agent workflow is a LangGraph `StateGraph` ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)), and local development traces model calls and graph steps into a self-hosted Langfuse instance ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)). Embeddings run locally on TACC with BGE-M3 ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
 
 ![System containers and components](proposal/figs/fig2_components.png)
 
 The optional GPU job serves Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context, admitting at most four concurrent requests, as a baseline. The primary text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)). The figure source is [proposal/figs/fig2_components.dot](proposal/figs/fig2_components.dot).
 
-The five planned subsystems inside the CPU job:
+The six planned subsystems inside the CPU job:
+- Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
 - Evidence: a TACC OCR job parses the course PDFs into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md)); hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
 - Practice lab: packs that mirror the target assignment environment (first pack: MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness); a generated reference solution is accepted only after it compiles and passes the pack's tests.
 - Policy gate: the code-level gate described above, plus the versioned deadline registry it reads.
@@ -59,6 +60,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 
 | Path | Intended role | State |
 |---|---|---|
+| `src/verifiable_tutor/auth/` | Accounts, authentication, sessions, and roles | planned (not created yet) |
 | `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/orchestrator/` | Request routing and context budget | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/evidence/` | Hybrid retrieval and deterministic span verifier | placeholder (`.gitkeep`) |
@@ -82,7 +84,11 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `pyproject.toml`, `uv.lock` | Python packaging, dependencies, pytest configuration, and locked local environment | present: packaging |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
 | `docs/figures/` | Report and documentation figures | placeholder (`.gitkeep`) |
+| `docs/prd.md` | Product requirements, scope, acceptance criteria, and milestones | present: PRD |
+| `GLOSSARY.md` | Domain vocabulary used across the docs and code | present: glossary |
 | `docs/tech-selection.md`, `docs/adr/` | Technology decisions and the ADRs that argue them | present: decisions |
+| `docs/langfuse-local.md` | Local development tracing runbook | present: runbook |
+| `docs/email-local.md` | Registration and reset email runbook | present: runbook |
 | `docs/tacc-notes.md` | Platform constraints, budgets, and mechanics | present: notes |
 | `proposal/` | Proposal sources: `proposal.md`, `build_proposal.py`, figure `.dot` sources, rendered PDF and DOCX | present: proposal sources |
 
@@ -117,11 +123,15 @@ Deliverables: the code repository, the evaluation report, and the demo.
 ## Documentation
 
 - [proposal/proposal.md](proposal/proposal.md): readable Markdown text of the proposal, generated by `proposal/build_proposal.py`.
+- [docs/prd.md](docs/prd.md): product requirements, scope, acceptance criteria, and milestones.
+- [GLOSSARY.md](GLOSSARY.md): the project's domain vocabulary.
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf): the two-page submitted PDF.
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx): editable DOCX version.
 - [docs/tech-selection.md](docs/tech-selection.md): technology choices, job topology, demo modes, and the week-one verification spikes.
 - [docs/model-providers.md](docs/model-providers.md): agent-facing API notes for DeepSeek and Xiaomi MiMo, model switching, image and audio input, thinking control, web search, JSON output, and tool calling.
-- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, and retry behaviour.
+- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, and typed agent tools.
+- [docs/langfuse-local.md](docs/langfuse-local.md): runbook for the optional local Langfuse instance used for development tracing.
+- [docs/email-local.md](docs/email-local.md): runbook for registration and password reset email over QQ Mail SMTP.
 - [config/models.yaml](config/models.yaml): provider endpoints, model ids, role routing, request parameters, and embedding settings. Secrets stay in the ignored `.env`; [.env.example](.env.example) is the committed template.
 - [docs/tacc-notes.md](docs/tacc-notes.md): platform constraints, budgets, and measured platform mechanics.
 - [AGENTS.md](AGENTS.md): agent and contributor guide covering sources of truth, commands, and conventions.
