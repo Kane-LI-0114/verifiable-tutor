@@ -1,8 +1,8 @@
 # Technology selection
 
-Scope: implementation technology for this repository. It does not change the frozen two-page proposal. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The four architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
+Scope: implementation technology for this repository. It does not change the frozen two-page proposal. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The five architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
 
-Status: decided on 2026-10-28. No implementation code, test, or TACC job exists yet, so every command below is planned, not verified.
+Status: decided on 2026-10-28 and updated on 2026-10-29 for the external model APIs. No application code or test exists yet; the bootstrap and the first two spike jobs are committed, but their results are not recorded here.
 
 ## Decisions at a glance
 
@@ -15,14 +15,14 @@ Status: decided on 2026-10-28. No implementation code, test, or TACC job exists 
 | Corpus and OCR | PaddleOCR-VL-1.6 on vLLM, PP-DocLayoutV2 layout on CPU, page images through pypdfium2, per-page JSONL with page numbers and block boxes, resumable one-hour jobs | Page numbers and block boxes are what the evidence requirement and citation panel need ([ADR-0002](adr/0002-ocr-on-tacc-with-paddleocr-vl.md)) |
 | Retrieval | SQLite FTS5 BM25 plus BGE-M3 dense vectors, fused with reciprocal rank fusion; an English query variant feeds the BM25 arm for Chinese queries | Multilingual, no vector database, and the proposal's ablation arms are preserved ([ADR-0004](adr/0004-hybrid-retrieval-with-bge-m3.md)) |
 | Embedding model | BGE-M3 primary; Qwen3-Embedding-0.6B fallback; Qwen3-Embedding-4B upgrade path | Fits the RTX 3090 and CPU query embedding, MIT licensed, strong cross-lingual retrieval |
-| Model client | `openai` SDK against the vLLM OpenAI-compatible endpoint; temperature 0, thinking disabled; replay and mock backends behind one interface | Primary course service plus offline development and demo |
+| Model client | `openai` SDK against external OpenAI-compatible providers: DeepSeek `deepseek-v4-flash` for chat with Xiaomi MiMo `mimo-v2.5` as fallback; temperature 0; replay and mock backends behind one interface | External APIs remove the shared-Qwen queue and cold start; keys stay in `.env` and settings in `config/models.yaml` ([ADR-0005](adr/0005-external-model-apis-as-primary.md)) |
 | Orchestration | Hand-written asyncio state machine with an explicit budget for model calls, tool calls, context tokens, and wall time; no agent framework | Testable, reproducible, and consistent with "the policy is code" |
 | Policy gate | YAML deadline registry validated by pydantic, rule and embedding intent routing, injected clock, JSONL decision log, fail closed to abstention | Deterministic and resistant to prompt injection |
 | Practice lab | Subprocess runner with timeouts and resource limits against the public MPI toolchain; a generated solution is accepted only after its tests pass | Mirrors the assignment environment |
 | Storage | SQLite for metadata, FTS5, and caches; NumPy arrays for vectors; JSONL for traces and replay | No external service, and everything is copyable between `USERDIR` and the laptop |
 | Tests | pytest with the red and green loop, run inside the project environment on TACC | The framework decision that AGENTS.md left open |
 | Evaluation | Benchmark JSONL, an evaluation harness that writes JSON, plots generated locally | matplotlib is absent from the public environment |
-| Jobs and demo | `tacc/serve` for Qwen (unchanged), `tacc/ocr`, `tacc/index`, `tacc/client`; the demo runs from a TACC CPU job once the tunnel spike passes, with a local backend and replay as fallbacks | The one-hour policy cap, per-job service addresses, and demo risk |
+| Jobs and demo | `tacc/serve` for the optional Qwen baseline, `tacc/ocr`, `tacc/index`, `tacc/client`; the demo runs from a TACC CPU job once the tunnel spike passes, with a local backend and replay as fallbacks | The one-hour policy cap, per-job service addresses, and demo risk |
 
 ## Environment strategy
 
@@ -80,7 +80,7 @@ See [ADR-0004](adr/0004-hybrid-retrieval-with-bge-m3.md) for the argument. Opera
 - BM25 uses SQLite FTS5, so no extra package is needed; the index is built from page chunks.
 - BGE-M3 dense vectors are computed once in `tacc/index/` on one GPU, written as a NumPy array plus a row map, and searched exactly with a single matrix multiplication. At an estimated 3,000 to 6,000 chunks this is milliseconds.
 - Fusing uses reciprocal rank fusion with configurable weights. Reranking is a later experiment, not a first-version dependency.
-- A Chinese query gets one English variant from the Qwen service for the BM25 arm; the variant is cached by query hash, and the cost is reported in RQ4.
+- A Chinese query gets one English variant from the configured text model for the BM25 arm; the variant is cached by query hash, and the cost is reported in RQ4.
 - Ablation arms are BM25 only, dense only, and hybrid. Optional arms are Qwen3-Embedding-0.6B and a small reranker, added only if the 50-question bake-off shows a gain.
 - The span verifier is deterministic: a quoted span is accepted only if it occurs in the cited page's OCR text after whitespace and case normalisation; one repair round, then abstention.
 
@@ -97,17 +97,18 @@ The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elem
 ## Backend, policy, practice, and storage
 
 - Backend budget per request: at most 6 model calls, at most 24K context tokens of the 32K window, a per-call timeout, and a hard wall-clock ceiling. The orchestrator records every step transition in the trace.
+- Model providers and secrets: `config/models.yaml` owns provider endpoints, model ids, role routing, request parameters, retry and timeout values, the response cache, and the BGE-M3 embedding settings. `.env` owns only `DEEPSEEK_API_KEY` and `MIMO_API_KEY`; [.env.example](../.env.example) is the committed template. The loader resolves the key variables at startup and fails closed when one is missing ([ADR-0005](adr/0005-external-model-apis-as-primary.md)).
 - Policy gate: the deadline registry is a versioned YAML file in `config/`, validated by pydantic. The clock is injected, so tests can place a request before release, during an extension window, and after the deadline. Unclassifiable or unregistered requests abstain rather than guess. Every decision is logged with the state, the rule, and the registry version.
 - Practice lab: generated solutions are written to a temporary directory, compiled with the public MPI toolchain, and run with a timeout and resource limits; a solution is accepted only after the pack's tests pass. Verified solutions are cached.
 - Storage: SQLite at `USERDIR/state/` for metadata, caches, and the decision log; `USERDIR/index/` for vectors and BM25 tables; `USERDIR/traces/` for JSONL traces and replay logs. `data/caches/` and `data/index/` remain the local mirrors for development.
 
 ## Jobs and demo modes
 
-The platform allows one GPU job per node at a time for our purposes: the Qwen service uses both GPUs, so OCR and embedding jobs run before evaluation windows, not beside the service.
+The platform allows one GPU job per node at a time for our purposes: the Qwen baseline, when used, occupies both GPUs, so OCR and embedding jobs run before evaluation windows, not beside it.
 
 | Job directory | Resources | Purpose | Output |
 |---|---|---|---|
-| `tacc/serve/` | 2 GPUs, 8 CPUs, 59 min | The course Qwen service command; our copy sets the 59-minute policy request | `SERVICE_BASE_URL` in the log |
+| `tacc/serve/` | 2 GPUs, 8 CPUs, 59 min | Optional baseline: the course Qwen service command; our copy sets the 59-minute policy request | `SERVICE_BASE_URL` in the log |
 | `tacc/ocr/` | 1 GPU, 8 CPUs, 59 min | Render, layout, and OCR the corpus | Page records, page images, figure crops in `USERDIR` |
 | `tacc/index/` | 1 GPU, 8 CPUs, 59 min | Embed chunks and build the BM25 table | Vectors, row map, FTS5 database in `USERDIR` |
 | `tacc/client/` | 4 CPUs, 59 min | Agent backend plus the static UI, and the evaluation harness run | Traces, evaluation JSON, logs in `USERDIR` |
@@ -116,8 +117,8 @@ Access facts measured on 2026-10-28: compute node addresses are private, there i
 
 Demo modes, in order of fidelity:
 
-1. **TACC-hosted backend and UI (primary once verified and permitted).** The `tacc/client` job serves the API and the static UI on one origin; the laptop forwards a local port to the node port with `ssh -p 30041 -N -L 127.0.0.1:8080:<node>:8080 <user>@gw.turing.ust.hk`, and the backend calls the Qwen service on the same cluster. This matches the proposal's execution path and needs no CORS.
-2. **Local backend and UI (fallback).** The same code runs on the laptop; the Qwen service is reached through the documented SSH forwarding to the GPU node, and the corpus and index are mirrored from `USERDIR`. This removes queue and job-lifetime risk from the live demo and is the documented path for an off-platform client.
+1. **TACC-hosted backend and UI (primary once verified and permitted).** The `tacc/client` job serves the API and the static UI on one origin; the laptop forwards a local port to the node port with `ssh -p 30041 -N -L 127.0.0.1:8080:<node>:8080 <user>@gw.turing.ust.hk`. The backend calls the external text API through the cluster egress and runs BGE-M3 for query embedding in the same job. This matches the proposal's execution path and needs no CORS.
+2. **Local backend and UI (fallback).** The same code runs on the laptop; text generation calls the external API directly, and query embedding uses either a local BGE-M3 copy or cached query vectors; the corpus and index are mirrored from `USERDIR`. This removes queue and job-lifetime risk from the live demo.
 3. **Replay (last resort).** No model, no TACC: recorded event streams play back through the real frontend and backend replay endpoint.
 
 Evaluation results and report artifacts always come from the TACC jobs, whatever mode the live demo uses. The mode used for the final presentation is decided after the tunnel spike and recorded in the report.
@@ -132,7 +133,7 @@ The staff clarification recorded on 2026-10-28 says TACC and the provided Qwen m
 
 The submitted proposal commits to a TACC CPU job for the agent backend ([proposal section 3](../proposal/proposal.md#3-proposed-system)). That is a project commitment, not a course requirement.
 
-Reading: the canonical execution path keeps the backend as a TACC CPU job for evaluation and report evidence. A local backend that calls the TACC model service is acceptable for live use if student-run forwarding is not permitted, provided the report states which mode the demo used. One question remains for the TA: whether the final demo is expected to run the backend on TACC.
+Reading: the canonical execution path keeps the backend as a TACC CPU job for evaluation and report evidence. A local backend that calls the external model API and uses a local or cached embedding path is acceptable for live use if student-run forwarding is not permitted, provided the report states which mode the demo used. One question remains for the TA: whether the final demo is expected to run the backend on TACC.
 
 ## Repository additions
 
@@ -142,6 +143,7 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 - `src/verifiable_tutor/llm/`: model client, replay and mock backends, caches, token accounting.
 - `src/verifiable_tutor/ui/web/`: React source; build output in `src/verifiable_tutor/ui/static/` (ignored).
 - `tacc/ocr/` and `tacc/index/`: the two batch job directories above.
+- `config/models.yaml`: provider endpoints, model ids, role routing, request parameters, response cache, and embedding settings; secrets stay in `.env`.
 
 ## Rejected alternatives
 
@@ -160,7 +162,7 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 | dots.ocr or dots.mocr as the OCR pipeline | One model with native vLLM 0.26.0 support: the simplest deployment, no PaddlePaddle or layout model | Lower shared-protocol text accuracy than PaddleOCR-VL-1.6, 3.04B weights mean 43 to 85 minutes for the corpus and two jobs, no official recipe, and JSON repair is required; kept as the first fallback if the Paddle stack cannot be installed |
 | MinerU as the OCR pipeline | Mature pipeline with a good schema | Heavier stack and AGPL weights on one variant |
 | Qwen3-Embedding-4B as the default | Better Chinese to English retrieval numbers | Eight GB of weights and several times the embedding time, unproven need |
-| External LLM or search as primary | Better answer quality without local serving | The course service is the intended primary; external calls are optional, labelled, cached baselines |
+| Qwen service as the primary text backend | Exact alignment with the frozen proposal and no external API cost | Queue, cold start, address churn, and shared GPU contention slow iteration and demo reliability; kept as an optional baseline ([ADR-0005](adr/0005-external-model-apis-as-primary.md)) |
 
 ## Verification spikes
 
@@ -171,16 +173,17 @@ No job has been submitted yet. These run in week one, in this order, and each ha
 3. **Corpus job** (1 GPU, 59 minutes, resumable). Run the full 342 pages; if it does not finish, run a second job and confirm resume without duplicates. Exit criterion: all pages have records and images in `USERDIR`.
 4. **Index job** (1 GPU, 59 minutes). Embed the chunks with BGE-M3, build the FTS5 table, and run the 50-question bake-off over BM25, dense, and hybrid. Exit criterion: page-hit@5 and nDCG are recorded and the primary model choice is confirmed or overturned.
 5. **Tunnel job** (4 CPUs, about 20 minutes). Serve a stub page on port 8080. First check from the login node whether the gateway can reach `<node>:8080`; then forward `127.0.0.1:8080` to the node and load the page in a browser, including one refresh. Exit criterion: the page loads through the tunnel, a killed and restarted tunnel recovers, and the demo mode is fixed afterwards. Ask the TA about the forwarding policy before the demo.
-6. **End-to-end smoke** (1 GPU service plus 1 CPU client, about 30 minutes). Ten benchmark questions through the full pipeline with the span verifier and the policy gate. Exit criterion: traces, tests, and results follow the required execution path.
+6. **End-to-end smoke** (1 CPU job plus external API calls, about 30 minutes). Ten benchmark questions through the full pipeline with the span verifier and the policy gate, using cached responses for repeat runs. Exit criterion: traces, tests, and results follow the required execution path.
 
 ## Risks and open questions
 
 - `uv` and a target install under PRoot are the largest environment risk. Fallbacks: a virtual environment from the public interpreter, then the SDK conda environment.
 - The PaddlePaddle CPU wheel may fail to install. Fallback: pure vLLM whole-page prompts, page-level citations only.
-- Gateway to job-container port reachability is unverified; the SSH forward plumbing works and arbitrary target ports are not restricted. No document addresses student forwarding to a web port directly; the general prohibition and the model-service instruction conflict. If the TA disallows it or the spike fails, the demo uses the local backend and UI with the model service reached through the documented forwarding path.
+- Gateway to job-container port reachability is unverified; the SSH forward plumbing works and arbitrary target ports are not restricted. No document addresses student forwarding to a web port directly; the general prohibition and the model-service instruction conflict. If the TA disallows it or the spike fails, the demo uses the local backend and UI with text generation through the external API and a local or cached embedding path.
 - Cluster capacity was tight on 2026-10-28: no idle nodes, several drain and down. Start the service and backend jobs early and keep replay ready; do not assume a node on demand.
+- External model APIs add an outage, cost, and data-egress risk. Every call is cached and labelled; evaluation must run from cache, and a benchmark run needs an explicit paid-call budget. A local demo needs an embedding path for BGE-M3: a local copy of the model or cached query vectors.
 - The first OCR and embedding runs may exceed one hour. Mitigation: resume, per-document shards, and 50-minute self-stop.
-- The model service address changes with every job; the client writes it from the current log into the task configuration before submission.
+- The optional Qwen baseline address changes with every job; when it is used, the client writes it from the current log into the task configuration before submission.
 - Group storage is 100 GB shared by three accounts; the expected footprint is a few GB for weights, about 58 MB of PDFs, a few hundred MB of OCR output and page images, and small index files.
 - The comparison between OCR output and PDF text is not a correctness oracle; human spot checks on figure-heavy slides remain part of RQ1.
 - The frontend build depends on the laptop Node toolchain; a clean machine needs Node and `npm ci` before it can serve the UI.
@@ -189,6 +192,7 @@ No job has been submitted yet. These run in week one, in this order, and each ha
 ## References
 
 - Platform constraints and budgets: [tacc-notes.md](tacc-notes.md)
+- Model providers and secrets: [config/models.yaml](../config/models.yaml), [.env.example](../.env.example), and [ADR-0005](adr/0005-external-model-apis-as-primary.md)
 - Repository layout and directory ownership: [README.md](../README.md#repository-layout)
 - Agent rules: [AGENTS.md](../AGENTS.md)
 - Course project brief, public environment guide, and package lists: course workspace, outside this repository

@@ -4,9 +4,9 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Current state
 
-- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), and four decision records under `docs/adr/`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
-- Every other directory is a `.gitkeep` placeholder: `benchmarks/`, `config/`, `data/`, `examples/`, `scripts/`, `src/`, `tacc/`, `tests/`, and `docs/figures/`.
-- There is no application code, no `__init__.py`, no `pyproject.toml` or `requirements.txt`, no CI, no `LICENSE`, and no benchmark input or result data. The test framework is chosen (pytest, see ADR-0001) but no test exists.
+- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), five decision records under `docs/adr/`, the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, and the model provider configuration in `config/models.yaml` with the committed `.env.example` template. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
+- The remaining directories are still `.gitkeep` placeholders: `benchmarks/`, `data/`, `examples/`, `src/`, `tacc/serve/`, `tacc/client/`, `tests/`, and `docs/figures/`.
+- There is no application code, no `__init__.py`, no root packaging metadata, no CI, no `LICENSE`, and no benchmark input or result data. The test framework is chosen (pytest, see ADR-0001) but no test exists.
 - Do not assume a module, entry point, test runner, or benchmark result exists because a directory is named after it. The first code change creates the package and the packaging files described in [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md).
 
 ## Sources of truth
@@ -19,6 +19,7 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 | Page previews | The exported PDF | Manual export; no script in this repository renders them |
 | Project description and directory roles | [README.md](README.md) | Edit by hand |
 | Technology decisions | [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/` | Edit by hand; append a new ADR to supersede a decision |
+| Model providers and request parameters | `config/models.yaml` (no secrets); keys only in the ignored `.env` | Edit by hand; `.env.example` is the committed template |
 | Agent rules | This file | Edit by hand |
 
 - Edit the constants in `proposal/build_proposal.py`, then rerun the script. Never hand-edit `proposal/proposal.md` or the `.docx`: the next build overwrites both.
@@ -47,7 +48,7 @@ Verified locally on 2026-10-28:
 | Line-anchored explainer | `src/verifiable_tutor/teaching/` |
 | Evaluation harness | `src/verifiable_tutor/eval/` |
 | Browser UI source; built assets are written to `src/verifiable_tutor/ui/static/` | `src/verifiable_tutor/ui/web/` |
-| GPU job for the Qwen service | `tacc/serve/` |
+| Optional baseline GPU job for the Qwen service | `tacc/serve/` |
 | GPU job for the OCR pipeline (render, layout, recognition) | `tacc/ocr/` |
 | GPU job for embeddings and the BM25 index | `tacc/index/` |
 | CPU job for the agent backend and the evaluation harness | `tacc/client/` |
@@ -55,7 +56,7 @@ Verified locally on 2026-10-28:
 | Model client, replay and mock backends, caches, token accounting | `src/verifiable_tutor/llm/` |
 | Course questions and policy scenarios | `benchmarks/questions/`, `benchmarks/policy_scenarios/` |
 | Generated benchmark results | `benchmarks/results/` |
-| Configuration such as the deadline registry and model client | `config/` |
+| Configuration such as the deadline registry, model providers, and request parameters | `config/` |
 | OCR output and page images, retrieval index, embedding and response caches | `data/corpus/`, `data/index/`, `data/caches/` |
 | Helper scripts | `scripts/` |
 | Report figures | `docs/figures/` |
@@ -102,11 +103,11 @@ Tests live under `tests/` and mirror the package path: `src/verifiable_tutor/pol
 
 ## TACC and model serving
 
-This repository is a standalone Git repository nested inside the course workspace at `../../`, so paths beginning with `../../` are outside the repository and do not resolve on a hosted copy. The project targets the course TACC@HKUST platform. `tacc/serve/`, `tacc/ocr/`, `tacc/index/`, and `tacc/client/` are task directories for that platform, and the authoritative workflow is the course documentation outside this repository: the course workspace instructions in `../../CLAUDE.md` and the copies in `../../tacc-env-docs/`. Treat this section as a pointer, not the authority. All paths in this section are on TACC or inside a task directory, not in this repository.
+This repository is a standalone Git repository nested inside the course workspace at `../../`, so paths beginning with `../../` are outside the repository and do not resolve on a hosted copy. The project targets the course TACC@HKUST platform. `tacc/env-spike/` and `tacc/ocr-smoke/` are the committed spike jobs; `tacc/serve/`, `tacc/ocr/`, `tacc/index/`, and `tacc/client/` are planned task directories. The authoritative workflow is the course documentation outside this repository: the course workspace instructions in `../../CLAUDE.md` and the copies in `../../tacc-env-docs/`. Treat this section as a pointer, not the authority. All paths in this section are on TACC or inside a task directory, not in this repository.
 
 - The course uses the official SDK CLI: configure with `tcloud config -u USERNAME -f PRIVATE_KEY`, then `tcloud init`, and submit from a task directory containing `tuxiv.conf` with `tcloud submit`.
 - Inspect a job with `tcloud ps -j JOB_ID`, read its log with `tcloud cat slurm_log/<task>-<JOB_ID>.log`, fetch outputs with `tcloud download <remote> <local>`, and release resources with `tcloud cancel -j JOB_ID`.
-- The Qwen service is a GPU job in `tacc/serve/`: vLLM serving model `qwen3.8-27b` on port 8000, 32K context, at most 4 concurrent requests, 2x RTX 3090, tensor parallel 2. The agent backend or client is a separate CPU job in `tacc/client/`.
+- The Qwen service is a GPU job in `tacc/serve/`: vLLM serving model `qwen3.8-27b` on port 8000, 32K context, at most 4 concurrent requests, 2x RTX 3090, tensor parallel 2. It is an optional baseline: the primary text generation uses external OpenAI-compatible APIs ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)), configured in `config/models.yaml` with keys in `.env`. The agent backend or client is a separate CPU job in `tacc/client/`.
 - The service is ready only when its log contains `Application startup complete`. The log then prints `SERVICE_BASE_URL=http://NODE:8000/v1`; the client writes that value into its `server-url.txt` before submission. The address expires when the job ends.
 - Hard constraints: cancel GPU jobs when finished; `/mnt/home/public/course-envs/CSIT6000V/` is read-only, so never install dependencies into it or modify it; on the `tacc` partition, Slurm exports host-global CUDA device indices while the container enumerates devices from zero, so CUDA jobs must `unset CUDA_VISIBLE_DEVICES` or CUDA reports no CUDA-capable device.
 - No custom images: the SDK job schema has no image field, and accounts have no Docker or root. The dependency strategy is a hash-pinned project environment installed into `$HOME` ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)); GPU work keeps the public environment.
@@ -127,7 +128,8 @@ This repository is a standalone Git repository nested inside the course workspac
 
 Known gaps:
 
-- No `requirements.txt`, `pyproject.toml`, or `uv.lock` yet. [docs/tech-selection.md](docs/tech-selection.md) and [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md) fix the strategy; the first code change adds the files.
+- No root `requirements.txt`, `pyproject.toml`, or `uv.lock` yet; the TACC job requirements live in `scripts/tacc/requirements-tacc.txt`. [docs/tech-selection.md](docs/tech-selection.md) and [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md) fix the strategy; the first code change adds the packaging files.
+- No model-config loader yet. `config/models.yaml` and `.env.example` fix the contract; the loader and its tests land with the first code change.
 - No UI build script yet. The first frontend change adds the `npm ci && npm run build` flow and records the command here.
 - No script exports the proposal PDF or the page previews; both are manual steps outside this repository.
 - `benchmarks/results/` is not gitignored, so large run outputs can be committed by accident.
@@ -135,7 +137,7 @@ Known gaps:
 
 Open decisions, not settled by this repository:
 
-- The technology choices are settled in [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/`: packaging and dependency pinning, test framework, OCR pipeline, embedding model, and UI stack. Do not reopen them in code; supersede a decision with a new ADR.
+- The technology choices are settled in [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/`: packaging and dependency pinning, test framework, OCR pipeline, embedding model, UI stack, and model backend. Do not reopen them in code; supersede a decision with a new ADR.
 - The proposal PDF export remains a manual step outside this repository; it is not a project dependency.
 - The verification spikes listed in [docs/tech-selection.md#verification-spikes](docs/tech-selection.md#verification-spikes) are unrun. Record their platform findings in [docs/tacc-notes.md](docs/tacc-notes.md) when they happen.
 

@@ -8,7 +8,7 @@ Yijun Sun (course TA) answered our questions about allowed model usage and the T
 
 | Topic | Clarification | What it means here |
 |---|---|---|
-| Model backend | TACC and the provided Qwen model are not mandatory. External LLM APIs and external computing resources are acceptable. | The TACC service stays the primary backend for the course execution path; external LLM calls cover optional baselines only. |
+| Model backend | TACC and the provided Qwen model are not mandatory. External LLM APIs and external computing resources are acceptable. | External APIs are allowed and are now the primary text path; the TACC Qwen service stays as an optional baseline ([ADR-0005](adr/0005-external-model-apis-as-primary.md)). |
 | Cost | The course may not be able to reimburse external API or external compute costs. | No experiment in the submitted repository may require a paid external call. Cache every external result. |
 | Packages and storage | Dependencies and model downloads may go into our own workspace. Group storage must stay within 100 GB, combined across all three members. | Install into `$HOME`, never into the read-only public environment. Budget weights, indexes, and caches against the 100 GB cap. |
 | Embeddings | An embedding model may run on TACC through a submitted job. Precomputing embeddings externally and BM25-only retrieval are also acceptable. | Keep the planned hybrid index; the dense side can be produced on TACC in a short batch job. |

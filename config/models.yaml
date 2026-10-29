@@ -1,0 +1,79 @@
+# Model configuration for verifiable-tutor.
+#
+# Secrets live only in .env at the repository root (ignored by Git). This file
+# is committed and never contains a key: each provider names the environment
+# variable that holds its key. Model ids and endpoints were read from the local
+# client configuration on 2026-10-29 and must be confirmed at the first live
+# call, because providers rename models without notice.
+#
+# The primary text-generation path is an external OpenAI-compatible API. The
+# course Qwen service on TACC is an optional baseline and is not configured
+# here. Embeddings are not an API: BGE-M3 runs on TACC (see the embedding
+# section) and is loaded by the indexing and backend jobs.
+
+defaults:
+  timeout_s: 60
+  max_retries: 2
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 2048
+
+providers:
+  deepseek:
+    type: openai_compatible
+    base_url: https://api.deepseek.com/v1
+    api_key_env: DEEPSEEK_API_KEY
+    models:
+      fast: deepseek-v4-flash
+      strong: deepseek-v4-pro
+  mimo:
+    type: openai_compatible
+    base_url: https://api.xiaomimimo.com/v1
+    api_key_env: MIMO_API_KEY
+    models:
+      default: mimo-v2.5
+      strong: mimo-v2.5-pro
+
+# Each role picks a provider and a model alias, and may override request
+# parameters. The chat role lists a fallback provider used when the primary
+# call fails after retries.
+roles:
+  chat:
+    provider: deepseek
+    model: fast
+    fallback:
+      provider: mimo
+      model: default
+    params:
+      temperature: 0.0
+      max_tokens: 2048
+  translate_query:
+    provider: deepseek
+    model: fast
+    params:
+      temperature: 0.0
+      max_tokens: 256
+  classify_intent:
+    provider: mimo
+    model: default
+    params:
+      temperature: 0.0
+      max_tokens: 64
+
+# External responses are cached by provider, model, parameters, and messages.
+# No experiment in the submitted repository may require a paid call; the cache
+# makes evaluation runs reproducible and free after the first run.
+cache:
+  enabled: true
+  directory: data/caches/model
+
+embedding:
+  # Local model on TACC, not an API. Weights are cached under $HOME/models and
+  # vectors are stored in USERDIR by the index job.
+  provider: local
+  model: BAAI/bge-m3
+  model_path: ~/models/bge-m3
+  dimension: 1024
+  device: cpu
+  batch_size: 16
+  max_length: 512
