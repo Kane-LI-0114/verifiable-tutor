@@ -4,7 +4,7 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Current state
 
-- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), five decision records under `docs/adr/`, the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, the model provider configuration in `config/models.yaml` with the committed `.env.example` template, and the implemented model layer: `src/verifiable_tutor/llm/config.py`, `src/verifiable_tutor/llm/adapter.py` (chat, streaming, ASR, TTS, MiMo audio-file routing, DeepSeek search and fetch), the `tests/llm/` suite, `pyproject.toml`, `uv.lock`, and `scripts/smoke_model_adapter.py`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
+- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), five decision records under `docs/adr/`, the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, the model provider configuration in `config/models.yaml` with the committed `.env.example` template, and the implemented model layer: `src/verifiable_tutor/llm/config.py`, `src/verifiable_tutor/llm/adapter.py` (chat, streaming with replay, ASR, TTS, MiMo audio-file routing, DeepSeek search and fetch, file-backed response cache), the `tests/llm/` suite, `pyproject.toml`, `uv.lock`, and `scripts/smoke_model_adapter.py`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
 - The remaining directories are still `.gitkeep` placeholders: `benchmarks/`, `data/`, `examples/`, `docs/figures/`, `tacc/serve/`, `tacc/client/`, and the unbuilt `src/verifiable_tutor/` subpackages (`policy/`, `orchestrator/`, `evidence/`, `practice/`, `teaching/`, `eval/`, `ui/`).
 - The model layer is implemented and tested locally. No other application code exists yet, and there is no CI, no `LICENSE`, and no benchmark input or result data. pytest is the chosen framework and `tests/llm/` is the first suite.
 - Do not assume a module, entry point, test runner, or benchmark result exists because a directory is named after it. The package, packaging files, and test runner are recorded in [Toolchain and commands](#toolchain-and-commands).
@@ -36,7 +36,7 @@ Verified locally on 2026-10-28 and 2026-10-29:
 - That script imports `docx`, but no `requirements.txt` or `pyproject.toml` records the requirement. On a fresh interpreter, install it with `python3 -m pip install python-docx` (this requirement is inferred from the import, not declared by a file).
 - Re-render one figure: `dot -Gdpi=300 -Tpng proposal/figs/fig1_usecase.dot -o proposal/figs/fig1_usecase.png`, and the same pattern for `fig2_components`.
 - Create the local application environment: `uv venv .venv --python 3.12` then `uv pip install -e '.[dev]'`. The application targets Python 3.12 and `pyproject.toml` is the packaging source.
-- Run the test suite: `.venv/bin/python -m pytest`. The first suite is `tests/llm/` (configuration, chat, streaming, ASR, TTS, audio-file routing, search and fetch); the runner is recorded here as the TDD change required.
+- Run the test suite: `.venv/bin/python -m pytest`. The first suite is `tests/llm/` (configuration, chat, streaming, ASR, TTS, audio-file routing, search, fetch, cache); the runner is recorded here as the TDD change required.
 - Run the live model smoke: `.venv/bin/python scripts/smoke_model_adapter.py`. It makes real DeepSeek and MiMo calls with the keys in `.env`, including audio-file input and TTS, is not part of pytest, and exits non-zero on a failed step (verified 2026-10-29, ten steps).
 - There is no application build or server run command yet, and no UI build command. [docs/tech-selection.md](docs/tech-selection.md) lists the planned commands and the verification spikes; record any new command here in the change that adds it.
 
@@ -56,7 +56,7 @@ Verified locally on 2026-10-28 and 2026-10-29:
 | GPU job for embeddings and the BM25 index | `tacc/index/` |
 | CPU job for the agent backend and the evaluation harness | `tacc/client/` |
 | Corpus build from OCR output, page images, chunking, and corpus hashing | `src/verifiable_tutor/corpus/` |
-| Model provider config and adapter (implemented); replay and mock backends, caches, token accounting (pending) | `src/verifiable_tutor/llm/` |
+| Model provider config, adapter, and response cache (implemented); replay and mock backends, token accounting (pending) | `src/verifiable_tutor/llm/` |
 | Course questions and policy scenarios | `benchmarks/questions/`, `benchmarks/policy_scenarios/` |
 | Generated benchmark results | `benchmarks/results/` |
 | Configuration such as the deadline registry, model providers, and request parameters | `config/` |
@@ -132,6 +132,7 @@ This repository is a standalone Git repository nested inside the course workspac
 Known gaps:
 
 - No root `requirements.txt`; packaging lives in `pyproject.toml` with `uv.lock`, and the TACC job requirements live in `scripts/tacc/requirements-tacc.txt`.
+- The response cache has no TTL or eviction; delete `data/caches/model/` or change `cache.directory` to invalidate it.
 - No UI build script yet. The first frontend change adds the `npm ci && npm run build` flow and records the command here.
 - No script exports the proposal PDF or the page previews; both are manual steps outside this repository.
 - `benchmarks/results/` is not gitignored, so large run outputs can be committed by accident.

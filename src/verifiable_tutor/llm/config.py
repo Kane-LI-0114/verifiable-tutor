@@ -124,9 +124,15 @@ class ModelConfig(_StrictModel):
 class ResolvedModelConfig:
     """Validated configuration plus the API keys resolved from the environment."""
 
-    def __init__(self, config: ModelConfig, api_keys: Mapping[str, str]) -> None:
+    def __init__(
+        self,
+        config: ModelConfig,
+        api_keys: Mapping[str, str],
+        cache_dir: str | Path,
+    ) -> None:
         self.config = config
         self.api_keys: dict[str, str] = dict(api_keys)
+        self.cache_dir = Path(cache_dir)
 
     def model_id(self, provider: str, alias: str) -> str:
         return self.config.providers[provider].models[alias]
@@ -160,6 +166,7 @@ def load_model_config(
     *,
     env: Mapping[str, str] | None = None,
     env_file: str | Path | None = None,
+    base_dir: str | Path | None = None,
 ) -> ResolvedModelConfig:
     """Load the YAML config and resolve API keys, failing closed on any problem."""
 
@@ -195,7 +202,15 @@ def load_model_config(
     if config.thinking.disable_for_tools is None:
         raise ConfigError("thinking.disable_for_tools must be set")
 
-    return ResolvedModelConfig(config, api_keys)
+    base = (
+        Path(base_dir)
+        if base_dir is not None
+        else Path(config_path).resolve().parent.parent
+    )
+    cache_dir = Path(config.cache.directory).expanduser()
+    if not cache_dir.is_absolute():
+        cache_dir = base / cache_dir
+    return ResolvedModelConfig(config, api_keys, cache_dir)
 
 
 def _validate_role(

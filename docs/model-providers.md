@@ -487,18 +487,20 @@ Tool calls:
 
 ## 8. Configuration mapping
 
-The existing `config/models.yaml` predates this research and uses stale ids: `deepseek-v4-flash`, `deepseek-v4-pro`, `mimo-v2.5`, and `mimo-v2.5-pro`. Per the current provider docs and the project decision to use only DeepSeek flash, the configuration should become:
+The committed `config/models.yaml` implements the current contract. The relevant shape is:
 
 ```yaml
 providers:
   deepseek:
     base_url: https://api.deepseek.com
     api_key_env: DEEPSEEK_API_KEY
+    max_tokens_field: max_tokens
     models:
       flash: deepseek-flash
   mimo:
     base_url: https://api.xiaomimimo.com/v1
     api_key_env: MIMO_API_KEY
+    max_tokens_field: max_completion_tokens
     models:
       flash: mimo-v2.6-flash
       pro: mimo-v2.6-pro
@@ -508,17 +510,29 @@ search:
   provider: deepseek
   base_url: https://api.deepseek.com/v1
   api_key_env: DEEPSEEK_API_KEY
-  count: 10
+  default_count: 10
   need_content: true
 
 thinking:
-  default: off
   mapping:
-    deepseek: {off: none, low: low, high: high, max: max}
-    mimo: {off: disabled, low: enabled, high: enabled, max: enabled}
+    deepseek: {"off": none, low: low, high: high, max: max}
+    mimo: {"off": disabled, low: enabled, high: enabled, max: enabled}
+
+tts:
+  provider: mimo
+  models:
+    default: mimo-v2.5-tts
+  default_voice: mimo_default
+  default_format: wav
+
+cache:
+  enabled: true
+  directory: data/caches/model
 ```
 
-The model layer also needs per-provider output budget fields: `max_tokens` for DeepSeek and `max_completion_tokens` for MiMo. Current `defaults.max_tokens` cannot be sent to MiMo. The current `classify_intent` role points at MiMo, which is fine, but the model id must be updated.
+The per-provider output budget field is part of the provider block: `max_tokens` for DeepSeek and `max_completion_tokens` for MiMo. The loader validates providers, roles, thinking levels, TTS models, and cache settings, and fails closed on a missing key.
+
+Cache behavior (`cache` section): the adapter caches non-stream chat results, streaming event sequences, ASR transcripts, TTS audio, and search/fetch payloads. Keys combine provider, model, and request parameters (audio bytes are hashed for ASR) and are content addressed with SHA-256. Values are JSON under `cache.directory`, resolved relative to the repository root or an explicit `base_dir`. Every cached method accepts `use_cache=False`; cache I/O errors and corrupt entries count as misses. Streaming entries replay the stored event sequence immediately, so they preserve content but not the original token timing.
 
 ## 9. Failure modes and provider-specific gotchas
 

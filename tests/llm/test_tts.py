@@ -17,6 +17,7 @@ AUDIO_BYTES = b"RIFF$\x00\x00\x00WAVEfmt "
 
 def make_adapter(handler) -> ModelAdapter:
     resolved = load_model_config(REAL_CONFIG, env=ENV)
+    resolved.config.cache.enabled = False
     return ModelAdapter(resolved, transport=httpx.MockTransport(handler))
 
 

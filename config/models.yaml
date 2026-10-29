@@ -117,8 +117,13 @@ tts:
   default_instructions: "Speak clearly with a warm, steady teaching pace."
 
 # External responses are cached by provider, model, parameters, and messages.
-# No experiment in the submitted repository may require a paid call; the cache
-# makes evaluation runs reproducible and free after the first run.
+# The adapter caches chat, streaming event sequences, ASR, TTS, and
+# search/fetch. Keys are content addressed; values are JSON under this
+# directory, resolved relative to the repository root (or an explicit
+# base_dir). Per-call use_cache=False bypasses the cache, and cache I/O
+# failures count as misses. No experiment in the submitted repository may
+# require a paid call; the cache makes evaluation runs reproducible and free
+# after the first run.
 cache:
   enabled: true
   directory: data/caches/model

@@ -21,6 +21,7 @@ ENV = {"DEEPSEEK_API_KEY": "sk-deepseek-test", "MIMO_API_KEY": "sk-mimo-test"}
 
 def make_adapter(handler) -> ModelAdapter:
     resolved = load_model_config(REAL_CONFIG, env=ENV)
+    resolved.config.cache.enabled = False
     return ModelAdapter(resolved, transport=httpx.MockTransport(handler))
 
 
@@ -249,6 +250,7 @@ def test_image_block_is_kept_for_vision_provider() -> None:
 
 def test_image_block_is_rejected_when_provider_lacks_vision() -> None:
     resolved = load_model_config(REAL_CONFIG, env=ENV)
+    resolved.config.cache.enabled = False
     resolved.config.providers["deepseek"].supports.image = False
     adapter = ModelAdapter(resolved, transport=httpx.MockTransport(lambda r: httpx.Response(200)))
 

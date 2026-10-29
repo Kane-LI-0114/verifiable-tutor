@@ -68,6 +68,9 @@ def run_step(name: str, fn) -> bool:
 def main() -> int:
     env_file = ROOT / ".env"
     resolved = load_model_config(ROOT / "config" / "models.yaml", env_file=env_file)
+    # The smoke script must exercise the real network, so it bypasses the
+    # response cache; cache behavior is covered by tests/llm/test_cache.py.
+    resolved.config.cache.enabled = False
     adapter = ModelAdapter(resolved)
     failures: list[str] = []
 

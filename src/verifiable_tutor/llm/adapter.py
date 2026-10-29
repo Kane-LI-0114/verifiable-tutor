@@ -9,7 +9,9 @@ network boundary; the live smoke script uses the real network.
 from __future__ import annotations
 
 import base64
+import hashlib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 from urllib.parse import urlsplit
 
@@ -17,6 +19,7 @@ import httpx
 import openai
 from openai import OpenAI
 
+from .cache import ResponseCache
 from .config import ResolvedModelConfig
 
 
@@ -137,11 +140,14 @@ class ModelAdapter:
         resolved: ResolvedModelConfig,
         *,
         transport: httpx.BaseTransport | None = None,
+        cache_root: str | Path | None = None,
     ) -> None:
         self._resolved = resolved
         self._config = resolved.config
         self._transport = transport
         self._clients: dict[str, OpenAI] = {}
+        root = Path(cache_root) if cache_root is not None else resolved.cache_dir
+        self._cache = ResponseCache(root, enabled=self._config.cache.enabled)
 
     # -- provider plumbing -------------------------------------------------
     def _client(self, provider_name: str) -> OpenAI:
@@ -296,6 +302,7 @@ class ModelAdapter:
         temperature: float | None = None,
         top_p: float | None = None,
         max_output_tokens: int | None = None,
+        use_cache: bool = True,
         _allow_fallback: bool = True,
     ) -> ChatResult:
         provider_name, model_id, request = self._prepare_chat(
@@ -312,6 +319,15 @@ class ModelAdapter:
             max_output_tokens,
         )
 
+        cache_key = {"provider": provider_name, "request": request}
+        if use_cache:
+            cached = self._cache.get("chat", cache_key)
+            if cached is not None:
+                try:
+                    return _chat_result_from_dict(cached)
+                except (KeyError, TypeError, ValueError):
+                    pass
+
         try:
             response = self._client(provider_name).chat.completions.create(**request)
         except openai.APIStatusError as exc:
@@ -327,6 +343,7 @@ class ModelAdapter:
                 temperature,
                 top_p,
                 max_output_tokens,
+                use_cache,
                 _allow_fallback,
             )
         except (openai.APIConnectionError, openai.APITimeoutError) as exc:
@@ -342,6 +359,7 @@ class ModelAdapter:
                 temperature,
                 top_p,
                 max_output_tokens,
+                use_cache,
                 _allow_fallback,
             )
 
@@ -352,7 +370,7 @@ class ModelAdapter:
             for call in message.tool_calls or []
         )
         usage = response.usage.model_dump() if response.usage is not None else {}
-        return ChatResult(
+        result = ChatResult(
             text=message.content or "",
             reasoning=_extra_field(message, "reasoning_content"),
             tool_calls=tool_calls,
@@ -361,6 +379,9 @@ class ModelAdapter:
             provider=provider_name,
             model=model_id,
         )
+        if use_cache:
+            self._cache.set("chat", cache_key, _chat_result_to_dict(result))
+        return result
 
     def chat_stream(
         self,
@@ -376,6 +397,7 @@ class ModelAdapter:
         temperature: float | None = None,
         top_p: float | None = None,
         max_output_tokens: int | None = None,
+        use_cache: bool = True,
     ) -> Iterator[StreamEvent]:
         provider_name, _model_id, request = self._prepare_chat(
             role,
@@ -394,6 +416,18 @@ class ModelAdapter:
         if provider_name == "deepseek":
             request["stream_options"] = {"include_usage": True}
 
+        cache_key = {"provider": provider_name, "request": request}
+        if use_cache:
+            cached = self._cache.get("chat_stream", cache_key)
+            if isinstance(cached, list):
+                try:
+                    replay = [_stream_event_from_dict(item) for item in cached]
+                except (KeyError, TypeError, ValueError):
+                    replay = None
+                if replay is not None:
+                    yield from replay
+                    return
+
         try:
             stream = self._client(provider_name).chat.completions.create(**request)
         except openai.APIStatusError as exc:
@@ -401,6 +435,16 @@ class ModelAdapter:
         except (openai.APIConnectionError, openai.APITimeoutError) as exc:
             raise ProviderAPIError(None, str(exc)) from exc
 
+        events: list[StreamEvent] = []
+        for event in self._events_from_chunks(stream):
+            events.append(event)
+            yield event
+        if use_cache:
+            self._cache.set(
+                "chat_stream", cache_key, [_stream_event_to_dict(event) for event in events]
+            )
+
+    def _events_from_chunks(self, stream: Iterator[Any]) -> Iterator[StreamEvent]:
         for chunk in stream:
             if chunk.choices:
                 choice = chunk.choices[0]
@@ -439,6 +483,7 @@ class ModelAdapter:
         *,
         mime: str = "audio/wav",
         language: str = "auto",
+        use_cache: bool = True,
     ) -> TranscriptResult:
         """Transcribe speech with the MiMo ASR model, regardless of the chat provider."""
 
@@ -469,6 +514,19 @@ class ModelAdapter:
             ],
             "extra_body": {"asr_options": {"language": language}},
         }
+        cache_key = {
+            "model": provider.asr_model,
+            "mime": mime,
+            "language": language,
+            "audio_sha256": hashlib.sha256(audio).hexdigest(),
+        }
+        if use_cache:
+            cached = self._cache.get("transcribe", cache_key)
+            if cached is not None:
+                try:
+                    return _transcript_from_dict(cached)
+                except (KeyError, TypeError, ValueError):
+                    pass
         try:
             response = self._client(provider_name).chat.completions.create(**request)
         except openai.APIStatusError as exc:
@@ -483,12 +541,15 @@ class ModelAdapter:
             raw_seconds = _extra_field(usage, "seconds")
             if raw_seconds is not None:
                 seconds = float(raw_seconds)
-        return TranscriptResult(
+        result = TranscriptResult(
             text=message.content or "",
             language=language,
             seconds=seconds,
             model=provider.asr_model,
         )
+        if use_cache:
+            self._cache.set("transcribe", cache_key, _transcript_to_dict(result))
+        return result
 
     # -- MiMo text to speech ----------------------------------------------
     def speak(
@@ -499,6 +560,7 @@ class ModelAdapter:
         format: str | None = None,
         instructions: str | None = None,
         model_alias: str = "default",
+        use_cache: bool = True,
     ) -> SpeechResult:
         """Synthesize text with the MiMo TTS family."""
 
@@ -526,6 +588,18 @@ class ModelAdapter:
             ],
             "extra_body": {"audio": {"format": resolved_format, "voice": resolved_voice}},
         }
+        cache_key = {
+            "model": model_id,
+            "messages": request["messages"],
+            "audio": {"format": resolved_format, "voice": resolved_voice},
+        }
+        if use_cache:
+            cached = self._cache.get("tts", cache_key)
+            if cached is not None:
+                try:
+                    return _speech_from_dict(cached)
+                except (KeyError, TypeError, ValueError):
+                    pass
         try:
             response = self._client(tts.provider).chat.completions.create(**request)
         except openai.APIStatusError as exc:
@@ -545,12 +619,15 @@ class ModelAdapter:
             audio = base64.b64decode(audio_data)
         except (ValueError, TypeError) as exc:
             raise ProviderAPIError(None, f"invalid base64 TTS audio: {exc}") from exc
-        return SpeechResult(
+        result = SpeechResult(
             audio=audio,
             format=resolved_format,
             voice=resolved_voice,
             model=model_id,
         )
+        if use_cache:
+            self._cache.set("tts", cache_key, _speech_to_dict(result))
+        return result
 
     # -- DeepSeek REST search and fetch -----------------------------------
     def _rest_http_client(self) -> httpx.Client:
@@ -602,6 +679,7 @@ class ModelAdapter:
         count: int | None = None,
         need_content: bool | None = None,
         ori_question: str | None = None,
+        use_cache: bool = True,
     ) -> list[SearchResult]:
         """Search the web with the DeepSeek Search API, independent of the chat model."""
 
@@ -619,6 +697,14 @@ class ModelAdapter:
         }
         if ori_question is not None:
             payload["ori_question"] = ori_question
+        cache_key = {"base_url": self._config.search.base_url, "payload": payload}
+        if use_cache:
+            cached = self._cache.get("search", cache_key)
+            if isinstance(cached, list):
+                try:
+                    return [_search_result_from_dict(item) for item in cached]
+                except (KeyError, TypeError, ValueError):
+                    pass
         data = self._post_search_json(
             f"{self._config.search.base_url}{self._config.search.search_path}", payload
         )
@@ -640,9 +726,13 @@ class ModelAdapter:
                     authority=item.get("authority"),
                 )
             )
+        if use_cache:
+            self._cache.set(
+                "search", cache_key, [_search_result_to_dict(result) for result in results]
+            )
         return results
 
-    def fetch(self, url: str) -> FetchResult:
+    def fetch(self, url: str, *, use_cache: bool = True) -> FetchResult:
         """Fetch a page as Markdown with the DeepSeek Fetch API."""
 
         parts = urlsplit(url or "")
@@ -654,14 +744,33 @@ class ModelAdapter:
             or len(url) > 8192
         ):
             raise ValueError("url must be an http or https URL without credentials")
+        cache_key = {"base_url": self._config.search.base_url, "url": url}
+        if use_cache:
+            cached = self._cache.get("fetch", cache_key)
+            if isinstance(cached, Mapping):
+                try:
+                    return FetchResult(
+                        url=str(cached["url"]),
+                        title=str(cached["title"]),
+                        content=str(cached["content"]),
+                    )
+                except (KeyError, TypeError, ValueError):
+                    pass
         data = self._post_search_json(
             f"{self._config.search.base_url}{self._config.search.fetch_path}", {"url": url}
         )
-        return FetchResult(
+        result = FetchResult(
             url=url,
             title=data.get("title") or "",
             content=data.get("content") or "",
         )
+        if use_cache:
+            self._cache.set(
+                "fetch",
+                cache_key,
+                {"url": result.url, "title": result.title, "content": result.content},
+            )
+        return result
 
     def _maybe_fallback(
         self,
@@ -675,6 +784,7 @@ class ModelAdapter:
         temperature: float | None,
         top_p: float | None,
         max_output_tokens: int | None,
+        use_cache: bool,
         allow_fallback: bool,
     ) -> ChatResult:
         fallback = self._config.roles[role].fallback
@@ -691,9 +801,144 @@ class ModelAdapter:
                 temperature=temperature,
                 top_p=top_p,
                 max_output_tokens=max_output_tokens,
+                use_cache=use_cache,
                 _allow_fallback=False,
             )
         raise error
+
+
+def _transcript_to_dict(result: TranscriptResult) -> dict[str, Any]:
+    return {
+        "text": result.text,
+        "language": result.language,
+        "seconds": result.seconds,
+        "model": result.model,
+    }
+
+
+def _transcript_from_dict(payload: Mapping[str, Any]) -> TranscriptResult:
+    seconds = payload.get("seconds")
+    return TranscriptResult(
+        text=str(payload["text"]),
+        language=str(payload["language"]),
+        seconds=float(seconds) if seconds is not None else None,
+        model=str(payload["model"]),
+    )
+
+
+def _speech_to_dict(result: SpeechResult) -> dict[str, Any]:
+    return {
+        "audio": base64.b64encode(result.audio).decode("ascii"),
+        "format": result.format,
+        "voice": result.voice,
+        "model": result.model,
+    }
+
+
+def _speech_from_dict(payload: Mapping[str, Any]) -> SpeechResult:
+    return SpeechResult(
+        audio=base64.b64decode(str(payload["audio"])),
+        format=str(payload["format"]),
+        voice=str(payload["voice"]),
+        model=str(payload["model"]),
+    )
+
+
+def _search_result_to_dict(result: SearchResult) -> dict[str, Any]:
+    return {
+        "title": result.title,
+        "url": result.url,
+        "snippet": result.snippet,
+        "summary": result.summary,
+        "content": result.content,
+        "site_name": result.site_name,
+        "date": result.date,
+        "rerank_score": result.rerank_score,
+        "authority": result.authority,
+    }
+
+
+def _search_result_from_dict(payload: Mapping[str, Any]) -> SearchResult:
+    return SearchResult(
+        title=str(payload["title"]),
+        url=str(payload["url"]),
+        snippet=str(payload["snippet"]),
+        summary=str(payload["summary"]),
+        content=str(payload["content"]),
+        site_name=payload.get("site_name"),
+        date=payload.get("date"),
+        rerank_score=payload.get("rerank_score"),
+        authority=payload.get("authority"),
+    )
+
+
+def _stream_event_to_dict(event: StreamEvent) -> dict[str, Any]:
+    tool_call = None
+    if event.tool_call is not None:
+        tool_call = {
+            "index": event.tool_call.index,
+            "id": event.tool_call.id,
+            "name": event.tool_call.name,
+            "arguments_delta": event.tool_call.arguments_delta,
+        }
+    return {
+        "kind": event.kind,
+        "text": event.text,
+        "tool_call": tool_call,
+        "finish_reason": event.finish_reason,
+        "usage": dict(event.usage) if event.usage is not None else None,
+    }
+
+
+def _stream_event_from_dict(payload: Mapping[str, Any]) -> StreamEvent:
+    tool_data = payload.get("tool_call")
+    tool_call = None
+    if isinstance(tool_data, Mapping):
+        tool_call = ToolCallDelta(
+            index=int(tool_data["index"]),
+            id=tool_data.get("id"),
+            name=tool_data.get("name"),
+            arguments_delta=str(tool_data.get("arguments_delta") or ""),
+        )
+    usage = payload.get("usage")
+    return StreamEvent(
+        kind=str(payload["kind"]),
+        text=payload.get("text"),
+        tool_call=tool_call,
+        finish_reason=payload.get("finish_reason"),
+        usage=dict(usage) if isinstance(usage, Mapping) else None,
+    )
+
+
+def _chat_result_to_dict(result: ChatResult) -> dict[str, Any]:
+    return {
+        "text": result.text,
+        "reasoning": result.reasoning,
+        "tool_calls": [
+            {"id": call.id, "name": call.name, "arguments": call.arguments}
+            for call in result.tool_calls
+        ],
+        "finish_reason": result.finish_reason,
+        "usage": dict(result.usage),
+        "provider": result.provider,
+        "model": result.model,
+    }
+
+
+def _chat_result_from_dict(payload: Mapping[str, Any]) -> ChatResult:
+    tool_calls = tuple(
+        ToolCall(id=str(call["id"]), name=str(call["name"]), arguments=str(call["arguments"]))
+        for call in payload.get("tool_calls", []) or []
+    )
+    return ChatResult(
+        text=str(payload["text"]),
+        reasoning=payload.get("reasoning"),
+        tool_calls=tool_calls,
+        finish_reason=payload.get("finish_reason"),
+        usage=dict(payload.get("usage") or {}),
+        provider=str(payload["provider"]),
+        model=str(payload["model"]),
+    )
 
 
 def _extra_field(message: Any, name: str) -> str | None:
