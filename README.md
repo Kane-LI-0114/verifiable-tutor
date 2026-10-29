@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Proposal stage, technology selected.** The substantive content is the course project proposal, the project documentation, and the technology selection record with its decision records. Apart from those packages, `.gitignore`, and the documentation, the repository is a directory scaffold of empty `.gitkeep` placeholders. There is no application code, no tests, no benchmark data or results, and no evaluation report yet. Everything described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`.
+**Technology selected, model layer implemented.** The substantive content is the course project proposal, the project documentation, the technology selection record, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`.
 
 ## What it is
 
@@ -16,6 +16,7 @@ A tutoring agent for one course whose outputs are checkable in three ways: text 
 
 Students can:
 - Ask course questions and receive answers that cite the exact page and quoted span.
+- Ask by voice: record in the composer for transcription, or attach an audio file for MiMo 2.6 to analyze; play assistant answers as speech.
 - Request a review outline or a self-test quiz on a topic.
 - Practise with a generated exercise at the scale and environment of the corresponding assignment, receiving a reference solution, tests, and a stepwise explanation.
 - Submit their own solution and receive line-anchored teaching.
@@ -48,7 +49,7 @@ The five planned subsystems inside the CPU job:
 - Practice lab: packs that mirror the target assignment environment (first pack: MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness); a generated reference solution is accepted only after it compiles and passes the pack's tests.
 - Policy gate: the code-level gate described above, plus the versioned deadline registry it reads.
 - Teaching explainer: cites page spans, code lines, and test outcomes, and never invents missing content before the deadline.
-- Model client and trace logger: external OpenAI-compatible APIs are primary (DeepSeek, with Xiaomi MiMo as fallback), configured in `config/models.yaml` with keys in `.env`; the course Qwen service is an optional baseline; every call is labelled and cached; traces, tests, and results follow the required execution path from task to visible result ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)).
+- Model client and trace logger: external OpenAI-compatible APIs are primary (DeepSeek, with Xiaomi MiMo as fallback and for audio), configured in `config/models.yaml` with keys in `.env`; the course Qwen service is an optional baseline; every call is labelled and cached; audio-file input is supported when a MiMo 2.6 model is selected, the composer microphone uses MiMo ASR, and assistant text can be spoken with MiMo TTS ([model-providers.md](docs/model-providers.md)); traces, tests, and results follow the required execution path from task to visible result ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)).
 
 The browser UI is a React single-page application with shadcn and AI Elements components, served as static assets by the backend on one origin. Streaming uses the AI SDK UI message stream protocol, so the same frontend path serves live and replay sessions ([ADR-0003](docs/adr/0003-react-spa-with-ai-elements.md)). The job topology, batch windows, and demo modes are in [docs/tech-selection.md](docs/tech-selection.md#jobs-and-demo-modes).
 
@@ -65,7 +66,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/eval/` | Evaluation harness | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/corpus/` | Corpus build from OCR output: page records, chunks, page images, hashing | planned (not created yet) |
-| `src/verifiable_tutor/llm/` | Model client, replay and mock backends, caches, token accounting | planned (not created yet) |
+| `src/verifiable_tutor/llm/` | Model configuration loader and unified provider adapter; replay and mock backends pending | present: config and adapter |
 | `src/verifiable_tutor/ui/web/` | React UI source; built assets are written to `src/verifiable_tutor/ui/static/` | planned (not created yet) |
 | `tacc/serve/` | Optional baseline: TACC GPU job for the Qwen service | placeholder (`.gitkeep`) |
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |
@@ -76,8 +77,9 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `data/corpus/`, `data/index/`, `data/caches/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots | placeholder (`.gitkeep`) |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings | present: model config |
-| `scripts/` | Utility scripts: TACC bootstrap and submit helpers | present: bootstrap |
-| `tests/` | Test suite | placeholder (`.gitkeep`) |
+| `scripts/` | Utility scripts: TACC bootstrap and submit helpers, live model smoke | present: scripts |
+| `tests/` | Test suite under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch) | present: tests |
+| `pyproject.toml`, `uv.lock` | Python packaging, dependencies, pytest configuration, and locked local environment | present: packaging |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
 | `docs/figures/` | Report and documentation figures | placeholder (`.gitkeep`) |
 | `docs/tech-selection.md`, `docs/adr/` | Technology decisions and the ADRs that argue them | present: decisions |

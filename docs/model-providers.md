@@ -17,7 +17,9 @@ Scope and non-goals:
 | Text models used here | `deepseek-flash` only | `mimo-v2.6-flash`, `mimo-v2.6-pro` |
 | Context / max output | 1M / 384K tokens | 1M / 128K tokens |
 | Image input | Yes, `deepseek-flash` only | Yes, both v2.6 tiers |
-| Audio input | No, not supported anywhere | Yes: omni chat audio, plus `mimo-v2.5-asr` for transcripts |
+| Audio file input | No, not supported anywhere | Yes: omni chat on both v2.6 tiers |
+| Speech to text | No | Yes: `mimo-v2.5-asr`, transcript output |
+| Text to speech | No | Yes: `mimo-v2.5-tts` family, base64 audio output |
 | Video input | No | Yes, both v2.6 tiers |
 | Thinking control | `thinking.type` plus `reasoning_effort` levels `none, low, high, max` | `thinking.type` only, `enabled` or `disabled` |
 | JSON output | `response_format: json_object` only | `response_format: json_object` only |
@@ -29,11 +31,23 @@ Routing rules the agent layer must enforce:
 
 1. Model selection: the user or the config selects provider and tier. DeepSeek exposes only the `flash` tier by project decision. MiMo exposes `flash` and `pro`. All model ids live in `config/models.yaml`, never in code.
 2. Image input: route to the selected chat provider. DeepSeek accepts images only on `deepseek-flash`. MiMo accepts images on both v2.6 tiers.
-3. Voice input: always transcribe with MiMo `mimo-v2.5-asr`, then send the transcript to the selected chat provider. DeepSeek has no audio modality at all. MiMo omni chat audio understanding is optional and only for questions about the audio itself, not for transcription.
-4. Thinking: expose one unified control (`off`, `low`, `high`, `max`) and map it per provider. Force `off` on every tool-calling turn. Force `off` for deterministic evaluation runs, because temperature is ignored while thinking is on.
-5. Web search: always call the DeepSeek Search and Fetch REST APIs, even when the chat model is MiMo. These APIs are provider independent and authenticated with the DeepSeek key.
-6. JSON output: no provider offers `json_schema`. Put the schema in the prompt, set `json_object`, validate with pydantic, and retry a bounded number of times.
-7. Tool calls: disable thinking for the whole tool loop, echo the full assistant message (including `reasoning_content`) on every later turn for both providers, validate the tool arguments in code, and never rely on `tool_choice` other than `auto`.
+3. Audio file input: supported only when the selected model is a MiMo 2.6 tier. If the selected model is `mimo-v2.6-flash`, flash handles the audio; if it is `mimo-v2.6-pro`, pro handles it. If the selected provider is DeepSeek, the adapter rejects the attachment with a capability error instead of rerouting it silently.
+4. Voice-to-text: the microphone in the composer uses MiMo `mimo-v2.5-asr`. The transcript is inserted into the text box, and the normal chat path then runs with the selected text provider. This is a transcription call, not a chat call.
+5. Text to speech: assistant output can be synthesized by the MiMo TTS family on demand. This path also serves as the candidate for teaching-video voiceover. It is a separate call and does not change the chat provider.
+6. Thinking: expose one unified control (`off`, `low`, `high`, `max`) and map it per provider. Force `off` on every tool-calling turn. Force `off` for deterministic evaluation runs, because temperature is ignored while thinking is on.
+7. Web search: always call the DeepSeek Search and Fetch REST APIs, even when the chat model is MiMo. These APIs are provider independent and authenticated with the DeepSeek key.
+8. JSON output: no provider offers `json_schema`. Put the schema in the prompt, set `json_object`, validate with pydantic, and retry a bounded number of times.
+9. Tool calls: disable thinking for the whole tool loop, echo the full assistant message (including `reasoning_content`) on every later turn for both providers, validate the tool arguments in code, and never rely on `tool_choice` other than `auto`.
+
+Adapter surface, current and pending:
+
+| Method | Status | Purpose |
+|---|---|---|
+| `chat(messages, ...)` | implemented | text, image, and MiMo audio-file chat; DeepSeek audio input raises a capability error |
+| `chat_stream(messages, ...)` | implemented | normalized streaming events |
+| `transcribe(audio, mime, language)` | implemented | ASR for the composer microphone |
+| `search(query, ...)`, `fetch(url)` | implemented | DeepSeek REST search and fetch |
+| `speak(text, voice, format)` | implemented | MiMo TTS for playback and teaching-video voiceover |
 
 ## 2. Shared client contract
 
@@ -313,6 +327,12 @@ ASR constraints:
 
 Implementation consequence for the browser: MediaRecorder usually produces WebM or Opus, which ASR rejects. The client must record PCM WAV with the Web Audio API or transcode to wav or mp3 before upload. Do not plan on ffmpeg being present in the cluster environment.
 
+Routing in this project:
+
+- An audio file attached to a message is sent to the selected MiMo 2.6 tier through `input_audio`; `flash` handles it when flash is selected, and `pro` handles it when pro is selected. Selecting DeepSeek with an audio attachment raises a capability error rather than rerouting. The model answers or analyzes the audio; it is not a clean transcript path.
+- The composer microphone calls the ASR model and inserts the transcript into the text box; the following chat turn uses the selected text provider.
+- TTS is a separate output call described in section 4.9. It never changes the chat provider.
+
 ### 4.4 Thinking
 
 - Control: `thinking` with `{"type": "enabled" | "disabled"}` only. There is no effort or intensity level. It must go through `extra_body` with the OpenAI SDK.
@@ -350,7 +370,50 @@ Implementation consequence for the browser: MediaRecorder usually produces WebM 
 
 MiMo has a `tools: [{"type": "web_search", ...}]` capability with console plugin activation, separate per-call billing, and annotations in `message.annotations`. The project does not use it for four reasons: separate paid plugin, per-account console activation, non-standard tool type that breaks the two-provider symmetry, and server-side annotations instead of tool results the orchestrator controls.
 
-### 4.9 Errors and limits
+### 4.9 Text to speech
+
+The TTS path turns assistant text into audio. It also serves as the candidate for teaching-video voiceover.
+
+- Endpoint: `POST https://api.xiaomimimo.com/v1/chat/completions`, same base URL as chat.
+- Models: `mimo-v2.5-tts` for preset voices, `mimo-v2.5-tts-voiceclone` for a cloned voice, and `mimo-v2.5-tts-voicedesign` for a voice described in text.
+- Limits: 8K context and 8K output; 100 requests per minute and 10M tokens per minute per model.
+
+Request shape: the `user` message carries style instructions, and the `assistant` message carries the exact text to speak.
+
+```json
+{
+  "model": "mimo-v2.5-tts",
+  "messages": [
+    {"role": "user", "content": "Warm, clear, steady teaching pace."},
+    {"role": "assistant", "content": "Today we look at the roofline model."}
+  ],
+  "audio": {"format": "wav", "voice": "mimo_default"}
+}
+```
+
+- `audio.format`: `wav` by default, or `mp3`, `pcm`, `pcm16`. With `stream: true` the default becomes `pcm`; use `pcm16` when concatenating chunks.
+- `audio.voice` preset ids: `mimo_default`, `冰糖`, `茉莉`, `苏打`, `白桦`, `Mia`, `Chloe`, `Milo`, `Dean`.
+- `mimo-v2.5-tts-voiceclone` requires `audio.voice` to be a base64 audio sample in mp3 or wav.
+- `mimo-v2.5-tts-voicedesign` omits `audio.voice` and takes the voice description in the user message; `audio.optimize_text_preview` may preview an optimized script.
+- Singing mode prefixes the assistant text with `(唱歌)`, `(sing)`, or `(singing)`; style tags such as `(怅然)` are allowed.
+
+Response: `choices[0].message.audio.data` is base64 audio, `content` is empty, and `audio.transcript` and `audio.expires_at` are null. Streaming returns audio chunks.
+
+Cost and constraints:
+
+- The pricing page lists TTS as free for a limited period; re-check before relying on that.
+- Content moderation can block a request with 421.
+- No timestamps and no SSML are documented. The caller must split narration into segments deliberately and align captions itself.
+- The text to speak arrives in the assistant message, which is unusual for a chat API; do not reuse a normal chat message list.
+
+Teaching-video voiceover candidate:
+
+- Generate one audio segment per narration unit, using one consistent preset voice or a cloned teacher voice with consent.
+- Cache audio by text hash, voice, and format so a video rebuild does not pay again.
+- Because the API returns no timestamps, segment boundaries define caption timing; keep each segment short and review pacing on a sample before making the voiceover a deliverable.
+- Record the model, voice, and format with every generated clip.
+
+### 4.10 Errors and limits
 
 | Status | Meaning |
 |---|---|
@@ -487,8 +550,11 @@ Both providers:
 
 ## 10. Unverified items
 
+Live smoke verification on 2026-10-29: `scripts/smoke_model_adapter.py` exercised DeepSeek flash chat, streaming, image input, search, and fetch, plus MiMo flash and pro chat, ASR, audio-file input, and TTS with the live keys; all ten steps passed. The model ids and request shapes in sections 3 and 4 are therefore exercised for the basic paths, while the limits and combinations below remain unverified.
+
 - DeepSeek: images combined with thinking or with tools; `json_schema` on chat completions; `parallel_tool_calls`, `seed`, and `n`; exact SSE wire sample; whether `deepseek-v4-pro` rejects image blocks with an error.
 - MiMo: whether `json_schema` returns 400 or is ignored; `max_tokens` alias; `seed`, `n`, `logprobs`, `stream_options`; maximum parallel tool calls and maximum media per request; ASR maximum duration and sample-rate requirements; thinking combined with `json_object`; `force_search` versus `forced_search` in the MiMo web search docs.
+- MiMo audio and TTS: latency and token cost of audio-file omni calls compared with ASR; TTS speech quality, long-text behaviour, streaming chunk format, voice-clone quality and consent handling, and whether the free period persists.
 - Both: real quality and latency on the course corpus, cost under our workload, and behaviour when mixing images with tool loops. These need a small live smoke test rather than more document reading.
 
 ## 11. Sources

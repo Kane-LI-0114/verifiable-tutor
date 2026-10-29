@@ -4,10 +4,10 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Current state
 
-- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), five decision records under `docs/adr/`, the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, and the model provider configuration in `config/models.yaml` with the committed `.env.example` template. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
-- The remaining directories are still `.gitkeep` placeholders: `benchmarks/`, `data/`, `examples/`, `src/`, `tacc/serve/`, `tacc/client/`, `tests/`, and `docs/figures/`.
-- There is no application code, no `__init__.py`, no root packaging metadata, no CI, no `LICENSE`, and no benchmark input or result data. The test framework is chosen (pytest, see ADR-0001) but no test exists.
-- Do not assume a module, entry point, test runner, or benchmark result exists because a directory is named after it. The first code change creates the package and the packaging files described in [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md).
+- Substantive content: the project proposal, the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), five decision records under `docs/adr/`, the TACC bootstrap under `scripts/tacc/`, the two spike jobs under `tacc/env-spike/` and `tacc/ocr-smoke/`, the model provider configuration in `config/models.yaml` with the committed `.env.example` template, and the implemented model layer: `src/verifiable_tutor/llm/config.py`, `src/verifiable_tutor/llm/adapter.py` (chat, streaming, ASR, TTS, MiMo audio-file routing, DeepSeek search and fetch), the `tests/llm/` suite, `pyproject.toml`, `uv.lock`, and `scripts/smoke_model_adapter.py`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`.
+- The remaining directories are still `.gitkeep` placeholders: `benchmarks/`, `data/`, `examples/`, `docs/figures/`, `tacc/serve/`, `tacc/client/`, and the unbuilt `src/verifiable_tutor/` subpackages (`policy/`, `orchestrator/`, `evidence/`, `practice/`, `teaching/`, `eval/`, `ui/`).
+- The model layer is implemented and tested locally. No other application code exists yet, and there is no CI, no `LICENSE`, and no benchmark input or result data. pytest is the chosen framework and `tests/llm/` is the first suite.
+- Do not assume a module, entry point, test runner, or benchmark result exists because a directory is named after it. The package, packaging files, and test runner are recorded in [Toolchain and commands](#toolchain-and-commands).
 
 ## Sources of truth
 
@@ -29,13 +29,16 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Toolchain and commands
 
-Verified locally on 2026-10-28:
+Verified locally on 2026-10-28 and 2026-10-29:
 
 - `python3` is Python 3.11.9 (the interpreter used for the proposal build; the application targets 3.12 per [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)), `python-docx` 1.2.0 is installed, and Graphviz `dot` is 14.1.5.
 - Build or refresh the proposal: `python3 proposal/build_proposal.py`. It is the only runnable build in the repository.
 - That script imports `docx`, but no `requirements.txt` or `pyproject.toml` records the requirement. On a fresh interpreter, install it with `python3 -m pip install python-docx` (this requirement is inferred from the import, not declared by a file).
 - Re-render one figure: `dot -Gdpi=300 -Tpng proposal/figs/fig1_usecase.dot -o proposal/figs/fig1_usecase.png`, and the same pattern for `fig2_components`.
-- There is no application build, run, or test command yet. Do not document or invent one until code and packaging exist. [docs/tech-selection.md](docs/tech-selection.md) lists the planned commands and the verification spikes; the change that adds each command records it here.
+- Create the local application environment: `uv venv .venv --python 3.12` then `uv pip install -e '.[dev]'`. The application targets Python 3.12 and `pyproject.toml` is the packaging source.
+- Run the test suite: `.venv/bin/python -m pytest`. The first suite is `tests/llm/` (configuration, chat, streaming, ASR, TTS, audio-file routing, search and fetch); the runner is recorded here as the TDD change required.
+- Run the live model smoke: `.venv/bin/python scripts/smoke_model_adapter.py`. It makes real DeepSeek and MiMo calls with the keys in `.env`, including audio-file input and TTS, is not part of pytest, and exits non-zero on a failed step (verified 2026-10-29, ten steps).
+- There is no application build or server run command yet, and no UI build command. [docs/tech-selection.md](docs/tech-selection.md) lists the planned commands and the verification spikes; record any new command here in the change that adds it.
 
 ## Where new work goes
 
@@ -53,7 +56,7 @@ Verified locally on 2026-10-28:
 | GPU job for embeddings and the BM25 index | `tacc/index/` |
 | CPU job for the agent backend and the evaluation harness | `tacc/client/` |
 | Corpus build from OCR output, page images, chunking, and corpus hashing | `src/verifiable_tutor/corpus/` |
-| Model client, replay and mock backends, caches, token accounting | `src/verifiable_tutor/llm/` |
+| Model provider config and adapter (implemented); replay and mock backends, caches, token accounting (pending) | `src/verifiable_tutor/llm/` |
 | Course questions and policy scenarios | `benchmarks/questions/`, `benchmarks/policy_scenarios/` |
 | Generated benchmark results | `benchmarks/results/` |
 | Configuration such as the deadline registry, model providers, and request parameters | `config/` |
@@ -64,7 +67,7 @@ Verified locally on 2026-10-28:
 | Tests | `tests/` |
 
 - Python code targets Python 3.12 and uses the `src/` layout. The dependency and environment strategy is [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md); local development uses a uv-managed 3.12 interpreter. The package name is `verifiable_tutor`, so a module added at `src/verifiable_tutor/policy/gate.py` is imported as `from verifiable_tutor.policy.gate import ...`.
-- Until packaging exists, run code with `PYTHONPATH=src python3 ...` instead of installing the package.
+- Run code with the editable install in `.venv`; without installing the package, `PYTHONPATH=src .venv/bin/python` also works.
 - Tests are written before the implementation and live under `tests/`; [Test-driven development](#test-driven-development) owns the loop and the file naming. The framework is pytest; the change that adds the first test records the runner command here.
 - Keep new files inside the mapped directory. If a change makes the directory roles stale, update [README.md#repository-layout](README.md#repository-layout) in the same commit.
 
@@ -86,7 +89,7 @@ Tests observe behavior at seams. A seam is the public boundary through which the
 - Reproduce a reported defect with a failing test before fixing it.
 - Name tests after the capability in domain terms, for example `test_before_deadline_refuses_complete_solution_and_offers_hint`. If the repository gains a `GLOSSARY.md` or ADRs near the change, read them and use their terms.
 
-Tests live under `tests/` and mirror the package path: `src/verifiable_tutor/policy/gate.py` is tested at `tests/policy/test_gate.py`. TDD needs a runner to show red before green, so the change that adds the first test also records the framework and its command in this file.
+Tests live under `tests/` and mirror the package path: `src/verifiable_tutor/policy/gate.py` is tested at `tests/policy/test_gate.py`. The framework and its command are recorded in [Toolchain and commands](#toolchain-and-commands).
 
 ## Conventions
 
@@ -122,14 +125,13 @@ This repository is a standalone Git repository nested inside the course workspac
 - Proposal changes: rerun `python3 proposal/build_proposal.py`, inspect `git diff` for `proposal/proposal.md` and the DOCX, re-export the PDF and previews if the DOCX changed, and confirm the document is still two pages.
 - File hygiene: `git status --short` shows only the intended files, `.gitkeep` files are untouched, and no generated artifact, cache, log, environment file, or benchmark dump is staged.
 - Features: every slice has a test that was seen to fail for the intended reason before the implementation, passes after it, and the seams covered are stated in the change description.
-- Code, once it exists: run the tests on TACC with the course environment rather than only locally, cancel any GPU job started for the test, and record the exact command used. There is nothing to run yet.
+- Code: run `.venv/bin/python -m pytest` locally and the same suite on TACC when a job can execute it, cancel any GPU job started for the test, and record the exact command used.
 
 ## Known gaps and open decisions
 
 Known gaps:
 
-- No root `requirements.txt`, `pyproject.toml`, or `uv.lock` yet; the TACC job requirements live in `scripts/tacc/requirements-tacc.txt`. [docs/tech-selection.md](docs/tech-selection.md) and [ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md) fix the strategy; the first code change adds the packaging files.
-- No model-config loader yet. `config/models.yaml` and `.env.example` fix the contract; the loader and its tests land with the first code change.
+- No root `requirements.txt`; packaging lives in `pyproject.toml` with `uv.lock`, and the TACC job requirements live in `scripts/tacc/requirements-tacc.txt`.
 - No UI build script yet. The first frontend change adds the `npm ci && npm run build` flow and records the command here.
 - No script exports the proposal PDF or the page previews; both are manual steps outside this repository.
 - `benchmarks/results/` is not gitignored, so large run outputs can be committed by accident.

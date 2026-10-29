@@ -2,9 +2,9 @@
 #
 # Secrets live only in .env at the repository root (ignored by Git). This file
 # is committed and never contains a key: each provider names the environment
-# variable that holds its key. Model ids and endpoints were read from the local
-# client configuration on 2026-10-29 and must be confirmed at the first live
-# call, because providers rename models without notice.
+# variable that holds its key. Endpoints and model ids follow the provider
+# research in docs/model-providers.md, read on 2026-10-29; model ids change
+# often, so this file, not the code, is the source of truth.
 #
 # The primary text-generation path is an external OpenAI-compatible API. The
 # course Qwen service on TACC is an optional baseline and is not configured
@@ -16,23 +16,50 @@ defaults:
   max_retries: 2
   temperature: 0.0
   top_p: 1.0
-  max_tokens: 2048
+  max_output_tokens: 4096
+  # Unified thinking control: off, low, high, or max. See the mapping below.
+  thinking: "off"
 
 providers:
   deepseek:
     type: openai_compatible
-    base_url: https://api.deepseek.com/v1
+    # Chat lives at {base_url}/chat/completions; do not append /v1 here.
+    base_url: https://api.deepseek.com
     api_key_env: DEEPSEEK_API_KEY
+    # DeepSeek uses max_tokens, range 1 to 393216.
+    max_tokens_field: max_tokens
     models:
-      fast: deepseek-v4-flash
-      strong: deepseek-v4-pro
+      # The project uses only the Flash tier on DeepSeek.
+      flash: deepseek-flash
+    supports:
+      image: true
+      audio: false
+      video: false
+      thinking_levels: ["off", low, high, max]
   mimo:
     type: openai_compatible
     base_url: https://api.xiaomimimo.com/v1
     api_key_env: MIMO_API_KEY
+    # MiMo uses max_completion_tokens, default and maximum 131072.
+    max_tokens_field: max_completion_tokens
+    asr_model: mimo-v2.5-asr
     models:
-      default: mimo-v2.5
-      strong: mimo-v2.5-pro
+      flash: mimo-v2.6-flash
+      pro: mimo-v2.6-pro
+    supports:
+      image: true
+      audio: true
+      video: true
+      # MiMo has only on and off; low and max degrade to on.
+      thinking_levels: ["off", high]
+
+thinking:
+  # Unified level -> provider-specific request value.
+  mapping:
+    deepseek: {"off": none, low: low, high: high, max: max}
+    mimo: {"off": disabled, low: enabled, high: enabled, max: enabled}
+  # Tool-calling turns always disable thinking on both providers.
+  disable_for_tools: true
 
 # Each role picks a provider and a model alias, and may override request
 # parameters. The chat role lists a fallback provider used when the primary
@@ -40,25 +67,54 @@ providers:
 roles:
   chat:
     provider: deepseek
-    model: fast
+    model: flash
     fallback:
       provider: mimo
-      model: default
+      model: flash
+    thinking: "off"
     params:
       temperature: 0.0
-      max_tokens: 2048
+      max_output_tokens: 4096
   translate_query:
     provider: deepseek
-    model: fast
+    model: flash
+    thinking: "off"
     params:
       temperature: 0.0
-      max_tokens: 256
+      max_output_tokens: 256
   classify_intent:
     provider: mimo
-    model: default
+    model: flash
+    thinking: "off"
     params:
       temperature: 0.0
-      max_tokens: 64
+      max_output_tokens: 64
+
+# Search always uses the DeepSeek REST APIs, even when the chat model is MiMo.
+search:
+  provider: deepseek
+  base_url: https://api.deepseek.com/v1
+  api_key_env: DEEPSEEK_API_KEY
+  search_path: /tools/search
+  fetch_path: /tools/fetch
+  default_count: 10
+  need_content: true
+  timeout_s: 30
+  max_retries: 2
+
+# Text to speech uses the MiMo TTS family. The user message carries style
+# instructions and the assistant message carries the text to speak.
+tts:
+  provider: mimo
+  models:
+    default: mimo-v2.5-tts
+    voiceclone: mimo-v2.5-tts-voiceclone
+    voicedesign: mimo-v2.5-tts-voicedesign
+  default_voice: mimo_default
+  default_format: wav
+  voices: [mimo_default, 冰糖, 茉莉, 苏打, 白桦, Mia, Chloe, Milo, Dean]
+  formats: [wav, mp3, pcm, pcm16]
+  default_instructions: "Speak clearly with a warm, steady teaching pace."
 
 # External responses are cached by provider, model, parameters, and messages.
 # No experiment in the submitted repository may require a paid call; the cache
