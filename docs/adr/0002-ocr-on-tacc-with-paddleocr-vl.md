@@ -68,4 +68,5 @@ Layout runs on CPU because the GPU is the throughput bottleneck for recognition 
 - The 96.33 OmniDocBench v1.6 score is vendor-reported and is not treated as a measurement of this project.
 - Corpus survey: 12 PDFs and 342 pages, measured on 2026-10-28 from the course workspace PDFs
 - Verification items: [../tech-selection.md](../tech-selection.md#verification-spikes)
-- Verified on 2026-10-29 (job 27879): vLLM 0.26.0 serves `PaddleOCR-VL-1.6` with `--trust-remote-code --served-model-name PaddleOCR-VL-1.6-0.9B`, PP-DocLayoutV2 runs on CPU from the PaddleX modelscope cache, and 10 pages produced 171 validated blocks at a median 4.26 s per page. Projected 342 pages: 1,934 s. Measurements: [../tacc-notes.md](../tacc-notes.md#verification-spike-results-2026-10-29).
+- Verified on 2026-10-29 (job 27879): vLLM 0.26.0 serves `PaddleOCR-VL-1.6` with `--trust-remote-code --served-model-name PaddleOCR-VL-1.6-0.9B`, PP-DocLayoutV2 runs on CPU from the PaddleX modelscope cache, and 10 pages produced 171 validated blocks at a median 4.26 s per page. Projected 342 pages: 1,934 s.
+- Verified on 2026-10-29 (job 27884): one complete 8-page PDF parsed end to end, 121 blocks, one document markdown with 8 page markers, median 3.9 s per page, 414 s job body. Measurements: [../tacc-notes.md](../tacc-notes.md#verification-spike-results-2026-10-29).

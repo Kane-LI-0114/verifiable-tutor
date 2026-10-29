@@ -124,6 +124,15 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - Projection including setup: 342 pages take about 1,934 s (32 minutes), so one 59-minute corpus job covers the corpus with margin. Keep the resumable design anyway.
 - The whole OCR job body (bootstrap cache hit, render, server start, probe, 10 pages, teardown) took 421 s.
 
+### Whole-document PDF parse
+
+- Job 27884 parsed one complete file, `course_project.pdf` (584,562 bytes, sha256 `1bf2e7a6dc194cce...`), with no page preselection: copy the file in, enumerate 8 pages, render each at 200 DPI, serve the model, parse every page, assemble one document.
+- All 8 pages enumerated and rendered; vLLM startup was 284 s; the first-page recognition probe returned the project title in 2.2 s.
+- All 8 pages parsed in 121 blocks and 8,430 characters at a median 3.905 s per page, with no bbox, label or ordering problems.
+- The assembled markdown `document/course_project-ocr.md` is 10,003 bytes with 8 `<!-- page: N -->` markers. The whole job body took 414 s, so a single small PDF fits comfortably inside one hour; a large PDF should still use the per-document sharding from the corpus design.
+- This is the path the demo needs: a user supplies one PDF, the TACC OCR model parses the whole file, and the backend receives per-page records plus one document markdown. No corpus pre-parse is required.
+- Known follow-up: the PaddleX page markdown can reference exported `imgs/...` crops that the job does not write. The citation panel should use the page WebP and block boxes, and the assembler can strip those image references when the UI does not need them.
+
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
@@ -133,4 +142,4 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - tcloud SDK 0.4.1 job schema: https://github.com/turingaicloud/tcloud-sdk/blob/master/cli/tcloudcli/tuxivconfig.go
 - tcloud quickstart configuration guide and FAQ: https://github.com/turingaicloud/quickstart
 - SDK client cluster configuration, `~/.tcloud/.clusterconfig`, read on 2026-10-28.
-- Spike jobs 27872 and 27879, 2026-10-29: Slurm logs in `USERDIR/slurm_log/`, summaries and JSONL in `USERDIR/env-spike/` and `USERDIR/ocr-smoke/`.
+- Spike jobs 27872, 27879 and 27884, 2026-10-29: Slurm logs in `USERDIR/slurm_log/`, summaries and JSONL in `USERDIR/env-spike/`, `USERDIR/ocr-smoke/` and `USERDIR/pdf-parse/`.

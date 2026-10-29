@@ -73,6 +73,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/serve/` | Optional baseline: TACC GPU job for the Qwen service | placeholder (`.gitkeep`) |
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |
 | `tacc/ocr-smoke/` | Committed GPU spike: PaddleOCR-VL smoke on representative pages | present: spike job |
+| `tacc/pdf-parse/` | Committed GPU job: parses one complete PDF file end to end (enumerate, render, layout, recognition, document markdown) | present: demo path spike |
 | `tacc/ocr/` | TACC GPU job for page rendering, layout, and OCR | planned (not created yet) |
 | `tacc/index/` | TACC GPU job for embeddings and the BM25 index | planned (not created yet) |
 | `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
@@ -80,7 +81,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `data/corpus/`, `data/index/`, `data/caches/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots | placeholder (`.gitkeep`) |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings | present: model config |
-| `scripts/` | Utility scripts: TACC bootstrap and submit helpers, live model smoke | present: scripts |
+| `scripts/` | Utility scripts: TACC bootstrap, submit helper, and shared OCR stage helpers; live model smoke | present: scripts |
 | `tests/` | Test suite under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch) | present: tests |
 | `pyproject.toml`, `uv.lock` | Python packaging, dependencies, pytest configuration, and locked local environment | present: packaging |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
