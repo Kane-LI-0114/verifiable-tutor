@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.5 |
+| **Status** | Draft for review, version 0.6 |
 | **Date** | 2026-10-29 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
@@ -181,7 +181,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-E5 | The agent grades each student answer: deterministic for single choice, multiple choice, and true or false; rubric and citation based for short answer; test-result based for code, with code answers executed through the same `tacc/exec` job | P1 | A wrong answer receives an explanation and the correct reasoning; a code answer shows pending, running, and scored states, and its score follows the recorded test results |
 | FR-E6 | Every grading explanation cites the lecture, tutorial, or course assignment material that supports the correct answer | P1 | Every explanation in the graded sample carries a citation, and every citation passes the span verifier |
 | FR-E7 | Grading results are stored per user and question with the answer, score, explanation, and TACC job reference; the student can retry | P1 | A user sees their own results only; a retry creates a new attempt without overwriting the old one |
-| FR-E8 | RQ2 metrics: share of generated questions whose reference answer compiles and passes tests, environment alignment, cost per question, and grading consistency on the constructed answer sample | P1 | The evaluation harness exports the metrics as JSON |
+| FR-E8 | RQ2 metrics: RQ2a covers reference-answer verifiability, knowledge point coverage, environment alignment, and cost per question; RQ2b covers agreement with the developer ground truth, false-pass rate, and citation validity on the shared grading set | P1 | The evaluation harness exports RQ2a and RQ2b metrics as JSON using the procedure in [benchmark-protocol.md](benchmark-protocol.md) |
 | FR-F1 | Line-anchored explanation of a submitted solution with file and line references and test outcomes | P1 | Each claim points to a line that exists in the submitted file |
 | FR-F2 | The explainer respects the disclosure gate and never fills in missing parts before the deadline | P0 | A pre-deadline submission explanation does not include the missing implementation |
 
@@ -211,7 +211,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-I1 | JSONL session trace is the canonical record for replay and evaluation | P0 | Every session has a JSONL file with ordered events, including step, thinking, tool, and text events |
 | FR-I2 | Optional local Langfuse tracing of model calls and graph steps; fail-open; local development only | P0 | The application answers normally with Langfuse disabled or down; the runbook exists |
 | FR-I3 | Benchmark: 50 course questions, 10 policy scenarios, one practice pack, with later-released sessions held out | P0 | The benchmark files exist and the harness runs them from cache |
-| FR-I4 | Evaluation harness exports JSON results and the four research questions are answered | P0 | RQ1 to RQ4 each have a result table or figure in the report |
+| FR-I4 | Evaluation harness exports JSON results and the four research questions are answered | P0 | RQ1 to RQ4 each have a result table or figure in the report; RQ2 reports generation and grading separately |
 | FR-I5 | At least one failure is analyzed by cause | P0 | The report names the dominant failure mode with trace evidence |
 | FR-J1 | The repository runs locally from a clean checkout with documented commands | P0 | A fresh clone plus the documented commands reaches a working chat |
 | FR-J2 | Tested demo runbook with the replay fallback | P0 | The demo can be run twice in a row, and replay works without network |
@@ -247,6 +247,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | Session trace | JSONL under the local data directory; `USERDIR` on TACC |
 | Generated question bank, student answers, grading results, and TACC job outputs | local data directory (SQLite plus files); the TACC job writes to `USERDIR` and the backend downloads the results |
 | TACC execution job | `tacc/exec/` task directory; the local backend submits, polls, and downloads with the tcloud CLI |
+| Self-test benchmark data: generated question sets, annotations, simulated answers, grader outputs, ground truth, and metrics | `benchmarks/self_test/`; only small curated result files are committed |
 
 ### Data model
 
@@ -258,13 +259,14 @@ Figure 5 shows the relational entities. Session traces, benchmark results, the r
 
 ## 8. Acceptance and evaluation targets
 
-Targets are provisional and confirmed by the first evaluation run. They are stated so the team can tell a pass from a regression.
+Targets are provisional and confirmed by the first evaluation run. They are stated so the team can tell a pass from a regression. The self-test benchmark procedure, including the external chatbot baseline and the simulated student answers, is in [benchmark-protocol.md](benchmark-protocol.md); RQ2 is reported in two parts.
 
 | Research question | Target |
 |---|---|
 | RQ1 evidence fidelity | Deterministic span verification passes for 100 percent of displayed citations; citation span accuracy at or above 0.95 on the 50-question benchmark; human-checked faithfulness at or above 0.90 on a sample of 20 answers |
-| RQ2 practice and self-test verifiability | At or above 0.90 of generated questions have a reference answer that compiles and passes tests where applicable and cites course material; environment alignment documented; cost per question reported; grading consistency measured on the constructed answer sample |
-| Self-test grading evidence | Every grading explanation in the sample cites a course source, and every citation passes the span verifier |
+| RQ2a self-test generation quality | At or above 0.90 of generated questions have a reference answer that compiles and passes tests where applicable and cites course material; knowledge point coverage against the course knowledge point list is reported; environment alignment and cost per question are reported |
+| RQ2b self-test grading agreement | On the shared question and answer set, agreement within one point with the developer ground truth at or above 0.85, normalized mean absolute error at or below 0.10, false-pass rate at or below 0.05, and 100 percent citation validity for the agent |
+| Self-test grading evidence | Every grading explanation in the shared set cites a course source, and every citation passes the span verifier |
 | RQ3 disclosure correctness | At or above 9 of 10 policy scenarios correct, including the adversarial set; no false allow before the deadline |
 | RQ4 cost and latency | Latency, model calls per request, and paid-call cost reported; BM25, dense, and hybrid ablation reported |
 | Failure analysis | At least one dominant failure mode analyzed with trace evidence |
@@ -288,12 +290,14 @@ There is no published presentation or submission date. Work is ordered in four w
 - The SQLite checkpointer depends on the native sqlite-vec extension; the TACC import spike is pending (ADR-0008).
 - The practice pack set beyond the first MPI pack is P2; the report states the pack scope.
 - Self-test generation and TACC execution are P0 while answer grading is P1. Code answers use per-request TACC jobs under the team account, with two to three trusted demo users and no hostile-user isolation. Confirm the split and the acceptable queue latency.
+- The self-test benchmark protocol in [benchmark-protocol.md](benchmark-protocol.md) is provisional: the shared set size, the target values, and the simulated-student model are confirmed after the first dry run.
 
 ## 11. Related documents
 
 - Proposal: [../proposal/proposal.md](../proposal/proposal.md)
 - Technology selection: [tech-selection.md](tech-selection.md)
 - Decision records: [adr/](adr/)
+- Self-test benchmark protocol: [benchmark-protocol.md](benchmark-protocol.md)
 - Local Langfuse runbook: [langfuse-local.md](langfuse-local.md)
 - Local email runbook: [email-local.md](email-local.md)
 - Agent rules: [../AGENTS.md](../AGENTS.md)
