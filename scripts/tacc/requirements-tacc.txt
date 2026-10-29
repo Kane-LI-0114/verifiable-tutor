@@ -1,0 +1,12 @@
+# Project-layer dependencies for TACC jobs.
+#
+# Only the delta over the read-only course public environment is pinned here.
+# The GPU stack (vLLM, PyTorch, Transformers) is owned by the public prefix.
+# Installed by scripts/tacc/bootstrap.sh into $HOME/vt-deps/<key>.
+#
+# Pins come from the official PaddleOCR-VL docs (Python 3.9-3.13 verified,
+# PaddlePaddle 3.2.1 or later for x64 CPU) and the vLLM PaddleOCR-VL recipe.
+pypdfium2==5.6.0
+pytest==9.0.3
+paddlepaddle==3.2.1
+paddleocr[doc-parser]==3.7.0
