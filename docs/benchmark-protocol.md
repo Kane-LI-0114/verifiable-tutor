@@ -1,15 +1,17 @@
 # Benchmark protocol: self-test generation and grading
 
-Status: draft, version 0.2, 2026-10-29. Owner: LI Jinchuan. This protocol implements RQ2 in [docs/prd.md](prd.md#8-acceptance-and-evaluation-targets). The PRD owns the requirement and the target values; this file owns the procedure and the data layout.
+Status: draft, version 0.3, 2026-10-29. Owner: LI Jinchuan. This protocol implements RQ2 in [docs/prd.md](prd.md#8-acceptance-and-evaluation-targets). The PRD owns the requirement and the target values; this file owns the procedure and the data layout.
 
 ## 1. Purpose
 
-Compare the project against an external chatbot on two questions that RQ2 splits into:
+This benchmark asks one question for a student: does using our agent produce a measurably better self-test loop than using the external chatbot? It is not a test of whether a chatbot can write questions, because a current chatbot can. It tests whether the agent's design (course retrieval, citation and span verification, reference-answer verification, TACC execution of code answers, and rubric-grounded grading) turns the same task into material a student can use without correction.
 
-- **RQ2a self-test generation quality.** Are the generated questions valid, answerable, grounded in the course, and do they cover the intended knowledge points?
+RQ2 is split into:
+
+- **RQ2a self-test generation quality.** Are the generated questions valid, answerable, grounded in the course, and do they cover the intended knowledge points, and how much of that does each system deliver?
 - **RQ2b grading agreement.** Given the same questions and the same answers, does the agent grade them closer to the developer ground truth than the external chatbot, and is the grading evidence valid?
 
-The comparison is deliberately a small-sample, course-project benchmark. It is descriptive, not a claim of general superiority.
+The comparison is deliberately a small-sample, course-project benchmark. It reports the agent and the chatbot side by side, including the capability gap. It does not start from the assumption that the agent wins, and a tie is reported as a tie.
 
 ## 2. Systems under test
 
@@ -76,7 +78,20 @@ Target values are provisional until the first run. They live in the PRD; this pr
 - RQ2b: within-one-point agreement at or above 0.85, normalized MAE at or below 0.10, false-pass at or below 0.05, and 100 percent citation validity for A on the shared set.
 - Both: at least one failure analyzed by cause.
 
-## 6. Data layout
+## 6. Capability gap and student usefulness
+
+Beyond the per-system scores, report what each system can actually deliver to a student. These are the capabilities that distinguish the agent from a plain chatbot; they are reported as measured evidence, not as an assertion.
+
+- **Verified reference answers.** Developers verify every generated question's reference answer, running tests where applicable. Report the share that passes for both systems.
+- **Grounding.** Share of generated questions with a course source that passes the citation check. If the chatbot does not cite course pages, record the capability as absent and report the measured share for the agent; do not score the absence as zero quality.
+- **Execution evidence.** Share of code questions whose reference answer or student answer actually ran on a test harness. The agent can use `tacc/exec`; the chatbot has no execution path, and that is recorded as absent.
+- **Grounded grading.** Share of grading explanations with a course citation that passes the span verifier, and share of code grades backed by a recorded execution result. Report the agent's share and record the chatbot's absence.
+- **Student usability.** Developers rate a sample of generated questions and graded items as usable as-is or requiring correction, looking for factual errors, ambiguity, missing answers, and feedback a student cannot act on.
+- **Capability table.** A side-by-side table marks each capability for A and B as supported, partial, or absent, with the measured evidence beside it.
+
+The report states the measured difference. If the chatbot matches the agent on a metric, that is reported as a tie; the protocol does not assume an advantage.
+
+## 7. Data layout
 
 All benchmark data stays under `benchmarks/self_test/`. Only small, curated results are committed; raw web transcripts and large simulated-answer batches are staged and summarized.
 
@@ -102,7 +117,7 @@ benchmarks/self_test/
 
 `benchmarks/results/` stays for the small machine-readable result files that the report cites.
 
-## 7. Procedure checklist
+## 8. Procedure checklist
 
 1. Confirm model versions and access dates for A, B, and the simulator. A must run `deepseek-flash`; B must show the DeepSeek Flash selection in the web UI and be captured in a screenshot before the run.
 2. Generate both question sets with the same task prompt; save raw outputs.
@@ -113,7 +128,7 @@ benchmarks/self_test/
 7. Compute RQ2a and RQ2b metrics into JSON; write a short failure note.
 8. Add the results tables to the report and state every limitation below.
 
-## 8. Limitations
+## 9. Limitations
 
 - **Same model, different product scaffolding.** A and B use DeepSeek Flash, so model capability is held constant, but the web product has its own system prompt, retrieval, and search behaviour while the agent has retrieval, verification, and typed tools. The comparison is a product-level comparison of system design, not a controlled model-only experiment. If the web selection cannot be verified on the run day, the run is marked as a different-model baseline.
 - **Simulated students.** Answers are generated by a model role-play, not real students; the report discloses the simulator, model version, and prompt.
@@ -121,3 +136,13 @@ benchmarks/self_test/
 - **Developer annotations.** Two team members annotate and score; randomization and blind annotation reduce, but do not remove, bias.
 - **Web instability.** The web UI and the served model may change between runs; raw transcripts and dates are the only reproducibility mechanism for B.
 - **No human answer quality.** The protocol measures generated questions and grading agreement, not learning gains for students.
+- **A negative result is valid.** The comparison is designed to test whether the agent adds measurable value. If the chatbot matches or beats the agent, that is reported; prompts and metrics are not tuned after seeing the results.
+
+## 10. Appendix: optional controlled API arm
+
+The web baseline mixes the model with the web product's own system prompt, retrieval, and search. To separate that scaffolding from the agent's design, run one supplementary arm. It is never used for the RQ2 target values.
+
+- **Generation.** Call the DeepSeek API directly at `https://api.deepseek.com/v1/chat/completions` with model `deepseek-flash`, the same user task prompt, temperature 0, thinking off, and no `tools` field and no search. Do not add a project system prompt; if the API requires one, use an empty or minimal prompt and record it verbatim.
+- **Grading.** Use the same grading prompt, rubric, and answers as condition B, again with no tools and no search.
+- **Recording.** Save the request JSON, the response JSON, the model id, the date, and the parameters. Report this arm beside A and B, labelled as the controlled API arm, and never merge it into the main comparison.
+- **Reading.** If A beats this arm, the gain is attributable to the agent design (retrieval, verification, execution, and citations). If A only beats the web arm, the gain is attributable to product scaffolding. Either result is reported.

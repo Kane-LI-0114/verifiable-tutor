@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.6 |
+| **Status** | Draft for review, version 0.7 |
 | **Date** | 2026-10-29 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
@@ -181,7 +181,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-E5 | The agent grades each student answer: deterministic for single choice, multiple choice, and true or false; rubric and citation based for short answer; test-result based for code, with code answers executed through the same `tacc/exec` job | P1 | A wrong answer receives an explanation and the correct reasoning; a code answer shows pending, running, and scored states, and its score follows the recorded test results |
 | FR-E6 | Every grading explanation cites the lecture, tutorial, or course assignment material that supports the correct answer | P1 | Every explanation in the graded sample carries a citation, and every citation passes the span verifier |
 | FR-E7 | Grading results are stored per user and question with the answer, score, explanation, and TACC job reference; the student can retry | P1 | A user sees their own results only; a retry creates a new attempt without overwriting the old one |
-| FR-E8 | RQ2 metrics: RQ2a covers reference-answer verifiability, knowledge point coverage, environment alignment, and cost per question; RQ2b covers agreement with the developer ground truth, false-pass rate, and citation validity on the shared grading set | P1 | The evaluation harness exports RQ2a and RQ2b metrics as JSON using the procedure in [benchmark-protocol.md](benchmark-protocol.md) |
+| FR-E8 | RQ2 metrics: RQ2a covers reference-answer verifiability, knowledge point coverage, environment alignment, and cost per question; RQ2b covers agreement with the developer ground truth, false-pass rate, and citation validity on the shared grading set; the capability gap table compares the agent and the chatbot | P1 | The evaluation harness exports RQ2a and RQ2b metrics and the capability table as JSON using the procedure in [benchmark-protocol.md](benchmark-protocol.md) |
 | FR-F1 | Line-anchored explanation of a submitted solution with file and line references and test outcomes | P1 | Each claim points to a line that exists in the submitted file |
 | FR-F2 | The explainer respects the disclosure gate and never fills in missing parts before the deadline | P0 | A pre-deadline submission explanation does not include the missing implementation |
 
@@ -259,13 +259,14 @@ Figure 5 shows the relational entities. Session traces, benchmark results, the r
 
 ## 8. Acceptance and evaluation targets
 
-Targets are provisional and confirmed by the first evaluation run. They are stated so the team can tell a pass from a regression. The self-test benchmark procedure, including the external chatbot baseline and the simulated student answers, is in [benchmark-protocol.md](benchmark-protocol.md); RQ2 is reported in two parts.
+Targets are provisional and confirmed by the first evaluation run. They are stated so the team can tell a pass from a regression. The self-test benchmark procedure, including the external chatbot baseline, the simulated student answers, the optional controlled API arm, and the capability gap, is in [benchmark-protocol.md](benchmark-protocol.md); RQ2 is reported in two parts, and a tie is a valid result.
 
 | Research question | Target |
 |---|---|
 | RQ1 evidence fidelity | Deterministic span verification passes for 100 percent of displayed citations; citation span accuracy at or above 0.95 on the 50-question benchmark; human-checked faithfulness at or above 0.90 on a sample of 20 answers |
 | RQ2a self-test generation quality | At or above 0.90 of generated questions have a reference answer that compiles and passes tests where applicable and cites course material; knowledge point coverage against the course knowledge point list is reported; environment alignment and cost per question are reported |
 | RQ2b self-test grading agreement | On the shared question and answer set, agreement within one point with the developer ground truth at or above 0.85, normalized mean absolute error at or below 0.10, false-pass rate at or below 0.05, and 100 percent citation validity for the agent |
+| RQ2 capability gap | Report the side-by-side capability table for grounding, verified reference answers, execution evidence, grounded grading, and student usability; there is no numeric target, the measured difference is the result |
 | Self-test grading evidence | Every grading explanation in the shared set cites a course source, and every citation passes the span verifier |
 | RQ3 disclosure correctness | At or above 9 of 10 policy scenarios correct, including the adversarial set; no false allow before the deadline |
 | RQ4 cost and latency | Latency, model calls per request, and paid-call cost reported; BM25, dense, and hybrid ablation reported |
