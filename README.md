@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Technology selected, model layer implemented, PRD v0.4 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+**Technology selected, model layer implemented, PRD v0.5 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
 
 ## What it is
 
@@ -84,7 +84,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tests/` | Test suite under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch) | present: tests |
 | `pyproject.toml`, `uv.lock` | Python packaging, dependencies, pytest configuration, and locked local environment | present: packaging |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
-| `docs/figures/` | PRD diagram sources and renders (use case, containers, ER), and future report figures | present: PRD diagrams |
+| `docs/figures/` | PRD diagram sources and renders (use case, containers, sequence examples, ER), and future report figures | present: PRD diagrams |
 | `docs/prd.md` | Product requirements, scope, acceptance criteria, and milestones | present: PRD |
 | `GLOSSARY.md` | Domain vocabulary used across the docs and code | present: glossary |
 | `docs/tech-selection.md`, `docs/adr/` | Technology decisions and the ADRs that argue them | present: decisions |
@@ -130,7 +130,7 @@ Multi-course support is out of scope for this deliverable and is recorded as fut
 - [GLOSSARY.md](GLOSSARY.md): the project's domain vocabulary.
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf): the two-page submitted PDF.
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx): editable DOCX version.
-- [docs/figures/](docs/figures/): PRD diagram sources (`.dot`) and rendered PNGs: use cases, containers, and the entity relationship model.
+- [docs/figures/](docs/figures/): PRD diagram sources (`.dot`) and rendered PNGs: use cases, containers, sequence examples, and the entity relationship model.
 - [docs/tech-selection.md](docs/tech-selection.md): technology choices, job topology, demo modes, and the week-one verification spikes.
 - [docs/model-providers.md](docs/model-providers.md): agent-facing API notes for DeepSeek and Xiaomi MiMo, model switching, image and audio input, thinking control, web search, JSON output, and tool calling.
 - [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, and typed agent tools.

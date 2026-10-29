@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.4 |
+| **Status** | Draft for review, version 0.5 |
 | **Date** | 2026-10-29 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
@@ -107,6 +107,18 @@ Each journey is a demo or evaluation script and is accepted against its numbered
 - **J7 Voice.** The student records a question in the composer (transcribed by ASR) or attaches an audio file while a MiMo model is selected, and can play the answer back as speech.
 - **J8 Provider timeout.** A slow or unavailable provider produces an in-place timeout message with a retry action, without switching models and without exposing a raw provider error.
 - **J9 Offline replay.** With no network and no model calls, a recorded session replays through the real frontend and backend path.
+
+### Sequence examples
+
+Figure 3 traces one question: the disclosure gate runs before retrieval, quoted spans are verified before the answer is shown, and the same events feed the work chain and the JSONL trace. Figure 4 traces a code self-test answer: the backend submits a `tacc/exec` job, polls it, and grades from the recorded test results. Reference answers are verified through the same exec job at generation time, which the second diagram omits for space.
+
+![Figure 3. Answer a course question](figures/prd-sequence-question.png)
+
+*Figure 3. Answer a course question. Source: [figures/prd-sequence-question.dot](figures/prd-sequence-question.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-sequence-question.dot -o figures/prd-sequence-question.png`.*
+
+![Figure 4. Grade a self-test answer with a TACC job](figures/prd-sequence-grading.png)
+
+*Figure 4. Grade a self-test answer with a TACC job. Source: [figures/prd-sequence-grading.dot](figures/prd-sequence-grading.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-sequence-grading.dot -o figures/prd-sequence-grading.png`.*
 
 ## 5. Functional requirements
 
@@ -238,11 +250,11 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 
 ### Data model
 
-Figure 3 shows the relational entities. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners.
+Figure 5 shows the relational entities. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners.
 
-![Figure 3. Relational entities](figures/prd-er.png)
+![Figure 5. Relational entities](figures/prd-er.png)
 
-*Figure 3. Relational entities and relationships. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`.*
+*Figure 5. Relational entities and relationships. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`.*
 
 ## 8. Acceptance and evaluation targets
 
