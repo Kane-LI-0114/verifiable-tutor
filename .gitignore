@@ -35,7 +35,14 @@ examples/output/
 tmp/
 scratch/
 
+# --- Frontend dependencies and build output ---
+node_modules/
+src/verifiable_tutor/ui/static/
+
 # --- Editors ---
 .idea/
 .vscode/
 *.swp
+
+# --- TACC task staging (shared scripts copied in at submit time) ---
+tacc/*/_staged/
