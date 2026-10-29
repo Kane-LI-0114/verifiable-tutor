@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Proposal stage.** The only substantive content in this repository is the course project proposal. Apart from the proposal package and `.gitignore`, the repository is a directory scaffold of empty `.gitkeep` placeholders. There is no application code, no tests, no benchmark data or results, and no evaluation report yet. Everything described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)`.
+**Proposal stage, technology selected.** The substantive content is the course project proposal, the project documentation, and the technology selection record with its decision records. Apart from those packages, `.gitignore`, and the documentation, the repository is a directory scaffold of empty `.gitkeep` placeholders. There is no application code, no tests, no benchmark data or results, and no evaluation report yet. Everything described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`.
 
 ## What it is
 
@@ -37,18 +37,20 @@ The gate is code, not a prompt: a versioned registry of release and due dates wi
 
 ## Architecture
 
-The planned system has three moving parts: a browser UI, an agent backend submitted as a TACC CPU job, and a course Qwen service running as a TACC GPU job behind a model-client abstraction.
+The planned system has three moving parts: a React browser UI served by the agent backend, the agent backend submitted as a TACC CPU job, and a course Qwen service running as a TACC GPU job behind a model-client abstraction. The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
 
 ![System containers and components](proposal/figs/fig2_components.png)
 
 The GPU job is intended to serve Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context, admitting at most four concurrent requests. The figure source is [proposal/figs/fig2_components.dot](proposal/figs/fig2_components.dot).
 
 The five planned subsystems inside the CPU job:
-- Evidence: hybrid retrieval (batched and cached dense embeddings plus BM25, fused, with optional reranking) and a deterministic span verifier that requires every quoted span to occur on its cited page, with one repair round or abstention. The OCR stage is chosen in week one, with existing course transcripts as fallback.
+- Evidence: a TACC OCR job parses the course PDFs into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md)); hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
 - Practice lab: packs that mirror the target assignment environment (first pack: MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness); a generated reference solution is accepted only after it compiles and passes the pack's tests.
 - Policy gate: the code-level gate described above, plus the versioned deadline registry it reads.
 - Teaching explainer: cites page spans, code lines, and test outcomes, and never invents missing content before the deadline.
 - Model client and trace logger: the TACC service is primary; external LLM and search APIs are optional, labelled, and cached for baselines; traces, tests, and results follow the required execution path from task to visible result.
+
+The browser UI is a React single-page application with shadcn and AI Elements components, served as static assets by the backend on one origin. Streaming uses the AI SDK UI message stream protocol, so the same frontend path serves live and replay sessions ([ADR-0003](docs/adr/0003-react-spa-with-ai-elements.md)). The job topology, batch windows, and demo modes are in [docs/tech-selection.md](docs/tech-selection.md#jobs-and-demo-modes).
 
 ## Repository layout
 
@@ -62,16 +64,22 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/eval/` | Evaluation harness | placeholder (`.gitkeep`) |
-| `src/verifiable_tutor/ui/` | Browser UI; static assets under `src/verifiable_tutor/ui/static/` | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/corpus/` | Corpus build from OCR output: page records, chunks, page images, hashing | planned (not created yet) |
+| `src/verifiable_tutor/llm/` | Model client, replay and mock backends, caches, token accounting | planned (not created yet) |
+| `src/verifiable_tutor/ui/web/` | React UI source; built assets are written to `src/verifiable_tutor/ui/static/` | planned (not created yet) |
 | `tacc/serve/` | TACC GPU job for the Qwen service | placeholder (`.gitkeep`) |
-| `tacc/client/` | TACC CPU job for the agent backend | placeholder (`.gitkeep`) |
+| `tacc/ocr/` | TACC GPU job for page rendering, layout, and OCR | planned (not created yet) |
+| `tacc/index/` | TACC GPU job for embeddings and the BM25 index | planned (not created yet) |
+| `tacc/client/` | TACC CPU job for the agent backend, the UI, and the evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
-| `data/corpus/`, `data/index/`, `data/caches/` | Course PDFs and OCR, dense plus BM25 index, cached embeddings and retrieval snapshots | placeholder (`.gitkeep`) |
+| `data/corpus/`, `data/index/`, `data/caches/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots | placeholder (`.gitkeep`) |
 | `config/` | Runtime configuration | placeholder (`.gitkeep`) |
 | `tests/` | Test suite | placeholder (`.gitkeep`) |
 | `scripts/` | Utility scripts | placeholder (`.gitkeep`) |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
 | `docs/figures/` | Report and documentation figures | placeholder (`.gitkeep`) |
+| `docs/tech-selection.md`, `docs/adr/` | Technology decisions and the ADRs that argue them | present: decisions |
+| `docs/tacc-notes.md` | Platform constraints, budgets, and mechanics | present: notes |
 | `proposal/` | Proposal sources: `proposal.md`, `build_proposal.py`, figure `.dot` sources, rendered PDF and DOCX | present: proposal sources |
 
 ## Evaluation plan
@@ -107,6 +115,9 @@ Deliverables: the code repository, the evaluation report, and the demo.
 - [proposal/proposal.md](proposal/proposal.md): readable Markdown text of the proposal, generated by `proposal/build_proposal.py`.
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf): the two-page submitted PDF.
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx): editable DOCX version.
+- [docs/tech-selection.md](docs/tech-selection.md): technology choices, job topology, demo modes, and the week-one verification spikes.
+- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, and the retrieval model.
+- [docs/tacc-notes.md](docs/tacc-notes.md): platform constraints, budgets, and measured platform mechanics.
 - [AGENTS.md](AGENTS.md): agent and contributor guide covering sources of truth, commands, and conventions.
 
 ## Team
