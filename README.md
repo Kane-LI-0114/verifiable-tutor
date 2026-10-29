@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Technology selected, model layer implemented, PRD v0.2 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+**Technology selected, model layer implemented, PRD v0.3 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
 
 ## What it is
 
@@ -17,8 +17,8 @@ A tutoring agent for one course whose outputs are checkable in three ways: text 
 Students can:
 - Ask course questions and receive answers that cite the exact page and quoted span.
 - Ask by voice: record in the composer for transcription, or attach an audio file for MiMo 2.6 to analyze; play assistant answers as speech.
-- Request a review outline or a self-test quiz on a topic.
-- Practise with a generated exercise at the scale and environment of the corresponding assignment, receiving a reference solution, tests, and a stepwise explanation.
+- Request a review outline or self-test questions on a topic; answer them and receive graded feedback with citations.
+- Practise with a generated exercise at the scale and environment of the corresponding assignment, receiving a reference solution, tests, and a stepwise explanation; code answers run as TACC jobs.
 - Submit their own solution and receive line-anchored teaching.
 
 Instructors and TAs can:
@@ -47,7 +47,7 @@ The optional GPU job serves Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K conte
 The six planned subsystems inside the CPU job:
 - Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
 - Evidence: a TACC OCR job parses the course PDFs into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md)); hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
-- Practice lab: packs that mirror the target assignment environment (first pack: MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness); a generated reference solution is accepted only after it compiles and passes the pack's tests.
+- Practice lab and self-test: generated questions in the types the student asks for or the agent chooses, with cited reference answers; reference tests and student code answers execute as TACC jobs, and the agent grades the answers with citations. The first pack is MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness; a generated reference solution is accepted only after it compiles and passes the pack's tests.
 - Policy gate: the code-level gate described above, plus the versioned deadline registry it reads.
 - Teaching explainer: cites page spans, code lines, and test outcomes, and never invents missing content before the deadline.
 - Model client and trace logger: external OpenAI-compatible APIs are primary (DeepSeek, and Xiaomi MiMo when the user or config selects it, including audio). A failed call retries the selected model and then shows a timeout or unavailable message; it never switches models, configured in `config/models.yaml` with keys in `.env`; the course Qwen service is an optional baseline; every call is labelled and cached; audio-file input is supported when a MiMo 2.6 model is selected, the composer microphone uses MiMo ASR, and assistant text can be spoken with MiMo TTS ([model-providers.md](docs/model-providers.md)); traces, tests, and results follow the required execution path from task to visible result ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)).
@@ -75,6 +75,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/ocr-smoke/` | Committed GPU spike: PaddleOCR-VL smoke on representative pages | present: spike job |
 | `tacc/ocr/` | TACC GPU job for page rendering, layout, and OCR | planned (not created yet) |
 | `tacc/index/` | TACC GPU job for embeddings and the BM25 index | planned (not created yet) |
+| `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
 | `tacc/client/` | TACC CPU job for the agent backend, the UI, and the evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `data/corpus/`, `data/index/`, `data/caches/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots | placeholder (`.gitkeep`) |
@@ -97,7 +98,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 All evaluation work is planned and the repository contains no results. Four research questions, detailed in [proposal section 4](proposal/proposal.md#4-evaluation-plan):
 
 - RQ1 evidence fidelity: citation span accuracy (deterministic) and faithfulness (human-checked support rate).
-- RQ2 practice verifiability: the share of generated exercises whose reference solution compiles and passes course-style tests, plus environment alignment and cost per exercise.
+- RQ2 practice and self-test verifiability: the share of generated questions whose reference answer compiles and passes course-style tests, environment alignment, cost per question, and grading consistency on a small constructed sample.
 - RQ3 disclosure correctness: behavior across the five policy states, including a deadline extension, and an adversarial set (false "deadline passed" claims, TA impersonation, role-play, pasted "official" solutions) against a prompt-only baseline.
 - RQ4 cost: end-to-end latency, model calls per request, and a retrieval ablation over BM25, dense, and hybrid variants.
 

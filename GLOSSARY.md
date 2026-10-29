@@ -49,8 +49,20 @@ A pre-deadline response that moves the student toward the solution without suppl
 _Avoid_: Answer, partial solution
 
 **Practice pack**:
-A bundle that mirrors one assignment's environment: toolchain, source layout, datasets, and a test harness.
+A generated practice artifact that mirrors one assignment's environment, or a self-test question set over a topic: toolchain, source layout, datasets, test harness, and reference answers.
 _Avoid_: Exercise set, tutorial, sandbox
+
+**Self-test question**:
+A generated question the student answers and the agent grades. The types are single choice, multiple choice, true or false, short answer, and code. The self-test feature and the practice lab are the same capability.
+_Avoid_: Quiz item, exercise, test
+
+**Answer grading**:
+The agent's judgement of a student's answer: a score, an explanation, and a citation to the course material that supports the correct answer. Code answers are graded from recorded TACC test results.
+_Avoid_: Correction, marking, auto-grading
+
+**TACC execution job**:
+A TACC job that runs reference tests and self-test code answers on the platform and writes results to `USERDIR`. The local backend submits it, polls it, and downloads the results.
+_Avoid_: Sandbox, runner, worker
 
 **Reference solution**:
 A solution to a practice exercise that is shown only after it compiled and passed the pack's tests.

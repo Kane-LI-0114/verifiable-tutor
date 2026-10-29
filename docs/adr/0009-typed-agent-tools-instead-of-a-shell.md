@@ -30,6 +30,7 @@ A generic shell exposed to a model would allow arbitrary file access (including 
 - The user-visible work chain renders each tool call: tool name, model-supplied arguments, the exact command line, the exit code, and truncated standard output and error. This is what "command-line execution" means in the product, and it is produced from the tool layer rather than from a shell session.
 - Before running user-supplied code, the graph interrupts and asks the user to confirm, using the LangGraph interrupt mechanism ([ADR-0008](0008-langgraph-as-agent-orchestration-runtime.md)). Generated practice code that was already verified in batch runs without an extra confirmation. File writes outside the scratch directory are rejected by the runner.
 - The same runner code is used locally and on TACC. A Docker container is not part of the local execution path, because parity with TACC matters more than stronger local isolation.
+- Practice and self-test code answers run as TACC jobs under the team account. The demo has two to three trusted users, so the system does not claim hostile-user isolation; the job container and the runner limits are the boundary, and the limitation is stated in the report. The requirements are in [../prd.md](../prd.md), FR-E4 and NFR-11.
 
 ## Consequences
 

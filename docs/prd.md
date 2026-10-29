@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.2 |
+| **Status** | Draft for review, version 0.3 |
 | **Date** | 2026-10-29 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
@@ -18,7 +18,7 @@ Goals:
 
 - **G1 Evidence-grounded answers.** Every course claim cites a page and a quoted span, and every cited span is checked against the page text.
 - **G2 Enforced disclosure.** What the agent may reveal follows a dated assignment policy evaluated in code, not in the prompt.
-- **G3 Verified practice.** A practice exercise is shown only with a reference solution that has compiled and passed the pack's tests in the course environment.
+- **G3 Verified practice and self-test.** A practice exercise or self-test question is shown with a reference answer that has compiled and passed its tests where applicable; a student's answer is graded against that reference answer and explained with citations.
 - **G4 Reproducible evaluation.** Representative cases, recorded traces, and a failure analysis produced from TACC runs, with no paid call needed to rerun.
 
 Course deliverables this must satisfy: a frontend for task input, visible progress, and result review; a backend with an agent workflow, a model API, and tool and data integration; an evaluation with representative cases, metrics, and at least one analyzed failure; a tested demo; and a runnable code repository.
@@ -32,7 +32,7 @@ Course deliverables this must satisfy: a frontend for task input, visible progre
 | Demo operator | A team member driving the presentation | Uses a student or seeded account |
 | Grader or audience | Watches the demo | No account and no direct access to the deployment |
 
-Accounts exist to associate conversations and traces with a person and to prepare the system for real use. This is a course design: it is not hardened for public multi-tenant operation, and abuse protection is out of scope (section 3).
+Accounts exist to associate conversations and traces with a person and to prepare the system for real use. This is a course design: it is not hardened for public multi-tenant operation, and abuse protection is out of scope (section 3). Students never see other users' conversations or traces. Self-test grading is student-facing; TAs do not grade homework in this system.
 
 ## 3. Scope
 
@@ -45,14 +45,15 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 - Model control: DeepSeek Flash as the default, MiMo Flash and Pro selectable, a unified thinking level, and explicit retry and timeout behavior without cross-model fallback.
 - Disclosure gate: five policy states from a versioned deadline registry, intent routing, refusal and hints before the deadline, full teaching after it, decision logging, injected clock.
 - Work chain: a user-facing timeline of steps, model thinking, and tool calls including command lines and output.
-- Practice lab: one MPI and GEMM pack that mirrors the assignment environment; exercises and reference solutions generated in batch, verified by compilation and tests, and cached.
+- Practice lab and self-test: generated questions in the types the student asks for (single choice, multiple choice, true or false, short answer, and code), or the type the agent chooses from context when the student does not ask; reference answers verified by compilation and tests in the TACC job and cached. The practice lab and the self-test are the same capability.
 - Voice: microphone transcription into the composer, audio file attachments when a MiMo model is selected, and text to speech playback.
 - Observability and evaluation: JSONL session traces, local Langfuse tracing during development, a benchmark harness over 50 course questions, 10 policy scenarios, and the practice pack, results, and a failure analysis.
-- Delivery: the system runs locally from a clean checkout with documented commands, a demo runbook, and a replay fallback. TACC jobs produce the corpus, index, and evaluation evidence used in the report.
+- Delivery: the system runs locally from a clean checkout with documented commands, a demo runbook, and a replay fallback. TACC jobs produce the corpus, index, evaluation evidence, and code-answer execution results used in the report.
 
 **P1, committed but can land after the first demo:**
 
-- Study aids: grounded review outline and self-test quiz.
+- Study aids: grounded review outline; self-test questions come from the practice lab above.
+- Self-test answer grading: the agent grades the student's answers to generated questions and explains each result with citations to lecture, tutorial, or course assignment material; code answers execute as TACC jobs.
 - Line-anchored explanation of a user-submitted solution.
 - In-app deadline registry editor for the instructor role.
 - TACC-hosted demo path, if the TA authorizes the forward and the tunnel spike passes.
@@ -70,7 +71,7 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 
 - A public deployment or real multi-tenant operation.
 - Quotas, daily budgets, login lockout, and abuse protection. The account system has basic authentication and authorization only.
-- Plagiarism detection, gradebook integrations, and unattended automatic grading.
+- Plagiarism detection, gradebook integrations, and grading of TA-submitted homework or formal course grades.
 - Mobile applications, native clients, and server-side rendering.
 - Strong sandboxing of user code on TACC (see ADR-0009 and section 6).
 - Email deliverability guarantees beyond local demonstration.
@@ -86,8 +87,8 @@ Each journey is a demo or evaluation script and is accepted against its numbered
 - **J1 First visit and first question.** A student registers with a student email, receives a six digit code, signs in, asks a course question in Chinese or English, and sees a streamed answer with inline citations, a work chain, and an evidence panel.
 - **J2 Homework request before the deadline.** The student asks for a complete assignment solution before the due date. The agent refuses the complete solution, offers a hint, and the work chain shows the policy state and the rule that decided it.
 - **J3 Teaching after the deadline.** The same request after the due date (or inside an extension window that ended) receives full teaching plus a verified solution.
-- **J4 Review outline and quiz.** The student asks for a review outline or a self-test quiz on a topic and receives cited material that does not reveal the current assignment solution.
-- **J5 Practice.** The student opens a practice exercise for the MPI and GEMM assignment, runs the provided tests, and reviews the verified reference solution and stepwise explanation.
+- **J4 Review outline and self-test.** The student asks for a review outline or a self-test on a topic, optionally naming the question type. The agent generates cited questions and reference answers that do not reveal the current assignment solution.
+- **J5 Practice and answer grading.** The student answers a generated practice or self-test question, including a code answer. The agent grades the answer, runs code answers as TACC jobs, and explains the result with citations.
 - **J6 Submitted solution.** The student pastes their own solution and receives line-anchored teaching. Before the deadline the agent does not fill in missing parts.
 - **J7 Voice.** The student records a question in the composer (transcribed by ASR) or attaches an audio file while a MiMo model is selected, and can play the answer back as speech.
 - **J8 Provider timeout.** A slow or unavailable provider produces an in-place timeout message with a retry action, without switching models and without exposing a raw provider error.
@@ -141,16 +142,20 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-C7 | Decision log in JSONL with state, rule id, registry version, and clock | P0 | Every policy decision appears in the trace and the log |
 | FR-C8 | The clock is injected so tests can place a request in any state | P0 | A test changes the clock only, not the code path |
 
-### 5.4 Study aids, practice, and teaching
+### 5.4 Study aids, practice, self-test, and teaching
 
 | ID | Requirement | Priority | Acceptance |
 |---|---|---|---|
 | FR-D1 | Review outline on a topic, grounded in citations | P1 | Every outline item carries at least one verified citation |
-| FR-D2 | Self-test quiz with answers and citations, without revealing the current assignment solution | P1 | The quiz respects the same policy gate as chat |
-| FR-E1 | Practice pack format mirroring the assignment: toolchain, Makefile, datasets, and a test harness | P0 | The MPI and GEMM pack compiles and runs with the course toolchain |
-| FR-E2 | Exercises and reference solutions generated in batch; a solution is shown only after it compiles and passes the pack's tests; verified artifacts are cached | P0 | A generated exercise without a passing solution is not shown; the cache avoids regeneration |
-| FR-E3 | Test execution inside the restricted runner in the TACC CPU job | P0 | The runner seam returns exit code and output, enforces the timeout, and rejects commands outside the whitelist |
-| FR-E4 | RQ2 metrics: share of exercises whose reference solution compiles and passes tests, environment alignment, cost per exercise | P0 | The evaluation harness exports the metrics as JSON |
+| FR-D2 | Self-test questions come from the practice lab artifacts; the system keeps one question record and one reference answer, not a separate quiz format | P1 | A self-test question and a practice exercise share one record |
+| FR-E1 | Generated question types: single choice, multiple choice, true or false, short answer, and code. The student names a type when they want one; otherwise the agent chooses from the topic and context | P0 | A request that names a type produces that type; a request without a type produces at least one defensible type and records why |
+| FR-E2 | Every question has a reference answer, and every reference answer cites the lecture, tutorial, or course assignment material it comes from | P0 | A generated question without a verified reference answer is not shown; every reference answer carries at least one citation |
+| FR-E3 | Practice packs mirror the assignment environment (toolchain, Makefile, datasets, test harness); reference solutions are generated in batch, verified by compilation and tests, and cached | P0 | The MPI and GEMM pack compiles and runs with the course toolchain; an unverified exercise is not shown |
+| FR-E4 | Reference tests execute as TACC jobs in `tacc/exec`: the backend submits the job, polls it, downloads the results, and caches them | P0 | A generated reference answer shows pending, running, and verified states; a repeated verification is served from cache; the report records measured queue and run time |
+| FR-E5 | The agent grades each student answer: deterministic for single choice, multiple choice, and true or false; rubric and citation based for short answer; test-result based for code, with code answers executed through the same `tacc/exec` job | P1 | A wrong answer receives an explanation and the correct reasoning; a code answer shows pending, running, and scored states, and its score follows the recorded test results |
+| FR-E6 | Every grading explanation cites the lecture, tutorial, or course assignment material that supports the correct answer | P1 | Every explanation in the graded sample carries a citation, and every citation passes the span verifier |
+| FR-E7 | Grading results are stored per user and question with the answer, score, explanation, and TACC job reference; the student can retry | P1 | A user sees their own results only; a retry creates a new attempt without overwriting the old one |
+| FR-E8 | RQ2 metrics: share of generated questions whose reference answer compiles and passes tests, environment alignment, cost per question, and grading consistency on the constructed answer sample | P1 | The evaluation harness exports the metrics as JSON |
 | FR-F1 | Line-anchored explanation of a submitted solution with file and line references and test outcomes | P1 | Each claim points to a line that exists in the submitted file |
 | FR-F2 | The explainer respects the disclosure gate and never fills in missing parts before the deadline | P0 | A pre-deadline submission explanation does not include the missing implementation |
 
@@ -202,6 +207,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | NFR-8 | Scale | Single-node, course-demo scale; no load or concurrency guarantees; multi-user correctness is tested, performance is not |
 | NFR-9 | Accessibility | Keyboard reachable controls and readable contrast in the main flows; full WCAG conformance is not claimed |
 | NFR-10 | Data lifecycle | Local SQLite and JSONL files; the instructor can delete a user's data; no retention guarantee |
+| NFR-11 | Self-test execution | Code answers and reference tests run in the TACC job container under the team account; the demo has two to three trusted users, so no hostile-user isolation is claimed; queue and run latency are shown to the user and recorded in the report |
 
 ## 7. Configuration and data ownership
 
@@ -213,6 +219,8 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | Secrets: provider keys, SMTP authorization code, Langfuse keys, session secret | `.env`, ignored by Git; `.env.example` carries empty placeholders |
 | Corpus and page images, index, caches | `data/corpus/`, `data/index/`, `data/caches/` locally; `USERDIR` on TACC |
 | Session trace | JSONL under the local data directory; `USERDIR` on TACC |
+| Generated question bank, student answers, grading results, and TACC job outputs | local data directory (SQLite plus files); the TACC job writes to `USERDIR` and the backend downloads the results |
+| TACC execution job | `tacc/exec/` task directory; the local backend submits, polls, and downloads with the tcloud CLI |
 
 ## 8. Acceptance and evaluation targets
 
@@ -221,7 +229,8 @@ Targets are provisional and confirmed by the first evaluation run. They are stat
 | Research question | Target |
 |---|---|
 | RQ1 evidence fidelity | Deterministic span verification passes for 100 percent of displayed citations; citation span accuracy at or above 0.95 on the 50-question benchmark; human-checked faithfulness at or above 0.90 on a sample of 20 answers |
-| RQ2 practice verifiability | At or above 0.90 of generated exercises have a reference solution that compiles and passes the pack's tests; environment alignment documented; cost per exercise reported |
+| RQ2 practice and self-test verifiability | At or above 0.90 of generated questions have a reference answer that compiles and passes tests where applicable and cites course material; environment alignment documented; cost per question reported; grading consistency measured on the constructed answer sample |
+| Self-test grading evidence | Every grading explanation in the sample cites a course source, and every citation passes the span verifier |
 | RQ3 disclosure correctness | At or above 9 of 10 policy scenarios correct, including the adversarial set; no false allow before the deadline |
 | RQ4 cost and latency | Latency, model calls per request, and paid-call cost reported; BM25, dense, and hybrid ablation reported |
 | Failure analysis | At least one dominant failure mode analyzed with trace evidence |
@@ -233,7 +242,7 @@ There is no published presentation or submission date. Work is ordered in four w
 
 1. **Corpus, index, and access.** TACC OCR and index jobs, retrieval, accounts, sessions, and the local run path.
 2. **Agent and policy.** LangGraph graph, disclosure gate, deadline registry, evidence verification, work chain, and model control.
-3. **Practice, teaching, and voice.** MPI pack, test runner, explainer, study aids, microphone and speech output.
+3. **Practice, self-test, teaching, and voice.** MPI pack, TACC execution job for reference tests and code answers, answer grading, explainer, study aids, microphone and speech output.
 4. **Evaluation and delivery.** Benchmark, evaluation harness, local Langfuse traces, report and figures, demo runbook, replay fallback.
 
 ## 10. Open questions
@@ -244,6 +253,7 @@ There is no published presentation or submission date. Work is ordered in four w
 - The Langfuse stack disk usage is estimated at 5 to 10 GB; measure once the stack is first started.
 - The SQLite checkpointer depends on the native sqlite-vec extension; the TACC import spike is pending (ADR-0008).
 - The practice pack set beyond the first MPI pack is P2; the report states the pack scope.
+- Self-test generation and TACC execution are P0 while answer grading is P1. Code answers use per-request TACC jobs under the team account, with two to three trusted demo users and no hostile-user isolation. Confirm the split and the acceptable queue latency.
 
 ## 11. Related documents
 
