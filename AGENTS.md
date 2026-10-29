@@ -22,6 +22,7 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 | Product requirements and acceptance | [docs/prd.md](docs/prd.md) | Edit by hand; the proposal stays frozen and this file owns what ships |
 | Domain vocabulary | [GLOSSARY.md](GLOSSARY.md) | Edit by hand when a term is resolved |
 | Technology decisions | [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/` | Edit by hand; append a new ADR to supersede a decision |
+| Corpus record fields | [docs/corpus-schema.md](docs/corpus-schema.md) | Edit by hand; bump the record schema version when a field changes meaning |
 | Model providers and request parameters | `config/models.yaml` (no secrets); keys only in the ignored `.env` | Edit by hand; `.env.example` is the committed template |
 | Local development tracing procedure | [docs/langfuse-local.md](docs/langfuse-local.md); the decision is [ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md) | Edit by hand |
 | Registration and reset email procedure | [docs/email-local.md](docs/email-local.md) | Edit by hand |
@@ -45,6 +46,7 @@ Verified locally on 2026-10-28 and 2026-10-29:
 - Run the test suite: `.venv/bin/python -m pytest`. The first suite is `tests/llm/` (configuration, chat, streaming, ASR, TTS, audio-file routing, search, fetch, cache); the runner is recorded here as the TDD change required.
 - Run the live model smoke: `.venv/bin/python scripts/smoke_model_adapter.py`. It makes real DeepSeek and MiMo calls with the keys in `.env`, including audio-file input and TTS, is not part of pytest, and exits non-zero on a failed step (verified 2026-10-29, ten steps).
 - Start the optional local Langfuse stack only when tracing is needed; the steps are in [docs/langfuse-local.md](docs/langfuse-local.md). Neither pytest nor any TACC job depends on it.
+- Run one PDF through the TACC OCR job from the laptop: `python3 scripts/tacc/parse_pdf.py --pdf <file.pdf> --pages 1-3`. It uploads the file, submits the job, polls it, downloads the results, and prints one JSON object; verified 2026-10-29 with jobs 27887 and 27889. The record fields are in [docs/corpus-schema.md](docs/corpus-schema.md).
 - There is no application build or server run command yet, and no UI build command. [docs/tech-selection.md](docs/tech-selection.md) lists the planned commands and the verification spikes; record any new command here in the change that adds it.
 
 ## Where new work goes
@@ -128,7 +130,8 @@ This repository is a standalone Git repository nested inside the course workspac
 - Keep one entrypoint item per job: the SDK joins multiple entrypoint entries into a single command line. Keep task directories to code, because a submit directory is capped at 1 GiB; put corpus, page images, indexes, and weights in `USERDIR` or `$HOME` with `tcloud upload`.
 - Platform mechanics measured from the SDK source and the live cluster configuration (submit cap, persistence, single entrypoint, container facts) are recorded in [docs/tacc-notes.md](docs/tacc-notes.md#platform-mechanics-2026-10-28).
 - Compute nodes are private and have no inbound path from a laptop. The documented off-platform access path is an SSH local forward through the account's SSH entry; the course documents both prescribe and prohibit student-run forwarding, so the policy is unresolved. Read [docs/tacc-notes.md](docs/tacc-notes.md#access-from-outside-2026-10-28) before designing a demo around a tunnel.
-- The scheduler enforces a one-hour limit: `sinfo` reports `TIMELIMIT 1:00:00` for the `tacc` partition, so every job requests `time=00:59:00`. Staff clarifications received on 2026-10-28 and the resulting job and storage budgets are recorded in [docs/tacc-notes.md](docs/tacc-notes.md); that file owns them.
+- The scheduler enforces a one-hour limit: `sinfo` reports `TIMELIMIT 1:00:00` for the `tacc` partition, so every job requests `time=00:59:00`. A persistent OCR service is therefore a 59-minute job with a 438 to 495 s cold start; plan the demo window accordingly and keep replay ready. Staff clarifications received on 2026-10-28 and the resulting job and storage budgets are recorded in [docs/tacc-notes.md](docs/tacc-notes.md); that file owns them.
+- `tacc/pdf-parse/` is the demo prototype: one PDF in, per-page records plus one document markdown out. `scripts/tacc/parse_pdf.py` is the local request interface that submits it.
 
 ## Before claiming a change is done
 

@@ -133,6 +133,15 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - This is the path the demo needs: a user supplies one PDF, the TACC OCR model parses the whole file, and the backend receives per-page records plus one document markdown. No corpus pre-parse is required.
 - Known follow-up: the PaddleX page markdown can reference exported `imgs/...` crops that the job does not write. The citation panel should use the page WebP and block boxes, and the assembler can strip those image references when the UI does not need them.
 
+### Parse request interface (local to TACC)
+
+`scripts/tacc/parse_pdf.py` is the local interface: it uploads a PDF, generates a per-request task directory, submits `tacc/pdf-parse`, polls to completion, downloads the artifacts, and prints one JSON result. Two round trips were run on 2026-10-29.
+
+- Job 27887, first attempt: the request asked for pages 1 to 3 but the page subset did not reach the job, so it parsed all 8 pages of `course_project.pdf`: 121 blocks, 8,430 characters, median 6.355 s per page, vLLM startup 495 s, job elapsed 707 s, VRAM peak 21,999 MiB. The interface still returned the full artifact set (document markdown, page JSONL, summary, log), so the transport and return path worked.
+- Job 27889, after the fix: pages 1 to 3 requested and returned. 3 pages, 52 blocks, 1,586 characters, median 4.291 s per page, vLLM startup 438 s, interface wall time about 9 minutes including upload and download. Page subsetting now works end to end.
+- Timing structure: model startup dominates every request (438 to 495 s, roughly 70 percent of the job), so dropping from 8 pages to 3 pages saves only about 30 to 40 s of parse time. For a short demo, either start the OCR service job about 10 minutes early and keep requests inside its one-hour window, or accept a roughly 9 to 10 minute per-request round trip. A persistent service plus a light client job is the next step if demo latency must be lower.
+- The interface is local-only today: the demo backend can call it or wrap it, and it writes requests and results under `data/caches/parse-requests/` and `data/caches/parse-results/`, both gitignored. Record fields are in [corpus-schema.md](corpus-schema.md).
+
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
@@ -143,3 +152,4 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - tcloud quickstart configuration guide and FAQ: https://github.com/turingaicloud/quickstart
 - SDK client cluster configuration, `~/.tcloud/.clusterconfig`, read on 2026-10-28.
 - Spike jobs 27872, 27879 and 27884, 2026-10-29: Slurm logs in `USERDIR/slurm_log/`, summaries and JSONL in `USERDIR/env-spike/`, `USERDIR/ocr-smoke/` and `USERDIR/pdf-parse/`.
+- Parse request round trips 27887 and 27889, 2026-10-29: requests under `USERDIR/parse-requests/<request-id>/`, logs in `USERDIR/slurm_log/vt-parse-<request-id>-*.log`, local copies under the gitignored `data/caches/`.

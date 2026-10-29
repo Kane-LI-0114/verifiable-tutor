@@ -63,16 +63,16 @@ The decision and alternatives are in [ADR-0002](adr/0002-ocr-on-tacc-with-paddle
 2. Layout: PP-DocLayoutV2 through the PaddleOCR client on CPU, for block boxes and reading order.
 3. Recognition: PaddleOCR-VL-1.6 under vLLM on one RTX 3090, driven block by block or page by page according to the recipe.
 
-Output contract:
+Output contract (field-level schema: [corpus-schema.md](corpus-schema.md)):
 
-- `USERDIR/corpus/pages.jsonl`: one record per page with `doc_id`, `pdf_sha256`, `page_no`, image geometry, model and pipeline version, markdown, plain text, blocks with reading order and boxes, figures with crops, tables, formulas, status, and timings.
-- `USERDIR/corpus/pages/<doc>.p<NNN>.md`: page markdown for human inspection.
-- `USERDIR/corpus/images/<doc>.p<NNN>.webp`: page image for the citation panel.
-- `USERDIR/corpus/figures/`: cropped figures referenced by the block records.
+- `USERDIR/corpus/pages.jsonl`: one `vt-page-record/1` object per page with `doc_id`, `pdf_sha256`, `page_no`, image geometry, model and pipeline versions, markdown, plain text, `blocks[]` with ids, reading order, labels, pixel and normalised boxes, `layout_boxes[]` with detector scores, page image references, status, timings, and validation problems.
+- `USERDIR/corpus/document/<doc_id>-ocr.md`: the assembled document with `<!-- page: N -->` markers.
+- `USERDIR/corpus/pages/<doc>.p<NNN>.png` and `USERDIR/corpus/images/<doc>.p<NNN>.webp`: rendered page and citation image.
+- Figure crops are not emitted yet; the page WebP plus `bbox_norm` covers the citation overlay (see the schema note).
 
 Resume and time rules: fsync every 25 pages, a sidecar of completed page keys, a 50-minute stop for new pages, exit 0 with partial output. The first run is expected to need one or two one-hour jobs for 342 pages; the throughput is unmeasured and is a spike item.
 
-Chunking happens after OCR and is owned by `src/verifiable_tutor/corpus/`: page and section aware chunks carry `doc_id`, `page_no`, section title, and source block ids, so every quote can be traced to a page and a box.
+Chunking happens after OCR and is owned by `src/verifiable_tutor/corpus/`: page and section aware chunks follow the proposed `vt-chunk-record/1` shape in [corpus-schema.md](corpus-schema.md), carrying `doc_id`, `page_no`, section title, source block ids, the union box, and provenance, so every quote can be traced to a page and a box.
 
 The old PaddleOCR transcripts are not inputs to the system. They remain usable only as a human quality reference when the OCR results look wrong.
 
