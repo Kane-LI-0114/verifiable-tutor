@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Technology selected, model layer implemented, PRD v0.2 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, eleven ADRs (including LangGraph orchestration, local Langfuse tracing, typed agent tools, the TA grading assistant, and its execution sandbox), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+**Technology selected, model layer implemented, PRD v0.2 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
 
 ## What it is
 
@@ -44,9 +44,8 @@ The planned system has three moving parts: a React browser UI served by the agen
 
 The optional GPU job serves Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context, admitting at most four concurrent requests, as a baseline. The primary text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)). The figure source is [proposal/figs/fig2_components.dot](proposal/figs/fig2_components.dot).
 
-The seven planned subsystems inside the CPU job:
+The six planned subsystems inside the CPU job:
 - Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
-- Grading assistant (TA side): a separate LangGraph workflow over an assignment package and a batch of TA-uploaded submissions, with evidence-backed per-criterion score recommendations, a review workbench, an audit log, and CSV export after approval. Untrusted student code runs only in a local Docker sandbox ([ADR-0010](docs/adr/0010-ta-grading-agent.md), [ADR-0011](docs/adr/0011-grading-execution-sandbox.md)).
 - Evidence: a TACC OCR job parses the course PDFs into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md)); hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
 - Practice lab: packs that mirror the target assignment environment (first pack: MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness); a generated reference solution is accepted only after it compiles and passes the pack's tests.
 - Policy gate: the code-level gate described above, plus the versioned deadline registry it reads.
@@ -62,7 +61,6 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | Path | Intended role | State |
 |---|---|---|
 | `src/verifiable_tutor/auth/` | Accounts, authentication, sessions, and roles | planned (not created yet) |
-| `src/verifiable_tutor/grading/` | Assignment packages, the TA grading graph, the Docker sandbox runner, the audit log, and CSV export | planned (not created yet) |
 | `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/orchestrator/` | Request routing and context budget | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/evidence/` | Hybrid retrieval and deterministic span verifier | placeholder (`.gitkeep`) |
@@ -96,15 +94,14 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 
 ## Evaluation plan
 
-All evaluation work is planned and the repository contains no results. Four research questions from the proposal, plus one for the TA grading assistant, detailed in [docs/prd.md](docs/prd.md#8-acceptance-and-evaluation-targets):
+All evaluation work is planned and the repository contains no results. Four research questions, detailed in [proposal section 4](proposal/proposal.md#4-evaluation-plan):
 
 - RQ1 evidence fidelity: citation span accuracy (deterministic) and faithfulness (human-checked support rate).
 - RQ2 practice verifiability: the share of generated exercises whose reference solution compiles and passes course-style tests, plus environment alignment and cost per exercise.
 - RQ3 disclosure correctness: behavior across the five policy states, including a deadline extension, and an adversarial set (false "deadline passed" claims, TA impersonation, role-play, pasted "official" solutions) against a prompt-only baseline.
 - RQ4 cost: end-to-end latency, model calls per request, and a retrieval ablation over BM25, dense, and hybrid variants.
-- RQ5 grading assistance: per-criterion agreement with a TA reference on a small constructed sample, evidence validity, and the TA edit rate.
 
-The benchmark is planned to hold fifty course questions, ten policy scenarios, and one practice pack, with later-released sessions held out; runs use temperature 0, cached retrieval snapshots and responses, and an injected clock.
+The benchmark is planned to hold fifty course questions, ten policy scenarios, and two practice packs, with later-released sessions held out; runs use temperature 0, cached retrieval snapshots and responses, and an injected clock.
 
 ## Roadmap
 
@@ -123,7 +120,7 @@ The four one-week workstreams from proposal Table 1 (planned):
 
 Deliverables: the code repository, the evaluation report, and the demo.
 
-The PRD adds the account system and the TA grading assistant, which are not part of the proposal's four workstreams; the current workstreams are in [docs/prd.md](docs/prd.md#9-milestones). Multi-course support is out of scope and recorded as future development.
+Multi-course support is out of scope for this deliverable and is recorded as future development in [docs/prd.md](docs/prd.md#future-development).
 
 ## Documentation
 
@@ -134,7 +131,7 @@ The PRD adds the account system and the TA grading assistant, which are not part
 - [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx): editable DOCX version.
 - [docs/tech-selection.md](docs/tech-selection.md): technology choices, job topology, demo modes, and the week-one verification spikes.
 - [docs/model-providers.md](docs/model-providers.md): agent-facing API notes for DeepSeek and Xiaomi MiMo, model switching, image and audio input, thinking control, web search, JSON output, and tool calling.
-- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, typed agent tools, the TA grading assistant, and its execution sandbox.
+- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, and typed agent tools.
 - [docs/langfuse-local.md](docs/langfuse-local.md): runbook for the optional local Langfuse instance used for development tracing.
 - [docs/email-local.md](docs/email-local.md): runbook for registration and password reset email over QQ Mail SMTP.
 - [config/models.yaml](config/models.yaml): provider endpoints, model ids, role routing, request parameters, and embedding settings. Secrets stay in the ignored `.env`; [.env.example](.env.example) is the committed template.

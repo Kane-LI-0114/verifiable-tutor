@@ -21,15 +21,13 @@ Status: decided on 2026-10-28 and updated on 2026-10-29 for the external model A
 | Local tracing | Langfuse OSS v4 self-hosted with Docker Compose on the laptop, for local development only; JSONL stays canonical for replay and TACC evaluation | Model call and graph step provenance with local data, a framework-native LangGraph integration, and fail-open behavior; never installed on TACC ([ADR-0007](adr/0007-langfuse-for-local-model-call-tracing.md)) |
 | Accounts and access | Email and password accounts restricted to course student domains, server-side cookie sessions signed with a secret from `.env`, scrypt password hashing, a student and an instructor role, and QQ Mail SMTP with an authorization code for registration codes and reset links | A course design needs a basic user system and no third-party identity provider; the detailed requirements are in [prd.md](prd.md), the QQ Mail procedure in [email-local.md](email-local.md) |
 | Tool execution | The model calls typed LangGraph tools only; execution tools use one restricted subprocess runner (no shell interpolation, per-user scratch directory, environment allowlist without secrets, resource limits, timeout and process group kill); no generic shell | No strong sandbox is available on TACC, and typed tools keep every action auditable and visible in the work chain ([ADR-0009](adr/0009-typed-agent-tools-instead-of-a-shell.md)) |
-| Grading assistant | A separate TA-side workflow over an assignment package and a batch of TA-uploaded submissions; per-criterion score recommendations with evidence, a review workbench, an audit log, and CSV export after approval | Human oversight keeps grades accountable, and the model, tool, and trace layers are reused ([ADR-0010](adr/0010-ta-grading-agent.md)) |
-| Grading execution | Untrusted student code runs only in a local Docker sandbox (no network, read-only root, non-root user, one writable directory, CPU, memory, process, and time limits); TACC runs no grading code | The TACC job container gives process-level limits only, which are insufficient for third-party code ([ADR-0011](adr/0011-grading-execution-sandbox.md)) |
 | Voice input and output | Audio-file attachments are supported only when a MiMo model is selected; the selected tier handles the audio. The composer microphone uses MiMo `mimo-v2.5-asr`, and assistant text can be synthesized with the MiMo TTS family for playback and as a teaching-video voiceover candidate | DeepSeek has no audio; one provider covers both audio directions ([ADR-0005](adr/0005-external-model-apis-as-primary.md), [model-providers.md](model-providers.md)) |
 | Policy gate | YAML deadline registry validated by pydantic, rule and embedding intent routing, injected clock, JSONL decision log, fail closed to abstention | Deterministic and resistant to prompt injection |
 | Practice lab | Subprocess runner with timeouts and resource limits against the public MPI toolchain; a generated solution is accepted only after its tests pass | Mirrors the assignment environment |
-| Storage | SQLite for metadata, grading records, FTS5, and caches; NumPy arrays for vectors; JSONL for traces and replay | No external service, and everything is copyable between `USERDIR` and the laptop |
+| Storage | SQLite for metadata, FTS5, and caches; NumPy arrays for vectors; JSONL for traces and replay | No external service, and everything is copyable between `USERDIR` and the laptop |
 | Tests | pytest with the red and green loop, run inside the project environment on TACC | The framework decision that AGENTS.md left open |
 | Evaluation | Benchmark JSONL, an evaluation harness that writes JSON, plots generated locally | matplotlib is absent from the public environment |
-| Jobs and demo | `tacc/serve` for the optional Qwen baseline, `tacc/ocr`, `tacc/index`, `tacc/client`; the live demo currently runs from a local backend and UI, TACC provides the OCR, index, and evaluation evidence, and replay is the fallback; grading runs locally in Docker and adds no TACC job; the TACC-hosted demo is open pending the TA reply | The one-hour policy cap, per-job service addresses, and demo risk |
+| Jobs and demo | `tacc/serve` for the optional Qwen baseline, `tacc/ocr`, `tacc/index`, `tacc/client`; the live demo currently runs from a local backend and UI, TACC provides the OCR, index, and evaluation evidence, and replay is the fallback; the TACC-hosted demo is open pending the TA reply | The one-hour policy cap, per-job service addresses, and demo risk |
 
 ## Environment strategy
 
@@ -39,7 +37,6 @@ The full argument is in [ADR-0001](adr/0001-pinned-python-environment-without-do
 
 - GPU layer: the course public environment. vLLM 0.26.0, PyTorch 2.11.0+cu128, Transformers 5.10.4, Python 3.12.14, 199 packages total. It is read-only and must not be modified.
 - Project layer: everything the project adds, pinned in `requirements.txt` with hashes and in `uv.lock`. The expected delta is `pypdfium2` for page rendering, `pytest` for tests, the PaddleOCR client plus `paddlepaddle` CPU wheel for the OCR job, and the LangGraph dependency group (`langgraph`, `langchain-core`, `langgraph-checkpoint-sqlite`) for the agent backend ([ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md)). The Langfuse SDK is a local development extra only and is never installed on TACC ([ADR-0007](adr/0007-langfuse-for-local-model-call-tracing.md)). The public environment already provides FastAPI, uvicorn, pydantic, openai, httpx, NumPy, PyYAML, sse-starlette, and Pillow.
-- Grading layer: Docker on the laptop only. Untrusted student code runs in one container per submission ([ADR-0011](adr/0011-grading-execution-sandbox.md)); nothing in this layer exists on TACC, which has no Docker or root.
 
 ### Bootstrap, and why jobs do not reinstall
 
@@ -151,7 +148,6 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 - `src/verifiable_tutor/corpus/`: OCR output to chunks, page-image manifest, corpus hashing.
 - `src/verifiable_tutor/llm/`: model client, replay and mock backends, caches, token accounting.
 - `src/verifiable_tutor/ui/web/`: React source; build output in `src/verifiable_tutor/ui/static/` (ignored).
-- `src/verifiable_tutor/grading/`: assignment package ingestion, the grading graph, the Docker sandbox runner, the audit log, and the CSV export.
 - `tacc/ocr/` and `tacc/index/`: the two batch job directories above.
 - `config/models.yaml`: provider endpoints, model ids, role routing, request parameters, response cache, and embedding settings; secrets stay in `.env`.
 
@@ -173,8 +169,6 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 | MinerU as the OCR pipeline | Mature pipeline with a good schema | Heavier stack and AGPL weights on one variant |
 | Qwen3-Embedding-4B as the default | Better Chinese to English retrieval numbers | Eight GB of weights and several times the embedding time, unproven need |
 | Qwen service as the primary text backend | Exact alignment with the frozen proposal and no external API cost | Queue, cold start, address churn, and shared GPU contention slow iteration and demo reliability; kept as an optional baseline ([ADR-0005](adr/0005-external-model-apis-as-primary.md)) |
-| Unattended automatic grading | No TA effort at all | A wrong grade would be final, evidence optional, and appeals impossible; the assistant recommends and the TA approves ([ADR-0010](adr/0010-ta-grading-agent.md)) |
-| Running student code in the TACC job container for grading | The closest environment to the course assignments | TACC gives no strong sandbox for untrusted code, and the one-hour job and queue make interactive grading impractical; grading runs in a local Docker sandbox ([ADR-0011](adr/0011-grading-execution-sandbox.md)) |
 
 ## Verification spikes
 
@@ -188,7 +182,6 @@ No job has been submitted yet. These run in week one, in this order, and each ha
 6. **End-to-end smoke** (1 CPU job plus external API calls, about 30 minutes). Ten benchmark questions through the full pipeline with the span verifier and the policy gate, using cached responses for repeat runs. Exit criterion: traces, tests, and results follow the required execution path.
 7. **LangGraph import spike** (4 CPUs, about 15 minutes). Install the LangGraph dependency group through the bootstrap, import `langgraph` and `langgraph-checkpoint-sqlite` under the public interpreter, and run a two node graph with the SQLite checkpointer. Exit criterion: the import and the graph run inside one job; otherwise record the in-memory saver fallback ([ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md)).
 8. **Local Langfuse spike** (laptop, no TACC job). Bring up the Docker Compose stack from [langfuse-local.md](langfuse-local.md), emit one trace with a session id, and confirm the health endpoints, the web UI, and `TELEMETRY_ENABLED=false`. Exit criterion: one trace is visible and the backend still answers with tracing disabled.
-9. **Grading sandbox spike** (laptop, no TACC job). Build one assignment image, run a benign submission and a deliberately hostile one (network access, a read of `$HOME` or the repository, a write outside the mount, and a fork storm) in the Docker sandbox from [ADR-0011](adr/0011-grading-execution-sandbox.md), and confirm the limits and rejections. Exit criterion: the hostile submission cannot reach the network or host files, the runner kills a timeout, and the evidence records the image digest.
 
 ## Risks and open questions
 
@@ -205,8 +198,6 @@ No job has been submitted yet. These run in week one, in this order, and each ha
 - The frontend build depends on the laptop Node toolchain; a clean machine needs Node and `npm ci` before it can serve the UI.
 - LangGraph adds a dependency group that must be pinned and import-verified on TACC, and its SQLite checkpointer depends on the native sqlite-vec extension, which may fail under PRoot; the fallback is the in-memory saver plus the JSONL session store ([ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md)).
 - The local Langfuse stack adds a six container Docker Compose dependency, about 5 to 10 GB of disk, and a startup step to the development loop; it is local only and the application must fail open when it is down ([ADR-0007](adr/0007-langfuse-for-local-model-call-tracing.md), [langfuse-local.md](langfuse-local.md)).
-- Grading adds a Docker dependency on the laptop and one image per assignment. The local image reproduces the course assignment environment, it is not the environment itself, so the report states the alignment per assignment ([ADR-0011](adr/0011-grading-execution-sandbox.md)).
-- Grading quality depends on the assignment package and on a small constructed sample; RQ5 is reported as a small-sample result, not as a validated automatic grader ([ADR-0010](adr/0010-ta-grading-agent.md)).
 - The schema is single-course by design. Multi-course support is recorded as future development in [prd.md](prd.md#future-development) and would be a data model migration, not a configuration switch.
 - The TA was asked on 2026-10-29 whether the final demo must run the backend on TACC and whether forwarding to a student web port is allowed; no reply is recorded yet. Until the reply, the local backend is the demo mode and TACC stays the evaluation evidence path.
 

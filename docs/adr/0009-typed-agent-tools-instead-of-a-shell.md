@@ -30,7 +30,6 @@ A generic shell exposed to a model would allow arbitrary file access (including 
 - The user-visible work chain renders each tool call: tool name, model-supplied arguments, the exact command line, the exit code, and truncated standard output and error. This is what "command-line execution" means in the product, and it is produced from the tool layer rather than from a shell session.
 - Before running user-supplied code, the graph interrupts and asks the user to confirm, using the LangGraph interrupt mechanism ([ADR-0008](0008-langgraph-as-agent-orchestration-runtime.md)). Generated practice code that was already verified in batch runs without an extra confirmation. File writes outside the scratch directory are rejected by the runner.
 - The same runner code is used locally and on TACC. A Docker container is not part of the local execution path, because parity with TACC matters more than stronger local isolation.
-- This record covers the agent's own tools and generated practice code. Grading of untrusted student submissions is a separate execution class and uses its own Docker sandbox ([ADR-0011](0011-grading-execution-sandbox.md)).
 
 ## Consequences
 
@@ -81,5 +80,4 @@ A generic shell exposed to a model would allow arbitrary file access (including 
 - Environment strategy: [ADR-0001](0001-pinned-python-environment-without-docker.md)
 - Platform mechanics and the PRoot runtime: [../tacc-notes.md](../tacc-notes.md)
 - Practice lab and test runner: [../tech-selection.md](../tech-selection.md)
-- Grading sandbox for untrusted submissions: [ADR-0011](0011-grading-execution-sandbox.md)
 - User namespaces and PRoot constraints: course workspace `tacc-env-docs/SOURCES.md`, outside this repository

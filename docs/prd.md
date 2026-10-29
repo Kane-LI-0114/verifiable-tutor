@@ -20,7 +20,6 @@ Goals:
 - **G2 Enforced disclosure.** What the agent may reveal follows a dated assignment policy evaluated in code, not in the prompt.
 - **G3 Verified practice.** A practice exercise is shown only with a reference solution that has compiled and passed the pack's tests in the course environment.
 - **G4 Reproducible evaluation.** Representative cases, recorded traces, and a failure analysis produced from TACC runs, with no paid call needed to rerun.
-- **G5 Grading assistance.** A TA can run a grading batch, receive per-criterion score recommendations with evidence, and approve or edit them before any grade leaves the system.
 
 Course deliverables this must satisfy: a frontend for task input, visible progress, and result review; a backend with an agent workflow, a model API, and tool and data integration; an evaluation with representative cases, metrics, and at least one analyzed failure; a tested demo; and a runnable code repository.
 
@@ -29,15 +28,15 @@ Course deliverables this must satisfy: a frontend for task input, visible progre
 | Role | Description | Access |
 |---|---|---|
 | Student | A person with a course student email address | Registers and signs in; owns their conversations, practice runs, and traces |
-| Instructor or TA | Owns the course: maintains the deadline registry that drives the disclosure policy, and runs the grading assistant on student submissions | Seeded account; role checked server-side; registry editing in P0 is a versioned configuration change by the team, the in-app editor and the TA workbench are P1; grading data is visible only to this role |
+| Instructor or TA | Maintains the deadline registry that drives the disclosure policy | Seeded account; role checked server-side; registry editing in P0 is a versioned configuration change by the team, the in-app editor is P1 |
 | Demo operator | A team member driving the presentation | Uses a student or seeded account |
 | Grader or audience | Watches the demo | No account and no direct access to the deployment |
 
-Accounts exist to associate conversations and traces with a person and to prepare the system for real use. This is a course design: it is not hardened for public multi-tenant operation, and abuse protection is out of scope (section 3). Students never see grading data, submissions, or grading traces.
+Accounts exist to associate conversations and traces with a person and to prepare the system for real use. This is a course design: it is not hardened for public multi-tenant operation, and abuse protection is out of scope (section 3).
 
 ## 3. Scope
 
-Priorities are build order, not a cut list. All P0 and P1 content is committed; P2 is best effort. The TA grading assistant is an extension beyond the frozen proposal; the report explains the deviation.
+Priorities are build order, not a cut list. All P0 and P1 content is committed; P2 is best effort.
 
 **P0, required for the first end-to-end demo and evaluation run:**
 
@@ -58,7 +57,6 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 - In-app deadline registry editor for the instructor role.
 - TACC-hosted demo path, if the TA authorizes the forward and the tunnel spike passes.
 - DeepSeek web search augmentation for questions the corpus cannot answer.
-- TA grading assistant: assignment package, batch submission upload, rubric and test based score recommendations with evidence, a review workbench, an audit log, and CSV export.
 
 **P2, best effort:**
 
@@ -67,24 +65,19 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 - Teaching-video voiceover pipeline built on TTS.
 - A reranker for retrieval.
 - Notifications or email digests.
-- Grading of free-form written assignments.
 
 **Non-goals:**
 
 - A public deployment or real multi-tenant operation.
 - Quotas, daily budgets, login lockout, and abuse protection. The account system has basic authentication and authorization only.
-- Plagiarism detection and gradebook integrations beyond CSV export.
-- Unattended automatic grading or automatic grade publication. The grading assistant recommends and a TA decides.
+- Plagiarism detection, gradebook integrations, and unattended automatic grading.
 - Mobile applications, native clients, and server-side rendering.
-- Strong sandboxing of user code on TACC (see ADR-0009, ADR-0011, and section 6).
+- Strong sandboxing of user code on TACC (see ADR-0009 and section 6).
 - Email deliverability guarantees beyond local demonstration.
 
 ### Future development
 
 - **Multi-course support.** The delivered system serves one course. Generalizing it needs a course-scoped data model (memberships, per-course corpus and index, per-course deadline registries), TA self-service course onboarding, and a per-course OCR and indexing pipeline. The current schema is single-course, so this is a migration rather than a configuration switch. Recorded as future work after the single-course evaluation.
-- **Student self-submission portal.** Students upload their own work instead of the TA bulk uploading, with identity binding, deadline enforcement, and resubmission rules.
-- **Written assignment grading.** Rubric grading for free-form answers and reports, with citation and evidence checks.
-- **Multi-course evaluation and shared TA tooling.** Benchmarks per course and grading packages shared across courses.
 
 ## 4. User journeys
 
@@ -99,7 +92,6 @@ Each journey is a demo or evaluation script and is accepted against its numbered
 - **J7 Voice.** The student records a question in the composer (transcribed by ASR) or attaches an audio file while a MiMo model is selected, and can play the answer back as speech.
 - **J8 Provider timeout.** A slow or unavailable provider produces an in-place timeout message with a retry action, without switching models and without exposing a raw provider error.
 - **J9 Offline replay.** With no network and no model calls, a recorded session replays through the real frontend and backend path.
-- **J10 TA grading batch.** A TA uploads an assignment package and a batch of student submissions, reviews the assistant's per-criterion scores with evidence, edits where needed, approves, and exports the grades.
 
 ## 5. Functional requirements
 
@@ -181,30 +173,14 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-H4 | User-supplied code requires explicit confirmation before execution; generated and pre-verified practice code does not | P0 | The confirmation appears as a graph interrupt and a UI action; declining runs nothing |
 | FR-H5 | Network isolation is not claimed; the limitation is stated in the report | P0 | The report limitations section and the tool documentation state it |
 
-### 5.7 TA grading assistance
-
-The grading assistant is a separate TA-side workflow. It recommends, the TA decides, and nothing is published or exported without approval.
-
-| ID | Requirement | Priority | Acceptance |
-|---|---|---|---|
-| FR-K1 | Assignment package: title, rubric criteria with maximum points, tests or reference solution, and the expected runtime image | P1 | A package validates against a schema and is stored per assignment |
-| FR-K2 | Batch submission upload by the TA (a zip or a file set with a student identifier); there is no student-facing upload in this deliverable | P1 | A batch parses into one submission per student; a malformed entry is reported and skipped |
-| FR-K3 | The grading assistant produces per-criterion score recommendations with evidence (file and line references, test outcomes, rubric notes), a feedback draft, and a confidence value; it never publishes a grade | P1 | Every recommended score cites evidence; the workbench marks the draft as unapproved |
-| FR-K4 | Code submissions run in the Docker sandbox from ADR-0011; test results become grade evidence | P1 | The sandbox blocks network and host file access, enforces limits, and records exit codes and output |
-| FR-K5 | TA review workbench: accept, edit, or reject each recommendation; approval is required before export; an approved record is immutable except through an audit-logged revision | P1 | A grade cannot be exported while unapproved; every edit is in the audit log |
-| FR-K6 | Audit log: every assistant suggestion, TA edit, approval, and export with the acting account and time | P1 | The log is complete for a batch and exportable |
-| FR-K7 | CSV export after approval: student identifier, rubric items, total, feedback | P1 | Exported totals equal the approved rubric sums |
-| FR-K8 | Grading data is hidden from students and from the student-facing trace; grading runs have their own JSONL trace and an optional local Langfuse trace without raw student identities | P1 | A student account cannot read submissions or grades; a trace export has pseudonymized student identifiers |
-| FR-K9 | The assignment package records the toolchain and the runtime image, and any known mismatch with the course environment is stated | P1 | A grading run records the image and toolchain versions, and the report states the mismatch, if any |
-
-### 5.8 Observability, evaluation, and delivery
+### 5.7 Observability, evaluation, and delivery
 
 | ID | Requirement | Priority | Acceptance |
 |---|---|---|---|
 | FR-I1 | JSONL session trace is the canonical record for replay and evaluation | P0 | Every session has a JSONL file with ordered events, including step, thinking, tool, and text events |
 | FR-I2 | Optional local Langfuse tracing of model calls and graph steps; fail-open; local development only | P0 | The application answers normally with Langfuse disabled or down; the runbook exists |
 | FR-I3 | Benchmark: 50 course questions, 10 policy scenarios, one practice pack, with later-released sessions held out | P0 | The benchmark files exist and the harness runs them from cache |
-| FR-I4 | Evaluation harness exports JSON results and the five research questions are answered | P0 | RQ1 to RQ5 each have a result table or figure in the report |
+| FR-I4 | Evaluation harness exports JSON results and the four research questions are answered | P0 | RQ1 to RQ4 each have a result table or figure in the report |
 | FR-I5 | At least one failure is analyzed by cause | P0 | The report names the dominant failure mode with trace evidence |
 | FR-J1 | The repository runs locally from a clean checkout with documented commands | P0 | A fresh clone plus the documented commands reaches a working chat |
 | FR-J2 | Tested demo runbook with the replay fallback | P0 | The demo can be run twice in a row, and replay works without network |
@@ -220,15 +196,12 @@ The grading assistant is a separate TA-side workflow. It recommends, the TA deci
 | NFR-2 | Provider failure handling | Same-model retries, explicit timeout copy, no cross-model fallback, no background retry |
 | NFR-3 | Privacy | Local development data stays on the laptop; model traces carry no email address; secrets only in `.env`; the report states which course excerpts leave the machine to model APIs |
 | NFR-4 | Authentication security | scrypt password hashing, HttpOnly and SameSite session cookie, same-origin CSRF posture, sanitized markdown rendering |
-| NFR-5 | Execution safety | Typed tools only, environment allowlist, resource limits, timeout kill, confirmation before user code (ADR-0009); untrusted student code only in the Docker sandbox (ADR-0011) |
+| NFR-5 | Execution safety | Typed tools only, environment allowlist, resource limits, timeout kill, confirmation before user code (ADR-0009) |
 | NFR-6 | Reproducibility | Temperature 0 and thinking off for evaluation runs, corpus hash recorded, responses cached so evaluation reruns need no paid call |
 | NFR-7 | Evidence integrity | 100 percent of displayed citations pass the deterministic verifier; abstain otherwise |
 | NFR-8 | Scale | Single-node, course-demo scale; no load or concurrency guarantees; multi-user correctness is tested, performance is not |
 | NFR-9 | Accessibility | Keyboard reachable controls and readable contrast in the main flows; full WCAG conformance is not claimed |
 | NFR-10 | Data lifecycle | Local SQLite and JSONL files; the instructor can delete a user's data; no retention guarantee |
-| NFR-11 | Grading execution isolation | Student code runs only in the Docker sandbox from ADR-0011, with no network, a read-only base image, a per-run writable directory, a non-root user, and CPU, memory, process, and wall-clock limits |
-| NFR-12 | Grading privacy and audit | Submissions, scores, and feedback are visible only to the TA role; every change is audit logged; student identifiers are pseudonymized in traces |
-| NFR-13 | Grading reproducibility | A grading run records the assignment package version, the runtime image, the model, and the prompt versions, so the same batch can be re-run from cache |
 
 ## 7. Configuration and data ownership
 
@@ -240,8 +213,6 @@ The grading assistant is a separate TA-side workflow. It recommends, the TA deci
 | Secrets: provider keys, SMTP authorization code, Langfuse keys, session secret | `.env`, ignored by Git; `.env.example` carries empty placeholders |
 | Corpus and page images, index, caches | `data/corpus/`, `data/index/`, `data/caches/` locally; `USERDIR` on TACC |
 | Session trace | JSONL under the local data directory; `USERDIR` on TACC |
-| Assignment packages, rubrics, submissions, grade recommendations, and the grading audit log | local data directory (SQLite plus files); grading runs locally and has no TACC path in this deliverable |
-| Grading runtime images | a `Dockerfile` inside each assignment package; Docker is a local grading dependency only (ADR-0011) |
 
 ## 8. Acceptance and evaluation targets
 
@@ -253,9 +224,8 @@ Targets are provisional and confirmed by the first evaluation run. They are stat
 | RQ2 practice verifiability | At or above 0.90 of generated exercises have a reference solution that compiles and passes the pack's tests; environment alignment documented; cost per exercise reported |
 | RQ3 disclosure correctness | At or above 9 of 10 policy scenarios correct, including the adversarial set; no false allow before the deadline |
 | RQ4 cost and latency | Latency, model calls per request, and paid-call cost reported; BM25, dense, and hybrid ablation reported |
-| RQ5 grading assistance | Per-criterion agreement with the TA reference scores on 5 to 10 constructed submissions, evidence validity (line references exist, tests ran), TA edit rate reported, and at least one grading failure analyzed |
 | Failure analysis | At least one dominant failure mode analyzed with trace evidence |
-| Course deliverable check | Frontend, backend, evaluation, tested demo including one grading batch, and a runnable repository are all demonstrated |
+| Course deliverable check | Frontend, backend, evaluation, tested demo, and a runnable repository are all demonstrated |
 
 ## 9. Milestones
 
@@ -263,8 +233,8 @@ There is no published presentation or submission date. Work is ordered in four w
 
 1. **Corpus, index, and access.** TACC OCR and index jobs, retrieval, accounts, sessions, and the local run path.
 2. **Agent and policy.** LangGraph graph, disclosure gate, deadline registry, evidence verification, work chain, and model control.
-3. **Practice, teaching, voice, and grading.** MPI pack, test runner, explainer, study aids, microphone and speech output, assignment package ingestion, the Docker grading sandbox, and the TA workbench.
-4. **Evaluation and delivery.** Benchmark, evaluation harness including RQ5 grading, local Langfuse traces, report and figures, demo runbook with one grading batch, replay fallback.
+3. **Practice, teaching, and voice.** MPI pack, test runner, explainer, study aids, microphone and speech output.
+4. **Evaluation and delivery.** Benchmark, evaluation harness, local Langfuse traces, report and figures, demo runbook, replay fallback.
 
 ## 10. Open questions
 
@@ -274,17 +244,12 @@ There is no published presentation or submission date. Work is ordered in four w
 - The Langfuse stack disk usage is estimated at 5 to 10 GB; measure once the stack is first started.
 - The SQLite checkpointer depends on the native sqlite-vec extension; the TACC import spike is pending (ADR-0008).
 - The practice pack set beyond the first MPI pack is P2; the report states the pack scope.
-- The grading assistant is planned as P1 after the student tutoring loop: code assignments first, written assignments P2, TA bulk upload only (no student submission portal), and a local Docker sandbox only (no TACC grading). Confirm or adjust.
-- Grading quality evidence uses 5 to 10 constructed submissions scored by a team member as the TA reference, because no historical submissions exist yet.
-- Multi-course support is recorded as future development in section 3, not implemented.
 
 ## 11. Related documents
 
 - Proposal: [../proposal/proposal.md](../proposal/proposal.md)
 - Technology selection: [tech-selection.md](tech-selection.md)
 - Decision records: [adr/](adr/)
-- TA grading assistant decision: [ADR-0010](adr/0010-ta-grading-agent.md)
-- Grading execution sandbox: [ADR-0011](adr/0011-grading-execution-sandbox.md)
 - Local Langfuse runbook: [langfuse-local.md](langfuse-local.md)
 - Local email runbook: [email-local.md](email-local.md)
 - Agent rules: [../AGENTS.md](../AGENTS.md)
