@@ -152,3 +152,29 @@ def test_tool_call_fragments_are_streamed() -> None:
     assert arguments == '{"query":"roofline"}'
     assert events[-1].kind == "finish"
     assert events[-1].finish_reason == "tool_calls"
+
+
+def test_stream_retryable_error_retries_same_model() -> None:
+    calls: list[httpx.Request] = []
+    chunks = [
+        chunk(model="deepseek-flash", choices=[delta(content="hello")]),
+        chunk(
+            model="deepseek-flash",
+            choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        ),
+    ]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(503, json={"error": {"message": "busy"}})
+        return sse_response(chunks)
+
+    events = list(
+        make_adapter(handler).chat_stream(
+            [{"role": "user", "content": "ping"}], max_output_tokens=16
+        )
+    )
+
+    assert [event.kind for event in events] == ["text", "finish"]
+    assert len(calls) == 2

@@ -8,6 +8,7 @@ from verifiable_tutor.llm.adapter import (
     CapabilityError,
     ChatResult,
     ModelAdapter,
+    ModelResponseError,
     ModelSelectionError,
     ProviderAPIError,
 )
@@ -188,30 +189,68 @@ def test_tool_call_is_normalized_and_thinking_forced_off() -> None:
     assert result.finish_reason == "tool_calls"
 
 
-def test_fallback_provider_used_after_retryable_error() -> None:
+def test_retryable_error_retries_same_model_then_succeeds() -> None:
     seen: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request.url.host)
-        if request.url.host == "api.deepseek.com":
-            return httpx.Response(429, json=error_json("rate limited"))
-        return httpx.Response(200, json=completion_json(model="mimo-v2.6-flash"))
+        if len(seen) == 1:
+            return httpx.Response(503, json=error_json("busy"))
+        return httpx.Response(200, json=completion_json(model="deepseek-flash"))
 
     result = make_adapter(handler).chat([{"role": "user", "content": "ping"}])
 
-    assert result.provider == "mimo"
-    assert result.model == "mimo-v2.6-flash"
-    assert seen == ["api.deepseek.com", "api.xiaomimimo.com"]
+    assert result.provider == "deepseek"
+    assert result.model == "deepseek-flash"
+    assert seen == ["api.deepseek.com", "api.deepseek.com"]
 
 
-def test_non_retryable_api_error_is_wrapped() -> None:
+def test_retryable_error_exhausts_retries_with_user_facing_error() -> None:
+    calls: list[httpx.Request] = []
+
     def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(503, json=error_json("busy"))
+
+    with pytest.raises(ModelResponseError) as excinfo:
+        make_adapter(handler).chat([{"role": "user", "content": "ping"}])
+
+    error = excinfo.value
+    assert error.reason == "unavailable"
+    assert error.attempts == 3
+    assert error.user_message
+    assert len(calls) == 3
+
+
+def test_timeout_after_retries_reports_timeout() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        raise httpx.ReadTimeout("slow upstream", request=request)
+
+    with pytest.raises(ModelResponseError) as excinfo:
+        make_adapter(handler).chat([{"role": "user", "content": "ping"}])
+
+    error = excinfo.value
+    assert error.reason == "timeout"
+    assert error.attempts == 3
+    assert error.user_message
+    assert len(calls) == 3
+
+
+def test_non_retryable_api_error_is_not_retried() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
         return httpx.Response(401, json=error_json("bad key"))
 
     with pytest.raises(ProviderAPIError) as excinfo:
         make_adapter(handler).chat([{"role": "user", "content": "ping"}])
 
     assert excinfo.value.status == 401
+    assert len(calls) == 1
 
 
 def test_unknown_tier_raises_model_selection_error() -> None:

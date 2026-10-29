@@ -60,15 +60,9 @@ class RoleParams(_StrictModel):
     max_output_tokens: int | None = None
 
 
-class RoleFallback(_StrictModel):
-    provider: str
-    model: str
-
-
 class RoleConfig(_StrictModel):
     provider: str
     model: str
-    fallback: RoleFallback | None = None
     thinking: str | None = None
     params: RoleParams = Field(default_factory=RoleParams)
 
@@ -197,7 +191,7 @@ def load_model_config(
     api_keys["search"] = search_key
 
     for role_name, role in config.roles.items():
-        _validate_role(role_name, role, config, api_keys)
+        _validate_role(role_name, role, config)
     _validate_tts(config)
     if config.thinking.disable_for_tools is None:
         raise ConfigError("thinking.disable_for_tools must be set")
@@ -217,7 +211,6 @@ def _validate_role(
     role_name: str,
     role: RoleConfig,
     config: ModelConfig,
-    api_keys: Mapping[str, str],
 ) -> None:
     provider = config.providers.get(role.provider)
     if provider is None:
@@ -228,21 +221,6 @@ def _validate_role(
             f"for provider {role.provider!r}"
         )
     _validate_thinking(role_name, role.provider, role.thinking, config)
-    if role.fallback is not None:
-        fallback_provider = config.providers.get(role.fallback.provider)
-        if fallback_provider is None:
-            raise ConfigError(
-                f"role {role_name!r} fallback names unknown provider {role.fallback.provider!r}"
-            )
-        if role.fallback.model not in fallback_provider.models:
-            raise ConfigError(
-                f"role {role_name!r} fallback names unknown model alias "
-                f"{role.fallback.model!r} for provider {role.fallback.provider!r}"
-            )
-        if role.fallback.provider not in api_keys:
-            raise ConfigError(
-                f"role {role_name!r} fallback provider {role.fallback.provider!r} has no API key"
-            )
 
 
 def _validate_tts(config: ModelConfig) -> None:

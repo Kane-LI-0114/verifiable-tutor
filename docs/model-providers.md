@@ -38,6 +38,7 @@ Routing rules the agent layer must enforce:
 7. Web search: always call the DeepSeek Search and Fetch REST APIs, even when the chat model is MiMo. These APIs are provider independent and authenticated with the DeepSeek key.
 8. JSON output: no provider offers `json_schema`. Put the schema in the prompt, set `json_object`, validate with pydantic, and retry a bounded number of times.
 9. Tool calls: disable thinking for the whole tool loop, echo the full assistant message (including `reasoning_content`) on every later turn for both providers, validate the tool arguments in code, and never rely on `tool_choice` other than `auto`.
+10. Failure handling: retry the selected model on transient errors (timeouts, connection errors, 408, 409, 429, 5xx) up to `defaults.max_retries`. Never fall back to a different model or provider. After the last attempt raise `ModelResponseError` with `reason` (`timeout` or `unavailable`) and a `user_message`; the service shows that copy and the user decides when to retry. Non-retryable errors keep the `ProviderAPIError` status.
 
 Adapter surface, current and pending:
 

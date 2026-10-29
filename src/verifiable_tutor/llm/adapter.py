@@ -1,7 +1,7 @@
 """Unified model adapter over the external OpenAI-compatible providers.
 
 The adapter owns provider selection, request shaping, response normalization,
-thinking control, tool-call handling, fallback, streaming normalization, and
+thinking control, tool-call handling, same-model retries, streaming normalization, and
 the DeepSeek search and fetch APIs. Tests inject an ``httpx`` transport at the
 network boundary; the live smoke script uses the real network.
 """
@@ -42,9 +42,12 @@ class CapabilityError(AdapterError):
 class ProviderAPIError(AdapterError):
     """Raised when a provider returns an error response."""
 
-    def __init__(self, status: int | None, message: str) -> None:
+    def __init__(
+        self, status: int | None, message: str, *, timed_out: bool = False
+    ) -> None:
         self.status = status
         self.message = message
+        self.timed_out = timed_out
         super().__init__(f"provider error status={status}: {message}")
 
     @property
@@ -52,6 +55,26 @@ class ProviderAPIError(AdapterError):
         if self.status is None:
             return True
         return self.status in {408, 409, 429} or self.status >= 500
+
+
+class ModelResponseError(AdapterError):
+    """Raised after same-model retries are exhausted.
+
+    ``user_message`` is the copy the service shows to the user; the user then
+    decides when to retry. ``reason`` is a stable code for the UI layer.
+    """
+
+    def __init__(
+        self, reason: str, attempts: int, detail: str, status: int | None = None
+    ) -> None:
+        self.reason = reason
+        self.attempts = attempts
+        self.detail = detail
+        self.status = status
+        self.user_message = _MODEL_ERROR_MESSAGES[reason]
+        super().__init__(
+            f"model {reason} after {attempts} attempts: {detail}"
+        )
 
 
 @dataclass(frozen=True)
@@ -130,6 +153,10 @@ _AUDIO_BLOCK_TYPES = {"input_audio"}
 _ASR_MIMES = {"audio/wav", "audio/mpeg", "audio/mp3"}
 _ASR_MAX_BASE64_BYTES = 10 * 1024 * 1024
 _RETRYABLE_STATUS = {408, 409, 429}
+_MODEL_ERROR_MESSAGES = {
+    "timeout": "The model did not respond in time. Please try again.",
+    "unavailable": "The model is temporarily unavailable. Please try again.",
+}
 
 
 class ModelAdapter:
@@ -303,7 +330,6 @@ class ModelAdapter:
         top_p: float | None = None,
         max_output_tokens: int | None = None,
         use_cache: bool = True,
-        _allow_fallback: bool = True,
     ) -> ChatResult:
         provider_name, model_id, request = self._prepare_chat(
             role,
@@ -328,39 +354,27 @@ class ModelAdapter:
                 except (KeyError, TypeError, ValueError):
                     pass
 
-        try:
-            response = self._client(provider_name).chat.completions.create(**request)
-        except openai.APIStatusError as exc:
-            error = ProviderAPIError(exc.status_code, _error_message(exc))
-            return self._maybe_fallback(
-                error,
-                role,
-                messages,
-                thinking,
-                tools,
-                tool_choice,
-                response_format,
-                temperature,
-                top_p,
-                max_output_tokens,
-                use_cache,
-                _allow_fallback,
-            )
-        except (openai.APIConnectionError, openai.APITimeoutError) as exc:
-            error = ProviderAPIError(None, str(exc))
-            return self._maybe_fallback(
-                error,
-                role,
-                messages,
-                thinking,
-                tools,
-                tool_choice,
-                response_format,
-                temperature,
-                top_p,
-                max_output_tokens,
-                use_cache,
-                _allow_fallback,
+        attempts = self._config.defaults.max_retries + 1
+        last_error: ProviderAPIError | None = None
+        response = None
+        for attempt in range(attempts):
+            try:
+                response = self._client(provider_name).chat.completions.create(**request)
+                break
+            except openai.APIStatusError as exc:
+                last_error = ProviderAPIError(exc.status_code, _error_message(exc))
+            except openai.APITimeoutError as exc:
+                last_error = ProviderAPIError(None, str(exc), timed_out=True)
+            except openai.APIConnectionError as exc:
+                last_error = ProviderAPIError(None, str(exc))
+            if not last_error.retryable:
+                raise last_error
+            if attempt + 1 >= attempts:
+                raise _model_response_error(last_error, attempts) from last_error
+
+        if response is None:  # pragma: no cover - the loop either returns or raises
+            raise _model_response_error(
+                ProviderAPIError(None, "no response"), attempts
             )
 
         choice = response.choices[0]
@@ -428,17 +442,41 @@ class ModelAdapter:
                     yield from replay
                     return
 
-        try:
-            stream = self._client(provider_name).chat.completions.create(**request)
-        except openai.APIStatusError as exc:
-            raise ProviderAPIError(exc.status_code, _error_message(exc)) from exc
-        except (openai.APIConnectionError, openai.APITimeoutError) as exc:
-            raise ProviderAPIError(None, str(exc)) from exc
+        attempts = self._config.defaults.max_retries + 1
+        last_error: ProviderAPIError | None = None
+        stream = None
+        for attempt in range(attempts):
+            try:
+                stream = self._client(provider_name).chat.completions.create(**request)
+                break
+            except openai.APIStatusError as exc:
+                last_error = ProviderAPIError(exc.status_code, _error_message(exc))
+            except openai.APITimeoutError as exc:
+                last_error = ProviderAPIError(None, str(exc), timed_out=True)
+            except openai.APIConnectionError as exc:
+                last_error = ProviderAPIError(None, str(exc))
+            if not last_error.retryable:
+                raise last_error
+            if attempt + 1 >= attempts:
+                raise _model_response_error(last_error, attempts) from last_error
+
+        if stream is None:  # pragma: no cover - the loop either returns or raises
+            raise _model_response_error(ProviderAPIError(None, "no stream"), attempts)
 
         events: list[StreamEvent] = []
-        for event in self._events_from_chunks(stream):
-            events.append(event)
-            yield event
+        try:
+            for event in self._events_from_chunks(stream):
+                events.append(event)
+                yield event
+        except (openai.APIError, httpx.HTTPError) as exc:
+            raise _model_response_error(
+                ProviderAPIError(
+                    None,
+                    str(exc),
+                    timed_out=isinstance(exc, openai.APITimeoutError),
+                ),
+                attempts,
+            ) from exc
         if use_cache:
             self._cache.set(
                 "chat_stream", cache_key, [_stream_event_to_dict(event) for event in events]
@@ -772,39 +810,17 @@ class ModelAdapter:
             )
         return result
 
-    def _maybe_fallback(
-        self,
-        error: ProviderAPIError,
-        role: str,
-        messages: Sequence[Mapping[str, Any]],
-        thinking: str | None,
-        tools: Sequence[Mapping[str, Any]] | None,
-        tool_choice: str,
-        response_format: Mapping[str, Any] | None,
-        temperature: float | None,
-        top_p: float | None,
-        max_output_tokens: int | None,
-        use_cache: bool,
-        allow_fallback: bool,
-    ) -> ChatResult:
-        fallback = self._config.roles[role].fallback
-        if allow_fallback and error.retryable and fallback is not None:
-            return self.chat(
-                messages,
-                role=role,
-                provider=fallback.provider,
-                tier=fallback.model,
-                thinking=thinking,
-                tools=tools,
-                tool_choice=tool_choice,
-                response_format=response_format,
-                temperature=temperature,
-                top_p=top_p,
-                max_output_tokens=max_output_tokens,
-                use_cache=use_cache,
-                _allow_fallback=False,
-            )
-        raise error
+def _model_response_error(
+    error: ProviderAPIError, attempts: int
+) -> ModelResponseError:
+    timed_out = error.timed_out or error.status in {408, 504}
+    reason = "timeout" if timed_out else "unavailable"
+    return ModelResponseError(
+        reason=reason,
+        attempts=attempts,
+        detail=error.message,
+        status=error.status,
+    )
 
 
 def _transcript_to_dict(result: TranscriptResult) -> dict[str, Any]:

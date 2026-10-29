@@ -62,15 +62,14 @@ thinking:
   disable_for_tools: true
 
 # Each role picks a provider and a model alias, and may override request
-# parameters. The chat role lists a fallback provider used when the primary
-# call fails after retries.
+# parameters. Failures retry the same model up to defaults.max_retries; the
+# adapter never switches models or providers automatically. When the retries
+# are exhausted it raises a user-facing timeout or unavailable message, and
+# the user decides when to retry.
 roles:
   chat:
     provider: deepseek
     model: flash
-    fallback:
-      provider: mimo
-      model: flash
     thinking: "off"
     params:
       temperature: 0.0

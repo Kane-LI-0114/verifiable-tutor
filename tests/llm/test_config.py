@@ -55,9 +55,6 @@ roles:
   chat:
     provider: deepseek
     model: flash
-    fallback:
-      provider: mimo
-      model: flash
     thinking: "off"
     params:
       max_output_tokens: 2048
@@ -141,7 +138,7 @@ def test_unknown_role_provider_is_rejected(config_path: Path) -> None:
 def test_unknown_role_model_alias_is_rejected(config_path: Path) -> None:
     path = config_path
     path.write_text(
-        MINIMAL_CONFIG.replace("model: flash\n    fallback", "model: missing\n    fallback", 1),
+        MINIMAL_CONFIG.replace("model: flash\n    thinking", "model: missing\n    thinking", 1),
         encoding="utf-8",
     )
     with pytest.raises(ConfigError, match="missing"):

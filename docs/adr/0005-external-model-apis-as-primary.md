@@ -6,6 +6,8 @@
 | **Date** | 2026-10-29 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
+> **Superseded in part.** [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) replaces the cross-model fallback part of this decision. The rest stands. The live-verified model ids are `deepseek-flash`, `mimo-v2.6-flash`, and `mimo-v2.6-pro`; see [config/models.yaml](../../config/models.yaml).
+
 ## Context
 
 The frozen proposal commits to the course Qwen service on TACC as the primary model backend, with external LLM and search APIs as optional baselines. Two things changed after the proposal:
@@ -13,11 +15,11 @@ The frozen proposal commits to the course Qwen service on TACC as the primary mo
 - The staff clarification of 2026-10-28 says that TACC and the provided Qwen model are not mandatory, and that external LLM APIs and external computing resources are acceptable ([../tacc-notes.md](../tacc-notes.md)). It also says the course may not reimburse external API costs, so every external result must be cached.
 - Text generation is the highest-latency and highest-cost step of the agent. Pinning it to a shared Qwen job means every iteration waits on a queue, a 12 minute 40 second cold start, and an address that changes per job. The team wants faster iteration and a provider that can be swapped from configuration.
 
-Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSeek at `https://api.deepseek.com/v1` with models `deepseek-v4-flash` and `deepseek-v4-pro`, and Xiaomi MiMo at `https://api.xiaomimimo.com/v1` with models `mimo-v2.5` and `mimo-v2.5-pro`. The model ids were read from the local client configuration and must be confirmed at the first live call. Embeddings stay local: BGE-M3 on TACC was already chosen in [ADR-0004](0004-hybrid-retrieval-with-bge-m3.md), and keeping them local makes retrieval reproducible and free.
+Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSeek at `https://api.deepseek.com/v1` with models `deepseek-flash` and `deepseek-v4-pro`, and Xiaomi MiMo at `https://api.xiaomimimo.com/v1` with models `mimo-v2.6-flash` and `mimo-v2.6-pro`. The model ids were read from the local client configuration and must be confirmed at the first live call. Embeddings stay local: BGE-M3 on TACC was already chosen in [ADR-0004](0004-hybrid-retrieval-with-bge-m3.md), and keeping them local makes retrieval reproducible and free.
 
 ## Decision
 
-- **Primary text generation:** external OpenAI-compatible APIs through the `openai` SDK. The `chat` role points at DeepSeek `deepseek-v4-flash` with Xiaomi MiMo `mimo-v2.5` as the fallback. The `translate_query` role uses DeepSeek, and the `classify_intent` role uses MiMo. The provider mapping is configuration, not code.
+- **Primary text generation:** external OpenAI-compatible APIs through the `openai` SDK. The `chat` role points at DeepSeek `deepseek-flash`; [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) removes the earlier cross-model fallback. The `translate_query` role uses DeepSeek, and the `classify_intent` role uses MiMo. The provider mapping is configuration, not code.
 - **Embeddings:** BGE-M3 runs on TACC, both in the index job and for query embedding in the backend. Embeddings are not an external API.
 - **Course Qwen service:** an optional TACC baseline, not on the primary path.
 - **Secrets:** only API keys live in `.env` at the repository root, which Git ignores. The committed [.env.example](../../.env.example) is the template.
