@@ -1,0 +1,61 @@
+digraph prd_usecase {
+  graph [rankdir=LR, splines=line, nodesep=0.22, ranksep=0.42, fontname="Helvetica", fontsize=9,
+         bgcolor="white", pad=0.10, newrank=true, compound=true];
+  node [fontname="Helvetica", fontsize=8.5, margin="0.05,0.03"];
+  edge [fontname="Helvetica", fontsize=7.5, color="#333333", arrowsize=0.6];
+
+  student [label="Student", shape=box, style="rounded,filled", fillcolor="#e6e6e6", width=1.0, height=0.34];
+  ta      [label="Instructor / TA", shape=box, style="rounded,filled", fillcolor="#e6e6e6", width=1.2, height=0.34];
+  tacc    [label="TACC cluster\n(Slurm job container)", shape=box, style="rounded,dashed,filled",
+           fillcolor="#ffffff", width=1.5, height=0.42];
+
+  subgraph cluster_student {
+    label="Student use cases"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    account  [label="Register with student email,\nsign in, reset password", shape=ellipse];
+    ask      [label="Ask a course question\n(with citations)", shape=ellipse];
+    outline  [label="Request a review outline", shape=ellipse];
+    quiz     [label="Take a self-test:\nsingle choice, multiple choice,\ntrue or false, short answer, code", shape=ellipse];
+    practice [label="Practise in the\npractice lab", shape=ellipse];
+    explain  [label="Submit own solution\nfor line-anchored teaching", shape=ellipse];
+    voice    [label="Ask by voice,\nlisten to the answer", shape=ellipse];
+  }
+
+  subgraph cluster_ta {
+    label="Instructor / TA use cases"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    registry [label="Maintain the\nassignment deadline registry", shape=ellipse];
+  }
+
+  subgraph cluster_guarantee {
+    label="Cross-cutting capabilities (included)"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    evidence [label="Retrieve course evidence\nand cite page and quote", shape=ellipse];
+    verify   [label="Verify every\nquoted span", shape=ellipse];
+    policy   [label="Apply the disclosure\npolicy state", shape=ellipse];
+    grade    [label="Grade the answer\nwith course citations", shape=ellipse];
+    refcheck [label="Verify the reference\nanswer", shape=ellipse];
+    runcode  [label="Run a code answer\nas a TACC job", shape=ellipse];
+  }
+
+  student -> account;
+  student -> ask;
+  student -> outline;
+  student -> quiz;
+  student -> practice;
+  student -> explain;
+  student -> voice;
+
+  ta -> registry;
+
+  ask -> evidence [style=dashed, arrowhead=onormal, label="«include»"];
+  ask -> verify [style=dashed, arrowhead=onormal, label="«include»"];
+  ask -> policy [style=dashed, arrowhead=onormal, label="«include»"];
+  outline -> evidence [style=dashed, arrowhead=onormal, label="«include»"];
+  quiz -> refcheck [style=dashed, arrowhead=onormal, label="«include»"];
+  quiz -> grade [style=dashed, arrowhead=onormal, label="«include»"];
+  practice -> refcheck [style=dashed, arrowhead=onormal, label="«include»"];
+  practice -> grade [style=dashed, arrowhead=onormal, label="«include»"];
+  explain -> policy [style=dashed, arrowhead=onormal, label="«include»"];
+  grade -> runcode [style=dashed, arrowhead=onormal, label="«extend» (code answers)"];
+
+  policy -> registry [style=dotted, arrowhead=none, label="reads"];
+  runcode -> tacc [style=dotted, arrowhead=none, label="executes on"];
+}

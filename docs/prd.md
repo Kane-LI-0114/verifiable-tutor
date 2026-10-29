@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.3 |
+| **Status** | Draft for review, version 0.4 |
 | **Date** | 2026-10-29 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
@@ -21,6 +21,14 @@ Goals:
 - **G3 Verified practice and self-test.** A practice exercise or self-test question is shown with a reference answer that has compiled and passed its tests where applicable; a student's answer is graded against that reference answer and explained with citations.
 - **G4 Reproducible evaluation.** Representative cases, recorded traces, and a failure analysis produced from TACC runs, with no paid call needed to rerun.
 
+### System overview
+
+The backend and its stores run on the developer laptop for the demo, the model calls go to external OpenAI-compatible APIs, and TACC jobs produce the corpus, index, evaluation evidence, and self-test code execution. Langfuse is used in local development only. The proposal's own use case and container figures are the frozen submission; the figures in this document reflect the decisions recorded here.
+
+![Figure 1. Containers and external dependencies](figures/prd-containers.png)
+
+*Figure 1. Containers and external dependencies. Source: [figures/prd-containers.dot](figures/prd-containers.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-containers.dot -o figures/prd-containers.png`.*
+
 Course deliverables this must satisfy: a frontend for task input, visible progress, and result review; a backend with an agent workflow, a model API, and tool and data integration; an evaluation with representative cases, metrics, and at least one analyzed failure; a tested demo; and a runnable code repository.
 
 ## 2. Users and roles
@@ -33,6 +41,12 @@ Course deliverables this must satisfy: a frontend for task input, visible progre
 | Grader or audience | Watches the demo | No account and no direct access to the deployment |
 
 Accounts exist to associate conversations and traces with a person and to prepare the system for real use. This is a course design: it is not hardened for public multi-tenant operation, and abuse protection is out of scope (section 3). Students never see other users' conversations or traces. Self-test grading is student-facing; TAs do not grade homework in this system.
+
+### Actors and use cases
+
+![Figure 2. Actors and use cases](figures/prd-usecase.png)
+
+*Figure 2. Actors and use cases. Source: [figures/prd-usecase.dot](figures/prd-usecase.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-usecase.dot -o figures/prd-usecase.png`.*
 
 ## 3. Scope
 
@@ -221,6 +235,14 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | Session trace | JSONL under the local data directory; `USERDIR` on TACC |
 | Generated question bank, student answers, grading results, and TACC job outputs | local data directory (SQLite plus files); the TACC job writes to `USERDIR` and the backend downloads the results |
 | TACC execution job | `tacc/exec/` task directory; the local backend submits, polls, and downloads with the tcloud CLI |
+
+### Data model
+
+Figure 3 shows the relational entities. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners.
+
+![Figure 3. Relational entities](figures/prd-er.png)
+
+*Figure 3. Relational entities and relationships. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`.*
 
 ## 8. Acceptance and evaluation targets
 

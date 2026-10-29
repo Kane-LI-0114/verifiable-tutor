@@ -1,0 +1,80 @@
+digraph prd_containers {
+  graph [rankdir=LR, splines=ortho, nodesep=0.18, ranksep=0.34, fontname="Helvetica", fontsize=9,
+         bgcolor="white", pad=0.10, compound=true];
+  node [fontname="Helvetica", fontsize=7.5, shape=box, style="rounded,filled", fillcolor="#f5f5f5",
+        margin="0.06,0.03", height=0.30];
+  edge [fontname="Helvetica", fontsize=7, color="#333333", arrowsize=0.5];
+
+  student [label="Student\nbrowser", fillcolor="#e6e6e6", width=1.0];
+  ta      [label="Instructor / TA\nbrowser", fillcolor="#e6e6e6", width=1.1];
+
+  subgraph cluster_laptop {
+    label="Developer laptop: local demo deployment"; fontsize=9; style="rounded"; color="#666666"; margin=10;
+
+    ui [label="React SPA\nAI Elements chat, work chain,\nevidence panel, self-test UI", fillcolor="#e6e6e6", width=2.1];
+
+    subgraph cluster_backend {
+      label="FastAPI backend (single process)"; fontsize=8.5; style="rounded,dashed"; color="#888888"; margin=8;
+      api   [label="API and AI SDK\nstream adapter"];
+      auth  [label="Accounts and\nsessions"];
+      agent [label="LangGraph orchestration\ntutoring graph, self-test graph,\ntyped tools, budgets"];
+      gate  [label="Disclosure gate and\ndeadline registry"];
+      ev    [label="Retrieval and\nevidence verification\nFTS5 + BGE-M3 + verifier"];
+      qgen  [label="Practice and\nself-test generation"];
+      grade [label="Answer grading\nand citations"];
+      mc    [label="Model adapter\nretries, cache, ASR, TTS"];
+      tr    [label="Trace logger\nJSONL + replay"];
+    }
+
+    db     [label="SQLite\nusers, sessions, conversations,\nquestions, answers, grades,\npolicy decisions", shape=cylinder, fillcolor="#ffffff"];
+    files  [label="Local files\nJSONL traces, replay,\nresponse cache, corpus and\nindex mirror", shape=cylinder, fillcolor="#ffffff"];
+    lf     [label="Local Langfuse\n(development only)", fillcolor="#ffffff", style="rounded,dashed"];
+
+    student -> ui [label="uses"];
+    ta -> ui [label="maintains registry"];
+    ui -> api [label="HTTP + SSE"];
+    api -> auth;
+    api -> agent;
+    agent -> gate;
+    agent -> ev;
+    agent -> qgen;
+    agent -> grade;
+    agent -> tr;
+    gate -> db [style=dashed, arrowhead=none];
+    auth -> db [style=dashed, arrowhead=none];
+    grade -> db [style=dashed, arrowhead=none];
+    tr -> files [style=dashed, arrowhead=none];
+    agent -> mc;
+    mc -> db [style=dotted, arrowhead=none, label="cache"];
+    tr -> lf [style=dotted, arrowhead=none, label="dev only"];
+    ev -> files [style=dotted, arrowhead=none, label="index mirror"];
+  }
+
+  subgraph cluster_external {
+    label="External services (HTTPS)"; fontsize=9; style="rounded"; color="#666666"; margin=10;
+    ds   [label="DeepSeek API\nchat, search, fetch", fillcolor="#ffffff"];
+    mimo [label="Xiaomi MiMo API\nchat, ASR, TTS,\naudio input", fillcolor="#ffffff"];
+    mail [label="QQ Mail SMTP\nverification and reset", fillcolor="#ffffff"];
+  }
+
+  subgraph cluster_tacc {
+    label="TACC@HKUST (Slurm, one-hour jobs)"; fontsize=9; style="rounded"; color="#666666"; margin=10;
+    ocr    [label="OCR job\nrender, layout,\nPaddleOCR-VL", fillcolor="#ffffff"];
+    index  [label="Index job\nBGE-M3 and FTS5", fillcolor="#ffffff"];
+    exec   [label="Exec job (tacc/exec)\nreference tests and\ncode answers", fillcolor="#ffffff"];
+    evalh  [label="Evaluation job\nbenchmark and ablations", fillcolor="#ffffff"];
+    qwen   [label="Optional Qwen\nbaseline (vLLM)", fillcolor="#ffffff", style="rounded,dashed"];
+    userdir [label="USERDIR and $HOME\ncorpus, page images, index,\nmodels, job outputs", shape=cylinder, fillcolor="#ffffff"];
+  }
+
+  mc -> ds [label="chat, search"];
+  mc -> mimo [label="chat, audio, TTS"];
+  auth -> mail [label="email"];
+  agent -> exec [label="submit, poll, download"];
+  ocr -> userdir [style=dashed, arrowhead=none];
+  index -> userdir [style=dashed, arrowhead=none];
+  exec -> userdir [style=dashed, arrowhead=none];
+  evalh -> userdir [style=dashed, arrowhead=none];
+  userdir -> files [style=dotted, label="download", dir=back];
+  mc -> qwen [style=dotted, label="optional baseline"];
+}

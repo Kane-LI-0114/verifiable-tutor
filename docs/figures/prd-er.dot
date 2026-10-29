@@ -1,0 +1,179 @@
+digraph prd_er {
+  graph [rankdir=LR, splines=ortho, nodesep=0.16, ranksep=0.42, fontname="Helvetica", fontsize=9,
+         bgcolor="white", pad=0.10, compound=true];
+  node [fontname="Helvetica", fontsize=7.5, shape=plaintext];
+  edge [fontname="Helvetica", fontsize=7, color="#333333", arrowsize=0.55,
+        dir=both, arrowtail=tee, arrowhead=crow];
+
+  subgraph cluster_account {
+    label="Accounts"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    user [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>USER</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">email</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">password_hash</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">role</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">email_verified_at</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    session [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>SESSION</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">expires_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+  }
+
+  subgraph cluster_conversation {
+    label="Conversations and evidence"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    conversation [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>CONVERSATION</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    message [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>MESSAGE</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">conversation_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">role</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">content</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    citation [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>CITATION</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">message_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">document_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">quoted_span</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">verified_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+  }
+
+  subgraph cluster_corpus {
+    label="Course corpus"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    document [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>DOCUMENT</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">pdf_sha256</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">page_count</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    page [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>PAGE</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">document_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">image_path</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    chunk [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>CHUNK</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">page_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">section</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">text</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">bm25_rowid</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+  }
+
+  subgraph cluster_policy {
+    label="Disclosure policy"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    assignment [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>ASSIGNMENT</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">release_at</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">due_at</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">extension_until</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    decision [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>POLICY_DECISION</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">conversation_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">assignment_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">state</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">rule_id</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">registry_version</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">decided_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+  }
+
+  subgraph cluster_practice {
+    label="Practice, self-test, and grading"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    pack [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>PRACTICE_PACK</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">assignment_id</TD><TD ALIGN="LEFT">FK nullable</TD></TR>
+      <TR><TD ALIGN="LEFT">topic</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">environment</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    question [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>QUESTION</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">practice_pack_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">type</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">prompt</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">reference_answer</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    refcite [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>REFERENCE_CITATION</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">question_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">document_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">quoted_span</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    answer [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>ANSWER</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">question_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">content</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">submitted_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    grade [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>GRADE_RESULT</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">answer_id</TD><TD ALIGN="LEFT">FK unique</TD></TR>
+      <TR><TD ALIGN="LEFT">score</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">max_score</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">explanation</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">confidence</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">graded_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    execjob [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>EXEC_JOB</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">answer_id</TD><TD ALIGN="LEFT">FK nullable</TD></TR>
+      <TR><TD ALIGN="LEFT">question_id</TD><TD ALIGN="LEFT">FK nullable</TD></TR>
+      <TR><TD ALIGN="LEFT">kind</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">state</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">tacc_job_id</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">exit_code</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">finished_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+  }
+
+  user -> session;
+  user -> conversation;
+  user -> answer;
+  conversation -> message;
+  message -> citation;
+  document -> page;
+  page -> chunk;
+  page -> citation;
+  assignment -> decision;
+  conversation -> decision;
+  assignment -> pack;
+  pack -> question;
+  question -> refcite;
+  page -> refcite;
+  question -> answer;
+  answer -> grade;
+  question -> execjob;
+  answer -> execjob;
+}
