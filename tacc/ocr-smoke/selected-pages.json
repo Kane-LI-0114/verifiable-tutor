@@ -1,0 +1,72 @@
+[
+  {
+    "doc_id": "Tutorial_5",
+    "pdf": "tutorial/Tutorial_5.pdf",
+    "page_no": 19,
+    "tags": ["table"],
+    "rationale": "Five-column CXL performance table with a shaded header band, caption, footnote and two prose bullets; the only genuine data table in the lecture PDFs. A PaddleOCR transcript sits next to this PDF but has no page markers."
+  },
+  {
+    "doc_id": "Tutorial_4",
+    "pdf": "tutorial/Tutorial_4.pdf",
+    "page_no": 33,
+    "tags": ["formula"],
+    "rationale": "Online softmax recurrence is pure equation work: boxed m_j-1 and d_j-1 definitions, four chained summation steps and a brace-joined result, with 70 math characters on the page."
+  },
+  {
+    "doc_id": "Tutorial_3",
+    "pdf": "tutorial/Tutorial_3.pdf",
+    "page_no": 25,
+    "tags": ["formula"],
+    "rationale": "Attention(Q,K,V) and S=QK^T matrix expansions with nested summations, plus the C <- alpha AB + beta C box, laid out beside the transformer diagram."
+  },
+  {
+    "doc_id": "ACS_Lecture_1_2026F",
+    "pdf": "ACS_Lecture_1_2026F.pdf",
+    "page_no": 59,
+    "tags": ["two-column"],
+    "rationale": "Full-slide two-column comparison: Barrier text and timeline panel on the left, condition variable text and producer/consumer panel on the right, with a clean vertical gutter."
+  },
+  {
+    "doc_id": "ACS_lecture_2_2026F",
+    "pdf": "ACS_lecture_2_2026F.pdf",
+    "page_no": 29,
+    "tags": ["two-column"],
+    "rationale": "Side-by-side code comparison: column-wise traversal against blocked/tiled traversal, each half pairing a code block with a matrix diagram."
+  },
+  {
+    "doc_id": "Tutorial_3",
+    "pdf": "tutorial/Tutorial_3.pdf",
+    "page_no": 21,
+    "tags": ["figure-only"],
+    "rationale": "Page is almost entirely a diagram: GPU device code and CPU host code screenshots wired to GPU memory boxes, with only 35 extractable characters (title and page number)."
+  },
+  {
+    "doc_id": "course_project",
+    "pdf": "course_project.pdf",
+    "page_no": 7,
+    "tags": ["figure-only"],
+    "rationale": "Pure STORM research workflow diagram with numbered arrows and agent icons; the text layer holds only the title (31 characters)."
+  },
+  {
+    "doc_id": "Tutorial_1",
+    "pdf": "tutorial/Tutorial_1.pdf",
+    "page_no": 14,
+    "tags": ["image-only"],
+    "rationale": "Image-only PDF with zero text layer; the scanned slide holds a C code block plus three boxed guides, so OCR must recover code and table-like structure from pixels. Its PaddleOCR transcript has no page markers."
+  },
+  {
+    "doc_id": "Tutorial_2",
+    "pdf": "tutorial/Tutorial_2.pdf",
+    "page_no": 5,
+    "tags": ["image-only"],
+    "rationale": "Image-only PDF with zero text layer; four bordered BEFORE/AFTER Rank-Value mini tables with arrows, the densest table layout in an untexted scan. Its PaddleOCR transcript has no page markers."
+  },
+  {
+    "doc_id": "Assignment_1_final",
+    "pdf": "hw1/Assignment_1_final.pdf",
+    "page_no": 4,
+    "tags": ["dense-text"],
+    "rationale": "Densest text page in the corpus (1927 extracted characters): US Letter portrait prose with four bordered tcloud command boxes and step-by-step TACC instructions."
+  }
+]
