@@ -87,6 +87,7 @@ fi
 # PaddleX resolves local model dirs only; keep any residual download on the mirror
 # and skip the model-hoster connectivity probe.
 export PADDLE_PDX_CACHE_HOME="$HOME/models/paddlex"
+export PADDLE_PDX_CPU_NUM_THREADS="${PADDLE_PDX_CPU_NUM_THREADS:-8}"
 export PADDLE_PDX_MODEL_SOURCE="${PADDLE_PDX_MODEL_SOURCE:-huggingface}"
 export PADDLE_PDX_HUGGING_FACE_ENDPOINT="${PADDLE_PDX_HUGGING_FACE_ENDPOINT:-https://hf-mirror.com}"
 export PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK="${PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK:-True}"
@@ -97,20 +98,34 @@ echo; echo "===== 2. model weights ====="
 HF_BIN="$PUBLIC_ROOT/vllm-env/bin/hf"
 mkdir -p "$HOME/models"
 download_model() {
-    local repo=$1 dir=$2 marker=$3
+    local repo=$1 dir=$2 marker=$3 attempt started rc
     if [ -f "$HOME/models/$dir/$marker" ]; then
         echo "[models] already present: $dir ($(du -sh "$HOME/models/$dir" 2>/dev/null | cut -f1))"
         return 0
     fi
-    local started=$(date +%s)
-    timeout 1500 env -u PYTHONPATH bash "$PUBLIC_ROOT/runtime.sh" "$HF_BIN" download "$repo" --local-dir "$HOME/models/$dir"
-    local rc=$?
-    echo "[models] $repo rc=$rc seconds=$(( $(date +%s) - started )) size=$(du -sh "$HOME/models/$dir" 2>/dev/null | cut -f1)"
-    return $rc
+    for attempt in 1 2; do
+        started=$(date +%s)
+        timeout 900 env -u PYTHONPATH bash "$PUBLIC_ROOT/runtime.sh" "$HF_BIN" download "$repo" \
+            --local-dir "$HOME/models/$dir" --max-workers 4
+        rc=$?
+        echo "[models] $repo attempt $attempt rc=$rc seconds=$(( $(date +%s) - started )) size=$(du -sh "$HOME/models/$dir" 2>/dev/null | cut -f1)"
+        if [ "$rc" -eq 0 ] && [ -f "$HOME/models/$dir/$marker" ]; then
+            return 0
+        fi
+        sleep 5
+    done
+    return 1
 }
 MODELS_OK=1
-download_model "PaddlePaddle/PP-DocLayoutV2" "PP-DocLayoutV2" "inference.pdiparams" || MODELS_OK=0
 download_model "PaddlePaddle/PaddleOCR-VL-1.6" "PaddleOCR-VL-1.6" "model.safetensors" || MODELS_OK=0
+# The HF mirror download in PRoot hit TLS verification failures and stalls; the
+# environment spike proved PaddleX fetches PP-DocLayoutV2 reliably from
+# modelscope into PADDLE_PDX_CACHE_HOME. Prefer that copy, and let the client
+# auto-download into the same cache if it is absent.
+LAYOUT_MODEL_DIR=""
+for candidate in "$HOME/models/paddlex/official_models/PP-DocLayoutV2" "$HOME/models/PP-DocLayoutV2"; do
+    if [ -f "$candidate/inference.pdiparams" ]; then LAYOUT_MODEL_DIR="$candidate"; break; fi
+done
 OCR_MODEL_DIR=""
 OCR_MODEL_NAME=""
 for candidate in PaddleOCR-VL-1.6 PaddleOCR-VL; do
@@ -122,9 +137,9 @@ for candidate in PaddleOCR-VL-1.6 PaddleOCR-VL; do
     fi
 done
 if [ "$MODELS_OK" -eq 1 ] && [ -n "$OCR_MODEL_DIR" ]; then
-    record PASS model_weights "layout=$(du -sh "$HOME/models/PP-DocLayoutV2" 2>/dev/null | cut -f1) rec=$OCR_MODEL_NAME $(du -sh "$OCR_MODEL_DIR" 2>/dev/null | cut -f1)"
+    record PASS model_weights "rec=$OCR_MODEL_NAME $(du -sh "$OCR_MODEL_DIR" 2>/dev/null | cut -f1) layout=${LAYOUT_MODEL_DIR:-<paddlex-cache-autodownload>}"
 else
-    record FAIL model_weights "download failed or weights incomplete (layout_dir=$HOME/models/PP-DocLayoutV2 rec_dir=${OCR_MODEL_DIR:-missing})"
+    record FAIL model_weights "OCR weights incomplete (rec_dir=${OCR_MODEL_DIR:-missing})"
 fi
 
 # ------------------------------------------------------- 3. render selected pages
@@ -236,7 +251,7 @@ elif [ -f "$VLLM_MODEL/config.json" ]; then
         --served-model-name "$SERVED_NAME"
         --host 127.0.0.1 --port "$VLLM_PORT"
         --dtype bfloat16
-        --gpu-memory-utilization 0.90
+        --gpu-memory-utilization 0.85
         --max-model-len 32768
         --max-num-seqs 8
         --limit-mm-per-prompt '{"image": 1}'
@@ -244,18 +259,20 @@ elif [ -f "$VLLM_MODEL/config.json" ]; then
         --no-enable-prefix-caching
         --mm-processor-cache-gb 0
     )
+    # The 27855 run proved vLLM needs roughly 3 minutes to load this model and
+    # capture graphs; the first attempt was killed after only 120 s.
     FIRST_BUDGET=$(time_left)
-    FIRST_BUDGET=$(( FIRST_BUDGET - 1800 ))
-    [ "$FIRST_BUDGET" -gt 660 ] && FIRST_BUDGET=660
-    [ "$FIRST_BUDGET" -lt 120 ] && FIRST_BUDGET=120
+    FIRST_BUDGET=$(( FIRST_BUDGET - 2100 ))
+    [ "$FIRST_BUDGET" -gt 600 ] && FIRST_BUDGET=600
+    [ "$FIRST_BUDGET" -lt 300 ] && FIRST_BUDGET=300
     if start_vllm_attempt full "$FIRST_BUDGET" "${FULL_ARGS[@]}"; then
         VLLM_OK=1
     else
         echo "[vllm] retrying with the minimal, eager-mode argument set"
         SECOND_BUDGET=$(time_left)
-        SECOND_BUDGET=$(( SECOND_BUDGET - 1200 ))
-        [ "$SECOND_BUDGET" -gt 420 ] && SECOND_BUDGET=420
-        [ "$SECOND_BUDGET" -lt 120 ] && SECOND_BUDGET=120
+        SECOND_BUDGET=$(( SECOND_BUDGET - 1500 ))
+        [ "$SECOND_BUDGET" -gt 480 ] && SECOND_BUDGET=480
+        [ "$SECOND_BUDGET" -lt 240 ] && SECOND_BUDGET=240
         MINIMAL_ARGS=(
             --trust-remote-code
             --served-model-name "$SERVED_NAME"
@@ -305,14 +322,14 @@ fi
 echo; echo "===== 6. layout + recognition on 10 pages ====="
 CLIENT_RC=1
 CLIENT_TIMEOUT=$(( $(time_left) - 120 ))
-[ "$CLIENT_TIMEOUT" -gt 1500 ] && CLIENT_TIMEOUT=1500
+[ "$CLIENT_TIMEOUT" -gt 1800 ] && CLIENT_TIMEOUT=1800
 [ "$CLIENT_TIMEOUT" -lt 180 ] && CLIENT_TIMEOUT=180
 if [ "$VLLM_OK" -eq 1 ] && [ "$RENDERED_PAGES" -ge 1 ] && [ -s "$OUT/render-manifest.json" ]; then
     timeout "$CLIENT_TIMEOUT" bash "$PUBLIC_ROOT/runtime.sh" "$VT_PYTHON" "$HERE/ocr_pages.py" \
         --manifest "$OUT/render-manifest.json" \
         --server-url "http://127.0.0.1:${VLLM_PORT}/v1" \
         --api-model-name "$SERVED_NAME" \
-        --layout-model-dir "$HOME/models/PP-DocLayoutV2" \
+        --layout-model-dir "$LAYOUT_MODEL_DIR" \
         --pipeline-version v1.6 \
         --device cpu \
         --max-concurrency 8 \

@@ -221,11 +221,17 @@ download_model() {
         echo "[models] already present: $dir"
         return 0
     fi
-    local started=$(date +%s)
-    timeout 1500 bash "$PUBLIC_ROOT/runtime.sh" "$HF_BIN" download "$repo" --local-dir "$HOME/models/$dir"
-    local rc=$?
-    echo "[models] $repo -> local-dir $dir rc=$rc seconds=$(( $(date +%s) - started )) size=$(du -sh "$HOME/models/$dir" 2>/dev/null | cut -f1)"
-    return $rc
+    echo "[models] $dir missing marker $marker, downloading"
+    local attempt started rc
+    for attempt in 1 2; do
+        started=$(date +%s)
+        timeout 900 bash "$PUBLIC_ROOT/runtime.sh" "$HF_BIN" download "$repo" --local-dir "$HOME/models/$dir" --max-workers 4
+        rc=$?
+        echo "[models] $repo attempt $attempt rc=$rc seconds=$(( $(date +%s) - started )) size=$(du -sh "$HOME/models/$dir" 2>/dev/null | cut -f1)"
+        if [ "$rc" -eq 0 ]; then return 0; fi
+        sleep 5
+    done
+    return 1
 }
 if download_model "PaddlePaddle/PP-DocLayoutV2" "PP-DocLayoutV2" "inference.pdiparams"; then
     record PASS download_layout_v2 "$(du -sh "$HOME/models/PP-DocLayoutV2" 2>/dev/null | cut -f1)"

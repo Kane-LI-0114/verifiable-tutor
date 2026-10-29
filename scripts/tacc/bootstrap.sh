@@ -96,12 +96,30 @@ fi
 run_proot "$UV_BIN" --version 2>&1 | sed 's/^/[bootstrap] uv /' >&2
 
 export UV_CACHE_DIR="$HOME/.cache/uv"
+export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-300}"
+export UV_CONCURRENT_DOWNLOADS="${UV_CONCURRENT_DOWNLOADS:-4}"
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+
+# Serialise installs across jobs that share the same cache key. Two spike jobs
+# started on the same minute and raced on this directory in the 27854/27855 run.
+mkdir -p "$HOME/vt-deps"
+LOCK="$HOME/vt-deps/.lock-$KEY"
+lock_acquired=0
+for _ in $(seq 1 60); do
+    if mkdir "$LOCK" 2>/dev/null; then lock_acquired=1; break; fi
+    log "waiting for another job to finish installing $KEY"
+    sleep 2
+done
+if [ "$lock_acquired" -eq 1 ]; then
+    trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT INT TERM
+else
+    log "WARNING: cache lock not acquired, proceeding"
+fi
 
 started=$(date +%s)
 log "installing $(wc -l < "$REQUIREMENTS") pins into $TARGET (revision $BOOTSTRAP_REV)"
 
-install_target() {
+install_target_once() {
     mkdir -p "$TARGET"
     run_proot "$UV_BIN" pip install \
         --python "$PUBLIC_ROOT/vllm-env/bin/python" \
@@ -110,14 +128,25 @@ install_target() {
         -r "$REQUIREMENTS"
 }
 
+install_target() {
+    local attempt
+    for attempt in 1 2 3; do
+        log "target install attempt $attempt of 3"
+        if install_target_once; then return 0; fi
+        log "attempt $attempt failed (flaky PyPI route?), cleaning and retrying"
+        rm -rf "$TARGET"
+        sleep 10
+    done
+    return 1
+}
+
 mode=target
 if install_target; then
     mode=target
 else
-    status=$?
-    log "target install failed (status $status), falling back to a venv"
+    log "target install failed after retries, falling back to a venv"
     rm -rf "$TARGET"
-    if run_proot "$UV_BIN" venv --python "$PUBLIC_ROOT/vllm-env/bin/python" "$TARGET" \
+    if run_proot "$UV_BIN" venv --clear --python "$PUBLIC_ROOT/vllm-env/bin/python" "$TARGET" \
         && run_proot "$UV_BIN" pip install --python "$TARGET/bin/python" --link-mode copy -r "$REQUIREMENTS"; then
         mode=venv
     else

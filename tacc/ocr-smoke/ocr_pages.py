@@ -207,7 +207,7 @@ def main():
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--server-url", required=True)
     parser.add_argument("--api-model-name", default="PaddleOCR-VL-1.6-0.9B")
-    parser.add_argument("--layout-model-dir", required=True)
+    parser.add_argument("--layout-model-dir", default="")
     parser.add_argument("--pipeline-version", default="v1.6")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--layout-threshold", type=float, default=0.3)
@@ -231,26 +231,49 @@ def main():
 
     import paddle  # noqa: PLC0415
 
-    paddle.set_num_threads(cpu_threads)
-    print(f"[ocr] paddle cpu threads: {cpu_threads}", flush=True)
+    # Paddle 3.2.1 does not expose paddle.set_num_threads; try the documented
+    # setters in order and never fail the run over CPU thread tuning.
+    thread_setters = [
+        ("paddle.set_num_threads", getattr(paddle, "set_num_threads", None)),
+        ("paddle.device.set_num_threads", getattr(getattr(paddle, "device", None), "set_num_threads", None)),
+        ("paddle.base.core.set_num_threads", getattr(getattr(getattr(paddle, "base", None), "core", None), "set_num_threads", None)),
+    ]
+    applied = "none"
+    for name, setter in thread_setters:
+        if callable(setter):
+            try:
+                setter(cpu_threads)
+                applied = name
+                break
+            except Exception as exc:  # noqa: BLE001
+                print(f"[ocr] {name} failed: {exc}", flush=True)
+    if applied == "none":
+        try:
+            paddle.set_flags({"FLAGS_omp_num_threads": cpu_threads})
+            applied = "FLAGS_omp_num_threads"
+        except Exception as exc:  # noqa: BLE001
+            print(f"[ocr] paddle.set_flags failed: {exc}", flush=True)
+    print(f"[ocr] paddle cpu threads requested={cpu_threads} applied={applied}", flush=True)
 
     from paddleocr import PaddleOCRVL  # noqa: PLC0415
 
     started = time.time()
+    pipeline_kwargs = {
+        "pipeline_version": args.pipeline_version,
+        "device": args.device,
+        "layout_detection_model_name": "PP-DocLayoutV2",
+        "layout_threshold": args.layout_threshold,
+        "vl_rec_backend": "vllm-server",
+        "vl_rec_server_url": args.server_url,
+        "vl_rec_api_model_name": args.api_model_name,
+        "vl_rec_max_concurrency": args.max_concurrency,
+        "use_doc_orientation_classify": False,
+        "use_doc_unwarping": False,
+    }
+    if args.layout_model_dir:
+        pipeline_kwargs["layout_detection_model_dir"] = args.layout_model_dir
     try:
-        pipeline = PaddleOCRVL(
-            pipeline_version=args.pipeline_version,
-            device=args.device,
-            layout_detection_model_name="PP-DocLayoutV2",
-            layout_detection_model_dir=args.layout_model_dir,
-            layout_threshold=args.layout_threshold,
-            vl_rec_backend="vllm-server",
-            vl_rec_server_url=args.server_url,
-            vl_rec_api_model_name=args.api_model_name,
-            vl_rec_max_concurrency=args.max_concurrency,
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-        )
+        pipeline = PaddleOCRVL(**pipeline_kwargs)
     except Exception as exc:  # noqa: BLE001
         init_seconds = round(time.time() - started, 2)
         error = f"{type(exc).__name__}: {exc}"
