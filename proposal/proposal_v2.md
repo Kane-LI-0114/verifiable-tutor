@@ -2,7 +2,7 @@
 
 A course-grounded agent with evidence-checked answers, executable practice labs, and enforced course policy
 
-LI Jinchuan (21188271) · TIAN Yujia (21201619) · XIE Yifeng (21322152) · October 30, 2026 (revision 2)
+LI Jinchuan (21188271) · TIAN Yujia (21201619) · XIE Yifeng (21322152) · October 30, 2026
 
 CSIT6000V · Advanced AI Computing and Systems · Fall 2026
 
@@ -22,7 +22,7 @@ Disclosure follows a five-state policy: pre-release, active, extension window, p
 
 Figure 2 shows the containers. A React browser UI talks to a FastAPI agent backend on the developer laptop, which runs a typed LangGraph workflow, calls external OpenAI-compatible model APIs, and reads a local mirror of the OCR pages and index vectors that TACC produces offline. The required execution path, from task to visible result, runs on the laptop: enter the task, watch progress, and review the answer with its evidence.
 
-Evidence. Course PDFs are parsed by a TACC OCR batch job with PaddleOCR-VL into page records with page numbers, block boxes, and page images; the week-one OCR and whole-PDF parse spikes passed before this revision. Page- and section-aware chunks are embedded with BGE-M3 in a TACC index job and indexed with BM25; both artifacts are downloaded into the laptop mirror. A deterministic verifier checks that every quoted span occurs on its cited page, triggering one repair round or abstention.
+Evidence. Course PDFs are parsed by a TACC OCR batch job with PaddleOCR-VL into page records with page numbers, block boxes, and page images; the week-one OCR and whole-PDF parse spikes passed in week one. Page- and section-aware chunks are embedded with BGE-M3 in a TACC index job and indexed with BM25; both artifacts are downloaded into the laptop mirror. A deterministic verifier checks that every quoted span occurs on its cited page, triggering one repair round or abstention.
 
 Artifacts. A practice pack mirrors the target assignment environment: MPI/GEMM with the same toolchain, Makefile, public datasets, and sdk-test-style harness. A generated reference solution is accepted only after it compiles and passes the pack tests in a TACC execution job, and verified answers are cached. A CUDA attention pack is best effort (P2).
 

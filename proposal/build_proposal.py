@@ -44,8 +44,8 @@ else:
     DOCX = os.path.join(HERE, "CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v2.docx")
     MD = os.path.join(HERE, "proposal_v2.md")
     FIG2 = os.path.join(FIGS, "fig2_components_v2.png")
-    DATE = "October 30, 2026 (revision 2)"
-    HEADER_LINE = "Project Proposal \u00b7 Topic Selection \u00b7 Revision 2"
+    DATE = "October 30, 2026"
+    HEADER_LINE = "Project Proposal \u00b7 Topic Selection"
     REVISION_NOTE = None
     COURSE_LINE = ("CSIT6000V \u00b7 Advanced AI Computing and Systems \u00b7 Fall 2026 "
                    "\u00b7 Instructor: Prof. Kai Chen")
@@ -58,8 +58,8 @@ else:
     CAVEAT = ("The models, services, and batch layout named here reflect the current plan "
               "and may change as development proceeds.")
     TBL_CAPTION = "Table 1. Gantt-style work plan (W1-W4)."
-    PROP_SUBJECT = "CSIT6000V Project Proposal (Topic Selection), revision 2"
-    PROP_COMMENTS = "Course project proposal, Fall 2026, revision 2"
+    PROP_SUBJECT = "CSIT6000V Project Proposal (Topic Selection)"
+    PROP_COMMENTS = "Course project proposal, Fall 2026"
 
 # ---------------------------------------------------------------- content
 TITLE = "Verifiable AI Tutoring on TACC"
@@ -166,7 +166,7 @@ REFS = [
     "Assignment 1: MPI Programming, CSIT6000V, Fall 2026.",
 ]
 
-# ------------------------------------------------------- revision 2 content
+# --------------------------------------------------------- version 2 content
 # The revision records the delivered topology (local backend, TACC offline
 # compute) and the task-oriented positioning. Version 1 stays untouched.
 V2_MOTIVATION = (
@@ -200,7 +200,7 @@ V2_SYSTEM = [
      "on the laptop: enter the task, watch progress, and review the answer with its evidence."),
     ("Evidence. Course PDFs are parsed by a TACC OCR batch job with PaddleOCR-VL into page "
      "records with page numbers, block boxes, and page images; the week-one OCR and whole-PDF "
-     "parse spikes passed before this revision. Page- and section-aware chunks are embedded with "
+     "parse spikes passed in week one. Page- and section-aware chunks are embedded with "
      "BGE-M3 in a TACC index job and indexed with BM25; both artifacts are downloaded into the "
      "laptop mirror. A deterministic verifier checks that every quoted span occurs on its cited "
      "page, triggering one repair round or abstention."),
