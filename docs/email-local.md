@@ -51,7 +51,7 @@ When `SMTP_HOST` or `SMTP_PASSWORD` is empty, the backend runs in development mo
 - The authorization code grants access to the mailbox, not only to SMTP. It belongs only in `.env`, never in Git, a screenshot, or a message. Regenerate it in the QQ Mail settings if it leaks.
 - Register the sending address as a contact or whitelist it in the receiving account to reduce spam filtering.
 - The current host may rate-limit or reject outbound SMTP; if the network blocks port 465, try 587 with STARTTLS.
-- TACC jobs do not send email. If the backend later moves to TACC, outbound SMTP from the job needs a separate reachability check.
+- TACC jobs do not send email. The backend runs locally and no TACC-hosted backend is planned ([ADR-0010](adr/0010-tacc-as-offline-compute.md)), so SMTP stays a local-only concern.
 
 ## Troubleshooting
 

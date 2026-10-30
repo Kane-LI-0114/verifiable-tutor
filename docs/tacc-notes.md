@@ -17,7 +17,17 @@ Yijun Sun (course TA) answered our questions about allowed model usage and the T
 
 The reply also notes that at this stage the proposal should focus on the idea and the overall approach, with implementation details refined as the project progresses.
 
-Status note (2026-10-29): the two follow-up questions below, whether SSH forwarding may reach a student-run web port and whether the final demo must run the backend on TACC, were sent to the TA by email. No reply is recorded yet.
+## Staff clarification (2026-10-30)
+
+The follow-up questions sent to the TA by email on 2026-10-29 were answered on 2026-10-30: whether the final demo must run the backend on TACC, and whether SSH forwarding may reach a student-run web port. The reply, reported by the project lead:
+
+| Topic | Clarification | What it means here |
+|---|---|---|
+| Backend hosting | The backend does not have to be deployed on TACC. | The backend, UI, and stores run locally, and no TACC-hosted mode is built ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). |
+| Required TACC use | At least one offline job must use TACC results. The examples are OCR parsing and embedding of document chunks: TACC produces the results, they are stored locally, and the delivered system reads them. | The OCR and index jobs are the required offline pipeline; their outputs are mirrored under `data/corpus/` and `data/index/`; the report cites the job ids and logs. |
+| Online services | TACC is used as an offline compute resource, and no online service is deployed there. | Every TACC job writes files and exits. The TACC-hosted backend, the SSH web-port forward, and the tunnel spike are dropped. |
+
+The web-port forwarding question is therefore moot: the delivered system reaches no TACC service. The 2026-10-28 clarification above remains valid for model usage, cost, packages, storage, embeddings, OCR, and resource limits.
 
 ## Discrepancy: job time limit
 
@@ -45,7 +55,7 @@ Facts below were read from the tcloud SDK 0.4.1 source, the live cluster configu
 ## Access from outside (2026-10-28)
 
 - **Compute nodes are private.** The observed node address is RFC1918 (`10.0.1.0/24`, with `10.0.0.0/8` routed), and login and compute nodes share one NAT egress address. There is no direct inbound path from a laptop, and tcloud 0.4.1 has no port-publishing or ingress command.
-- **The reachable path is an SSH local forward through the account's SSH entry.** The documented off-platform path forwards to `NODE:8000` through the account's SSH entry. Probes on 2026-10-28 showed that `gw.turing.ust.hk:30041` accepts `-L` forwards to arbitrary cluster addresses and arbitrary target ports, and the login node routes into `10.0.0.0/16`. Gateway to job-container port reachability is still unverified and is the critical item in the tunnel spike.
+- **The reachable path is an SSH local forward through the account's SSH entry.** The documented off-platform path forwards to `NODE:8000` through the account's SSH entry. Probes on 2026-10-28 showed that `gw.turing.ust.hk:30041` accepts `-L` forwards to arbitrary cluster addresses and arbitrary target ports, and the login node routes into `10.0.0.0/16`. Gateway to job-container port reachability stays unverified, but the 2026-10-30 clarification removes the need for it: the delivered system reaches no TACC service ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 - **Command shape:** `ssh -p 30041 -i <private key> -N -L 127.0.0.1:<local port>:<node>:<remote port> <user>@gw.turing.ust.hk`, then open `http://127.0.0.1:<local port>/`. Target the node address or the dashed node name, never the gateway's own localhost. Use `ExitOnForwardFailure` and `ServerAliveInterval` to make a dead tunnel visible.
 - **No document addresses forwarding to a student-run web port directly.** The general wording and the model-service wording conflict, and no sentence either permits or forbids the web-port use case by name. Exact wording:
   - "SDK 内部使用 SSH 协议和 Slurm；学生不登录平台服务器，也不自行建立 SSH 转发。" (student commands, file and environment section)
@@ -53,10 +63,10 @@ Facts below were read from the tcloud SDK 0.4.1 source, the live cluster configu
   - "个人电脑默认通过 SDK 提交客户端程序到平台调用；如果需要从校外电脑直接访问 HTTP 服务，请使用平台明确提供或批准的访问入口。" (student commands, service section)
   - "All users cannot ssh to our server. If you have special needs, please feel free to contact us." (tcloud quickstart FAQ, item 4)
   - Term of Service usage rules: "Do not run any application that performs a security intrusion", "Do not run any application that could be interpreted as a privacy violation", "Do not hold TACC resources when they are not actively used", "Do not access resources that are not allocated to you", "Do not make hacking attempts to the TACC infrastructure". Violations can lead to account disabling, notifying the supervisor, or legal action.
-  - Reading: the model-service forward has specific textual support; forwarding to our own web port has none. Treat the web-port use as an authorization question for the TA, not as documented permission.
-- **Capability versus permission.** The SSH plumbing works; the only explicit text about off-platform access is the model-service forward. The follow-up email of 2026-10-29 asks whether forwarding to a student-run web port is permitted; until the TA replies, treat the web-port demo as unauthorized and use the local backend mode instead ([tech-selection.md](tech-selection.md#jobs-and-demo-modes)).
+  - Reading: the model-service forward has specific textual support; forwarding to our own web port has none. The 2026-10-30 clarification makes the web-port case moot for the delivered system.
+- **Capability versus permission.** The SSH plumbing works; the only explicit text about off-platform access is the model-service forward. The 2026-10-30 clarification removes the web-port use from the delivery, so no forwarding is designed into the demo. The facts above stay recorded for an optional experiment that uses the documented model-service forward; the delivered baseline does not ([tech-selection.md](tech-selection.md#jobs-and-demo-modes)).
 - **No per-job public URL was found.** The web console shows job history and status; the platform's HAProxy port-exposure mechanism for Jupyter-style access is not documented for student jobs through the course SDK.
-- **Capacity is tight.** Measured on 2026-10-28: 10 nodes, `MaxNodes=2`, 20 CPUs per node, 2 GPUs per node, with 0 idle, 6 drain, 4 down, and 3 jobs pending from another account. Queueing, not concurrency, is the demo risk; keep replay and start service jobs early.
+- **Capacity is tight.** Measured on 2026-10-28: 10 nodes, `MaxNodes=2`, 20 CPUs per node, 2 GPUs per node, with 0 idle, 6 drain, 4 down, and 3 jobs pending from another account. Queueing, not concurrency, is the demo risk; keep replay ready and submit batch jobs early.
 
 Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo` and `scontrol` output read from the login node on 2026-10-28; tcloud quickstart FAQ and TOS; platform architecture paper arXiv 2110.01556, sections 3.2, 5.2, and 7.
 
@@ -65,8 +75,8 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 - The public environment validation recorded on 2026-10-06 measured a full cold start of 12 minutes 40 seconds for the Qwen service, including first load and compile. With a one-hour cap, one service job leaves about 45 minutes of usable serving time.
 - The service address (`SERVICE_BASE_URL=http://NODE:8000/v1`) changes with every job, and the client must read it from the log of the current job each time. The address stops working when the job ends.
 - Evaluation must fit the usable window: split the 50-question benchmark and the ablations into batches that complete in under 45 minutes, and cache retrieval snapshots and model responses so a rerun does not need a fresh service.
-- Use one service job per evaluation window instead of short repeated submissions; this respects both the one-hour cap and the fairness rule.
-- The demo should have a replay mode that reads cached responses, so the presentation does not depend on a live GPU job. The current demo mode is the local backend and UI; the TACC-hosted mode stays open until the TA replies to the 2026-10-29 email.
+- Use one baseline job per evaluation window instead of short repeated submissions; this respects both the one-hour cap and the fairness rule.
+- The demo has a replay mode that reads cached responses, so the presentation does not depend on a live model or a queued job. The demo mode is settled by the 2026-10-30 clarification: the backend and UI run locally, and TACC is used only through submitted batch jobs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 
 ## Storage budget
 
@@ -78,6 +88,8 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 ## Consequences for the plan
 
 - No proposal change is needed: the frozen two-page [proposal](../proposal/proposal.md) already states the TACC service as primary, with external LLM and search APIs optional, labelled, and cached. The clarification confirms that text rather than invalidating it.
+- The delivered topology runs the backend locally and uses TACC only through batch jobs, so the report explains the deviation from the proposal's TACC CPU backend and Qwen-service primaries ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [ADR-0005](adr/0005-external-model-apis-as-primary.md)).
+- The course TACC requirement is met by the offline pipeline: the OCR job parses the corpus, the index job computes the embeddings, their outputs are mirrored locally, and the backend reads the mirror. The report cites the job ids and logs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 - Keep the repository runnable without external keys or GPU access: cached baselines, cached retrieval snapshots, and a replay path.
 - The dense retrieval side needs no new packages: the public environment already ships PyTorch and Transformers, so an open embedding model can be loaded directly once its weights are downloaded to our workspace. BM25 remains the no-cost fallback and a required ablation arm.
 - The OCR job is now part of the plan, not a stretch goal: the corpus is produced by a TACC OCR job whose model and output contract are recorded in [tech-selection.md](tech-selection.md) and [ADR-0002](adr/0002-ocr-on-tacc-with-paddleocr-vl.md). The existing transcripts are only a human quality reference.
@@ -145,6 +157,7 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
+- Course staff reply of 2026-10-30 on backend hosting and offline TACC use, reported by the project lead after the 2026-10-29 follow-up email.
 - Course public environment guide and student commands, course workspace copies outside this repository.
 - TACC tutorial, `time=02:00:00` service example.
 - Public environment validation record, 2026-10-06: 12 minutes 40 seconds cold start, 65.75 tokens/s single stream, 203.33 tokens/s at four concurrent requests.

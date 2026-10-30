@@ -9,7 +9,7 @@ digraph prd_containers {
   ta      [label="Instructor / TA\nbrowser", fillcolor="#e6e6e6", width=1.1];
 
   subgraph cluster_laptop {
-    label="Developer laptop: local demo deployment"; fontsize=9; style="rounded"; color="#666666"; margin=10;
+    label="Developer laptop: delivered backend and UI"; fontsize=9; style="rounded"; color="#666666"; margin=10;
 
     ui [label="React SPA\nAI Elements chat, work chain,\nevidence panel, self-test UI", fillcolor="#e6e6e6", width=2.1];
 
@@ -63,7 +63,7 @@ digraph prd_containers {
     index  [label="Index job\nBGE-M3 and FTS5", fillcolor="#ffffff"];
     exec   [label="Exec job (tacc/exec)\nreference tests and\ncode answers", fillcolor="#ffffff"];
     evalh  [label="Evaluation job\nbenchmark and ablations", fillcolor="#ffffff"];
-    qwen   [label="Optional Qwen\nbaseline (vLLM)", fillcolor="#ffffff", style="rounded,dashed"];
+    qwen   [label="Optional Qwen\nbatch baseline", fillcolor="#ffffff", style="rounded,dashed"];
     userdir [label="USERDIR and $HOME\ncorpus, page images, index,\nmodels, job outputs", shape=cylinder, fillcolor="#ffffff"];
   }
 

@@ -2,7 +2,7 @@
 
 Scope: implementation technology for this repository. It does not change the frozen two-page proposal. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
 
-Status: decided on 2026-10-28 and updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph. The model layer, its tests, and its live smoke script are implemented; the remaining subsystems are planned, and the two committed spike jobs have no recorded results yet.
+Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, and updated on 2026-10-30 for the offline TACC boundary ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The model layer, its tests, and its live smoke script are implemented; the remaining subsystems are planned. Spikes 1 to 3 ran on 2026-10-29; spikes 4 to 10 are unrun.
 
 ## Decisions at a glance
 
@@ -10,7 +10,7 @@ Status: decided on 2026-10-28 and updated on 2026-10-29 for the external model A
 |---|---|---|
 | Python runtime | 3.12 everywhere: 3.12.14 in the course public environment, 3.12.13 locally through uv | One version for both legs removes a whole class of skew |
 | Dependency and environment strategy | Hash-pinned `requirements.txt` plus `uv.lock`, installed by an idempotent bootstrap into `$HOME`; the GPU stack stays on the read-only public environment; `Dockerfile` is for local development only | The platform has no custom-image support and a 1 GiB submit cap ([ADR-0001](adr/0001-pinned-python-environment-without-docker.md)) |
-| Backend | FastAPI and uvicorn in one process, serving both the API and the built UI on one origin; server-sent events through `StreamingResponse` | Both are pinned in the public environment; one origin survives SSH tunnelling and offline demos |
+| Backend | FastAPI and uvicorn in one process, serving both the API and the built UI on one origin; server-sent events through `StreamingResponse`; run on the developer laptop | Both are pinned in the public environment; one origin keeps the local demo, the replay path, and the offline run on one port ([ADR-0010](adr/0010-tacc-as-offline-compute.md)) |
 | Frontend | React 19, Vite, TypeScript, Tailwind CSS 4, shadcn/ui, AI Elements, `@ai-sdk/react`, streamdown, KaTeX, Shiki | Mainstream chatbot stack with ready components for the timeline and citations ([ADR-0003](adr/0003-react-spa-with-ai-elements.md)) |
 | Corpus and OCR | PaddleOCR-VL-1.6 on vLLM, PP-DocLayoutV2 layout on CPU, page images through pypdfium2, per-page JSONL with page numbers and block boxes, resumable one-hour jobs | Page numbers and block boxes are what the evidence requirement and citation panel need ([ADR-0002](adr/0002-ocr-on-tacc-with-paddleocr-vl.md)) |
 | Retrieval | SQLite FTS5 BM25 plus BGE-M3 dense vectors, fused with reciprocal rank fusion; an English query variant feeds the BM25 arm for Chinese queries | Multilingual, no vector database, and the proposal's ablation arms are preserved ([ADR-0004](adr/0004-hybrid-retrieval-with-bge-m3.md)) |
@@ -27,7 +27,7 @@ Status: decided on 2026-10-28 and updated on 2026-10-29 for the external model A
 | Storage | SQLite for metadata, FTS5, and caches; NumPy arrays for vectors; JSONL for traces and replay | No external service, and everything is copyable between `USERDIR` and the laptop |
 | Tests | pytest with the red and green loop, run inside the project environment on TACC | The framework decision that AGENTS.md left open |
 | Evaluation | Benchmark JSONL, an evaluation harness that writes JSON, plots generated locally | matplotlib is absent from the public environment |
-| Jobs and demo | `tacc/serve` for the optional Qwen baseline, `tacc/ocr`, `tacc/index`, `tacc/client`; the live demo currently runs from a local backend and UI, TACC provides the OCR, index, and evaluation evidence, and replay is the fallback; the TACC-hosted demo is open pending the TA reply | The one-hour policy cap, per-job service addresses, and demo risk |
+| Jobs and demo | `tacc/ocr`, `tacc/index`, `tacc/exec`, and `tacc/client` are offline batch jobs; the backend, UI, and stores run on the laptop; TACC produces the corpus, index, execution results, and evaluation evidence, which are mirrored locally; replay is the fallback if the live path fails; nothing is served from TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md)) | The one-hour policy cap, the 2026-10-30 TA clarification, and demo risk |
 
 ## Environment strategy
 
@@ -95,7 +95,7 @@ The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elem
 
 - The FastAPI adapter emits the AI SDK UI message stream protocol. Events used by this project: `start`, `text-start`, `text-delta`, `text-end`, `data-step` for the progress timeline, `source-document` for citations, `finish`, and `error`.
 - The same event stream is recorded to JSONL per session. Replay re-emits recorded events at a speed factor, so the offline demo runs the production frontend path with no model.
-- The build runs locally. `npm ci && npm run build` writes to `src/verifiable_tutor/ui/static/`, which is generated and ignored by Git; `package-lock.json` is committed. The TACC job receives the built assets in its task directory.
+- The build runs locally. `npm ci && npm run build` writes to `src/verifiable_tutor/ui/static/`, which is generated and ignored by Git; `package-lock.json` is committed. The local backend serves the build, and no TACC job serves the UI ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 - Evidence panel: page WebP plus highlight rectangles from the OCR block boxes, no PDF viewer, no CDN, self-hosted KaTeX fonts, system CJK font stack.
 - Chinese and English UI strings are kept in one translation resource with a header toggle.
 
@@ -106,29 +106,30 @@ The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elem
 - Voice and audio: an audio file attached to a message is supported only when the selected model is a MiMo 2.6 tier; flash handles it when flash is selected and pro handles it when pro is selected. Selecting DeepSeek with an audio attachment raises a capability error. The composer microphone calls MiMo ASR and inserts the transcript into the text box; the next chat turn uses the selected text provider. Assistant text can be spoken by MiMo TTS, cached by text, voice, and format. The TTS path is also the candidate for teaching-video voiceover; it has no timestamp output, so the video pipeline must split narration into segments and align captions itself.
 - Policy gate: the deadline registry is a versioned YAML file in `config/`, validated by pydantic. The clock is injected, so tests can place a request before release, during an extension window, and after the deadline. Unclassifiable or unregistered requests abstain rather than guess. Every decision is logged with the state, the rule, and the registry version.
 - Practice lab and self-test: generated questions and reference answers are written to a temporary directory, compiled with the public MPI toolchain, and run with a timeout and resource limits in the `tacc/exec` job; a question is shown only after its reference answer passes. Student code answers are executed the same way, per request, with a pending, running, and scored state in the UI, and the results are cached. Verified answers are cached. The demo users are two to three trusted accounts, so the exec job relies on the TACC job container and the runner limits, not on hostile-user isolation.
-- Storage: SQLite at `USERDIR/state/` for metadata, caches, and the decision log; `USERDIR/index/` for vectors and BM25 tables; `USERDIR/traces/` for JSONL traces and replay logs. `data/caches/` and `data/index/` remain the local mirrors for development.
+- Storage: local SQLite for metadata, caches, and the decision log; JSONL traces under the local data directory; `data/corpus/`, `data/index/`, and `data/caches/` hold the local mirror of the TACC artifacts. The TACC jobs write to `USERDIR`, and the backend downloads the outputs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 
 ## Jobs and demo modes
 
-The platform allows one GPU job per node at a time for our purposes: the Qwen baseline, when used, occupies both GPUs, so OCR and embedding jobs run before evaluation windows, not beside it.
+The platform allows one GPU job per node at a time for our purposes: the baseline job, when used, occupies both GPUs, so OCR and embedding jobs run before baseline windows, not beside it.
 
 | Job directory | Resources | Purpose | Output |
 |---|---|---|---|
-| `tacc/serve/` | 2 GPUs, 8 CPUs, 59 min | Optional baseline: the course Qwen service command; our copy sets the 59-minute policy request | `SERVICE_BASE_URL` in the log |
+| `tacc/serve/` | 2 GPUs, 8 CPUs, 59 min | Optional baseline: load Qwen in the job, generate answers for the baseline question set, and exit | Baseline answers and logs in `USERDIR`; no endpoint |
 | `tacc/ocr/` | 1 GPU, 8 CPUs, 59 min | Render, layout, and OCR the corpus | Page records, page images, figure crops in `USERDIR` |
 | `tacc/index/` | 1 GPU, 8 CPUs, 59 min | Embed chunks and build the BM25 table | Vectors, row map, FTS5 database in `USERDIR` |
-| `tacc/client/` | 4 CPUs, 59 min | Agent backend plus the static UI, and the evaluation harness run | Traces, evaluation JSON, logs in `USERDIR` |
+| `tacc/client/` | 4 CPUs, 59 min | Offline evaluation harness: run the benchmark over the corpus and index artifacts in `USERDIR` and the cached model responses | Evaluation JSON, traces, logs in `USERDIR` |
 | `tacc/exec/` | 4 CPUs, 59 min | Per-request execution of reference tests and student code answers for practice and self-test; the local backend submits, polls, and downloads | Test results, stdout and stderr, exit codes in `USERDIR` |
 
-Access facts measured on 2026-10-28: compute node addresses are private, there is no inbound path from a laptop, and tcloud has no port publishing. An SSH local forward through `gw.turing.ust.hk:30041` reaches arbitrary cluster addresses and ports, though gateway to job-container reachability is still unverified. The only forwarding use the course documents explicitly is a local client reaching the provided model service on `NODE:8000`; forwarding to a student-run web service is not described anywhere, and the student commands contain a general sentence against self-set-up forwarding that conflicts with the service instruction. The exact wording is recorded in [tacc-notes.md](tacc-notes.md#access-from-outside-2026-10-28). The SPA is built with a relative `/api` base so the same build works when served by the backend or by a local static server.
+Every job above is a batch job. None serves the product, and each writes files and exits; the outputs are downloaded into the local mirror ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 
-Demo modes, in order of current planning:
+Access facts measured on 2026-10-28: compute node addresses are private, there is no inbound path from a laptop, and tcloud has no port publishing. The 2026-10-30 clarification removes the need to reach a job port, so the delivered system has no TACC service to forward to; the facts are recorded in [tacc-notes.md](tacc-notes.md#access-from-outside-2026-10-28) for completeness. The SPA is built with a relative `/api` base so the same build works when served by the local backend or by a local static server.
 
-1. **Local backend and UI (current primary).** The same code runs on the laptop; text generation calls the external API directly, and query embedding uses either a local BGE-M3 copy or cached query vectors; the corpus and index are mirrored from `USERDIR`. This is the development and demo mode until the TA replies, because it removes queue, job-lifetime, and network risk from the live demo. The report states that this mode was used.
-2. **TACC-hosted backend and UI (open).** The `tacc/client` job serves the API and the static UI on one origin; the laptop forwards a local port to the node port with `ssh -p 30041 -N -L 127.0.0.1:8080:<node>:8080 <user>@gw.turing.ust.hk`. The backend calls the external text API through the cluster egress and runs BGE-M3 for query embedding in the same job. This matches the proposal's execution path and needs no CORS, but it needs an authorization answer for the web-port forward and a passed tunnel spike.
-3. **Replay (last resort).** No model, no TACC: recorded event streams play back through the real frontend and backend replay endpoint.
+Demo modes:
 
-Evaluation results and report artifacts always come from the TACC jobs, whatever mode the live demo uses. The questions about forwarding to a student web port and about whether the final demo must run the backend on TACC were sent to the TA on 2026-10-29; the reply sets whether the TACC-hosted mode becomes the primary one.
+1. **Local backend and UI (delivered).** The same code runs on the laptop; text generation calls the external API directly, and query embedding uses either a local BGE-M3 copy or cached query vectors; the corpus and index are the local mirrors downloaded from `USERDIR`. This is the only mode the demo and the report use ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+2. **Replay (fallback).** No model, no TACC: recorded event streams play back through the real frontend and backend replay endpoint.
+
+Evaluation results and report artifacts always come from the TACC offline jobs. The local backend can rerun the harness from the mirrored artifacts for development. The course TACC requirement is the offline OCR and index pipeline, and the report cites the job ids and logs.
 
 ## Where the backend runs
 
@@ -140,7 +141,7 @@ The staff clarification recorded on 2026-10-28 says TACC and the provided Qwen m
 
 The submitted proposal commits to a TACC CPU job for the agent backend ([proposal section 3](../proposal/proposal.md#3-proposed-system)). That is a project commitment, not a course requirement.
 
-Reading on 2026-10-29: the backend is built and demoed locally first, and the TACC CPU job remains the evidence path for the evaluation and the report. A local backend that calls the external model API and uses a local or cached embedding path is acceptable for live use, provided the report states which mode the demo used. The TA was asked on 2026-10-29 whether forwarding to a student web port is allowed and whether the final demo must run the backend on TACC; the reply decides whether the TACC-hosted mode is added.
+Clarification of 2026-10-30: the backend does not have to be deployed on TACC. The course requirement is at least one offline job that uses TACC results, with OCR parsing and chunk embedding as the examples: TACC produces the results, they are stored locally, and the delivered system reads them. TACC is an offline compute resource, and no online service is deployed there ([tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). The delivered topology is therefore a local backend and UI with TACC batch jobs behind it ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The proposal's TACC CPU job and Qwen-service primaries are not delivered as written; the report explains the deviation.
 
 ## Repository additions
 
@@ -181,8 +182,8 @@ Spikes 1 to 3 ran on 2026-10-29 and passed every exit criterion; the measurement
 3. **Whole-document PDF parse job** (1 GPU, about 10 minutes). Parse one complete PDF file the way the demo will: copy the file into the job workspace, enumerate every page, render each page, run layout and recognition for every page, and assemble one document markdown with page markers. Exit criterion: every page parses, the per-page JSONL validates, and one document markdown exists. Status: passed on 2026-10-29 as job 27884: `course_project.pdf`, 8 of 8 pages, 121 blocks, median 3.905 s per page, a 10,003 byte document markdown with 8 page markers, and a 414 s job body.
 4. **Corpus job** (1 GPU, 59 minutes, resumable). Run the full 342 pages; if it does not finish, run a second job and confirm resume without duplicates. Exit criterion: all pages have records and images in `USERDIR`.
 5. **Index job** (1 GPU, 59 minutes). Embed the chunks with BGE-M3, build the FTS5 table, and run the 50-question bake-off over BM25, dense, and hybrid. Exit criterion: page-hit@5 and nDCG are recorded and the primary model choice is confirmed or overturned.
-6. **Tunnel job** (4 CPUs, about 20 minutes). Serve a stub page on port 8080. First check from the login node whether the gateway can reach `<node>:8080`; then forward `127.0.0.1:8080` to the node and load the page in a browser, including one refresh. Exit criterion: the page loads through the tunnel, a killed and restarted tunnel recovers, and the demo mode is fixed afterwards. Ask the TA about the forwarding policy before the demo.
-7. **End-to-end smoke** (1 CPU job plus external API calls, about 30 minutes). Ten benchmark questions through the full pipeline with the span verifier and the policy gate, using cached responses for repeat runs. Exit criterion: traces, tests, and results follow the required execution path.
+6. **Offline artifact round trip** (laptop plus one CPU job, about 20 minutes). Run a small OCR and index subset through the batch jobs, download the artifacts into `data/corpus/` and `data/index/`, and start the local backend against the mirror. Exit criterion: the backend answers one benchmark question from TACC-produced artifacts with no TACC job running, and the corpus hash and job ids match the job logs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+7. **End-to-end smoke** (laptop plus external API calls, about 30 minutes). Ten benchmark questions through the local backend with the span verifier and the policy gate, using cached responses for repeat runs. Exit criterion: traces, tests, and results follow the required execution path.
 8. **LangGraph import spike** (4 CPUs, about 15 minutes). Install the LangGraph dependency group through the bootstrap, import `langgraph` and `langgraph-checkpoint-sqlite` under the public interpreter, and run a two node graph with the SQLite checkpointer. Exit criterion: the import and the graph run inside one job; otherwise record the in-memory saver fallback ([ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md)).
 9. **Local Langfuse spike** (laptop, no TACC job). Bring up the Docker Compose stack from [langfuse-local.md](langfuse-local.md), emit one trace with a session id, and confirm the health endpoints, the web UI, and `TELEMETRY_ENABLED=false`. Exit criterion: one trace is visible and the backend still answers with tracing disabled.
 10. **Self-test execution spike** (1 CPU job plus external API calls, about 20 minutes). Submit one `tacc/exec` job that compiles a generated reference answer, runs its tests, and executes one sample code answer; poll the job from the local backend, download the results, and measure queue plus run time. Exit criterion: the results are downloadable, cached, and the measured latency is recorded; the report states the trusted-user assumption.
@@ -192,12 +193,12 @@ Spikes 1 to 3 ran on 2026-10-29 and passed every exit criterion; the measurement
 - `uv` and a target install under PRoot are verified (2026-10-29): the target install works and imports all four project packages, but the first install takes about 33 minutes and PyPI needed retries. The bootstrap retries, sets a longer HTTP timeout, and serialises concurrent installs. Fallbacks: a virtual environment from the public interpreter, then the SDK conda environment.
 - The PaddlePaddle CPU wheel installs and imports under PRoot (2026-10-29, paddle 3.2.1), and PP-DocLayoutV2 runs on CPU. The remaining fallback is pure vLLM whole-page prompts with page-level citations only.
 - Two PRoot network quirks are recorded on 2026-10-29: `hf download` against the HF mirror hits TLS certificate verification errors, so layout weights come through the PaddleX modelscope path, and the first install must not be combined with GPU work because it can consume most of a one-hour job.
-- Gateway to job-container port reachability is unverified; the SSH forward plumbing works and arbitrary target ports are not restricted. No document addresses student forwarding to a web port directly; the general prohibition and the model-service instruction conflict. If the TA disallows it or the spike fails, the demo uses the local backend and UI with text generation through the external API and a local or cached embedding path.
-- Cluster capacity was tight on 2026-10-28: no idle nodes, several drain and down. Start the service and backend jobs early and keep replay ready; do not assume a node on demand.
+- The web-port forwarding question is closed by the 2026-10-30 clarification: the delivered system has no TACC service to reach, so no tunnel is built and the optional baseline generates inside its own job. TACC compute nodes stay private; the documented model-service forward remains available if a future experiment needs it, but the delivery does not use it ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+- Cluster capacity was tight on 2026-10-28: no idle nodes, several drain and down. Submit the batch jobs early, keep the local mirror current, and keep replay ready; do not assume a node on demand.
 - External model APIs add an outage, cost, and data-egress risk. Every call is cached and labelled; evaluation must run from cache, and a benchmark run needs an explicit paid-call budget. A local demo needs an embedding path for BGE-M3: a local copy of the model or cached query vectors.
 - TTS has no timestamps and its free period is temporary, so teaching-video voiceover needs a quality and pacing check before it becomes a deliverable.
 - The first OCR and embedding runs may exceed one hour. Mitigation: resume, per-document shards, and 50-minute self-stop.
-- The optional Qwen baseline address changes with every job; when it is used, the client writes it from the current log into the task configuration before submission.
+- The optional Qwen baseline runs as one batch job and writes its answers to `USERDIR`; there is no per-job address to copy, so the baseline is recorded as a job id and a result file.
 - Group storage is 100 GB shared by three accounts; the expected footprint is a few GB for weights, about 58 MB of PDFs, a few hundred MB of OCR output and page images, and small index files.
 - The comparison between OCR output and PDF text is not a correctness oracle; human spot checks on figure-heavy slides remain part of RQ1.
 - The frontend build depends on the laptop Node toolchain; a clean machine needs Node and `npm ci` before it can serve the UI.
@@ -206,7 +207,7 @@ Spikes 1 to 3 ran on 2026-10-29 and passed every exit criterion; the measurement
 - The schema is single-course by design. Multi-course support is recorded as future development in [prd.md](prd.md#future-development) and would be a data model migration, not a configuration switch.
 - Self-test code execution depends on the TACC queue: a per-request `tacc/exec` job can wait minutes and the one-hour job cap bounds the batch size. The demo has two to three trusted users, the UI shows pending, running, and scored states, and the measured queue and run time goes into the report.
 - The self-test execution path does not claim hostile-user isolation. The demo accounts belong to the team; a real deployment would need a sandboxed execution environment ([ADR-0009](adr/0009-typed-agent-tools-instead-of-a-shell.md)).
-- The TA was asked on 2026-10-29 whether the final demo must run the backend on TACC and whether forwarding to a student web port is allowed; no reply is recorded yet. Until the reply, the local backend is the demo mode and TACC stays the evaluation evidence path.
+- The demo mode and the TACC boundary are settled by the 2026-10-30 clarification: the backend and UI run locally, and TACC is used only through batch jobs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The earlier question about a TACC-hosted demo is closed.
 
 ## References
 

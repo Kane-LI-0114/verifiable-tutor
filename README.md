@@ -2,11 +2,11 @@
 
 *A course-grounded agent with evidence-checked answers, executable practice labs, and enforced course policy*
 
-Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) by LI Jinchuan, TIAN Yujia, and XIE Yifeng: a course-grounded tutoring agent built to run on TACC.
+Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) by LI Jinchuan, TIAN Yujia, and XIE Yifeng: a course-grounded tutoring agent served from the developer laptop, with TACC as its offline compute resource.
 
 ## Status
 
-**Technology selected, model layer implemented, PRD v0.7 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, nine ADRs (including LangGraph orchestration, local Langfuse tracing, and typed agent tools), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+**Technology selected, model layer implemented, PRD v0.8 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, ten ADRs (including LangGraph orchestration, local Langfuse tracing, typed agent tools, and TACC as an offline compute resource), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
 
 ## What it is
 
@@ -38,13 +38,13 @@ The gate is code, not a prompt: a versioned registry of release and due dates wi
 
 ## Architecture
 
-The planned system has three moving parts: a React browser UI served by the agent backend, the agent backend (run locally for the current demo and submitted as a TACC CPU job for evaluation evidence), and a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), with the course Qwen service kept as an optional TACC baseline. The agent workflow is a LangGraph `StateGraph` ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)), and local development traces model calls and graph steps into a self-hosted Langfuse instance ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)). Embeddings run locally on TACC with BGE-M3 ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
+The planned system has three moving parts: a React browser UI served by the agent backend, the agent backend (run locally, with TACC supplying offline corpus, index, execution, and evaluation artifacts), and a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), with the course Qwen service kept as an optional offline baseline. TACC is an offline compute resource: every job writes files and exits, the artifacts are mirrored locally, and no service runs on TACC ([ADR-0010](docs/adr/0010-tacc-as-offline-compute.md)). The agent workflow is a LangGraph `StateGraph` ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)), and local development traces model calls and graph steps into a self-hosted Langfuse instance ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)). The retrieval index is built on TACC with BGE-M3, and query embedding runs on the laptop ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
 
 ![System containers and components](proposal/figs/fig2_components.png)
 
-The optional GPU job serves Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context, admitting at most four concurrent requests, as a baseline. The primary text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)). The figure source is [proposal/figs/fig2_components.dot](proposal/figs/fig2_components.dot).
+The optional baseline loads Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context inside one batch job that generates the baseline answers and exits; no endpoint is exposed. The primary text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)). The figure source is [proposal/figs/fig2_components.dot](proposal/figs/fig2_components.dot).
 
-The six planned subsystems inside the CPU job:
+The six planned subsystems inside the backend:
 - Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
 - Evidence: a TACC OCR job parses PDF files, one file per request, into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md), [docs/corpus-schema.md](docs/corpus-schema.md)); `scripts/tacc/parse_pdf.py` runs the whole local-to-TACC round trip and returns per-page JSONL plus one document markdown; hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
 - Practice lab and self-test: generated questions in the types the student asks for or the agent chooses, with cited reference answers; reference tests and student code answers execute as TACC jobs, and the agent grades the answers with citations. The first pack is MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness; a generated reference solution is accepted only after it compiles and passes the pack's tests.
@@ -70,14 +70,14 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/corpus/` | Corpus build from OCR output: page records, chunks, page images, hashing | planned (not created yet) |
 | `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache |
 | `src/verifiable_tutor/ui/web/` | React UI source; built assets are written to `src/verifiable_tutor/ui/static/` | planned (not created yet) |
-| `tacc/serve/` | Optional baseline: TACC GPU job for the Qwen service | placeholder (`.gitkeep`) |
+| `tacc/serve/` | Optional baseline: TACC GPU batch job that generates Qwen answers | placeholder (`.gitkeep`) |
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |
 | `tacc/ocr-smoke/` | Committed GPU spike: PaddleOCR-VL smoke on representative pages | present: spike job |
 | `tacc/pdf-parse/` | Committed GPU job: parses one complete PDF file end to end (enumerate, render, layout, recognition, document markdown) | present: demo path spike |
 | `tacc/ocr/` | TACC GPU job for page rendering, layout, and OCR | planned (not created yet) |
 | `tacc/index/` | TACC GPU job for embeddings and the BM25 index | planned (not created yet) |
 | `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
-| `tacc/client/` | TACC CPU job for the agent backend, the UI, and the evaluation harness | placeholder (`.gitkeep`) |
+| `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
 | `data/corpus/`, `data/index/`, `data/caches/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots | placeholder (`.gitkeep`) |
@@ -140,7 +140,7 @@ Multi-course support is out of scope for this deliverable and is recorded as fut
 - [docs/benchmark-protocol.md](docs/benchmark-protocol.md): the RQ2 self-test generation and grading benchmark: baseline, shared set, simulated answers, ground truth, and metrics.
 - [docs/paddleocr-vl-api.md](docs/paddleocr-vl-api.md): PaddleOCR-VL request and response construction for the local pipeline, the recognition service, the self-hosted parsing service, and the hosted official API.
 - [docs/model-providers.md](docs/model-providers.md): agent-facing API notes for DeepSeek and Xiaomi MiMo, model switching, image and audio input, thinking control, web search, JSON output, and tool calling.
-- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, and typed agent tools.
+- [docs/adr/](docs/adr/): decision records for the environment, the OCR pipeline, the UI stack, the retrieval model, the model backend, retry behaviour, local model-call tracing, the orchestration runtime, typed agent tools, and the offline TACC boundary.
 - [docs/langfuse-local.md](docs/langfuse-local.md): runbook for the optional local Langfuse instance used for development tracing.
 - [docs/email-local.md](docs/email-local.md): runbook for registration and password reset email over QQ Mail SMTP.
 - [config/models.yaml](config/models.yaml): provider endpoints, model ids, role routing, request parameters, and embedding settings. Secrets stay in the ignored `.env`; [.env.example](.env.example) is the committed template.

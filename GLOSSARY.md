@@ -64,6 +64,10 @@ _Avoid_: Correction, marking, auto-grading
 A TACC job that runs reference tests and self-test code answers on the platform and writes results to `USERDIR`. The local backend submits it, polls it, and downloads the results.
 _Avoid_: Sandbox, runner, worker
 
+**Offline TACC job**:
+A submitted batch job that produces artifacts, such as OCR page records, embedding vectors, execution results, or evaluation output, which are downloaded to the laptop and read by the local backend. It serves no requests and exits when it finishes.
+_Avoid_: TACC service, deployment, hosted backend
+
 **Reference solution**:
 A solution to a practice exercise that is shown only after it compiled and passed the pack's tests.
 _Avoid_: Solution, answer key

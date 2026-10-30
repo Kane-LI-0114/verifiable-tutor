@@ -6,6 +6,8 @@
 | **Date** | 2026-10-29 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
+> **Context update (2026-10-30).** The delivered backend runs on the laptop only. [ADR-0010](0010-tacc-as-offline-compute.md) settles that TACC is used as an offline compute resource, so the TACC CPU backend path discussed above is not delivered. The tool boundary and the per-request `tacc/exec` execution of code answers are unchanged.
+
 ## Context
 
 The lead requires users to see the agent's thinking and execution, including command-line execution. That can mean two different things: giving the model a shell, or giving it typed tools whose implementation runs commands. The choice decides both the security surface and the shape of the user-visible work chain.

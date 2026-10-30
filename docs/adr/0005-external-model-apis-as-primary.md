@@ -8,6 +8,8 @@
 
 > **Superseded in part.** [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) replaces the cross-model fallback part of this decision. The rest stands. The live-verified model ids are `deepseek-flash`, `mimo-v2.6-flash`, and `mimo-v2.6-pro`; see [config/models.yaml](../../config/models.yaml).
 
+> **Amended in part (2026-10-30).** The delivered backend runs on the laptop ([ADR-0010](0010-tacc-as-offline-compute.md)), so query embedding runs locally with a local BGE-M3 copy or cached query vectors, while batch index embedding stays on a TACC GPU job. The course Qwen model is used as an offline batch baseline, not as a deployed service.
+
 ## Context
 
 The frozen proposal commits to the course Qwen service on TACC as the primary model backend, with external LLM and search APIs as optional baselines. Two things changed after the proposal:

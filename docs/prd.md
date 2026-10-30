@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.7 |
-| **Date** | 2026-10-29 |
+| **Status** | Draft for review, version 0.8 |
+| **Date** | 2026-10-30 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
 | **Supersedes** | The proposal stays frozen as the submitted two-page artifact. This document is the living product specification; [tech-selection.md](tech-selection.md) and the ADRs own how the system is built |
@@ -23,7 +23,7 @@ Goals:
 
 ### System overview
 
-The backend and its stores run on the developer laptop for the demo, the model calls go to external OpenAI-compatible APIs, and TACC jobs produce the corpus, index, evaluation evidence, and self-test code execution. Langfuse is used in local development only. The proposal's own use case and container figures are the frozen submission; the figures in this document reflect the decisions recorded here.
+The backend and its stores run on the developer laptop for the demo, the model calls go to external OpenAI-compatible APIs, and TACC jobs produce the corpus, index, evaluation evidence, and self-test code execution. TACC is an offline compute resource: every job is a batch job that writes files and exits, its artifacts are downloaded into the local mirror, and no service is hosted on TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). Langfuse is used in local development only. The proposal's own use case and container figures are the frozen submission; the figures in this document reflect the decisions recorded here.
 
 ![Figure 1. Containers and external dependencies](figures/prd-containers.png)
 
@@ -70,7 +70,6 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 - Self-test answer grading: the agent grades the student's answers to generated questions and explains each result with citations to lecture, tutorial, or course assignment material; code answers execute as TACC jobs.
 - Line-anchored explanation of a user-submitted solution.
 - In-app deadline registry editor for the instructor role.
-- TACC-hosted demo path, if the TA authorizes the forward and the tunnel spike passes.
 - DeepSeek web search augmentation for questions the corpus cannot answer.
 
 **P2, best effort:**
@@ -84,6 +83,7 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 **Non-goals:**
 
 - A public deployment or real multi-tenant operation.
+- Hosting the backend, the UI, or any long-running service on TACC. The course requirement is offline TACC computation, not a TACC deployment ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 - Quotas, daily budgets, login lockout, and abuse protection. The account system has basic authentication and authorization only.
 - Plagiarism detection, gradebook integrations, and grading of TA-submitted homework or formal course grades.
 - Mobile applications, native clients, and server-side rendering.
@@ -215,9 +215,9 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-I5 | At least one failure is analyzed by cause | P0 | The report names the dominant failure mode with trace evidence |
 | FR-J1 | The repository runs locally from a clean checkout with documented commands | P0 | A fresh clone plus the documented commands reaches a working chat |
 | FR-J2 | Tested demo runbook with the replay fallback | P0 | The demo can be run twice in a row, and replay works without network |
-| FR-J3 | TACC jobs produce OCR, index, and evaluation evidence recorded in the report | P0 | Job ids, logs, and result files are cited in the report |
+| FR-J3 | Offline TACC pipeline: the OCR and index jobs run on TACC, their artifacts are mirrored under `data/corpus/` and `data/index/`, and the delivered backend answers from the mirror | P0 | Job ids, logs, and artifact hashes are cited in the report; the local backend answers a benchmark question from the mirrored artifacts with no TACC job running |
 | FR-J4 | UI strings in Chinese and English with a toggle | P1 | A single translation resource serves both languages |
-| FR-J5 | TACC-hosted demo path | P1 | Open until the TA replies to the 2026-10-29 email |
+| FR-J5 | TACC usage boundary: TACC appears only as submitted batch jobs; no service listens on TACC for the product, and the backend and UI run locally | P0 | The demo runs on the laptop; the report states the topology and that no online service is deployed on TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md)) |
 
 ## 6. Non-functional requirements
 
@@ -284,7 +284,6 @@ There is no published presentation or submission date. Work is ordered in four w
 
 ## 10. Open questions
 
-- The TA reply on (a) SSH forwarding to a student-run web port and (b) whether the final demo must run the backend on TACC is pending. The local backend is the demo mode until then.
 - Allowed registration domains are set to `connect.ust.hk` and `ust.hk` as a default; confirm if the course uses another domain.
 - The email flow is set to a six digit code for registration and a one-time link for reset; confirm if a link is preferred for both.
 - The Langfuse stack disk usage is estimated at 5 to 10 GB; measure once the stack is first started.
