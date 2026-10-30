@@ -6,11 +6,11 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Technology selected, model layer implemented, PRD v0.8 drafted.** The substantive content is the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, ten ADRs (including LangGraph orchestration, local Langfuse tracing, typed agent tools, and TACC as an offline compute resource), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+**Technology selected, model layer implemented, PRD v0.9 drafted.** The substantive content is the course project proposal v1 (submitted) and its current revision v2, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, ten ADRs (including LangGraph orchestration, local Langfuse tracing, typed agent tools, and TACC as an offline compute resource), the local tracing and email runbooks, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
 
 ## What it is
 
-A tutoring agent for one course whose outputs are checkable in three ways: text claims against cited page spans, code artifacts against executable tests, and disclosure against a dated policy. The scope is deliberately narrow: this course's own materials, assignments, and deadlines. The full argument, including motivation and design rationale, is in [proposal/proposal.md](proposal/proposal.md); this README is the entry point, not a second proposal.
+A tutoring agent for one course whose outputs are checkable in three ways: text claims against cited page spans, code artifacts against executable tests, and disclosure against a dated policy. The scope is deliberately narrow: this course's own materials, assignments, and deadlines. The full argument, including motivation and design rationale, is in [proposal/proposal_v2.md](proposal/proposal_v2.md) (current revision; the submitted v1 is [proposal/proposal.md](proposal/proposal.md)); this README is the entry point, not a second proposal.
 
 ## Use cases
 
@@ -34,15 +34,15 @@ A five-state policy decides what the agent may reveal. The states are pre-releas
 | Post-deadline | Replaces refusal with full teaching plus a verified solution. |
 | Unknown | Abstains rather than guesses; insufficient evidence also leads to abstention. |
 
-The gate is code, not a prompt: a versioned registry of release and due dates with extensions, an intent classifier, and a log of every decision. The proposal covers the policy in [section 2](proposal/proposal.md#2-task-definition-and-outputs) and [section 3](proposal/proposal.md#3-proposed-system).
+The gate is code, not a prompt: a versioned registry of release and due dates with extensions, an intent classifier, and a log of every decision. The proposal covers the policy in [section 2](proposal/proposal_v2.md#2-task-definition-and-outputs) and [section 3](proposal/proposal_v2.md#3-proposed-system).
 
 ## Architecture
 
 The planned system has three moving parts: a React browser UI served by the agent backend, the agent backend (run locally, with TACC supplying offline corpus, index, execution, and evaluation artifacts), and a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), with the course Qwen service kept as an optional offline baseline. TACC is an offline compute resource: every job writes files and exits, the artifacts are mirrored locally, and no service runs on TACC ([ADR-0010](docs/adr/0010-tacc-as-offline-compute.md)). The agent workflow is a LangGraph `StateGraph` ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)), and local development traces model calls and graph steps into a self-hosted Langfuse instance ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)). The retrieval index is built on TACC with BGE-M3, and query embedding runs on the laptop ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
 
-![System containers and components](proposal/figs/fig2_components.png)
+![System containers and components](proposal/figs/fig2_components_v2.png)
 
-The optional baseline loads Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context inside one batch job that generates the baseline answers and exits; no endpoint is exposed. The primary text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)). The figure source is [proposal/figs/fig2_components.dot](proposal/figs/fig2_components.dot).
+The optional baseline loads Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context inside one batch job that generates the baseline answers and exits; no endpoint is exposed. The primary text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)). The figure source is [proposal/figs/fig2_components_v2.dot](proposal/figs/fig2_components_v2.dot).
 
 The six planned subsystems inside the backend:
 - Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
@@ -95,22 +95,22 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `docs/langfuse-local.md` | Local development tracing runbook | present: runbook |
 | `docs/email-local.md` | Registration and reset email runbook | present: runbook |
 | `docs/tacc-notes.md` | Platform constraints, budgets, and mechanics | present: notes |
-| `proposal/` | Proposal sources: `proposal.md`, `build_proposal.py`, figure `.dot` sources, rendered PDF and DOCX | present: proposal sources |
+| `proposal/` | Proposal sources: v1 `proposal.md` and v2 `proposal_v2.md`, `build_proposal.py`, figure `.dot` sources, rendered PDFs, DOCX files, and v2 previews | present: proposal sources |
 
 ## Evaluation plan
 
-All evaluation work is planned and the repository contains no results. Four research questions, detailed in [proposal section 4](proposal/proposal.md#4-evaluation-plan):
+All evaluation work is planned and the repository contains no results. The project is task-oriented (the course brief's task learning and adaptation direction): it quantifies tutoring-task performance against baselines, and reports efficiency as a secondary metric in RQ4. Four research questions, detailed in [proposal section 4](proposal/proposal_v2.md#4-evaluation-plan):
 
 - RQ1 evidence fidelity: citation span accuracy (deterministic) and faithfulness (human-checked support rate).
 - RQ2 practice and self-test verifiability: the share of generated questions whose reference answer compiles and passes course-style tests, environment alignment, cost per question, and grading consistency on a small constructed sample.
 - RQ3 disclosure correctness: behavior across the five policy states, including a deadline extension, and an adversarial set (false "deadline passed" claims, TA impersonation, role-play, pasted "official" solutions) against a prompt-only baseline.
 - RQ4 cost: end-to-end latency, model calls per request, and a retrieval ablation over BM25, dense, and hybrid variants.
 
-The benchmark is planned to hold fifty course questions, ten policy scenarios, and two practice packs, with later-released sessions held out; runs use temperature 0, cached retrieval snapshots and responses, and an injected clock.
+The benchmark is planned to hold fifty course questions, ten policy scenarios, one MPI/GEMM practice pack, and a shared self-test grading set, with later-released sessions held out; runs use temperature 0, cached retrieval snapshots and responses, and an injected clock.
 
 ## Roadmap
 
-The four one-week workstreams from proposal Table 1 (planned):
+The four one-week workstreams from proposal v2 Table 1 (planned):
 
 | Workstream | W1 | W2 | W3 | W4 |
 |---|---|---|---|---|
@@ -123,17 +123,20 @@ The four one-week workstreams from proposal Table 1 (planned):
 | UI and replay mode | | | X | X |
 | Evaluation, report, demo | | | | X |
 
-Deliverables: the code repository, the evaluation report, and the demo.
+Deliverables: the code repository, the evaluation report, the tested demo, and the final presentation.
 
 Multi-course support is out of scope for this deliverable and is recorded as future development in [docs/prd.md](docs/prd.md#future-development).
 
 ## Documentation
 
-- [proposal/proposal.md](proposal/proposal.md): readable Markdown text of the proposal, generated by `proposal/build_proposal.py`.
+- [proposal/proposal_v2.md](proposal/proposal_v2.md): readable Markdown text of the current proposal revision, generated by `proposal/build_proposal.py --version 2`.
+- [proposal/proposal.md](proposal/proposal.md): Markdown text of the submitted v1 proposal, kept frozen.
 - [docs/prd.md](docs/prd.md): product requirements, scope, acceptance criteria, and milestones.
 - [GLOSSARY.md](GLOSSARY.md): the project's domain vocabulary.
-- [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf): the two-page submitted PDF.
-- [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx): editable DOCX version.
+- [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v2.pdf](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v2.pdf): the two-page revision submitted by 2026-11-01, exported from the v2 DOCX with LibreOffice.
+- [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v2.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v2.docx): editable v2 DOCX.
+- [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.pdf): the submitted v1 PDF, kept frozen.
+- [CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx](proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx): the submitted v1 DOCX, kept frozen.
 - [docs/figures/](docs/figures/): PRD diagram sources (`.dot`) and rendered PNGs: use cases, containers, sequence examples, and the entity relationship model.
 - [docs/tech-selection.md](docs/tech-selection.md): technology choices, job topology, demo modes, and the week-one verification spikes.
 - [docs/corpus-schema.md](docs/corpus-schema.md): page, block, document and chunk record fields produced by the OCR pipeline.
@@ -153,4 +156,4 @@ Multi-course support is out of scope for this deliverable and is recorded as fut
 - TIAN Yujia (21201619)
 - XIE Yifeng (21322152)
 
-CSIT6000V Advanced AI Computing and Systems, Fall 2026. Instructor: Prof. Kai Chen. Proposal dated October 27, 2026. Repository: https://github.com/Kane-LI-0114/verifiable-tutor
+CSIT6000V Advanced AI Computing and Systems, Fall 2026. Instructor: Prof. Kai Chen. Proposal v1 dated October 27, 2026; revision v2 dated October 30, 2026, due November 1, 2026. Repository: https://github.com/Kane-LI-0114/verifiable-tutor

@@ -8,11 +8,11 @@
 
 > **Superseded in part.** [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) replaces the cross-model fallback part of this decision. The rest stands. The live-verified model ids are `deepseek-flash`, `mimo-v2.6-flash`, and `mimo-v2.6-pro`; see [config/models.yaml](../../config/models.yaml).
 
-> **Amended in part (2026-10-30).** The delivered backend runs on the laptop ([ADR-0010](0010-tacc-as-offline-compute.md)), so query embedding runs locally with a local BGE-M3 copy or cached query vectors, while batch index embedding stays on a TACC GPU job. The course Qwen model is used as an offline batch baseline, not as a deployed service.
+> **Amended in part (2026-10-30).** The delivered backend runs on the laptop ([ADR-0010](0010-tacc-as-offline-compute.md)), so query embedding runs locally with a local BGE-M3 copy or cached query vectors, while batch index embedding stays on a TACC GPU job. The course Qwen model is used as an offline batch baseline, not as a deployed service. Proposal v2 (revision dated 2026-10-30) records external APIs as primary; proposal v1 remains the submitted artifact.
 
 ## Context
 
-The frozen proposal commits to the course Qwen service on TACC as the primary model backend, with external LLM and search APIs as optional baselines. Two things changed after the proposal:
+The submitted proposal v1 (October 27, 2026) commits to the course Qwen service on TACC as the primary model backend, with external LLM and search APIs as optional baselines. Two things changed after the proposal:
 
 - The staff clarification of 2026-10-28 says that TACC and the provided Qwen model are not mandatory, and that external LLM APIs and external computing resources are acceptable ([../tacc-notes.md](../tacc-notes.md)). It also says the course may not reimburse external API costs, so every external result must be cached.
 - Text generation is the highest-latency and highest-cost step of the agent. Pinning it to a shared Qwen job means every iteration waits on a queue, a 12 minute 40 second cold start, and an address that changes per job. The team wants faster iteration and a provider that can be swapped from configuration.
@@ -42,15 +42,15 @@ Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSee
 - The course does not reimburse external calls, so evaluation must run from cache and the paid-call budget must stay small; a careless benchmark run costs money.
 - Provider model ids and behaviour change over time, so the report and the cache key must record the exact provider and model.
 - Course material excerpts leave the platform as prompts to a third party. This is acceptable for a course project with public course material, but it must be stated in the report.
-- The frozen proposal names the Qwen service as primary. The report must explain this deviation and keep the TACC jobs for evaluation evidence.
-- A local demo needs an embedding path: either BGE-M3 loaded on the laptop or a cache of query vectors; this is still to be decided.
+- Proposal v1 names the Qwen service as primary; proposal v2 records the delivered decision. The report explains the change from v1 and keeps the TACC jobs for evaluation evidence.
+- A local demo needs an embedding path: BGE-M3 loaded on the laptop or a cache of query vectors, as recorded in [ADR-0010](0010-tacc-as-offline-compute.md).
 
 **Neutral:**
 - `tacc/serve` moves from a required job to an optional baseline, and the job budget shifts toward OCR and indexing.
 
 ## Alternatives considered
 
-**Keep the Qwen service as primary.** For: exact alignment with the frozen proposal, no API cost, and a model the course has already validated and provided. Against: queue, cold start, address churn, and shared GPU contention limit iteration and demo reliability. Why not chosen: speed of iteration and independence matter more for a four-week project, and the staff clarification permits external APIs.
+**Keep the Qwen service as primary.** For: exact alignment with proposal v1, no API cost, and a model the course has already validated and provided. Against: queue, cold start, address churn, and shared GPU contention limit iteration and demo reliability. Why not chosen: speed of iteration and independence matter more for a four-week project, and the staff clarification permits external APIs.
 
 **Use a single external provider.** For: one endpoint, one key, and the simplest configuration. Against: only one provider for the provider-specific roles and for comparing answers. Why not chosen: two providers were already available, and the per-role configuration keeps both available without code changes. [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) removes automatic fallback between them.
 

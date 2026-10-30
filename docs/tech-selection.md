@@ -1,8 +1,8 @@
 # Technology selection
 
-Scope: implementation technology for this repository. It does not change the frozen two-page proposal. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
+Scope: implementation technology for this repository. It tracks proposal v2 (revision dated 2026-10-30); proposal v1 remains the submitted artifact. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
 
-Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, and updated on 2026-10-30 for the offline TACC boundary ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The model layer, its tests, and its live smoke script are implemented; the remaining subsystems are planned. Spikes 1 to 3 ran on 2026-10-29; spikes 4 to 10 are unrun.
+Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, and updated on 2026-10-30 for the offline TACC boundary ([ADR-0010](adr/0010-tacc-as-offline-compute.md)), aligned with proposal v2 (revision dated 2026-10-30). The model layer, its tests, and its live smoke script are implemented; the remaining subsystems are planned. Spikes 1 to 3 ran on 2026-10-29; spikes 4 to 10 are unrun.
 
 ## Decisions at a glance
 
@@ -139,9 +139,9 @@ Two course sources point at TACC. The brief is titled "Course Project: build an 
 
 The staff clarification recorded on 2026-10-28 says TACC and the provided Qwen model are not mandatory, and that external LLM APIs and external computing resources are acceptable ([tacc-notes.md](tacc-notes.md)).
 
-The submitted proposal commits to a TACC CPU job for the agent backend ([proposal section 3](../proposal/proposal.md#3-proposed-system)). That is a project commitment, not a course requirement.
+The submitted proposal v1 commits to a TACC CPU job for the agent backend ([proposal v1 section 3](../proposal/proposal.md#3-proposed-system)). That was a project commitment, not a course requirement; proposal v2 records the delivered local-backend topology ([proposal v2 section 3](../proposal/proposal_v2.md#3-proposed-system)).
 
-Clarification of 2026-10-30: the backend does not have to be deployed on TACC. The course requirement is at least one offline job that uses TACC results, with OCR parsing and chunk embedding as the examples: TACC produces the results, they are stored locally, and the delivered system reads them. TACC is an offline compute resource, and no online service is deployed there ([tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). The delivered topology is therefore a local backend and UI with TACC batch jobs behind it ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The proposal's TACC CPU job and Qwen-service primaries are not delivered as written; the report explains the deviation.
+Clarification of 2026-10-30: the backend does not have to be deployed on TACC. The course requirement is at least one offline job that uses TACC results, with OCR parsing and chunk embedding as the examples: TACC produces the results, they are stored locally, and the delivered system reads them. TACC is an offline compute resource, and no online service is deployed there ([tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). The delivered topology is therefore a local backend and UI with TACC batch jobs behind it ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). Proposal v2 records the delivered topology, so the report explains the change from v1's TACC CPU job and Qwen-service primaries rather than a deviation from the current plan.
 
 ## Repository additions
 
@@ -171,7 +171,7 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 | dots.ocr or dots.mocr as the OCR pipeline | One model with native vLLM 0.26.0 support: the simplest deployment, no PaddlePaddle or layout model | Lower shared-protocol text accuracy than PaddleOCR-VL-1.6, 3.04B weights mean 43 to 85 minutes for the corpus and two jobs, no official recipe, and JSON repair is required; kept as the first fallback if the Paddle stack cannot be installed |
 | MinerU as the OCR pipeline | Mature pipeline with a good schema | Heavier stack and AGPL weights on one variant |
 | Qwen3-Embedding-4B as the default | Better Chinese to English retrieval numbers | Eight GB of weights and several times the embedding time, unproven need |
-| Qwen service as the primary text backend | Exact alignment with the frozen proposal and no external API cost | Queue, cold start, address churn, and shared GPU contention slow iteration and demo reliability; kept as an optional baseline ([ADR-0005](adr/0005-external-model-apis-as-primary.md)) |
+| Qwen service as the primary text backend | Exact alignment with proposal v1 and no external API cost | Queue, cold start, address churn, and shared GPU contention slow iteration and demo reliability; kept as an optional baseline ([ADR-0005](adr/0005-external-model-apis-as-primary.md)) |
 
 ## Verification spikes
 

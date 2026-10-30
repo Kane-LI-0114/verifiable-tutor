@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.8 |
+| **Status** | Draft for review, version 0.9 |
 | **Date** | 2026-10-30 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
-| **Supersedes** | The proposal stays frozen as the submitted two-page artifact. This document is the living product specification; [tech-selection.md](tech-selection.md) and the ADRs own how the system is built |
+| **Supersedes** | Proposal v1 (submitted 2026-10-27) remains the submitted artifact; proposal v2 (revision dated 2026-10-30, due 2026-11-01) is the current statement of the plan and aligns with this document. This document is the living product specification; [tech-selection.md](tech-selection.md) and the ADRs own how the system is built |
 
-This document is the source of truth for what ships. The proposal records why the project exists and what was promised to the course; the technology selection and the ADRs record implementation decisions. When a requirement here contradicts the proposal, the report explains the deviation.
+This document is the source of truth for what ships. Proposal v1 records why the project exists and what was promised to the course; proposal v2 records the delivered topology and the revised deadline. When a requirement here contradicts proposal v1, the report explains the change; proposal v2 aligns with this document. The technology selection and the ADRs record implementation decisions.
+
+Version 0.9 aligns this document with proposal v2, records the corrected proposal deadline, and states the task-oriented project direction; product requirements are unchanged from 0.8.
 
 ## 1. Problem and goals
 
@@ -21,9 +23,11 @@ Goals:
 - **G3 Verified practice and self-test.** A practice exercise or self-test question is shown with a reference answer that has compiled and passed its tests where applicable; a student's answer is graded against that reference answer and explained with citations.
 - **G4 Reproducible evaluation.** Representative cases, recorded traces, and a failure analysis produced from TACC runs, with no paid call needed to rerun.
 
+**Project direction.** The course project brief lists two recommended exploration directions: task learning and adaptation, and system efficiency. This project takes the task-oriented direction: it targets tutoring-task performance for one course and quantifies that performance against baselines, namely an external chatbot for the self-test loop and a prompt-only policy for disclosure. Efficiency metrics (latency, model calls, cost) are reported as RQ4 and are not the optimization target (course project brief and lecture 0 slides, in the course workspace outside this repository; [proposal v2](../proposal/proposal_v2.md#4-evaluation-plan)).
+
 ### System overview
 
-The backend and its stores run on the developer laptop for the demo, the model calls go to external OpenAI-compatible APIs, and TACC jobs produce the corpus, index, evaluation evidence, and self-test code execution. TACC is an offline compute resource: every job is a batch job that writes files and exits, its artifacts are downloaded into the local mirror, and no service is hosted on TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). Langfuse is used in local development only. The proposal's own use case and container figures are the frozen submission; the figures in this document reflect the decisions recorded here.
+The backend and its stores run on the developer laptop for the demo, the model calls go to external OpenAI-compatible APIs, and TACC jobs produce the corpus, index, evaluation evidence, and self-test code execution. TACC is an offline compute resource: every job is a batch job that writes files and exits, its artifacts are downloaded into the local mirror, and no service is hosted on TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). Langfuse is used in local development only. Proposal v1 figures are the submitted artifact; proposal v2 redraws the container figure for the delivered topology, and the figures in this document follow the decisions recorded here.
 
 ![Figure 1. Containers and external dependencies](figures/prd-containers.png)
 
@@ -271,11 +275,11 @@ Targets are provisional and confirmed by the first evaluation run. They are stat
 | RQ3 disclosure correctness | At or above 9 of 10 policy scenarios correct, including the adversarial set; no false allow before the deadline |
 | RQ4 cost and latency | Latency, model calls per request, and paid-call cost reported; BM25, dense, and hybrid ablation reported |
 | Failure analysis | At least one dominant failure mode analyzed with trace evidence |
-| Course deliverable check | Frontend, backend, evaluation, tested demo, and a runnable repository are all demonstrated |
+| Course deliverable check | Frontend, backend, evaluation, tested demo, and a runnable repository are all demonstrated; proposal v2 is submitted by 2026-11-01 |
 
 ## 9. Milestones
 
-There is no published presentation or submission date. Work is ordered in four workstreams; a workstream is complete when its acceptance items in section 5 pass.
+Key dates: the revised proposal (v2) is due Sunday 2026-11-01; the course brief lists Thursday 2026-10-29, which the TA corrected ([tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). The final presentation and repository submission date are not yet published. Work is ordered in four workstreams; a workstream is complete when its acceptance items in section 5 pass.
 
 1. **Corpus, index, and access.** TACC OCR and index jobs, retrieval, accounts, sessions, and the local run path.
 2. **Agent and policy.** LangGraph graph, disclosure gate, deadline registry, evidence verification, work chain, and model control.
@@ -294,7 +298,7 @@ There is no published presentation or submission date. Work is ordered in four w
 
 ## 11. Related documents
 
-- Proposal: [../proposal/proposal.md](../proposal/proposal.md)
+- Proposal: [../proposal/proposal_v2.md](../proposal/proposal_v2.md) (current revision, dated 2026-10-30); the submitted v1 is [../proposal/proposal.md](../proposal/proposal.md)
 - Technology selection: [tech-selection.md](tech-selection.md)
 - Decision records: [adr/](adr/)
 - Self-test benchmark protocol: [benchmark-protocol.md](benchmark-protocol.md)

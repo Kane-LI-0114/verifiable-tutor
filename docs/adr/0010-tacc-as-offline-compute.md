@@ -8,7 +8,7 @@
 
 ## Context
 
-The frozen proposal commits to a TACC CPU job for the agent backend and to the course Qwen service on TACC. [ADR-0005](0005-external-model-apis-as-primary.md) moved text generation to external APIs but kept the TACC CPU job as the evaluation evidence path. [tech-selection.md](../tech-selection.md#where-the-backend-runs) recorded the hosting question as open and planned two demo modes: a local backend and a TACC-hosted backend reached through an SSH forward.
+The submitted proposal v1 (October 27, 2026) commits to a TACC CPU job for the agent backend and to the course Qwen service on TACC. [ADR-0005](0005-external-model-apis-as-primary.md) moved text generation to external APIs but kept the TACC CPU job as the evaluation evidence path. Proposal v2 (revision dated 2026-10-30) records the decision below. [tech-selection.md](../tech-selection.md#where-the-backend-runs) recorded the hosting question as open and planned two demo modes: a local backend and a TACC-hosted backend reached through an SSH forward.
 
 The project brief does not state where the backend must run. On 2026-10-29 we emailed the TA two follow-up questions: whether SSH forwarding to a student-run web port is allowed, and whether the final demo must run the backend on TACC. The answer arrived on 2026-10-30: the backend does not have to be deployed on TACC. The requirement is at least one offline job that uses TACC results. The examples given are OCR parsing and embedding of document chunks: TACC produces them, the results are stored locally, and the delivered system reads them. TACC is an offline compute resource, and no online service is deployed there ([tacc-notes.md](../tacc-notes.md#staff-clarification-2026-10-30)).
 
@@ -26,7 +26,7 @@ The project still needs real TACC compute in the deliverable: the corpus OCR, th
 - **Per-request execution.** Self-test code answers still use `tacc/exec/` because the course MPI toolchain lives on TACC. The local backend submits one batch job, polls it, and downloads the results. This is batch compute submitted on demand, not a hosted service. If the queue makes the demo unreliable, precomputed reference results and the local restricted runner are the fallback.
 - **Optional Qwen baseline.** The Qwen baseline is generated inside one GPU batch job and written to `USERDIR`. No endpoint is exposed, so the course Qwen model is used as offline compute rather than as a deployed service.
 - **Dropped.** The TACC-hosted demo mode, the SSH web-port forward, and the tunnel spike are removed. The web-port forwarding question is moot.
-- **Proposal deviation.** The proposal's TACC CPU backend commitment is not delivered as written. The report explains the deviation and records the TACC compute that was actually used.
+- **Proposal revision.** Proposal v1's TACC CPU backend commitment is not delivered as written. Proposal v2 records the local-backend and offline-TACC topology, and the report explains the change from v1 and records the TACC compute that was actually used.
 
 ## Consequences
 
@@ -40,7 +40,7 @@ The project still needs real TACC compute in the deliverable: the corpus OCR, th
 - GPU work is still queue-bound: the corpus, index, and baseline jobs wait for node availability and each must fit one hour.
 - The laptop must carry a BGE-M3 query-embedding path; a local model copy or cached vectors add setup and disk use.
 - The per-request `tacc/exec` path keeps a queue-dependent step in the demo, and the report must measure its latency.
-- The delivered topology deviates from the frozen proposal's TACC CPU job and Qwen-service primaries, so the report has one more deviation to explain.
+- The delivered topology differs from proposal v1's TACC CPU job and Qwen-service primaries; proposal v2 records the change, and the report explains it.
 
 **Neutral:**
 - `tacc/client/` changes from an agent backend and UI job to an offline evaluation harness job.

@@ -19,13 +19,14 @@ The reply also notes that at this stage the proposal should focus on the idea an
 
 ## Staff clarification (2026-10-30)
 
-The follow-up questions sent to the TA by email on 2026-10-29 were answered on 2026-10-30: whether the final demo must run the backend on TACC, and whether SSH forwarding may reach a student-run web port. The reply, reported by the project lead:
+The follow-up questions sent to the TA by email on 2026-10-29 were answered on 2026-10-30: whether the final demo must run the backend on TACC, and whether SSH forwarding may reach a student-run web port. The same reply corrected the proposal deadline to Sunday 2026-11-01; the course brief lists Thursday 2026-10-29. The reply, reported by the project lead:
 
 | Topic | Clarification | What it means here |
 |---|---|---|
 | Backend hosting | The backend does not have to be deployed on TACC. | The backend, UI, and stores run locally, and no TACC-hosted mode is built ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). |
 | Required TACC use | At least one offline job must use TACC results. The examples are OCR parsing and embedding of document chunks: TACC produces the results, they are stored locally, and the delivered system reads them. | The OCR and index jobs are the required offline pipeline; their outputs are mirrored under `data/corpus/` and `data/index/`; the report cites the job ids and logs. |
 | Online services | TACC is used as an offline compute resource, and no online service is deployed there. | Every TACC job writes files and exits. The TACC-hosted backend, the SSH web-port forward, and the tunnel spike are dropped. |
+| Proposal deadline | The proposal is due Sunday 2026-11-01, not Thursday 2026-10-29 as the course brief lists. | Proposal v2 (revision dated 2026-10-30) is submitted before the Sunday deadline; the PRD records the key date. |
 
 The web-port forwarding question is therefore moot: the delivered system reaches no TACC service. The 2026-10-28 clarification above remains valid for model usage, cost, packages, storage, embeddings, OCR, and resource limits.
 
@@ -87,8 +88,8 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 
 ## Consequences for the plan
 
-- No proposal change is needed: the frozen two-page [proposal](../proposal/proposal.md) already states the TACC service as primary, with external LLM and search APIs optional, labelled, and cached. The clarification confirms that text rather than invalidating it.
-- The delivered topology runs the backend locally and uses TACC only through batch jobs, so the report explains the deviation from the proposal's TACC CPU backend and Qwen-service primaries ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [ADR-0005](adr/0005-external-model-apis-as-primary.md)).
+- The proposal is revised: v1 (2026-10-27) stays the submitted artifact, and v2 (revision dated 2026-10-30) records the delivered local-backend and offline-TACC topology; it is submitted by the Sunday 2026-11-01 deadline. The course brief lists Thursday 2026-10-29, which the TA corrected.
+- The delivered topology runs the backend locally and uses TACC only through batch jobs; v2 records this, so the report explains the change from v1's TACC CPU backend and Qwen-service primaries ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [ADR-0005](adr/0005-external-model-apis-as-primary.md)).
 - The course TACC requirement is met by the offline pipeline: the OCR job parses the corpus, the index job computes the embeddings, their outputs are mirrored locally, and the backend reads the mirror. The report cites the job ids and logs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 - Keep the repository runnable without external keys or GPU access: cached baselines, cached retrieval snapshots, and a replay path.
 - The dense retrieval side needs no new packages: the public environment already ships PyTorch and Transformers, so an open embedding model can be loaded directly once its weights are downloaded to our workspace. BM25 remains the no-cost fallback and a required ablation arm.
@@ -157,7 +158,8 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
-- Course staff reply of 2026-10-30 on backend hosting and offline TACC use, reported by the project lead after the 2026-10-29 follow-up email.
+- Course staff reply of 2026-10-30 on backend hosting, offline TACC use, and the proposal deadline (Sunday 2026-11-01), reported by the project lead after the 2026-10-29 follow-up email.
+- Course project brief, Topic Selection and Proposal (course brief lists the proposal due October 29, 2026), course workspace copy outside this repository.
 - Course public environment guide and student commands, course workspace copies outside this repository.
 - TACC tutorial, `time=02:00:00` service example.
 - Public environment validation record, 2026-10-06: 12 minutes 40 seconds cold start, 65.75 tokens/s single stream, 203.33 tokens/s at four concurrent requests.
