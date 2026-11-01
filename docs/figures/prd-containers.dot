@@ -27,7 +27,7 @@ digraph prd_containers {
     }
 
     db     [label="SQLite\nusers, sessions, conversations,\nquestions, answers, grades,\npolicy decisions", shape=cylinder, fillcolor="#ffffff"];
-    files  [label="Local files\nJSONL traces, replay,\nresponse cache, corpus and\nindex mirror", shape=cylinder, fillcolor="#ffffff"];
+    files  [label="Local files\nJSONL traces, replay,\nresponse cache, corpus,\nindex mirror, knowledge base", shape=cylinder, fillcolor="#ffffff"];
     lf     [label="Local Langfuse\n(development only)", fillcolor="#ffffff", style="rounded,dashed"];
 
     student -> ui [label="uses"];
@@ -58,12 +58,12 @@ digraph prd_containers {
   }
 
   subgraph cluster_tacc {
-    label="TACC@HKUST (Slurm, one-hour jobs)"; fontsize=9; style="rounded"; color="#666666"; margin=10;
+    label="TACC@HKUST (Slurm, required model serving, one-hour jobs)"; fontsize=9; style="rounded"; color="#666666"; margin=10;
     ocr    [label="OCR job\nrender, layout,\nPaddleOCR-VL", fillcolor="#ffffff"];
     index  [label="Index job\nBGE-M3 and FTS5", fillcolor="#ffffff"];
     exec   [label="Exec job (tacc/exec)\nreference tests and\ncode answers", fillcolor="#ffffff"];
     evalh  [label="Evaluation job\nbenchmark and ablations", fillcolor="#ffffff"];
-    qwen   [label="Optional Qwen\nbatch baseline", fillcolor="#ffffff", style="rounded,dashed"];
+    qwen   [label="Qwen knowledge-base job\nvLLM TP=2, one-shot", fillcolor="#ffffff"];
     userdir [label="USERDIR and $HOME\ncorpus, page images, index,\nmodels, job outputs", shape=cylinder, fillcolor="#ffffff"];
   }
 
@@ -76,5 +76,6 @@ digraph prd_containers {
   exec -> userdir [style=dashed, arrowhead=none];
   evalh -> userdir [style=dashed, arrowhead=none];
   userdir -> files [style=dotted, label="download", dir=back];
-  mc -> qwen [style=dotted, label="optional baseline"];
+  qwen -> userdir [style=dashed, arrowhead=none];
+  agent -> qwen [label="submit KB job"];
 }

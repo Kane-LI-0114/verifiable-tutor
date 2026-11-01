@@ -118,3 +118,5 @@ Chunking rules for the first implementation: split at `paragraph_title` boundari
 ## Relationship to ADR-0002
 
 ADR-0002 describes the output in conceptual terms and names separate `figures[]`, `tables[]` and `formulas[]` arrays. The implemented record keeps one `blocks[]` array with a `label` field, and raw detector scores in `layout_boxes[]`; figure crops are not emitted yet, because the page WebP plus `bbox_norm` covers the citation use case. If figure crops become a requirement, they are appended as `figures[]` with `block_id`, `label`, `crop_path`, and `bbox_px` under a `vt-page-record/2` version.
+
+Knowledge-base records are not corpus records: the request, progress, and knowledge-card contracts are owned by [knowledge-schema.md](knowledge-schema.md).

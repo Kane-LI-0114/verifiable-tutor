@@ -18,11 +18,13 @@ digraph prd_usecase {
     practice [label="Practise in the\npractice lab", shape=ellipse];
     explain  [label="Submit own solution\nfor line-anchored teaching", shape=ellipse];
     voice    [label="Ask by voice,\nlisten to the answer", shape=ellipse];
+    kb_browse [label="Browse the knowledge base", shape=ellipse];
   }
 
   subgraph cluster_ta {
     label="Instructor / TA use cases"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
     registry [label="Maintain the\nassignment deadline registry", shape=ellipse];
+    kb_build [label="Build/refresh the\nknowledge base", shape=ellipse];
   }
 
   subgraph cluster_guarantee {
@@ -42,8 +44,10 @@ digraph prd_usecase {
   student -> practice;
   student -> explain;
   student -> voice;
+  student -> kb_browse;
 
   ta -> registry;
+  ta -> kb_build;
 
   ask -> evidence [style=dashed, arrowhead=onormal, label="«include»"];
   ask -> verify [style=dashed, arrowhead=onormal, label="«include»"];
@@ -58,4 +62,5 @@ digraph prd_usecase {
 
   policy -> registry [style=dotted, arrowhead=none, label="reads"];
   runcode -> tacc [style=dotted, arrowhead=none, label="executes on"];
+  kb_build -> tacc [style=dotted, arrowhead=none, label="submits job"];
 }

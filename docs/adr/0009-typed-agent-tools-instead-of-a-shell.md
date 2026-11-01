@@ -6,7 +6,7 @@
 | **Date** | 2026-10-29 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
-> **Context update (2026-10-30).** The delivered backend runs on the laptop only. [ADR-0010](0010-tacc-as-offline-compute.md) settles that TACC is used as an offline compute resource, so the TACC CPU backend path discussed above is not delivered. The tool boundary and the per-request `tacc/exec` execution of code answers are unchanged.
+> **Context update (2026-11-01).** The delivered backend runs on the laptop. [ADR-0011](0011-tacc-as-required-model-serving-backend.md) makes TACC a required model-serving backend for the embedding index and Qwen knowledge-base jobs, reached only by job submission; the tool boundary and the per-request `tacc/exec` execution of code answers are unchanged.
 
 ## Context
 

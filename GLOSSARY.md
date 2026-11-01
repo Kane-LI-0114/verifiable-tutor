@@ -68,6 +68,22 @@ _Avoid_: Sandbox, runner, worker
 A submitted batch job that produces artifacts, such as OCR page records, embedding vectors, execution results, or evaluation output, which are downloaded to the laptop and read by the local backend. It serves no requests and exits when it finishes.
 _Avoid_: TACC service, deployment, hosted backend
 
+**TACC model-serving backend**:
+A model that runs inside a submitted TACC job and whose output the local application uses. The project serves BGE-M3 for the index and Qwen for the knowledge base; no inbound service or SSH forwarding is used, and each job exits when it finishes.
+_Avoid_: Hosted model, served endpoint, TACC web service
+
+**Knowledge base**:
+The local store of cited course knowledge cards that Qwen builds on TACC from course chunks. The agent uses it for review outlines and self-tests, and students can browse it.
+_Avoid_: Vector store, document store
+
+**Knowledge card**:
+One validated knowledge record for a page or section: a summary, key terms, study questions, and page citations, produced by the Qwen knowledge-base job and stored locally.
+_Avoid_: Note, flashcard, summary row
+
+**Knowledge-base build job**:
+One submitted TACC GPU job that loads Qwen through vLLM, reads a request and course chunks from `USERDIR`, writes knowledge records and progress, and exits. The local backend submits it, polls it, downloads the result, validates it, and stores it.
+_Avoid_: Qwen endpoint, inference service
+
 **Reference solution**:
 A solution to a practice exercise that is shown only after it compiled and passed the pack's tests.
 _Avoid_: Solution, answer key

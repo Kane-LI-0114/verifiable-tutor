@@ -6,6 +6,8 @@
 | **Date** | 2026-10-28 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
+> **Augmented (2026-11-01).** The TACC index job is one of the project's required model-serving backends ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)); query embedding still runs in the local backend.
+
 ## Context
 
 The proposal promises a hybrid index over BM25 and dense embeddings, with an ablation over BM25 only, dense only, and hybrid. The corpus is English course material; students may ask in Chinese or English, so cross-lingual query to document retrieval decides whether the system works for the team's own demos and for RQ1.

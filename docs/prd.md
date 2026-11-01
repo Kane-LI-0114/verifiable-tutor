@@ -2,15 +2,15 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.9 |
-| **Date** | 2026-10-30 |
+| **Status** | Draft for review, version 0.10 |
+| **Date** | 2026-11-01 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
-| **Supersedes** | Proposal v1 (submitted 2026-10-27) remains the submitted artifact; proposal v2 (revision dated 2026-10-30, due 2026-11-01) is the current statement of the plan and aligns with this document. This document is the living product specification; [tech-selection.md](tech-selection.md) and the ADRs own how the system is built |
+| **Supersedes** | Proposal v1 (submitted 2026-10-27) remains the submitted artifact; proposal v2 (dated 2026-10-30) is a previous draft; proposal v3 (dated 2026-11-01) is the current statement of the plan and aligns with this document. This document is the living product specification; [tech-selection.md](tech-selection.md) and the ADRs own how the system is built |
 
-This document is the source of truth for what ships. Proposal v1 records why the project exists and what was promised to the course; proposal v2 records the delivered topology and the revised deadline. When a requirement here contradicts proposal v1, the report explains the change; proposal v2 aligns with this document. The technology selection and the ADRs record implementation decisions.
+This document is the source of truth for what ships. Proposal v1 records why the project exists and what was promised to the course; proposal v3 records the required TACC model-serving backend and the knowledge base. When a requirement here contradicts proposal v1, the report explains the change; proposal v3 aligns with this document. The technology selection and the ADRs record implementation decisions.
 
-Version 0.9 aligns this document with proposal v2, records the corrected proposal deadline, and states the task-oriented project direction; product requirements are unchanged from 0.8.
+Version 0.10 records the 2026-11-01 staff requirement that TACC be a required model-serving backend, adds the Qwen knowledge-base pipeline, and updates proposal references from v2 to v3.
 
 ## 1. Problem and goals
 
@@ -23,11 +23,11 @@ Goals:
 - **G3 Verified practice and self-test.** A practice exercise or self-test question is shown with a reference answer that has compiled and passed its tests where applicable; a student's answer is graded against that reference answer and explained with citations.
 - **G4 Reproducible evaluation.** Representative cases, recorded traces, and a failure analysis produced from TACC runs, with no paid call needed to rerun.
 
-**Project direction.** The course project brief lists two recommended exploration directions: task learning and adaptation, and system efficiency. This project takes the task-oriented direction: it targets tutoring-task performance for one course and quantifies that performance against baselines, namely an external chatbot for the self-test loop and a prompt-only policy for disclosure. Efficiency metrics (latency, model calls, cost) are reported as RQ4 and are not the optimization target (course project brief and lecture 0 slides, in the course workspace outside this repository; [proposal v2](../proposal/proposal_v2.md#4-evaluation-plan)).
+**Project direction.** The course project brief lists two recommended exploration directions: task learning and adaptation, and system efficiency. This project takes the task-oriented direction: it targets tutoring-task performance for one course and quantifies that performance against baselines, namely an external chatbot for the self-test loop and a prompt-only policy for disclosure. Efficiency metrics (latency, model calls, cost) are reported as RQ4 and are not the optimization target (course project brief and lecture 0 slides, in the course workspace outside this repository; [proposal v3](../proposal/proposal_v3.md#4-evaluation-plan)).
 
 ### System overview
 
-The backend and its stores run on the developer laptop for the demo, the model calls go to external OpenAI-compatible APIs, and TACC jobs produce the corpus, index, evaluation evidence, and self-test code execution. TACC is an offline compute resource: every job is a batch job that writes files and exits, its artifacts are downloaded into the local mirror, and no service is hosted on TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). Langfuse is used in local development only. Proposal v1 figures are the submitted artifact; proposal v2 redraws the container figure for the delivered topology, and the figures in this document follow the decisions recorded here.
+The backend and its stores run on the developer laptop. Interactive model calls go to external OpenAI-compatible APIs, and TACC is a required model-serving backend: submitted GPU jobs run the BGE-M3 embedding index and the Qwen knowledge-base enrichment, and their outputs are downloaded into the local mirror and knowledge base. TACC access is job submission only, with no SSH forwarding and no inbound service ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md), [tacc-notes.md](tacc-notes.md#staff-clarification-2026-11-01)). Langfuse is used in local development only. Proposal v3 redraws the container figure for the delivered topology, and the figures in this document follow the decisions recorded here.
 
 ![Figure 1. Containers and external dependencies](figures/prd-containers.png)
 
@@ -39,8 +39,8 @@ Course deliverables this must satisfy: a frontend for task input, visible progre
 
 | Role | Description | Access |
 |---|---|---|
-| Student | A person with a course student email address | Registers and signs in; owns their conversations, practice runs, and traces |
-| Instructor or TA | Maintains the deadline registry that drives the disclosure policy | Seeded account; role checked server-side; registry editing in P0 is a versioned configuration change by the team, the in-app editor is P1 |
+| Student | A person with a course student email address | Registers and signs in; owns their conversations, practice runs, and traces; browses the course knowledge base |
+| Instructor or TA | Maintains the deadline registry that drives the disclosure policy and triggers knowledge-base builds | Seeded account; role checked server-side; registry editing in P0 is a versioned configuration change by the team, the in-app editor is P1 |
 | Demo operator | A team member driving the presentation | Uses a student or seeded account |
 | Grader or audience | Watches the demo | No account and no direct access to the deployment |
 
@@ -50,7 +50,7 @@ Accounts exist to associate conversations and traces with a person and to prepar
 
 ![Figure 2. Actors and use cases](figures/prd-usecase.png)
 
-*Figure 2. Actors and use cases. Source: [figures/prd-usecase.dot](figures/prd-usecase.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-usecase.dot -o figures/prd-usecase.png`.*
+*Figure 2. Actors and use cases, including the knowledge base. Source: [figures/prd-usecase.dot](figures/prd-usecase.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-usecase.dot -o figures/prd-usecase.png`.*
 
 ## 3. Scope
 
@@ -64,9 +64,10 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 - Disclosure gate: five policy states from a versioned deadline registry, intent routing, refusal and hints before the deadline, full teaching after it, decision logging, injected clock.
 - Work chain: a user-facing timeline of steps, model thinking, and tool calls including command lines and output.
 - Practice lab and self-test: generated questions in the types the student asks for (single choice, multiple choice, true or false, short answer, and code), or the type the agent chooses from context when the student does not ask; reference answers verified by compilation and tests in the TACC job and cached. The practice lab and the self-test are the same capability.
+- Knowledge base: a required Qwen text-processing job on TACC builds cited course knowledge cards (summary, key concepts, study questions) that are stored locally, browsable, and used by review outlines and self-tests (FR-K1 to FR-K4).
 - Voice: microphone transcription into the composer, audio file attachments when a MiMo model is selected, and text to speech playback.
 - Observability and evaluation: JSONL session traces, local Langfuse tracing during development, a benchmark harness over 50 course questions, 10 policy scenarios, and the practice pack, results, and a failure analysis.
-- Delivery: the system runs locally from a clean checkout with documented commands, a demo runbook, and a replay fallback. TACC jobs produce the corpus, index, evaluation evidence, and code-answer execution results used in the report.
+- Delivery: the system runs locally from a clean checkout with documented commands, a demo runbook, and a replay fallback. TACC jobs produce the corpus, index, evaluation evidence, code-answer execution results, and the knowledge base used in the demo and report.
 
 **P1, committed but can land after the first demo:**
 
@@ -87,7 +88,7 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 **Non-goals:**
 
 - A public deployment or real multi-tenant operation.
-- Hosting the backend, the UI, or any long-running service on TACC. The course requirement is offline TACC computation, not a TACC deployment ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+- Hosting the backend, the UI, or any long-running service on TACC. TACC model serving runs inside submitted jobs and is reached only through job submission; no port forwarding or inbound service is used ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
 - Quotas, daily budgets, login lockout, and abuse protection. The account system has basic authentication and authorization only.
 - Plagiarism detection, gradebook integrations, and grading of TA-submitted homework or formal course grades.
 - Mobile applications, native clients, and server-side rendering.
@@ -111,10 +112,11 @@ Each journey is a demo or evaluation script and is accepted against its numbered
 - **J7 Voice.** The student records a question in the composer (transcribed by ASR) or attaches an audio file while a MiMo model is selected, and can play the answer back as speech.
 - **J8 Provider timeout.** A slow or unavailable provider produces an in-place timeout message with a retry action, without switching models and without exposing a raw provider error.
 - **J9 Offline replay.** With no network and no model calls, a recorded session replays through the real frontend and backend path.
+- **J10 Knowledge base.** An instructor or TA starts a knowledge-base build from the UI. The local backend submits one TACC Qwen job for a document shard, shows queued and running states, downloads and validates the JSONL records when the job finishes, and stores them locally. A student browses the cards and asks for a review outline that cites them; the work chain shows the job id, timings, and build status.
 
 ### Sequence examples
 
-Figure 3 traces one question: the disclosure gate runs before retrieval, quoted spans are verified before the answer is shown, and the same events feed the work chain and the JSONL trace. Figure 4 traces a code self-test answer: the backend submits a `tacc/exec` job, polls it, and grades from the recorded test results. Reference answers are verified through the same exec job at generation time, which the second diagram omits for space.
+Figure 3 traces one question: the disclosure gate runs before retrieval, quoted spans are verified before the answer is shown, and the same events feed the work chain and the JSONL trace. Figure 4 traces a code self-test answer: the backend submits a `tacc/exec` job, polls it, and grades from the recorded test results. Reference answers are verified through the same exec job at generation time, which the second diagram omits for space. Figure 5 traces a knowledge-base build: the UI starts the build, the backend submits one TACC Qwen job, polls it, downloads and validates the records, stores them locally, and the student uses them in a review outline.
 
 ![Figure 3. Answer a course question](figures/prd-sequence-question.png)
 
@@ -123,6 +125,10 @@ Figure 3 traces one question: the disclosure gate runs before retrieval, quoted 
 ![Figure 4. Grade a self-test answer with a TACC job](figures/prd-sequence-grading.png)
 
 *Figure 4. Grade a self-test answer with a TACC job. Source: [figures/prd-sequence-grading.dot](figures/prd-sequence-grading.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-sequence-grading.dot -o figures/prd-sequence-grading.png`.*
+
+![Figure 5. Build the knowledge base with a TACC Qwen job](figures/prd-sequence-kb-build.png)
+
+*Figure 5. Build the knowledge base with a TACC Qwen job. Source: [figures/prd-sequence-kb-build.dot](figures/prd-sequence-kb-build.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-sequence-kb-build.dot -o figures/prd-sequence-kb-build.png`.*
 
 ## 5. Functional requirements
 
@@ -151,7 +157,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-B3 | Every course fact carries a citation with document id, page number, and the quoted span | P0 | A citation chip opens the evidence panel at the cited page and highlights the span |
 | FR-B4 | Deterministic span verification: after whitespace and case normalization the quoted span must occur on the cited page; one repair round; otherwise abstain | P0 | A fabricated citation is rejected by the verifier; an answer that cannot be repaired becomes an abstention with the missing evidence named |
 | FR-B5 | Evidence panel: server-rendered page image plus highlight rectangles from OCR block boxes | P0 | No PDF viewer and no CDN are required; the panel works offline |
-| FR-B6 | Model selection: DeepSeek Flash default, MiMo Flash, MiMo Pro; one thinking control with four levels; MiMo degradation is recorded | P0 | The selected model and the effective thinking level appear in the trace; a MiMo selection with audio uses that same tier |
+| FR-B6 | Model selection: DeepSeek Flash default, MiMo Flash, MiMo Pro; one thinking control with four levels; MiMo degradation is recorded. Qwen on TACC is an offline knowledge-base backend, not a selectable chat model. | P0 | The selected model and the effective thinking level appear in the trace; a MiMo selection with audio uses that same tier |
 | FR-B7 | Same-model retries only; after exhaustion show a timeout or unavailable message with a retry action; no cross-model fallback and no raw provider error | P0 | A forced 503 sequence produces the user copy after three attempts and no call to another model |
 | FR-B8 | Cache successful model calls and replay identical requests without a paid call | P0 | A repeated benchmark request produces the same result with no network call |
 | FR-B9 | User-visible work chain: steps (understand, retrieve, verify, decide, generate, cite), model thinking, and tool calls with command lines and output | P0 | The chain is expandable per answer, shows the policy decision, and never shows a trace id or a provider raw error |
@@ -219,15 +225,24 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-I5 | At least one failure is analyzed by cause | P0 | The report names the dominant failure mode with trace evidence |
 | FR-J1 | The repository runs locally from a clean checkout with documented commands | P0 | A fresh clone plus the documented commands reaches a working chat |
 | FR-J2 | Tested demo runbook with the replay fallback | P0 | The demo can be run twice in a row, and replay works without network |
-| FR-J3 | Offline TACC pipeline: the OCR and index jobs run on TACC, their artifacts are mirrored under `data/corpus/` and `data/index/`, and the delivered backend answers from the mirror | P0 | Job ids, logs, and artifact hashes are cited in the report; the local backend answers a benchmark question from the mirrored artifacts with no TACC job running |
+| FR-J3 | TACC model-serving backend: submitted TACC jobs run the embedding index and the Qwen knowledge-base enrichment; the backend submits, polls, downloads, and uses their outputs; one Qwen build is demonstrated end to end | P0 | The demo builds one knowledge base from the UI; job id, log, timings, and record hashes are in the report; the knowledge base feeds a review outline |
 | FR-J4 | UI strings in Chinese and English with a toggle | P1 | A single translation resource serves both languages |
-| FR-J5 | TACC usage boundary: TACC appears only as submitted batch jobs; no service listens on TACC for the product, and the backend and UI run locally | P0 | The demo runs on the laptop; the report states the topology and that no online service is deployed on TACC ([ADR-0010](adr/0010-tacc-as-offline-compute.md)) |
+| FR-J5 | TACC access boundary: the frontend and backend run locally; TACC is reached only through job submission and `USERDIR` exchange; SSH port forwarding is not supported and no inbound service is exposed | P0 | The demo uses no SSH tunnel or forwarded port; the report states the topology and cites the job ids ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)) |
+
+### 5.8 Knowledge base
+
+| ID | Requirement | Priority | Acceptance |
+|---|---|---|---|
+| FR-K1 | Build the knowledge base: an instructor or TA starts a build from the UI; the backend submits one TACC Qwen GPU job per document shard, the job writes knowledge records and progress to `USERDIR`, and the backend polls the job, downloads and validates the records, and stores them locally | P0 | A build run shows queued, running, downloading, and ready states; the job id and log are recorded; a failed job can be retried and a completed shard is not rebuilt |
+| FR-K2 | Knowledge record content: each record carries `doc_id`, `page_no`, section, source block ids, summary, key terms, study questions, page citations, model id, prompt version, corpus hash, and job id | P0 | Every record validates against [knowledge-schema.md](knowledge-schema.md); a citation without a page reference is rejected |
+| FR-K3 | Knowledge-base use: students browse and search the cards; review outlines and self-tests use the records as context; every displayed citation still passes the span verifier | P0 | The demo builds a knowledge base, browses it, and produces one review outline from it; every outline citation verifies |
+| FR-K4 | Freshness and caching: a build is keyed by corpus hash, prompt version, and model id; unchanged inputs reuse the cached records | P1 | A second build with unchanged inputs makes no new TACC job; a changed prompt version triggers a rebuild |
 
 ## 6. Non-functional requirements
 
 | ID | Requirement | Target or acceptance |
 |---|---|---|
-| NFR-1 | Response latency | Measure and report first-token and full-answer latency on the local backend; provisional targets: first token at or under 3 seconds at p95, full answer at or under 20 seconds at p95 with cached retrieval |
+| NFR-1 | Response latency | Measure and report first-token and full-answer latency on the local backend; provisional targets: first token at or under 3 seconds at p95, full answer at or under 20 seconds at p95 with cached retrieval. The interactive target excludes the TACC batch model-serving path, whose queue, cold-start, and build time are reported separately (NFR-12) |
 | NFR-2 | Provider failure handling | Same-model retries, explicit timeout copy, no cross-model fallback, no background retry |
 | NFR-3 | Privacy | Local development data stays on the laptop; model traces carry no email address; secrets only in `.env`; the report states which course excerpts leave the machine to model APIs |
 | NFR-4 | Authentication security | scrypt password hashing, HttpOnly and SameSite session cookie, same-origin CSRF posture, sanitized markdown rendering |
@@ -238,28 +253,32 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | NFR-9 | Accessibility | Keyboard reachable controls and readable contrast in the main flows; full WCAG conformance is not claimed |
 | NFR-10 | Data lifecycle | Local SQLite and JSONL files; the instructor can delete a user's data; no retention guarantee |
 | NFR-11 | Self-test execution | Code answers and reference tests run in the TACC job container under the team account; the demo has two to three trusted users, so no hostile-user isolation is claimed; queue and run latency are shown to the user and recorded in the report |
+| NFR-12 | TACC knowledge-base job | Every build records job id, queue time, cold-start time, build time, chunk coverage, schema validity, and success or failure; a full corpus build uses sequential shards that fit the one-hour cap; the demo pre-builds or starts the job early |
 
 ## 7. Configuration and data ownership
 
 | Content | Owner |
 |---|---|
 | Provider endpoints, model ids, roles, retry and timeout values, cache and embedding settings | `config/models.yaml` |
+| Knowledge-base build settings: Qwen model, tensor parallel size, context length, shard size, prompt version, request and result paths, poll interval | `config/knowledge.yaml` |
 | Deadline registry | `config/deadlines.yaml` (planned), validated by pydantic |
 | Local tracing settings | `config/observability.yaml` (planned, local development only) |
 | Secrets: provider keys, SMTP authorization code, Langfuse keys, session secret | `.env`, ignored by Git; `.env.example` carries empty placeholders |
 | Corpus and page images, index, caches | `data/corpus/`, `data/index/`, `data/caches/` locally; `USERDIR` on TACC |
+| Knowledge-base records and build state | `data/kb/` locally plus SQLite tables; request and result JSONL in `USERDIR/kb/` on TACC |
 | Session trace | JSONL under the local data directory; `USERDIR` on TACC |
 | Generated question bank, student answers, grading results, and TACC job outputs | local data directory (SQLite plus files); the TACC job writes to `USERDIR` and the backend downloads the results |
 | TACC execution job | `tacc/exec/` task directory; the local backend submits, polls, and downloads with the tcloud CLI |
+| Qwen knowledge-base job | `tacc/serve/` task directory; the local backend submits, polls, and downloads with the tcloud CLI |
 | Self-test benchmark data: generated question sets, annotations, simulated answers, grader outputs, ground truth, and metrics | `benchmarks/self_test/`; only small curated result files are committed |
 
 ### Data model
 
-Figure 5 shows the relational entities. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners.
+Figure 6 shows the relational entities, including the knowledge-base build and card tables. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners.
 
-![Figure 5. Relational entities](figures/prd-er.png)
+![Figure 6. Relational entities](figures/prd-er.png)
 
-*Figure 5. Relational entities and relationships. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`.*
+*Figure 6. Relational entities and relationships, including the knowledge base. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`.*
 
 ## 8. Acceptance and evaluation targets
 
@@ -273,15 +292,17 @@ Targets are provisional and confirmed by the first evaluation run. They are stat
 | RQ2 capability gap | Report the side-by-side capability table for grounding, verified reference answers, execution evidence, grounded grading, and student usability; there is no numeric target, the measured difference is the result |
 | Self-test grading evidence | Every grading explanation in the shared set cites a course source, and every citation passes the span verifier |
 | RQ3 disclosure correctness | At or above 9 of 10 policy scenarios correct, including the adversarial set; no false allow before the deadline |
-| RQ4 cost and latency | Latency, model calls per request, and paid-call cost reported; BM25, dense, and hybrid ablation reported |
+| RQ4 cost and latency | Latency, model calls per request, paid-call cost, and TACC queue, cold-start, and build time reported; BM25, dense, and hybrid ablation reported |
+| TACC model-serving workflow | One knowledge-base build runs end to end from the UI: the Qwen job finishes, its records validate, and a review outline uses them; job id, log, queue, cold-start and build time, and schema validity are reported |
+| Knowledge-base coverage | At least one full document shard is processed; every record carries a summary, key terms, study questions, and page citations; coverage is reported per document |
 | Failure analysis | At least one dominant failure mode analyzed with trace evidence |
-| Course deliverable check | Frontend, backend, evaluation, tested demo, and a runnable repository are all demonstrated; proposal v2 is submitted by 2026-11-01 |
+| Course deliverable check | Frontend, backend, evaluation, tested demo, and a runnable repository are all demonstrated; proposal v3 is submitted by 2026-11-01 |
 
 ## 9. Milestones
 
-Key dates: the revised proposal (v2) is due Sunday 2026-11-01; the course brief lists Thursday 2026-10-29, which the TA corrected ([tacc-notes.md](tacc-notes.md#staff-clarification-2026-10-30)). The final presentation and repository submission date are not yet published. Work is ordered in four workstreams; a workstream is complete when its acceptance items in section 5 pass.
+Key dates: proposal v3 is submitted by Sunday 2026-11-01; the course brief lists Thursday 2026-10-29, which the TA corrected, and the 2026-11-01 staff email tightens the TACC model-serving requirement ([tacc-notes.md](tacc-notes.md#staff-clarification-2026-11-01)). The final presentation and repository submission date are not yet published. Work is ordered in four workstreams; a workstream is complete when its acceptance items in section 5 pass.
 
-1. **Corpus, index, and access.** TACC OCR and index jobs, retrieval, accounts, sessions, and the local run path.
+1. **Corpus, index, knowledge base, and access.** TACC OCR, embedding index, and Qwen knowledge-base jobs; retrieval; accounts; sessions; and the local run path.
 2. **Agent and policy.** LangGraph graph, disclosure gate, deadline registry, evidence verification, work chain, and model control.
 3. **Practice, self-test, teaching, and voice.** MPI pack, TACC execution job for reference tests and code answers, answer grading, explainer, study aids, microphone and speech output.
 4. **Evaluation and delivery.** Benchmark, evaluation harness, local Langfuse traces, report and figures, demo runbook, replay fallback.
@@ -295,13 +316,16 @@ Key dates: the revised proposal (v2) is due Sunday 2026-11-01; the course brief 
 - The practice pack set beyond the first MPI pack is P2; the report states the pack scope.
 - Self-test generation and TACC execution are P0 while answer grading is P1. Code answers use per-request TACC jobs under the team account, with two to three trusted demo users and no hostile-user isolation. Confirm the split and the acceptable queue latency.
 - The self-test benchmark protocol in [benchmark-protocol.md](benchmark-protocol.md) is provisional: the shared set size, the target values, and the simulated-student model are confirmed after the first dry run.
+- The knowledge-base card granularity, shard size, and prompt version are provisional; confirm them after the first Qwen job spike.
+- The demo knowledge-base build latency depends on the TACC queue and the Qwen cold start; confirm the acceptable pre-build window and the fallback if no GPU node is available.
 
 ## 11. Related documents
 
-- Proposal: [../proposal/proposal_v2.md](../proposal/proposal_v2.md) (current revision, dated 2026-10-30); the submitted v1 is [../proposal/proposal.md](../proposal/proposal.md)
+- Proposal: [../proposal/proposal_v3.md](../proposal/proposal_v3.md) (current, dated 2026-11-01); the submitted v1 is [../proposal/proposal.md](../proposal/proposal.md) and the previous draft is [../proposal/proposal_v2.md](../proposal/proposal_v2.md)
 - Technology selection: [tech-selection.md](tech-selection.md)
 - Decision records: [adr/](adr/)
 - Self-test benchmark protocol: [benchmark-protocol.md](benchmark-protocol.md)
+- Knowledge-base record schema: [knowledge-schema.md](knowledge-schema.md)
 - Local Langfuse runbook: [langfuse-local.md](langfuse-local.md)
 - Local email runbook: [email-local.md](email-local.md)
 - Agent rules: [../AGENTS.md](../AGENTS.md)

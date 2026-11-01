@@ -32,7 +32,7 @@ The citation panel shows a server-rendered page WebP with absolutely positioned 
 **Positive:**
 - Ready components cover the parts that distinguish the demo: step timeline, citation chips, sources panel, code blocks, streaming markdown.
 - The stack is MIT or Apache-2.0, copy-in where possible, with no runtime lock-in.
-- One origin, static assets, and no CDN survive SSH tunnelling and offline demos.
+- One origin, static assets, and no CDN keep the local demo and replay on one origin; SSH forwarding is not supported ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)).
 - The protocol adapter is shared with replay, so the offline demo uses the production UI code path.
 
 **Negative:**

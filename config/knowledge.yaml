@@ -1,0 +1,35 @@
+# Knowledge-base enrichment configuration.
+#
+# Status: planned. No code reads this file yet; the knowledge-base build is
+# the P0 implementation change that follows the 2026-11-01 staff requirement.
+# The Qwen job runs on TACC and is reached only through job submission; this
+# file holds no secrets. Record fields are in docs/knowledge-schema.md.
+
+job:
+  directory: tacc/serve
+  name: vt-kb
+  partition: tacc
+  nodes: 1
+  cpus_per_task: 8
+  gres: "gpu:2"
+  time: "00:59:00"
+
+model:
+  name: qwen3.8-27b
+  engine: vllm
+  tensor_parallel: 2
+  max_model_len: 32768
+  gpu_memory_utilization: 0.85
+
+build:
+  shard: document
+  max_chunks_per_job: 80
+  prompt_version: kb-v1
+  poll_interval_s: 30
+  queue_timeout_s: 3600
+  request_dir: kb/requests
+  result_dir: kb/results
+
+cache:
+  directory: data/kb
+  key: [corpus_hash, prompt_version, model]

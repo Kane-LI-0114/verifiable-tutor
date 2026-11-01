@@ -117,6 +117,8 @@ benchmarks/self_test/
 
 `benchmarks/results/` stays for the small machine-readable result files that the report cites.
 
+When a run uses the course knowledge base as context, record the `build_id`, corpus hash, prompt version, model, and TACC job id in the run metadata. TACC queue, cold-start, and build times are reported under RQ4 ([knowledge-schema.md](knowledge-schema.md)).
+
 ## 8. Procedure checklist
 
 1. Confirm model versions and access dates for A, B, and the simulator. A must run `deepseek-flash`; B must show the DeepSeek Flash selection in the web UI and be captured in a screenshot before the run.

@@ -158,6 +158,35 @@ digraph prd_er {
     </TABLE>>];
   }
 
+  subgraph cluster_kb {
+    label="Knowledge base"; fontsize=9; style="rounded,dashed"; color="#555555"; margin=10;
+    kbbuild [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>KB_BUILD</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">shard_key</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">tacc_job_id</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">corpus_hash</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">prompt_version</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">model</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">finished_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    kbcard [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>KNOWLEDGE_CARD</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">build_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">document_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">source_block_ids</TD><TD ALIGN="LEFT">JSON</TD></TR>
+      <TR><TD ALIGN="LEFT">summary</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">key_terms</TD><TD ALIGN="LEFT">JSON</TD></TR>
+      <TR><TD ALIGN="LEFT">study_questions</TD><TD ALIGN="LEFT">JSON</TD></TR>
+      <TR><TD ALIGN="LEFT">citations</TD><TD ALIGN="LEFT">JSON</TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+  }
+
   user -> session;
   user -> conversation;
   user -> answer;
@@ -176,4 +205,6 @@ digraph prd_er {
   answer -> grade;
   question -> execjob;
   answer -> execjob;
+  kbbuild -> kbcard;
+  document -> kbcard;
 }

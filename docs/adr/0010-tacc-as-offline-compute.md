@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted; superseded in part by [ADR-0011](0011-tacc-as-required-model-serving-backend.md) |
 | **Date** | 2026-10-30 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
+> **Superseded in part (2026-11-01).** [ADR-0011](0011-tacc-as-required-model-serving-backend.md) makes TACC a required model-serving backend: the BGE-M3 index job and the Qwen knowledge-base job are reached through job submission. TACC is no longer offline-only and Qwen is no longer optional. The local backend, the no-SSH/inbound-service rule, and the artifact-download decisions still stand.
+
 ## Context
 
-The submitted proposal v1 (October 27, 2026) commits to a TACC CPU job for the agent backend and to the course Qwen service on TACC. [ADR-0005](0005-external-model-apis-as-primary.md) moved text generation to external APIs but kept the TACC CPU job as the evaluation evidence path. Proposal v2 (revision dated 2026-10-30) records the decision below. [tech-selection.md](../tech-selection.md#where-the-backend-runs) recorded the hosting question as open and planned two demo modes: a local backend and a TACC-hosted backend reached through an SSH forward.
+The submitted proposal v1 (October 27, 2026) commits to a TACC CPU job for the agent backend and to the course Qwen service on TACC. [ADR-0005](0005-external-model-apis-as-primary.md) moved text generation to external APIs but kept the TACC CPU job as the evaluation evidence path. Proposal v2 recorded the offline-only decision below; proposal v3 supersedes it with a required TACC model-serving backend ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)). [tech-selection.md](../tech-selection.md#where-the-backend-runs) recorded the hosting question as open and planned two demo modes: a local backend and a TACC-hosted backend reached through an SSH forward.
 
 The project brief does not state where the backend must run. On 2026-10-29 we emailed the TA two follow-up questions: whether SSH forwarding to a student-run web port is allowed, and whether the final demo must run the backend on TACC. The answer arrived on 2026-10-30: the backend does not have to be deployed on TACC. The requirement is at least one offline job that uses TACC results. The examples given are OCR parsing and embedding of document chunks: TACC produces them, the results are stored locally, and the delivered system reads them. TACC is an offline compute resource, and no online service is deployed there ([tacc-notes.md](../tacc-notes.md#staff-clarification-2026-10-30)).
 
@@ -40,7 +42,7 @@ The project still needs real TACC compute in the deliverable: the corpus OCR, th
 - GPU work is still queue-bound: the corpus, index, and baseline jobs wait for node availability and each must fit one hour.
 - The laptop must carry a BGE-M3 query-embedding path; a local model copy or cached vectors add setup and disk use.
 - The per-request `tacc/exec` path keeps a queue-dependent step in the demo, and the report must measure its latency.
-- The delivered topology differs from proposal v1's TACC CPU job and Qwen-service primaries; proposal v2 records the change, and the report explains it.
+- The delivered topology differs from proposal v1's TACC CPU job and Qwen-service primaries; proposal v3 records the change, and the report explains it.
 
 **Neutral:**
 - `tacc/client/` changes from an agent backend and UI job to an offline evaluation harness job.

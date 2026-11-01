@@ -8,7 +8,9 @@
 
 > **Superseded in part.** [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) replaces the cross-model fallback part of this decision. The rest stands. The live-verified model ids are `deepseek-flash`, `mimo-v2.6-flash`, and `mimo-v2.6-pro`; see [config/models.yaml](../../config/models.yaml).
 
-> **Amended in part (2026-10-30).** The delivered backend runs on the laptop ([ADR-0010](0010-tacc-as-offline-compute.md)), so query embedding runs locally with a local BGE-M3 copy or cached query vectors, while batch index embedding stays on a TACC GPU job. The course Qwen model is used as an offline batch baseline, not as a deployed service. Proposal v2 (revision dated 2026-10-30) records external APIs as primary; proposal v1 remains the submitted artifact.
+> **Amended in part (2026-11-01).** Qwen on TACC is now a required offline text-processing backend for the knowledge base ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)); external APIs remain the interactive text path.
+
+> **Amended in part (2026-10-30).** The delivered backend runs on the laptop ([ADR-0010](0010-tacc-as-offline-compute.md)), so query embedding runs locally with a local BGE-M3 copy or cached query vectors, while batch index embedding stays on a TACC GPU job. The course Qwen model is a required offline knowledge-base backend, not an interactive text path ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)). Proposal v3 records external APIs as the interactive path; proposal v1 remains the submitted artifact.
 
 ## Context
 
@@ -23,7 +25,7 @@ Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSee
 
 - **Primary text generation:** external OpenAI-compatible APIs through the `openai` SDK. The `chat` role points at DeepSeek `deepseek-flash`; [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) removes the earlier cross-model fallback. The `translate_query` role uses DeepSeek, and the `classify_intent` role uses MiMo. The provider mapping is configuration, not code.
 - **Embeddings:** BGE-M3 runs on TACC, both in the index job and for query embedding in the backend. Embeddings are not an external API.
-- **Course Qwen service:** an optional TACC baseline, not on the primary path.
+- **Course Qwen service:** a required offline text-processing backend for the knowledge base, not an interactive text path ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)).
 - **Secrets:** only API keys live in `.env` at the repository root, which Git ignores. The committed [.env.example](../../.env.example) is the template.
 - **Provider settings:** endpoints, model ids, role routing, request parameters, retry and timeout values, the response cache, and the embedding configuration live in [config/models.yaml](../../config/models.yaml). That file is committed and contains no secrets.
 - **Caching and attribution:** every external call is labelled with provider, model, parameters, and latency, and cached by provider, model, parameters, and messages. No experiment in the submitted repository may require a paid call at rerun time.
@@ -42,11 +44,11 @@ Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSee
 - The course does not reimburse external calls, so evaluation must run from cache and the paid-call budget must stay small; a careless benchmark run costs money.
 - Provider model ids and behaviour change over time, so the report and the cache key must record the exact provider and model.
 - Course material excerpts leave the platform as prompts to a third party. This is acceptable for a course project with public course material, but it must be stated in the report.
-- Proposal v1 names the Qwen service as primary; proposal v2 records the delivered decision. The report explains the change from v1 and keeps the TACC jobs for evaluation evidence.
+- Proposal v1 names the Qwen service as primary; proposal v3 records the required offline Qwen knowledge-base backend. The report explains the change from v1 and keeps the TACC jobs for evaluation evidence.
 - A local demo needs an embedding path: BGE-M3 loaded on the laptop or a cache of query vectors, as recorded in [ADR-0010](0010-tacc-as-offline-compute.md).
 
 **Neutral:**
-- `tacc/serve` moves from a required job to an optional baseline, and the job budget shifts toward OCR and indexing.
+- `tacc/serve` becomes the required Qwen knowledge-base job, and the job budget shifts toward OCR, indexing, and knowledge-base builds.
 
 ## Alternatives considered
 
@@ -54,7 +56,7 @@ Two OpenAI-compatible providers are available to the team on 2026-10-29: DeepSee
 
 **Use a single external provider.** For: one endpoint, one key, and the simplest configuration. Against: only one provider for the provider-specific roles and for comparing answers. Why not chosen: two providers were already available, and the per-role configuration keeps both available without code changes. [ADR-0006](0006-same-model-retries-without-cross-model-fallback.md) removes automatic fallback between them.
 
-**Run text generation on a self-hosted model on TACC.** For: no external cost and no data leaving the platform. Against: the one-hour job cap, the read-only public environment, and the cold start make it the slowest path for the chat loop. Why not chosen: it reproduces the problem the team is trying to escape, and the provided Qwen service already covers the optional baseline.
+**Run interactive text generation on a self-hosted model on TACC.** For: no external cost and no data leaving the platform. Against: the one-hour job cap, the read-only public environment, and the seven to eight minute cold start make it the slowest path for the chat loop. Why not chosen: it reproduces the interactive problem the team is trying to escape; the 2026-11-01 requirement instead makes Qwen a required offline knowledge-base backend ([ADR-0011](0011-tacc-as-required-model-serving-backend.md)).
 
 **Use an external embedding API.** For: no local model to deploy. Against: cost and network dependency on every query, and BGE-M3 on TACC is already part of ADR-0004. Why not chosen: local embeddings are free, fast enough, and reproducible.
 

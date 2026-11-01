@@ -6,10 +6,12 @@
 # research in docs/model-providers.md, read on 2026-10-29; model ids change
 # often, so this file, not the code, is the source of truth.
 #
-# The primary text-generation path is an external OpenAI-compatible API. The
-# course Qwen service on TACC is an optional baseline and is not configured
-# here. Embeddings are not an API: BGE-M3 runs on TACC (see the embedding
-# section) and is loaded by the indexing and backend jobs.
+# The primary interactive text-generation path is an external OpenAI-compatible
+# API. Qwen on TACC is a required offline text-processing backend for the
+# knowledge base (ADR-0011); it is not an OpenAI-compatible provider, and its
+# job settings live in config/knowledge.yaml. Embeddings are not an API: BGE-M3
+# runs on TACC (see the embedding section) and is loaded by the indexing and
+# backend jobs.
 
 defaults:
   timeout_s: 60

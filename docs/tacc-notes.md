@@ -8,7 +8,7 @@ Yijun Sun (course TA) answered our questions about allowed model usage and the T
 
 | Topic | Clarification | What it means here |
 |---|---|---|
-| Model backend | TACC and the provided Qwen model are not mandatory. External LLM APIs and external computing resources are acceptable. | External APIs are allowed and are now the primary text path; the TACC Qwen service stays as an optional baseline ([ADR-0005](adr/0005-external-model-apis-as-primary.md)). |
+| Model backend | TACC and the provided Qwen model are not mandatory. External LLM APIs and external computing resources are acceptable. | External APIs are allowed and are the primary interactive text path. The TACC Qwen service was initially kept as an optional baseline; the 2026-11-01 email makes it a required offline knowledge-base backend ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)). |
 | Cost | The course may not be able to reimburse external API or external compute costs. | No experiment in the submitted repository may require a paid external call. Cache every external result. |
 | Packages and storage | Dependencies and model downloads may go into our own workspace. Group storage must stay within 100 GB, combined across all three members. | Install into `$HOME`, never into the read-only public environment. Budget weights, indexes, and caches against the 100 GB cap. |
 | Embeddings | An embedding model may run on TACC through a submitted job. Precomputing embeddings externally and BM25-only retrieval are also acceptable. | Keep the planned hybrid index; the dense side can be produced on TACC in a short batch job. |
@@ -26,9 +26,22 @@ The follow-up questions sent to the TA by email on 2026-10-29 were answered on 2
 | Backend hosting | The backend does not have to be deployed on TACC. | The backend, UI, and stores run locally, and no TACC-hosted mode is built ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). |
 | Required TACC use | At least one offline job must use TACC results. The examples are OCR parsing and embedding of document chunks: TACC produces the results, they are stored locally, and the delivered system reads them. | The OCR and index jobs are the required offline pipeline; their outputs are mirrored under `data/corpus/` and `data/index/`; the report cites the job ids and logs. |
 | Online services | TACC is used as an offline compute resource, and no online service is deployed there. | Every TACC job writes files and exits. The TACC-hosted backend, the SSH web-port forward, and the tunnel spike are dropped. |
-| Proposal deadline | The proposal is due Sunday 2026-11-01, not Thursday 2026-10-29 as the course brief lists. | Proposal v2 (revision dated 2026-10-30) is submitted before the Sunday deadline; the PRD records the key date. |
+| Proposal deadline | The proposal is due Sunday 2026-11-01, not Thursday 2026-10-29 as the course brief lists. | Proposal v3 (dated 2026-11-01) is submitted before the Sunday deadline; the PRD records the key date. |
 
-The web-port forwarding question is therefore moot: the delivered system reaches no TACC service. The 2026-10-28 clarification above remains valid for model usage, cost, packages, storage, embeddings, OCR, and resource limits.
+The 2026-11-01 email below supersedes the "required TACC use" and "online services" rows; the backend-hosting and deadline rows still stand. The 2026-10-28 clarification remains valid for model usage, cost, packages, storage, embeddings, OCR, and resource limits.
+
+## Staff clarification (2026-11-01)
+
+A second staff email on 2026-11-01 supersedes the optional reading of the 2026-10-30 answer:
+
+| Topic | Clarification | What it means here |
+|---|---|---|
+| Model serving | The project must use TACC as at least one of its model-serving backends and demonstrate a working end-to-end workflow. | TACC runs the BGE-M3 index job and a required Qwen knowledge-base enrichment job; one build is demonstrated end to end ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)). |
+| Text generation on TACC | The staff suggest also deploying a text-generation model on TACC, such as the course Qwen model. | Qwen runs as an offline text-processing backend for the knowledge base; it is not used for interactive chat, because a job-per-turn cold start is unusable ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)). |
+| SSH forwarding | SSH port forwarding is not supported for the project. | No tunnel or forwarded port is used; all TACC access is job submission ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)). |
+| Access pattern | Keep the frontend local and access TACC through job submission: submit a task, wait for the result, then use it in the application. | The local backend writes requests to `USERDIR`, submits a job, waits, downloads and validates the result, and uses it locally. |
+
+The 2026-10-30 backend-hosting and deadline rows still stand. Its "required TACC use" and "online services" rows are superseded by this email.
 
 ## Discrepancy: job time limit
 
@@ -55,17 +68,19 @@ Facts below were read from the tcloud SDK 0.4.1 source, the live cluster configu
 
 ## Access from outside (2026-10-28)
 
+Updated 2026-11-01: the project does not use SSH port forwarding; all access is job submission.
+
 - **Compute nodes are private.** The observed node address is RFC1918 (`10.0.1.0/24`, with `10.0.0.0/8` routed), and login and compute nodes share one NAT egress address. There is no direct inbound path from a laptop, and tcloud 0.4.1 has no port-publishing or ingress command.
-- **The reachable path is an SSH local forward through the account's SSH entry.** The documented off-platform path forwards to `NODE:8000` through the account's SSH entry. Probes on 2026-10-28 showed that `gw.turing.ust.hk:30041` accepts `-L` forwards to arbitrary cluster addresses and arbitrary target ports, and the login node routes into `10.0.0.0/16`. Gateway to job-container port reachability stays unverified, but the 2026-10-30 clarification removes the need for it: the delivered system reaches no TACC service ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
-- **Command shape:** `ssh -p 30041 -i <private key> -N -L 127.0.0.1:<local port>:<node>:<remote port> <user>@gw.turing.ust.hk`, then open `http://127.0.0.1:<local port>/`. Target the node address or the dashed node name, never the gateway's own localhost. Use `ExitOnForwardFailure` and `ServerAliveInterval` to make a dead tunnel visible.
+- **SSH local forwarding is not supported for the project.** The 2026-11-01 email settles the question: no tunnel or forwarded port is used. Probes on 2026-10-28 showed that `gw.turing.ust.hk:30041` accepts `-L` forwards to arbitrary cluster addresses and ports, and the login node routes into `10.0.0.0/16`; the project does not use them, and all TACC access is job submission ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
+- **Historical command shape, not used:** `ssh -p 30041 -i <private key> -N -L 127.0.0.1:<local port>:<node>:<remote port> <user>@gw.turing.ust.hk`, then open `http://127.0.0.1:<local port>/`. It is recorded only to document what the platform technically allows; the project does not forward ports.
 - **No document addresses forwarding to a student-run web port directly.** The general wording and the model-service wording conflict, and no sentence either permits or forbids the web-port use case by name. Exact wording:
   - "SDK 内部使用 SSH 协议和 Slurm；学生不登录平台服务器，也不自行建立 SSH 转发。" (student commands, file and environment section)
   - "离开平台的本地客户端需要通过该账号可用的 SSH 入口转发到 NODE:8000；登录和密钥使用本人已配置的账号。" (service commands, client section)
   - "个人电脑默认通过 SDK 提交客户端程序到平台调用；如果需要从校外电脑直接访问 HTTP 服务，请使用平台明确提供或批准的访问入口。" (student commands, service section)
   - "All users cannot ssh to our server. If you have special needs, please feel free to contact us." (tcloud quickstart FAQ, item 4)
   - Term of Service usage rules: "Do not run any application that performs a security intrusion", "Do not run any application that could be interpreted as a privacy violation", "Do not hold TACC resources when they are not actively used", "Do not access resources that are not allocated to you", "Do not make hacking attempts to the TACC infrastructure". Violations can lead to account disabling, notifying the supervisor, or legal action.
-  - Reading: the model-service forward has specific textual support; forwarding to our own web port has none. The 2026-10-30 clarification makes the web-port case moot for the delivered system.
-- **Capability versus permission.** The SSH plumbing works; the only explicit text about off-platform access is the model-service forward. The 2026-10-30 clarification removes the web-port use from the delivery, so no forwarding is designed into the demo. The facts above stay recorded for an optional experiment that uses the documented model-service forward; the delivered baseline does not ([tech-selection.md](tech-selection.md#jobs-and-demo-modes)).
+  - Reading: the model-service forward has specific textual support; forwarding to our own web port has none. The 2026-11-01 email makes the policy explicit: SSH forwarding is not supported for the project.
+- **Capability versus permission.** The SSH plumbing works, but the 2026-11-01 clarification does not permit SSH forwarding for the project. The delivered system does not use it; the facts above are historical and are not a design path ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md), [tech-selection.md](tech-selection.md#jobs-and-demo-modes)).
 - **No per-job public URL was found.** The web console shows job history and status; the platform's HAProxy port-exposure mechanism for Jupyter-style access is not documented for student jobs through the course SDK.
 - **Capacity is tight.** Measured on 2026-10-28: 10 nodes, `MaxNodes=2`, 20 CPUs per node, 2 GPUs per node, with 0 idle, 6 drain, 4 down, and 3 jobs pending from another account. Queueing, not concurrency, is the demo risk; keep replay ready and submit batch jobs early.
 
@@ -74,10 +89,11 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 ## Job budget
 
 - The public environment validation recorded on 2026-10-06 measured a full cold start of 12 minutes 40 seconds for the Qwen service, including first load and compile. With a one-hour cap, one service job leaves about 45 minutes of usable serving time.
-- The service address (`SERVICE_BASE_URL=http://NODE:8000/v1`) changes with every job, and the client must read it from the log of the current job each time. The address stops working when the job ends.
+- The course-provided service address (`SERVICE_BASE_URL=http://NODE:8000/v1`) changes with every job and is not used by the project: SSH forwarding is not supported, so the project runs Qwen inside its own submitted job ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
 - Evaluation must fit the usable window: split the 50-question benchmark and the ablations into batches that complete in under 45 minutes, and cache retrieval snapshots and model responses so a rerun does not need a fresh service.
-- Use one baseline job per evaluation window instead of short repeated submissions; this respects both the one-hour cap and the fairness rule.
-- The demo has a replay mode that reads cached responses, so the presentation does not depend on a live model or a queued job. The demo mode is settled by the 2026-10-30 clarification: the backend and UI run locally, and TACC is used only through submitted batch jobs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+- Use one Qwen knowledge-base job per document shard instead of short repeated submissions; this respects both the one-hour cap and the fairness rule.
+- The Qwen knowledge-base job pays the full vLLM cold start (438 to 495 s) before generation; shard by document, keep records resumable, and pre-build the demo knowledge base.
+- The demo has a replay mode that reads cached responses, so the presentation does not depend on a live model or a queued job. The demo mode is settled by the 2026-11-01 requirement: the backend and UI run locally, and TACC is a required model-serving backend reached through job submission ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
 
 ## Storage budget
 
@@ -88,9 +104,10 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 
 ## Consequences for the plan
 
-- The proposal is revised: v1 (2026-10-27) stays the submitted artifact, and v2 (revision dated 2026-10-30) records the delivered local-backend and offline-TACC topology; it is submitted by the Sunday 2026-11-01 deadline. The course brief lists Thursday 2026-10-29, which the TA corrected.
-- The delivered topology runs the backend locally and uses TACC only through batch jobs; v2 records this, so the report explains the change from v1's TACC CPU backend and Qwen-service primaries ([ADR-0010](adr/0010-tacc-as-offline-compute.md), [ADR-0005](adr/0005-external-model-apis-as-primary.md)).
-- The course TACC requirement is met by the offline pipeline: the OCR job parses the corpus, the index job computes the embeddings, their outputs are mirrored locally, and the backend reads the mirror. The report cites the job ids and logs ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+- The proposal is revised: v1 (2026-10-27) stays the submitted artifact, v2 (2026-10-30) is a previous draft, and v3 (2026-11-01) records the required TACC model-serving backend and the knowledge base; v3 is submitted before the Sunday deadline. The course brief lists Thursday 2026-10-29, which the TA corrected.
+- The delivered topology runs the backend locally and uses two TACC model-serving jobs, the BGE-M3 index job and the Qwen knowledge-base job, both reached by job submission; v3 records this ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md), [ADR-0005](adr/0005-external-model-apis-as-primary.md)).
+- The course TACC requirement is met by the BGE-M3 index job and the Qwen knowledge-base job; one build is demonstrated end to end, and the report cites the job ids, logs, timings, and record hashes ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
+- The knowledge base is a P0 feature: one build is one submitted GPU job per document shard, its records validate against [knowledge-schema.md](knowledge-schema.md), and the demo uses them in a review outline.
 - Keep the repository runnable without external keys or GPU access: cached baselines, cached retrieval snapshots, and a replay path.
 - The dense retrieval side needs no new packages: the public environment already ships PyTorch and Transformers, so an open embedding model can be loaded directly once its weights are downloaded to our workspace. BM25 remains the no-cost fallback and a required ablation arm.
 - The OCR job is now part of the plan, not a stretch goal: the corpus is produced by a TACC OCR job whose model and output contract are recorded in [tech-selection.md](tech-selection.md) and [ADR-0002](adr/0002-ocr-on-tacc-with-paddleocr-vl.md). The existing transcripts are only a human quality reference.
@@ -159,6 +176,7 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
 - Course staff reply of 2026-10-30 on backend hosting, offline TACC use, and the proposal deadline (Sunday 2026-11-01), reported by the project lead after the 2026-10-29 follow-up email.
+- Course staff email of 2026-11-01 on the required TACC model-serving backend, the suggested Qwen text-generation deployment, and the SSH-forwarding prohibition, reported by the project lead.
 - Course project brief, Topic Selection and Proposal (course brief lists the proposal due October 29, 2026), course workspace copy outside this repository.
 - Course public environment guide and student commands, course workspace copies outside this repository.
 - TACC tutorial, `time=02:00:00` service example.
