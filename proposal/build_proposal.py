@@ -2,8 +2,8 @@
 """Build the CSIT6000V 2-page project proposal (.docx + .md master).
 
 Version 1 is the submitted October 27, 2026 proposal and stays frozen.
-Version 2 is the October 30, 2026 revision: it writes new files and leaves
-every version 1 asset untouched.
+Version 2 is the October 30, 2026 revision. Version 3 is the November 1,
+2026 revision: it writes new files and leaves versions 1 and 2 untouched.
 """
 import argparse
 import os, subprocess
@@ -18,8 +18,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FIGS = os.path.join(HERE, "figs")
 
 _parser = argparse.ArgumentParser(description="Build the CSIT6000V project proposal.")
-_parser.add_argument("--version", type=int, choices=(1, 2), default=1,
-                     help="1 builds the submitted proposal; 2 builds the revision.")
+_parser.add_argument("--version", type=int, choices=(1, 2, 3), default=1,
+                     help="1 builds the submitted proposal; 2 or 3 build the revisions.")
 VERSION = _parser.parse_args().version
 
 if VERSION == 1:
@@ -36,6 +36,10 @@ if VERSION == 1:
     CAPTION2 = "Figure 2. Containers and components of the agent."
     ALT2_TEXT = ("Container and component diagram of the agent backend, model serving job, "
                  "stores, and tools.")
+    FIG1 = os.path.join(FIGS, "fig1_usecase.png")
+    FIG1_WIDTH = 5.2
+    ALT1_TEXT = "Use case diagram: student and instructor/TA actors and six agent use cases."
+    CAPTION1 = "Figure 1. Use cases of the tutoring agent."
     TBL_CAPTION = "Table 1. Gantt-style work plan (W1\u2013W4)."
     CAVEAT = None
     PROP_SUBJECT = "CSIT6000V Project Proposal (Topic Selection)"
@@ -55,6 +59,10 @@ else:
                 "external APIs, and offline TACC batch jobs with no hosted service.")
     ALT2_TEXT = ("Container and component diagram: a local backend and UI, external model "
                  "APIs, and TACC offline batch jobs with no hosted service.")
+    FIG1 = os.path.join(FIGS, "fig1_usecase.png")
+    FIG1_WIDTH = 5.2
+    ALT1_TEXT = "Use case diagram: student and instructor/TA actors and six agent use cases."
+    CAPTION1 = "Figure 1. Use cases of the tutoring agent."
     CAVEAT = ("The models, services, and batch layout named here reflect the current plan "
               "and may change as development proceeds.")
     TBL_CAPTION = "Table 1. Gantt-style work plan (W1-W4)."
@@ -263,6 +271,94 @@ V2_REFS = [
     "Assignment 1: MPI Programming, CSIT6000V, Fall 2026.",
 ]
 
+
+# --------------------------------------------------------- version 3 content
+# Version 3 records the 2026-11-01 TACC requirement: TACC is a required
+# model-serving backend, and Qwen runs there as an offline text-processing
+# backend for the course knowledge base. Versions 1 and 2 stay untouched.
+V3_TASK = [
+    ("Two actors use the agent. A student can (i) ask course questions and receive an answer "
+     "that cites the exact page and quoted span; (ii) request a review outline or a self-test "
+     "quiz on a topic; (iii) practise with a generated exercise at the scale and environment of "
+     "the corresponding assignment, receiving a reference solution, tests, and a stepwise "
+     "explanation; (iv) submit their own solution and receive line-anchored teaching; (v) "
+     "ask by voice, attach audio, and play spoken answers through the MiMo audio models; and "
+     "(vi) browse the course knowledge base that TACC enriches offline. An instructor or TA "
+     "maintains the deadline registry and triggers knowledge-base builds."),
+    TASK[1],
+]
+
+V3_SYSTEM = [
+    ("Figure 2 shows the containers. A React browser UI talks to a FastAPI agent backend on "
+     "the developer laptop, which runs a typed LangGraph workflow and calls external "
+     "OpenAI-compatible APIs for interactive answers. TACC is a required model-serving "
+     "backend: submitted GPU jobs run the embedding model and Qwen text processing; the "
+     "backend submits a job, waits for its result, and uses it. The required execution path, "
+     "from task to visible result, runs on the laptop: enter the task, watch progress, and "
+     "review the answer with its evidence."),
+    ("Evidence. Course PDFs are parsed by a TACC OCR job with PaddleOCR-VL into page records "
+     "with block boxes and page images. Page-aware chunks are embedded with BGE-M3 and indexed "
+     "with BM25 in a TACC job; the artifacts are downloaded to the laptop. A deterministic "
+     "verifier checks every quoted span against its cited page, with one repair round or "
+     "abstention."),
+    ("Knowledge base. Qwen on TACC is an offline text-processing backend: one submitted GPU "
+     "job per build shard reads course chunks from USERDIR, generates cited knowledge cards (summary, "
+     "key concepts, study questions) as JSONL, and exits. The local backend polls, downloads, "
+     "validates, and stores the records; no port forwarding or inbound service is used."),
+    ("Artifacts. The MPI/GEMM practice pack mirrors the assignment toolchain, Makefile, "
+     "datasets, and test harness; a generated reference solution is accepted only after it "
+     "compiles and passes the pack tests in a TACC execution job. A CUDA pack is best effort "
+     "(P2)."),
+    ("Policy. The gate is code, not a prompt: a typed LangGraph StateGraph over typed tools, a "
+     "versioned deadline registry, an intent classifier, and a decision log make disclosure "
+     "testable and resistant to prompt injection; explanations cite page spans, code lines, or "
+     "test outcomes."),
+    ("Deployment. Interactive text generation uses external APIs (DeepSeek primary; MiMo "
+     "selectable) with same-model retries and caching. TACC model serving is required and "
+     "batched: the embedding index and Qwen knowledge-base jobs are reached only through job "
+     "submission, and their outputs are downloaded and cached; no SSH forwarding or inbound "
+     "service is used."),
+]
+
+V3_EVAL = [
+    ("We ask four questions on an in-repository benchmark. This is a task-oriented project: it "
+     "targets tutoring-task performance against baselines (an external chatbot for the "
+     "self-test loop, a prompt-only policy for disclosure), with efficiency as a secondary "
+     "metric (RQ4). RQ1 tests citation accuracy and faithfulness; RQ2a tests reference answers "
+     "that compile and pass course-style tests; RQ2b compares grading agreement with developer "
+     "ground truth and the chatbot; RQ3 covers five policy states and adversarial cases; RQ4 "
+     "reports latency, model calls, and the BM25, dense, and hybrid ablation."),
+    ("The benchmark holds fifty course questions, ten policy scenarios, one MPI/GEMM pack, and "
+     "a shared grading set. The required TACC workflow is demonstrated end to end: one "
+     "knowledge-base build job per document batch is submitted, its JSONL records are "
+     "downloaded and validated, and the resulting knowledge base feeds a review outline; the "
+     "report records queue, cold-start, build time, and schema validity. Failure analysis groups "
+     "errors by cause: OCR corruption, figure-only slides, retrieval misses, context overflow, "
+     "test-failing generated solutions, policy bypasses, and malformed Qwen records."),
+]
+
+V3_MILESTONES = ("Four one-week workstreams move from infrastructure to full evaluation "
+                 "(Table 1). Deliverables are the code repository, evaluation report, tested "
+                 "demo, and final presentation; the demo includes a TACC Qwen knowledge-base "
+                 "build used by the agent.")
+
+V3_RISKS = ("TACC jobs are queue-bound and capped at one hour: schedule the embedding and "
+            "knowledge-base jobs early, shard by document, keep them resumable, and pre-build "
+            "the demo knowledge base. Qwen output can be malformed: records are schema-validated "
+            "and repaired once. External APIs add cost and availability risk: calls are labelled, "
+            "cached, and retried only on the same model. A laptop failure is covered by the "
+            "runbook and replay fallback; OCR quality is spot-checked, and prompt injection is "
+            "handled by the gate plus adversarial tests.")
+
+V3_REFS = [
+    "Course Project Brief and staff clarifications (2026-10-28, 2026-10-30, 2026-11-01), "
+    "CSIT6000V, Fall 2026.",
+    "TACC@HKUST Public Environment Guide, CSIT6000V, Fall 2026.",
+    "S. Robertson and H. Zaragoza. The Probabilistic Relevance Framework: BM25 and Beyond. "
+    "Found. Trends Inf. Retr., 3(4):333-389, 2009. doi:10.1561/1500000019.",
+    "Assignment 1: MPI Programming, CSIT6000V, Fall 2026.",
+]
+
 if VERSION == 2:
     MOTIVATION = V2_MOTIVATION
     TASK = V2_TASK
@@ -271,6 +367,41 @@ if VERSION == 2:
     MILESTONES = V2_MILESTONES
     RISKS = V2_RISKS
     REFS = V2_REFS
+elif VERSION == 3:
+    MOTIVATION = V2_MOTIVATION
+    TASK = V3_TASK
+    SYSTEM = V3_SYSTEM
+    EVAL = V3_EVAL
+    MILESTONES = V3_MILESTONES
+    RISKS = V3_RISKS
+    REFS = V3_REFS
+
+
+if VERSION == 3:
+    DOCX = os.path.join(HERE, "CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v3.docx")
+    MD = os.path.join(HERE, "proposal_v3.md")
+    FIG1 = os.path.join(FIGS, "fig1_usecase_v3.png")
+    FIG1_WIDTH = 4.7
+    FIG2 = os.path.join(FIGS, "fig2_components_v3.png")
+    DATE = "November 1, 2026"
+    HEADER_LINE = "Project Proposal \u00b7 Topic Selection"
+    REVISION_NOTE = None
+    COURSE_LINE = ("CSIT6000V \u00b7 Advanced AI Computing and Systems \u00b7 Fall 2026 "
+                   "\u00b7 Instructor: Prof. Kai Chen")
+    COURSE_LINE_MD = "CSIT6000V \u00b7 Advanced AI Computing and Systems \u00b7 Fall 2026"
+    FIG2_WIDTH = 14.4
+    ALT1_TEXT = ("Use case diagram: student and instructor/TA actors, the tutoring use cases, "
+                 "and the knowledge-base build and browse use cases.")
+    CAPTION1 = "Figure 1. Use cases of the tutoring agent and the knowledge base."
+    CAPTION2 = ("Figure 2. Containers and components of the agent: local backend, external APIs, "
+                "and required TACC model-serving jobs for embeddings and the Qwen knowledge base.")
+    ALT2_TEXT = ("Container and component diagram: a local backend and UI, external model APIs, "
+                 "and TACC model-serving jobs for embeddings and Qwen knowledge-base enrichment.")
+    CAVEAT = ("Models, service versions, and batch sizes may change; the required TACC "
+              "model-serving path and job-submission access are fixed.")
+    TBL_CAPTION = "Table 1. Gantt-style work plan (W1-W4)."
+    PROP_SUBJECT = "CSIT6000V Project Proposal (Topic Selection)"
+    PROP_COMMENTS = "Course project proposal, Fall 2026"
 
 # ---------------------------------------------------------------- helpers
 BODY_PT, SMALL_PT, CAP_PT = 10.5, 8.5, 7.5
@@ -415,9 +546,9 @@ if REVISION_NOTE:
 # 1 Motivation
 heading(doc, "1. Motivation and Problem")
 para(doc, MOTIVATION)
-p_fig1 = add_picture_centered(doc, os.path.join(FIGS, "fig1_usecase.png"), 5.2)
-set_alt(p_fig1, "Use case diagram: student and instructor/TA actors and six agent use cases.")
-caption(doc, "Figure 1. Use cases of the tutoring agent.")
+p_fig1 = add_picture_centered(doc, FIG1, FIG1_WIDTH)
+set_alt(p_fig1, ALT1_TEXT)
+caption(doc, CAPTION1)
 
 # 2 Task
 heading(doc, "2. Task Definition and Outputs")
@@ -494,7 +625,7 @@ with open(MD, "w", encoding="utf-8") as f:
         f.write(f"*{REVISION_NOTE}*\n\n")
     f.write(f"{COURSE_LINE_MD}\n\n")
     f.write("## 1. Motivation and Problem\n\n" + MOTIVATION + "\n\n")
-    f.write("![Figure 1](figs/fig1_usecase.png)\n\n")
+    f.write(f"![Figure 1](figs/{os.path.basename(FIG1)})\n\n")
     f.write("## 2. Task Definition and Outputs\n\n" + "\n\n".join(TASK) + "\n\n")
     f.write("## 3. Proposed System\n\n" + "\n\n".join(SYSTEM) + "\n\n")
     if CAVEAT:
