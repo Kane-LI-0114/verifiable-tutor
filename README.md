@@ -6,7 +6,7 @@ Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) b
 
 ## Status
 
-**Technology selected, model layer implemented, PRD v0.10 drafted.** The substantive content is the course project proposal v1 (submitted), the v2 draft, and the current v3, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, eleven ADRs (including LangGraph orchestration, local Langfuse tracing, typed agent tools, and the required TACC model-serving backend with the knowledge base), the local tracing and email runbooks, the knowledge-base schema and configuration, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+**Technology selected, model layer and Qwen knowledge-base round trip implemented, PRD v0.10 drafted.** The substantive content is the course project proposal v1 (submitted), the v2 draft, and the current v3, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, eleven ADRs (including LangGraph orchestration, local Langfuse tracing, typed agent tools, and the required TACC model-serving backend with the knowledge base), the local tracing and email runbooks, the knowledge-base schema, configuration and local driver, the Qwen knowledge-base job under `tacc/serve/` with its chunk, request and validation helpers, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The Qwen knowledge-base round trip is verified on TACC (job 28067, 2026-11-02: 8 of 8 records valid). The rest of the application, the corpus, benchmark data, and the evaluation report do not exist yet. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
 
 ## What it is
 
@@ -71,10 +71,10 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/eval/` | Evaluation harness | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/corpus/` | Corpus build from OCR output: page records, chunks, page images, hashing | planned (not created yet) |
-| `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state | planned (not created yet) |
+| `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state; present: chunk, request and schema validation helpers, storage and orchestration pending | present: helpers |
 | `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache |
 | `src/verifiable_tutor/ui/web/` | React UI source; built assets are written to `src/verifiable_tutor/ui/static/` | planned (not created yet) |
-| `tacc/serve/` | Required Qwen knowledge-base job: one submitted GPU job per document shard, records written to `USERDIR` | placeholder (`.gitkeep`) |
+| `tacc/serve/` | Required Qwen knowledge-base job: one submitted GPU job per document shard, records written to `USERDIR` | present: job, worker, prompt |
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |
 | `tacc/ocr-smoke/` | Committed GPU spike: PaddleOCR-VL smoke on representative pages | present: spike job |
 | `tacc/pdf-parse/` | Committed GPU job: parses one complete PDF file end to end (enumerate, render, layout, recognition, document markdown) | present: demo path spike |
@@ -84,10 +84,10 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
-| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots, knowledge-base records and build state | placeholder (`.gitkeep`) |
+| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots, knowledge-base records and build state | placeholder (`data/kb/` holds verified local records; all data contents are gitignored) |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling | present: model and knowledge config |
-| `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, and the live model smoke | present: scripts |
-| `tests/` | Test suite under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch) | present: tests |
+| `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, and the live model smoke | present: scripts |
+| `tests/` | Test suites under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch), `tests/knowledge/` (chunks, request, schema), and `tests/tacc/` (Qwen job worker, driver validation) | present: tests |
 | `pyproject.toml`, `uv.lock` | Python packaging, dependencies, pytest configuration, and locked local environment | present: packaging |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
 | `docs/figures/` | PRD diagram sources and renders (use case, containers, sequence examples, ER), and future report figures | present: PRD diagrams |

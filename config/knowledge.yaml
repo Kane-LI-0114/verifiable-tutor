@@ -1,9 +1,10 @@
 # Knowledge-base enrichment configuration.
 #
-# Status: planned. No code reads this file yet; the knowledge-base build is
-# the P0 implementation change that follows the 2026-11-01 staff requirement.
-# The Qwen job runs on TACC and is reached only through job submission; this
-# file holds no secrets. Record fields are in docs/knowledge-schema.md.
+# The local driver (scripts/tacc/run_kb_job.py) reads the model id, prompt
+# version, job name, chunk cap and polling values from this file. The TACC job
+# runs on the course Qwen environment and is reached only through job
+# submission; this file holds no secrets. Record fields are in
+# docs/knowledge-schema.md.
 
 job:
   directory: tacc/serve

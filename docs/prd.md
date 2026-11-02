@@ -316,7 +316,7 @@ Key dates: proposal v3 is submitted by Sunday 2026-11-01; the course brief lists
 - The practice pack set beyond the first MPI pack is P2; the report states the pack scope.
 - Self-test generation and TACC execution are P0 while answer grading is P1. Code answers use per-request TACC jobs under the team account, with two to three trusted demo users and no hostile-user isolation. Confirm the split and the acceptable queue latency.
 - The self-test benchmark protocol in [benchmark-protocol.md](benchmark-protocol.md) is provisional: the shared set size, the target values, and the simulated-student model are confirmed after the first dry run.
-- The knowledge-base card granularity, shard size, and prompt version are provisional; confirm them after the first Qwen job spike.
+- The knowledge-base card granularity is provisionally one card per page chunk: spike 10 (2026-11-02, job 28067) produced eight schema-valid cards from eight page-level chunks with the `kb-v1` prompt. The full-corpus shard size and the prompt version stay provisional until the corpus chunker exists and a full shard is measured.
 - The demo knowledge-base build latency depends on the TACC queue and the Qwen cold start; confirm the acceptable pre-build window and the fallback if no GPU node is available.
 
 ## 11. Related documents

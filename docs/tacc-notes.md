@@ -92,7 +92,7 @@ Sources for this section: SDK source `userconfig.go` and `tcloudcli.go`; `sinfo`
 - The course-provided service address (`SERVICE_BASE_URL=http://NODE:8000/v1`) changes with every job and is not used by the project: SSH forwarding is not supported, so the project runs Qwen inside its own submitted job ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
 - Evaluation must fit the usable window: split the 50-question benchmark and the ablations into batches that complete in under 45 minutes, and cache retrieval snapshots and model responses so a rerun does not need a fresh service.
 - Use one Qwen knowledge-base job per document shard instead of short repeated submissions; this respects both the one-hour cap and the fairness rule.
-- The Qwen knowledge-base job pays the full vLLM cold start (438 to 495 s) before generation; shard by document, keep records resumable, and pre-build the demo knowledge base.
+- The Qwen knowledge-base job measured a 434 s cold start before generation on 2026-11-02 (job 28067); shard by document, keep records resumable, and pre-build the demo knowledge base.
 - The demo has a replay mode that reads cached responses, so the presentation does not depend on a live model or a queued job. The demo mode is settled by the 2026-11-01 requirement: the backend and UI run locally, and TACC is a required model-serving backend reached through job submission ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
 
 ## Storage budget
@@ -172,6 +172,15 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - Timing structure: model startup dominates every request (438 to 495 s, roughly 70 percent of the job), so dropping from 8 pages to 3 pages saves only about 30 to 40 s of parse time. For a short demo, either start the OCR service job about 10 minutes early and keep requests inside its one-hour window, or accept a roughly 9 to 10 minute per-request round trip. A persistent service plus a light client job is the next step if demo latency must be lower.
 - The interface is local-only today: the demo backend can call it or wrap it, and it writes requests and results under `data/caches/parse-requests/` and `data/caches/parse-results/`, both gitignored. Record fields are in [corpus-schema.md](corpus-schema.md).
 
+### Qwen knowledge-base job (spike 10, 2026-11-02)
+
+- Job 28067 ran on 10-0-3-10 with 2 RTX 3090s and exited 0. The job served Qwen inside its own allocation through the course `serve.sh` launcher; no SSH forwarding and no inbound service were used.
+- The first status poll after submit already reported `R`, so queue time was at or under 2 s; cold start to a ready `/v1/models` was 434 s, and the eight-chunk generation body took 43.9 s, for a 479.4 s job body.
+- Eight page-level chunks from `course_project.pdf` (8 pages, 121 blocks) produced eight `vt-kb-record/1` records: 8 of 8 pass the local schema and citation check, every quoted span is found on its cited page after whitespace and case normalization, and no record needed the repair path.
+- `tcloud upload` cannot create a nested remote directory, so the driver uploads the request and input to the `USERDIR` root; the job moves them into `USERDIR/kb/requests/kb-20261102-01/` and writes `records.jsonl`, `progress.json` and `summary.json` to `USERDIR/kb/results/kb-20261102-01/`. The driver downloads and stores the canonical JSONL in the gitignored `data/kb/`.
+- Artifact hashes: request `1d0bbbb1bb377577...`, input `93dd801eeb9ba1c4...`, records `d04a23012990ab68...`. The records stay in the gitignored `data/kb/` and are not course material being redistributed.
+- The first driver attempt failed locally after the download with a missing `data/kb/records/` directory. The fix creates the storage directories, and the same downloaded artifacts were revalidated with the driver's offline mode, so no second GPU job was submitted. The job result above is from job 28067 and is unaffected.
+
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
@@ -186,3 +195,4 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - SDK client cluster configuration, `~/.tcloud/.clusterconfig`, read on 2026-10-28.
 - Spike jobs 27872, 27879 and 27884, 2026-10-29: Slurm logs in `USERDIR/slurm_log/`, summaries and JSONL in `USERDIR/env-spike/`, `USERDIR/ocr-smoke/` and `USERDIR/pdf-parse/`.
 - Parse request round trips 27887 and 27889, 2026-10-29: requests under `USERDIR/parse-requests/<request-id>/`, logs in `USERDIR/slurm_log/vt-parse-<request-id>-*.log`, local copies under the gitignored `data/caches/`.
+- Knowledge-base spike job 28067, 2026-11-02: log in `USERDIR/slurm_log/vt-kb-28067.log`; request, input and results under `USERDIR/kb/requests/kb-20261102-01/` and `USERDIR/kb/results/kb-20261102-01/`; local copies under the gitignored `data/caches/kb-requests/`, `data/caches/kb-results/` and `data/kb/`.

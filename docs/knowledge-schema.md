@@ -1,6 +1,6 @@
 # Knowledge-base record schema
 
-Status: draft, version 0.1, 2026-11-01. Owner: LI Jinchuan. This document owns the record contract for the Qwen knowledge-base build ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)). The requirements are in [prd.md](prd.md) FR-K1 to FR-K4; the job topology is in [tech-selection.md](tech-selection.md).
+Status: draft, version 0.1, 2026-11-01; the record and progress contracts were validated in spike 10 on 2026-11-02 (job 28067, eight page-level chunks, 8 of 8 records valid). Owner: LI Jinchuan. This document owns the record contract for the Qwen knowledge-base build ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)). The requirements are in [prd.md](prd.md) FR-K1 to FR-K4; the job topology is in [tech-selection.md](tech-selection.md).
 
 ## 1. Scope
 
@@ -24,6 +24,7 @@ kb/
   requests/<build_id>/input.jsonl       # one source chunk per line
   results/<build_id>/records.jsonl      # one vt-kb-record/1 object per line
   results/<build_id>/progress.json      # one vt-kb-progress/1 object
+  results/<build_id>/summary.json       # job timings and counts for NFR-12 evidence
 ```
 
 Locally:
