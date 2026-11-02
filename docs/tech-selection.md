@@ -2,7 +2,7 @@
 
 Scope: implementation technology for this repository. It tracks proposal v3 (dated 2026-11-01); proposal v1 remains the submitted artifact and proposal v2 is a previous draft. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
 
-Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, and updated on 2026-11-01 for the required TACC model-serving backend and knowledge base ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)), aligned with proposal v3 (dated 2026-11-01). The model layer, its tests, and its live smoke script are implemented, and the Qwen knowledge-base job and its file round trip are verified on TACC; the remaining subsystems are planned. Spikes 1 to 3 ran on 2026-10-29, spike 10 ran on 2026-11-02, and spikes 4 to 9 are unrun.
+Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, and updated on 2026-11-01 for the required TACC model-serving backend and knowledge base ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)), aligned with proposal v3 (dated 2026-11-01). The model layer, its tests, its live smoke script, and the first FastAPI backend surface are implemented, and the Qwen knowledge-base job and its file round trip are verified on TACC; retrieval, the disclosure gate, orchestration, practice execution, the UI, and the evaluation harness are planned. Spikes 1 to 3 ran on 2026-10-29, spike 10 ran on 2026-11-02, and spikes 4 to 9 are unrun. The first FastAPI backend surface was implemented on 2026-11-02 (health, accounts and sessions, chat streaming with the AI SDK stream and JSONL trace, replay, voice, knowledge cards and builds, corpus page images, and the practice-run scaffold) with `tests/api/`; its decisions are recorded in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
 
 ## Decisions at a glance
 
@@ -99,6 +99,18 @@ The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elem
 - The build runs locally. `npm ci && npm run build` writes to `src/verifiable_tutor/ui/static/`, which is generated and ignored by Git; `package-lock.json` is committed. The local backend serves the build, and no TACC job serves the UI ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
 - Evidence panel: page WebP plus highlight rectangles from the OCR block boxes, no PDF viewer, no CDN, self-hosted KaTeX fonts, system CJK font stack.
 - Chinese and English UI strings are kept in one translation resource with a header toggle.
+
+## Implemented backend surface (2026-11-02)
+
+The local backend exists and is tested with `tests/api/`. It follows the conventions in [fastapi-reference.md](fastapi-reference.md), and the structural decisions are recorded in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
+
+- Application: `src/verifiable_tutor/api/` holds the only app factory, the routers, the dependency wiring, the AI SDK UI message stream encoder, and the chat and replay services. `src/verifiable_tutor/auth/` holds scrypt hashing, the signed server-side session cookie, the email seam, and the instructor seed logical service. `src/verifiable_tutor/knowledge/service.py` holds the card reader and the build lifecycle. `settings.py`, `storage.py`, and `trace.py` at the package root own app settings, SQLite, and the JSONL trace.
+- Configuration: `config/app.yaml` owns non-secret app settings; `.env` holds the session secret, the SMTP authorization code, and provider keys. `SESSION_SECRET` is required and the app fails closed without it.
+- Storage: SQLite at `data/app/app.sqlite3` (accounts, login sessions, codes, conversations, messages, build state) and JSONL traces under `data/app/traces/`; both are runtime state, and `data/app/` contents are gitignored.
+- Chat: the request body is project-owned; the response is the AI SDK UI message stream v1 with `data-step` parts, the `x-conversation-id` response header, and a `[DONE]` terminator. Replay re-emits the recorded frames with scaled gaps.
+- Knowledge: builds submit the existing `scripts/tacc/run_kb_job.py` driver through a subprocess runner seam; cards are read from `data/kb/records/`. A build is unavailable until `knowledge.pages_path` points at local page records.
+- Practice: the run route is a documented 503 until `tacc/exec` exists. Retrieval, the disclosure gate, LangGraph orchestration, and the React UI remain planned.
+- Commands: install, run, seed, and test commands are recorded in [AGENTS.md](../AGENTS.md#toolchain-and-commands).
 
 ## Backend, policy, practice, and storage
 

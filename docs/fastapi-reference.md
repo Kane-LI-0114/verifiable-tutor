@@ -1,0 +1,370 @@
+# FastAPI reference for the local backend
+
+Status: reference, version 0.2, 2026-11-02. Owner: LI Jinchuan. Audience: coding agents adding or changing backend HTTP interfaces in this repository, and the humans directing them. This file owns the FastAPI conventions and the official-documentation citations behind them; it also records the conventions the implemented backend follows. It does not decide the stack ([tech-selection.md](tech-selection.md)), product behavior ([prd.md](prd.md)), the UI stream protocol ([ADR-0003](adr/0003-react-spa-with-ai-elements.md)), the TACC boundary ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)), or the agent workflow ([AGENTS.md](../AGENTS.md)); those owners win on conflict.
+
+As of 2026-11-02 the first backend surface is implemented in `src/verifiable_tutor/api/`, `src/verifiable_tutor/auth/`, and `src/verifiable_tutor/knowledge/`, with its contracts covered by `tests/api/`. Retrieval, the disclosure gate, LangGraph orchestration, `tacc/exec` execution, and the React UI are still planned. The rules were checked against the official site at FastAPI 0.162.0 on 2026-11-02; the [source index](#8-source-index) maps each section to the page it came from.
+
+## 1. When to read what
+
+Read this file before touching the backend. Read the owner first when the change is not only HTTP plumbing.
+
+| Change | Read first | This file covers |
+|---|---|---|
+| New or changed route, router, or dependency | this file, then [prd.md](prd.md) for the behavior | application object, routers, request data, responses, errors |
+| New request or response payload | this file, then the owning subsystem package | Pydantic models, validation, status codes |
+| Chat streaming or replay adapter | [ADR-0003](adr/0003-react-spa-with-ai-elements.md), this file | SSE, JSON Lines, streaming responses |
+| Login, session, or role check | [prd.md](prd.md) FR-A1 to FR-A4, [email-local.md](email-local.md) | cookie mechanics, dependencies, error codes |
+| Serving the built UI or static files | [ADR-0003](adr/0003-react-spa-with-ai-elements.md), [tech-selection.md](tech-selection.md#ui-and-streaming-protocol) | `app.frontend()`, mounts, fallbacks |
+| App settings, `.env`, startup work | [tech-selection.md](tech-selection.md#backend-policy-practice-and-storage) | lifespan, settings, testing overrides |
+| Any feature change | [AGENTS.md](../AGENTS.md#test-driven-development) | the test seams this file adds |
+
+## 2. State, layout, and dependency delta
+
+The HTTP boundary lives in `src/verifiable_tutor/api/`; domain logic sits in its mapped packages. The tree below is the implemented layout; update [README.md](../README.md#repository-layout) and [AGENTS.md](../AGENTS.md#where-new-work-goes) when a directory role changes.
+
+```
+src/verifiable_tutor/
+  settings.py        # AppSettings and load_settings(config/app.yaml, .env)
+  storage.py         # SQLite schema and repositories
+  trace.py           # JSONL session trace reader and writer
+  auth/              # security, email seam, accounts and sessions service
+  knowledge/         # existing chunk, request, and schema helpers; service.py adds cards and builds
+  api/
+    __init__.py
+    factory.py       # create_app(): the only FastAPI construction, lifespan, injected collaborators
+    main.py          # module-level app for the CLI
+    deps.py          # dependency wiring from app.state
+    streaming.py     # AI SDK UI message stream v1 encoder
+    chat.py          # chat turn service and trace writer
+    replay.py        # recorded-trace replay
+    seed.py          # instructor seeding command
+    routers/         # health, auth, chat, sessions, knowledge, corpus, voice, practice
+```
+
+Rules:
+
+- Routers stay thin. A route parses input, calls the owning subsystem (for example `verifiable_tutor.orchestrator.run_turn`), and returns a response model. Subsystem rules live in their packages, not in `api/`.
+- HTTP payloads are Pydantic v2 models. Put DTOs next to the router that owns them, or in `api/schemas/` when two routers share one. Domain types stay in the subsystem packages.
+- `factory.py` is the only module that constructs `FastAPI`; `main.py` only exposes the module-level app for the CLI. Tests import `create_app` with explicit settings and injected fakes, never `main`, so tests do not depend on the local `.env`.
+- Do not add a second configuration system. `config/models.yaml` and `config/knowledge.yaml` stay owned by their loaders ([llm/config.py](../src/verifiable_tutor/llm/config.py), the knowledge driver); `config/app.yaml` owns app settings; `.env` keeps one reader in `settings.py` (see [4.10](#410-settings-and-environment)).
+
+Dependency delta for the first backend change, recorded in [pyproject.toml](../pyproject.toml) and `uv.lock`:
+
+| Package | Why | Present now |
+|---|---|---|
+| `fastapi` | the framework | Yes; `fastapi>=0.162,<1` in `pyproject.toml`, locked in `uv.lock` |
+| `uvicorn` | ASGI server behind `fastapi dev` and `fastapi run` | Yes; `uvicorn>=0.54,<1` |
+| `python-multipart` | form fields and `UploadFile` (audio upload) | Yes; `python-multipart>=0.0.33,<1` |
+| `httpx` | `TestClient` and async API tests | Yes, in the `dev` extra |
+| `pydantic-settings` | app settings from environment variables, if adopted | No; deferred. Settings use `config/app.yaml` plus the existing `llm.config.load_dotenv` reader |
+| `fastapi-cli` | the `fastapi dev` and `fastapi run` commands | Yes; `fastapi-cli>=0.0.32,<1` |
+
+`fastapi[standard]` adds uvicorn, `fastapi-cli[standard]`, `python-multipart`, `httpx`, `jinja2`, and `email-validator`; plain `fastapi` plus uvicorn and `python-multipart` is the minimal alternative, with `fastapi-cli` added only if the CLI commands are wanted ([dependencies](https://fastapi.tiangolo.com/#dependencies)).
+
+The TACC public environment already provides FastAPI, uvicorn, pydantic, httpx, and sse-starlette ([tech-selection.md](tech-selection.md)), but the delivered backend runs on the laptop, so the local `pyproject.toml` is the source of the dependency list. Python stays 3.12 ([ADR-0001](adr/0001-pinned-python-environment-without-docker.md)).
+
+## 3. Recipe: adding one interface
+
+Each step ends on a completion criterion. Do not skip ahead; the criterion of the previous step is the precondition of the next.
+
+1. **Name the seam and write the failing test.** State the endpoint path, method, request, response, and error cases, then add the test under `tests/api/` that fails because the route is missing. Completion: the test fails for the intended reason (404 or import failure on the missing route), not because of a typo or an unrelated assertion. This is the red step required by [AGENTS.md](../AGENTS.md#test-driven-development).
+2. **Add the request and response models.** Pydantic v2 classes with explicit fields, `Field` constraints, and a response model that excludes secrets by construction. Completion: a test that sends an invalid body observes the default 422 envelope, or the handler you register.
+3. **Write the path operation on a router.** One router per subsystem file, `APIRouter(prefix=..., tags=[...])`, decorator with `status_code=` and `response_model` or a return annotation. Completion: the route test is green and `/docs` lists the operation with its tag.
+4. **Wire the dependencies.** Put shared resources in the lifespan and expose them through `deps.py`; use `Depends` in the route. Completion: the test overrides the dependency (`app.dependency_overrides`) and passes with no real model call or TACC job.
+5. **Include the router in `main.py`.** `app.include_router(module.router)`, with `prefix`, `tags`, and `dependencies` supplied at the include site when the whole router shares them. Completion: `app.openapi()` contains the path once, with the expected method and status codes.
+6. **Run the full suite and the app.** `.venv/bin/python -m pytest`, then start the server and exercise the route in `/docs`. Completion: the suite is green and the operation works end to end against the local backend.
+7. **Record the change.** Update the owner when behavior, configuration, or the layout changed; add the new command to [AGENTS.md](../AGENTS.md#toolchain-and-commands) when the change adds one.
+
+## 4. Rules
+
+### 4.1 App object and entrypoint
+
+`app = FastAPI()` is the single application instance. Declare metadata once in `main.py`; the automatic documentation uses it.
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.adapter = build_adapter()   # blocking construction is fine here
+    yield
+    app.state.adapter = None
+
+app = FastAPI(title="Verifiable Tutor", version="0.1.0", lifespan=lifespan)
+```
+
+- Set the app metadata once in `main.py`: `title`, `summary`, `description`, `version`, and `lifespan`. The description accepts Markdown and is rendered in `/docs` ([metadata page](https://fastapi.tiangolo.com/tutorial/metadata/)).
+- Both documentation UIs exist by default: Swagger UI at `/docs`, ReDoc at `/redoc`. The schema is served at `/openapi.json`. `docs_url=None`, `redoc_url=None`, and `openapi_url=None` disable them ([metadata page](https://fastapi.tiangolo.com/tutorial/metadata/)).
+- Run with the FastAPI CLI, configured once in `pyproject.toml`:
+
+  ```toml
+  [tool.fastapi]
+  entrypoint = "verifiable_tutor.api.main:app"
+  ```
+
+  `.venv/bin/fastapi dev` is the development command: auto-reload on, listens on `127.0.0.1`, and sets `FASTAPI_ENV=development` before importing the app. `.venv/bin/fastapi run` is the production-shaped command: no reload and `0.0.0.0`. Both use uvicorn under the hood ([FastAPI CLI](https://fastapi.tiangolo.com/fastapi-cli/)).
+- One process is the target for the local backend. Replication and worker counts are deployment concepts that matter when several processes share a database or an in-process graph; this repo's stores are local SQLite and the agent graph runs in process ([deployment concepts](https://fastapi.tiangolo.com/deployment/concepts/)).
+- JSON bodies keep the default strict `Content-Type` check. It is deliberate: it closes a localhost CSRF path that the docs describe, where a page sends a body without a JSON content type to a local API that assumes the network is trusted. Disable it with `strict_content_type=False` only when a real client cannot send a content type, and record why ([strict content type](https://fastapi.tiangolo.com/advanced/strict-content-type/)).
+
+### 4.2 Routers and application structure
+
+An `APIRouter` is a "mini FastAPI": it accepts the same decorators, dependencies, tags, and responses, and `app.include_router()` merges its operations into the application and its OpenAPI schema ([bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)).
+
+```python
+# api/routers/chat.py
+from fastapi import APIRouter
+from ..deps import ChatDep, CurrentUser, ModelDep
+
+router = APIRouter(tags=["chat"])
+
+@router.post("/api/chat")
+def create_turn(body: ChatBody, user: CurrentUser, chat: ChatDep, model: ModelDep):
+    ...
+```
+
+```python
+# api/factory.py
+from .routers import auth, chat, corpus, health, knowledge, practice, sessions, voice
+
+router_modules = [health, auth, chat, sessions, voice, knowledge, corpus, practice]
+for module in router_modules:
+    app.include_router(module.router)
+```
+
+- Import router modules, not their `router` variables (`from .routers import chat`). Several modules will name the variable `router`; importing the variable shadows the previous one ([bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)).
+- A router `prefix` never ends with a slash. The route path always starts with `/`, so `prefix="/items"` plus `@router.get("/")` is `/items/` ([bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)).
+- Use the include site for group-wide concerns: `app.include_router(admin.router, prefix="/admin", tags=["admin"], dependencies=[Depends(require_instructor)])`. The router module then does not need to know the mount point ([bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)).
+- Application-wide dependencies go in the constructor: `FastAPI(dependencies=[Depends(...)])`. Router-level dependencies run before decorator dependencies, which run before parameter dependencies ([global dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/)).
+- Routers are not sub-applications. Use `app.mount()` only for truly independent ASGI apps; a mounted app is isolated from the main OpenAPI schema and its lifespan does not run ([sub applications](https://fastapi.tiangolo.com/advanced/sub-applications/)).
+- Two routers may serve the same `APIRouter` under different prefixes and dependencies; the original router object stays unmodified ([bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)).
+
+### 4.3 Request data and validation
+
+Declare every request input with a type annotation and an `Annotated` marker. FastAPI validates it, documents it, and returns a 422 with a machine-readable body on failure; hand-written type checks in the route body duplicate that work.
+
+| Input | Declaration |
+|---|---|
+| Path parameter | `item_id: Annotated[str, Path(min_length=1)]` |
+| Query parameter | `q: Annotated[str \| None, Query(max_length=200)] = None` |
+| Header | `x_request_id: Annotated[str \| None, Header()] = None` |
+| Cookie | `session_id: Annotated[str \| None, Cookie()] = None` |
+| JSON body, one model | `payload: ChatRequest` |
+| Body key for a single model | `item: Annotated[Item, Body(embed=True)]` |
+| Form field | `username: Annotated[str, Form()]` |
+| File upload | `audio: Annotated[UploadFile, File()]`, or `list[UploadFile]` |
+
+Sources: [path parameters](https://fastapi.tiangolo.com/tutorial/path-params/), [query parameters](https://fastapi.tiangolo.com/tutorial/query-params/), [body](https://fastapi.tiangolo.com/tutorial/body/), [body multiple parameters](https://fastapi.tiangolo.com/tutorial/body-multiple-params/), [query validation](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/), [header parameters](https://fastapi.tiangolo.com/tutorial/header-params/), [cookie parameters](https://fastapi.tiangolo.com/tutorial/cookie-params/), [forms](https://fastapi.tiangolo.com/tutorial/request-forms/), [files](https://fastapi.tiangolo.com/tutorial/request-files/).
+
+- `Annotated` is the current style; the older form with `Query()` as the default value still works in example code, but new code here uses `Annotated` ([query parameters and string validations](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/)).
+- Fixed value sets become `Enum` or `Literal`, not free strings. Enums are validated, documented as choices, and give the frontend a single source for allowed values ([path parameters](https://fastapi.tiangolo.com/tutorial/path-params/)).
+- Constraints belong to Pydantic models and `Field`, not to route code: `Field(min_length=1, max_length=2000)` on a message body is enforced before the route runs.
+- File and form routes require `python-multipart`. `UploadFile` exposes `filename`, `content_type`, and `headers`, and async `read()`, `seek()`, and `close()`; seek to zero before a second read. The file is a spooled temporary file, not a path on disk ([request files](https://fastapi.tiangolo.com/tutorial/request-files/)).
+- Validation failures use a 422 with `{"detail": [{"loc": [...], "msg": "...", "type": "..."}]}`. If the frontend needs a different envelope, register a `RequestValidationError` handler and keep the default shape stable for the rest of the API ([handling errors](https://fastapi.tiangolo.com/tutorial/handling-errors/)).
+- An audio upload (MiMo ASR and TTS paths) is a `multipart/form-data` route with `Annotated[UploadFile, File()]` plus the selected model id as a form field. The capability rule itself lives in the model layer ([docs/model-providers.md](model-providers.md)).
+
+### 4.4 Responses, status codes, and errors
+
+Return a Pydantic model or a plain JSON-compatible value, and declare what the response is so OpenAPI and the frontend types stay truthful.
+
+- The return annotation is the response model. FastAPI uses it to validate, serialize with Pydantic, document, and filter the response. When input and output models differ (the common case for an account or a turn), declare `response_model=` on the decorator; it takes priority over the return annotation ([response model](https://fastapi.tiangolo.com/tutorial/response-model/)).
+- Filtering is a security tool: the response model decides which fields can leave the process. A database row model returned directly will leak every column it has, so define response models deliberately.
+- `response_model_exclude_unset=True` returns only explicitly set fields; `response_model_exclude_none=True` drops nulls; `include` and `exclude` are fine-tuning, and the OpenAPI schema still shows the complete model ([response model](https://fastapi.tiangolo.com/tutorial/response-model/)).
+- Set `status_code=` on the decorator with `fastapi.status` constants: 201 for a created resource, 202 for a submitted long job, 204 for empty success. The status code is part of the documented contract ([response status code](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/)).
+- Raise `HTTPException(status_code=..., detail=...)` for client-visible errors. `detail` may be any JSON-serializable value; the default bodies are `{"detail": ...}`, and an auth failure on a bearer scheme also carries `WWW-Authenticate: Bearer` ([handling errors](https://fastapi.tiangolo.com/tutorial/handling-errors/)).
+- Register handlers with `@app.exception_handler(...)`. Register the catch-all for Starlette's `HTTPException`, catch `RequestValidationError` for the 422 shape, and reuse FastAPI's default handlers from `fastapi.exception_handlers` when you only want to log first ([handling errors](https://fastapi.tiangolo.com/tutorial/handling-errors/)).
+- Return a `Response` subclass directly only when the payload is not a documentable JSON model (file, redirect, raw stream). A directly returned response is not documented, so also pass `response_class=` to keep the media type in OpenAPI ([custom response](https://fastapi.tiangolo.com/advanced/custom-response/)).
+- Streaming errors follow a different rule: an HTTP error can only be raised before the first byte. Once the stream has started, report failure in band with the protocol's `error` chunk ([ADR-0003](adr/0003-react-spa-with-ai-elements.md), [prd.md](prd.md) FR-B12).
+
+### 4.5 Async versus sync
+
+Mark a route `async def` only when its body awaits non-blocking work. Everything this backend calls today is blocking: the model adapter wraps the synchronous `openai` client and synchronous `httpx`, and the TACC driver launches subprocesses.
+
+- `def` route functions and `def` dependencies run in an external threadpool that Starlette awaits; the event loop stays free ([async](https://fastapi.tiangolo.com/async/)).
+- `async def` routes that call blocking code stall every concurrent request on the process. Choose `def` for the chat turn, the knowledge-build submission, the corpus image read, and any handler that touches the model adapter or the TACC driver.
+- Inside an `async def` that must call blocking code, offload it with `anyio.to_thread.run_sync(...)`; do not call it directly.
+- Streaming generators: a synchronous generator is fine from a `def` route (it is iterated in the threadpool); an async generator needs at least one `await` on each pass so cancellation can land ([stream data](https://fastapi.tiangolo.com/advanced/stream-data/), [custom response](https://fastapi.tiangolo.com/advanced/custom-response/)).
+- New async libraries are allowed only when they do not force a second execution model on the same request path. The model layer's retry, timeout, and cache rules are synchronous by design ([docs/model-providers.md](model-providers.md), [ADR-0005](adr/0005-external-model-apis-as-primary.md)).
+
+### 4.6 Dependencies and lifespan
+
+Use dependency injection for shared lookups and for anything a test needs to replace: settings, storage, the model adapter, the current user, the injected clock.
+
+- Declare dependencies as `Annotated[T, Depends(callable)]`. A type alias keeps repeated declarations short: `CurrentUser = Annotated[User, Depends(get_current_user)]` ([dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/)).
+- Dependencies take the same parameters as route functions, including request parameters and other dependencies. Sub-dependency trees are resolved once per request ([sub-dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/)).
+- Classes and callable instances work as dependencies; a callable instance is how parameterized dependencies are built ([classes as dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/), [advanced dependencies](https://fastapi.tiangolo.com/advanced/advanced-dependencies/)).
+- Dependencies with `yield` run setup before the route and teardown after it. Use `try` and `finally`; re-raise exceptions you catch, and raise `HTTPException` instead of swallowing one ([dependencies with yield](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/)).
+- The default teardown scope is the request: teardown runs after the response is sent. `Depends(fn, scope="function")` runs it right after the route returns and before the response is sent; use it only when the resource is not needed while streaming. A `"function"` dependency may have sub-dependencies of either scope; a `"request"` dependency's sub-dependencies must all use `"request"` ([dependencies with yield](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/), [advanced dependencies](https://fastapi.tiangolo.com/advanced/advanced-dependencies/)).
+- Long-lived resources (model adapter, SQLite connection factory, compiled graph, config) are created once in the lifespan, stored on `app.state`, and exposed through a dependency that reads `request.app.state`. Creating them at import time makes tests slow and makes a missing `.env` fail at import instead of at startup ([lifespan events](https://fastapi.tiangolo.com/advanced/events/)).
+- The lifespan runs once around the main application only; mounted sub-applications do not run theirs. Use `@asynccontextmanager`; the deprecated `on_event("startup"/"shutdown")` handlers exist for older code ([lifespan events](https://fastapi.tiangolo.com/advanced/events/)).
+
+### 4.7 Sessions, accounts, and security
+
+The product rules are fixed by the PRD: email and password sign-in, scrypt password hashing, a server-side session in an HttpOnly `SameSite=Lax` cookie that survives a refresh, expires after 7 days of inactivity, and is invalidated by logout; secrets live only in the ignored `.env` ([prd.md](prd.md) FR-A2, NFR-4, and section 7). This section covers only the FastAPI mechanics.
+
+- Set cookies through a `Response` parameter: declare `response: Response` in the route or in a dependency, call `response.set_cookie(...)`, and return the normal payload. FastAPI moves the cookie onto the final response, and the response model still filters the body. `response.delete_cookie(...)` removes it at logout ([response cookies](https://fastapi.tiangolo.com/advanced/response-cookies/)).
+- Cookie attributes come from Starlette's `Response.set_cookie`: `httponly=True`, `samesite="lax"`, `secure=False` on plain localhost, `max_age=7 * 24 * 3600`, `path="/"`. Confirm the exact signature against Starlette's response documentation when implementing.
+- Read the session cookie in a dependency with `session_id: Annotated[str | None, Cookie()] = None`, validate it against the server-side session store, and raise `HTTPException(status_code=401)` when it is missing or expired ([cookie parameters](https://fastapi.tiangolo.com/tutorial/cookie-params/), [handling errors](https://fastapi.tiangolo.com/tutorial/handling-errors/)).
+- Role checks are dependencies: a `require_instructor` dependency resolves the user, raises 403 when the role is wrong, and is attached at the router or include site for a whole group ([bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/)).
+- Password hashing belongs to `verifiable_tutor/auth/`, not to the route. The official tutorial uses `pwdlib` with Argon2; this project's PRD selects scrypt, so implement scrypt (for example `hashlib.scrypt`) behind a `verify_password` and `hash_password` seam and keep the algorithm details out of the HTTP layer ([OAuth2 with JWT](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/), [prd.md](prd.md)).
+- The official bearer-token path is `OAuth2PasswordBearer` plus `OAuth2PasswordRequestForm` plus JWT (`pwdlib`, `PyJWT`, `HS256`, `sub`, `exp`) and it adds the Authorize button to `/docs`. Use it only if the team moves away from cookie sessions; a cookie session does not need OAuth2 flows ([security first steps](https://fastapi.tiangolo.com/tutorial/security/first-steps/), [simple OAuth2](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/)).
+- Never log passwords, session tokens, provider keys, or full cookies. Session identifiers are opaque random values resolved server side; the cookie carries no user data.
+- There is no cross-origin CORS configuration for the delivered same-origin app. CORS is needed only for local development against the Vite dev server on port 5173 ([CORS](https://fastapi.tiangolo.com/tutorial/cors/)).
+
+### 4.8 Streaming responses
+
+Streaming is a first-class part of this backend: a chat answer streams while it is generated, and replay re-emits recorded chunks through the same frontend path ([ADR-0003](adr/0003-react-spa-with-ai-elements.md)). The official docs now cover three response shapes; pick the one the protocol needs and keep the framing in one module.
+
+| Shape | FastAPI API | Wire format | Use here |
+|---|---|---|---|
+| JSON Lines | `yield` items from a route, return annotation `AsyncIterable[Item]` or `Iterable[Item]` | `application/jsonl`, one JSON object per line | recorded event streams, batch endpoints |
+| Pure stream | `response_class=StreamingResponse`, `yield` `str` or `bytes` | whatever the route encodes, media type set by the class | protocol frames the project encodes itself |
+| Server-Sent Events | `response_class=EventSourceResponse`, import `ServerSentEvent` from `fastapi.sse` | `text/event-stream` with `data:`, `event:`, `id:`, `retry:` fields | the chat stream and replay, if the framing matches |
+
+- SSE support is native since 0.135.0: declare `response_class=EventSourceResponse`, yield Pydantic models or `ServerSentEvent` objects, and FastAPI JSON-encodes `data`, sets the keep-alive comment every 15 seconds, and adds `Cache-Control: no-cache` and `X-Accel-Buffering: no` ([SSE](https://fastapi.tiangolo.com/tutorial/server-sent-events/)).
+- `ServerSentEvent` carries `data` (JSON-encoded), `raw_data` (unencoded, for sentinels such as `[DONE]`), `event`, `id`, `retry`, and `comment`; `data` and `raw_data` are mutually exclusive. SSE also works on POST, which is the shape a chat turn needs ([SSE](https://fastapi.tiangolo.com/tutorial/server-sent-events/)).
+- JSON Lines is native since 0.134.0: a route with `yield` and an `AsyncIterable[Item]` or `Iterable[Item]` return annotation streams `application/jsonl`; the annotation drives validation, documentation, and Pydantic serialization, and omitting it falls back to `jsonable_encoder` ([stream JSON Lines](https://fastapi.tiangolo.com/tutorial/stream-json-lines/)).
+- Pure streaming since 0.134.0: `response_class=StreamingResponse` plus `yield` strings or bytes; FastAPI does not convert or document the payload, and the return annotation is only for tools. Subclass `StreamingResponse` with a `media_type` when the content type matters ([stream data](https://fastapi.tiangolo.com/advanced/stream-data/)).
+- Project protocol: ADR-0003 owns the chunk names (`start`, `text-start`, `text-delta`, `text-end`, `data-step`, `source-document`, `finish`, `error`) and the requirement that the same chunks are recorded as JSONL for replay. Implement the framing in `api/stream.py`, one adapter that both live and replay call, and verify the exact wire framing and response headers against the AI SDK protocol page linked from ADR-0003 before writing the adapter. Confirm how the AI SDK client consumes the stream (the `useChat` transport rather than the browser `EventSource` API) on that same page; if it is fetch-based, EventSource-only behaviors (automatic reconnect, `Last-Event-ID` resumption) are not required for chat, and are added only if replay needs resumption.
+- The live chat response carries the `x-conversation-id` header so a newly created conversation is addressable; replay returns the stream headers without that extension.
+- Dependencies with `yield` and streaming: keep the default `"request"` scope when the stream uses the dependency, because teardown runs after the response is sent. A database session shared with the stream must not be closed at function scope ([advanced dependencies](https://fastapi.tiangolo.com/advanced/advanced-dependencies/)).
+- Never buffer a whole answer to return it at the end. Emit per chunk, flush after each chunk, and write the JSONL trace as the chunks are produced so a mid-stream failure still leaves a usable trace (PRD FR-B10, FR-B12).
+- Streaming cuts both ways in tests: the test reads the stream incrementally with `client.stream(...)` and asserts the framing of the first and last chunks, not just a 200 status.
+
+### 4.9 Serving the React build and assets
+
+One origin serves the API and the built UI: FastAPI serves the static build of the React SPA, and the same origin keeps the demo and replay on one port ([ADR-0003](adr/0003-react-spa-with-ai-elements.md), [ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+
+- Use the official frontend helper, `app.frontend("/", directory=..., fallback="auto")`. It serves the built directory, gives path operations priority, and serves `index.html` only for GET and HEAD navigation requests that accept HTML; with `fallback="auto"`, a `404.html` file in the build is served for missing paths when present, otherwise `index.html` is the navigation fallback. Missing assets still return 404, so client-side routes work without swallowing API paths ([frontend](https://fastapi.tiangolo.com/tutorial/frontend/)).
+- The build output directory may not exist when the app is created (it is generated and gitignored). Default `check_dir="auto"` warns only when `FASTAPI_ENV=development` (set by `fastapi dev`) and raises otherwise; use `check_dir=False` when the app must import before the UI build exists, and document the reason ([frontend](https://fastapi.tiangolo.com/tutorial/frontend/)).
+- `app.frontend()` can also be registered on a router and included under a prefix, which is how a tool UI could be isolated later; path operations everywhere still win ([frontend](https://fastapi.tiangolo.com/tutorial/frontend/)).
+- For simple asset directories (page images, self-hosted KaTeX fonts), mount `StaticFiles(directory=...)` at a sub-path such as `/assets`. A mounted app is independent: its paths are not part of the API schema ([static files](https://fastapi.tiangolo.com/tutorial/static-files/)).
+- Do not mount `StaticFiles` at `/` to emulate SPA fallback; the frontend helper exists for that and applies the Accept and method rules correctly.
+- Serve one page image per request by file path with `FileResponse`, which sets `Content-Length`, `Last-Modified`, `ETag`, and a filename for downloads. The citation panel fetches the WebP plus highlight boxes from the OCR records ([custom response](https://fastapi.tiangolo.com/advanced/custom-response/), [prd.md](prd.md) evidence panel).
+- During local UI development the Vite dev server runs on `http://localhost:5173` and calls the API on `http://127.0.0.1:8000`, which is cross-origin. Add `CORSMiddleware` for local development only, with `allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"]`, `allow_credentials=True`, and the methods and headers the UI uses. The delivered app is same-origin and needs no CORS ([CORS](https://fastapi.tiangolo.com/tutorial/cors/)).
+
+### 4.10 Settings and environment
+
+App settings are a Pydantic settings object read once and injected through a dependency, so tests can replace it.
+
+- The documented pattern is `pydantic_settings.BaseSettings`, `SettingsConfigDict(env_file=".env")`, a `@lru_cache` factory dependency, and `app.dependency_overrides[get_settings]` in tests with a settings instance built from explicit values ([settings](https://fastapi.tiangolo.com/advanced/settings/)).
+- This repository already has a `.env` reader and YAML config loaders in the model layer. Keep exactly one `.env` reader: either extend the existing loader and build the settings object from it, or adopt `pydantic-settings` as the single reader and delete the hand-rolled one. Two parsers of `.env` will drift ([llm/config.py](../src/verifiable_tutor/llm/config.py), [tech-selection.md](tech-selection.md#backend-policy-practice-and-storage)).
+- Settings candidates for the API: the session signing secret, the SQLite path, the UI build directory, the allowed registration domains, and the `.env` path. Model provider endpoints and keys stay owned by `config/models.yaml` and its loader; do not duplicate them in the settings object ([ADR-0005](adr/0005-external-model-apis-as-primary.md)).
+- A missing required secret fails at startup, not on the first request that needs it. The model layer already fails closed when a provider key is missing; the API settings follow the same rule.
+- `.env.example` gains empty placeholders in the same change that adds a new secret; the real value stays in the ignored `.env` ([AGENTS.md](../AGENTS.md#conventions)).
+
+### 4.11 Long jobs and background work
+
+`BackgroundTasks` run after the response is sent, in the same process, with no retry, queue, or result channel; they are for short fire-and-forget work such as sending an email or flushing a trace, not for model calls or TACC waits ([background tasks](https://fastapi.tiangolo.com/tutorial/background-tasks/)).
+
+TACC work is a long job with a state machine. The pattern for the backend:
+
+1. `POST` submission returns 202 with a build or run id after writing the request files and recording the pending state.
+2. A separate poll endpoint or an SSE progress stream reports the state; the wait happens outside the request handler (a background task, a watcher thread, or a poll-on-read loop), never as a blocking sleep inside a request.
+3. The download, validation, and cache write of the result stay in the driver module that already owns them ([scripts/tacc/run_kb_job.py](../scripts/tacc/run_kb_job.py), [ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)).
+4. Failure is a state with a message, not an exception that leaves the UI polling forever.
+
+Persist the state in SQLite (metadata and build state are already the planned store) and expose one status endpoint per job family. The Qwen job contract and its record schemas stay owned by [knowledge-schema.md](knowledge-schema.md).
+
+### 4.12 Testing
+
+Tests sit at the HTTP seam: request in, response or stream out. The repository rules in [AGENTS.md](../AGENTS.md#test-driven-development) apply unchanged; this section adds the FastAPI mechanics.
+
+- `fastapi.testclient.TestClient` wraps the app and is used in normal `def` test functions with pytest; it needs `httpx`, already a dev dependency ([testing](https://fastapi.tiangolo.com/tutorial/testing/)).
+- The lifespan runs only inside a `with TestClient(app) as client:` block. A bare `client = TestClient(app)` skips startup, which hides missing resources or leaked state ([testing events](https://fastapi.tiangolo.com/advanced/testing-events/)).
+- Async tests use `httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test")` with `@pytest.mark.anyio`. `AsyncClient` does not trigger the lifespan by itself; use an ASGI lifespan manager when the test needs startup resources ([async tests](https://fastapi.tiangolo.com/advanced/async-tests/)).
+- Replace dependencies, not internals: `app.dependency_overrides[get_settings] = ...`, `app.dependency_overrides[get_adapter] = ...`, and reset the dict after the test. Overrides work anywhere a dependency is used, including router-level and decorator-level dependencies ([testing dependencies](https://fastapi.tiangolo.com/advanced/testing-dependencies/)).
+- Mock at process or network boundaries only: the model API transport (the adapter already accepts an `httpx` transport), TACC submission (the driver seam), and the clock. Do not mock routers or dependencies that are part of the behavior under test ([AGENTS.md](../AGENTS.md#test-driven-development)).
+- Test error paths, not just success: 401 without a session, 403 for the wrong role, 404 for an unknown id, 422 for a bad body, and the in-band stream failure chunk.
+- Test files mirror the package: `tests/api/test_chat.py`, `tests/api/test_auth.py`, and so on.
+
+### 4.13 OpenAPI as the interface contract
+
+The OpenAPI schema is the contract between the backend and the React UI, and it is generated from the code, so keeping the code declarative keeps the contract accurate.
+
+- Set `title`, `version`, and a Markdown `description` on the app; group operations with `tags` and, when the grouping needs explanation, `openapi_tags` with per-tag descriptions and order ([metadata](https://fastapi.tiangolo.com/tutorial/metadata/)).
+- Use `summary`, `description`, `response_description`, `deprecated=True`, and `include_in_schema=False` on operations where they apply. Internal endpoints such as a debug health probe can stay out of the public schema ([path operation configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/), [path operation advanced configuration](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/)).
+- Keep `operation_id` stable when the frontend or generated clients depend on it. Renaming a route or its function changes the schema; update the frontend types and the tests in the same change ([path operation advanced configuration](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/), [generate clients](https://fastapi.tiangolo.com/advanced/generate-clients/)).
+- When a response model changes, treat it as an API change: `/docs` and `/openapi.json` are part of the deliverable, and the demo will show them.
+- A custom exception handler changes the error envelope for all routes; if the frontend has one error parser, register the handler once in `main.py` and document the envelope in this file or the PRD ([handling errors](https://fastapi.tiangolo.com/tutorial/handling-errors/)).
+
+### 4.14 Running locally
+
+- Development: `.venv/bin/fastapi dev` after `uv pip install -e '.[dev]'` and adding the runtime dependencies. The CLI reloads on change and serves `http://127.0.0.1:8000`, with `/docs` for manual checks.
+- Demo and verification: `.venv/bin/fastapi run` for the no-reload mode.
+- Seed the instructor account with `.venv/bin/python -m verifiable_tutor.api.seed --instructor-email <address> --instructor-password <password>`; the instructor role gates the knowledge-build routes.
+- The local backend is single-process by design at course scale. Do not start two servers against the same SQLite file; SQLite locking will make one of them fail writes.
+- HTTPS and a TLS termination proxy are deployment concerns that do not apply to the localhost demo ([deployment concepts](https://fastapi.tiangolo.com/deployment/concepts/)).
+
+## 5. Implemented interface surface
+
+The backend exposes the surface below. Every route is covered by tests in `tests/api/`; the contracts are the ones the React UI will call. Errors use FastAPI's default `{"detail": ...}` envelope, and request validation keeps the default 422 body.
+
+| Method and path | Purpose | Stream | Access |
+|---|---|---|---|
+| `GET /api/health` | liveness and database ping | no | public |
+| `POST /api/auth/register` | create a pending student account and send a six digit code | no | public |
+| `POST /api/auth/verify` | activate the account with the code | no | public |
+| `POST /api/auth/login` | sign in and set the session cookie | no | public |
+| `POST /api/auth/logout` | delete the session and clear the cookie | no | optional session |
+| `GET /api/auth/me` | current account | no | session |
+| `POST /api/auth/reset/request` | send a one-time reset link | no | public |
+| `POST /api/auth/reset` | consume the token and replace the password | no | public |
+| `POST /api/chat` | one streamed model turn with persistence and trace | SSE | session |
+| `GET /api/sessions` | list the user's conversations | no | session |
+| `GET /api/sessions/{session_id}/messages` | conversation history | no | session |
+| `GET /api/sessions/{session_id}/replay` | replay the recorded stream at a speed factor | SSE | session |
+| `POST /api/voice/transcriptions` | MiMo ASR on an uploaded audio file | no | session |
+| `POST /api/voice/speech` | MiMo TTS audio bytes | no | session |
+| `GET /api/knowledge/cards` | browse validated knowledge cards | no | session |
+| `POST /api/knowledge/builds` | queue a Qwen build job | no | instructor |
+| `GET /api/knowledge/builds` | list builds | no | instructor |
+| `GET /api/knowledge/builds/{build_id}` | build state and result | no | instructor |
+| `GET /api/corpus/{doc_id}/pages/{page_no}.webp` | page image for the citation panel | no | session |
+| `POST /api/practice/runs` | scaffold only: documented 503 until `tacc/exec` exists | no | session |
+
+Deferred with no route in this pass: retrieval and citation frames, the disclosure gate and deadline registry, LangGraph orchestration, teaching and explainer, practice generation and grading, `tacc/exec` execution, the optional OpenAI-compatible interop endpoint, and the UI build. The full rationale is in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
+
+## 6. Checklist before claiming a backend change done
+
+- [ ] The seam test failed for the intended reason before the change and passes after it ([AGENTS.md](../AGENTS.md#test-driven-development)).
+- [ ] `.venv/bin/python -m pytest` is green, including the error paths and one streaming test.
+- [ ] `/docs` shows the operation with its tag, summary, status code, and response model, and `/openapi.json` contains it once.
+- [ ] Shared resources are created in the lifespan, closed at shutdown, and replaced through `app.dependency_overrides` in tests, with no import-time side effects.
+- [ ] Blocking calls are in `def` routes or dependencies, or moved off the loop with `anyio.to_thread.run_sync`.
+- [ ] The response model filters every secret and internal field; no key, cookie, password, or token appears in logs.
+- [ ] Streaming routes emit per chunk, write the JSONL trace as they go, and report failure in band after the first byte.
+- [ ] New secrets are in the ignored `.env` and named in `.env.example`; one `.env` reader exists.
+- [ ] Changed behavior, configuration, or layout is recorded in its owner ([README.md](../README.md), [AGENTS.md](../AGENTS.md), [tech-selection.md](tech-selection.md), or a new ADR), and paths and links in this file still resolve.
+- [ ] New commands are recorded in [AGENTS.md](../AGENTS.md#toolchain-and-commands).
+
+## 7. Decisions recorded in the implementation
+
+The first backend change settled the open questions from version 0.1. The full rationale is in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
+
+- Settings: `config/app.yaml` for non-secret app settings plus the existing `llm.config.load_dotenv` reader; `pydantic-settings` is deferred, and `SESSION_SECRET` is required with a fail-closed startup error.
+- Storage: the standard library `sqlite3` at `data/app/app.sqlite3` with WAL and short-lived connections; JSONL traces live under `data/app/traces/`.
+- Streaming: one hand-written encoder in `api/streaming.py` returning a `StreamingResponse` with the AI SDK v1 parts, the version header, and `[DONE]`; replay uses the same encoder.
+- Error envelope: FastAPI's default `{"detail": ...}` for client errors and the default 422 validation body; no custom envelope.
+- Chat request: project-owned (`message`, optional `session_id`, `provider`, `tier`) with a thin custom `ChatTransport` planned on the frontend; the provider layer stays OpenAI-compatible behind the adapter.
+
+## 8. Source index
+
+Official pages read on 2026-11-02 against the FastAPI documentation site at version 0.162.0. The behaviour in each section is taken from these pages; version notes in the text come from the pages themselves.
+
+| Section | Official page |
+|---|---|
+| 4.1, 2 | https://fastapi.tiangolo.com/ ; https://fastapi.tiangolo.com/fastapi-cli/ ; https://fastapi.tiangolo.com/advanced/strict-content-type/ |
+| 4.2 | https://fastapi.tiangolo.com/tutorial/bigger-applications/ ; https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/ ; https://fastapi.tiangolo.com/advanced/sub-applications/ |
+| 4.3 | https://fastapi.tiangolo.com/tutorial/path-params/ ; https://fastapi.tiangolo.com/tutorial/query-params/ ; https://fastapi.tiangolo.com/tutorial/body/ ; https://fastapi.tiangolo.com/tutorial/body-multiple-params/ ; https://fastapi.tiangolo.com/tutorial/query-params-str-validations/ ; https://fastapi.tiangolo.com/tutorial/header-params/ ; https://fastapi.tiangolo.com/tutorial/cookie-params/ ; https://fastapi.tiangolo.com/tutorial/request-forms/ ; https://fastapi.tiangolo.com/tutorial/request-files/ ; https://fastapi.tiangolo.com/tutorial/request-forms-and-files/ |
+| 4.4 | https://fastapi.tiangolo.com/tutorial/response-model/ ; https://fastapi.tiangolo.com/tutorial/response-status-code/ ; https://fastapi.tiangolo.com/tutorial/handling-errors/ ; https://fastapi.tiangolo.com/tutorial/path-operation-configuration/ ; https://fastapi.tiangolo.com/advanced/custom-response/ |
+| 4.5 | https://fastapi.tiangolo.com/async/ ; https://fastapi.tiangolo.com/advanced/stream-data/ |
+| 4.6 | https://fastapi.tiangolo.com/tutorial/dependencies/ ; https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/ ; https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/ ; https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/ ; https://fastapi.tiangolo.com/advanced/advanced-dependencies/ ; https://fastapi.tiangolo.com/advanced/events/ |
+| 4.7 | https://fastapi.tiangolo.com/advanced/response-cookies/ ; https://fastapi.tiangolo.com/tutorial/cookie-params/ ; https://fastapi.tiangolo.com/tutorial/security/first-steps/ ; https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/ ; https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/ ; https://fastapi.tiangolo.com/tutorial/cors/ |
+| 4.8 | https://fastapi.tiangolo.com/tutorial/server-sent-events/ ; https://fastapi.tiangolo.com/tutorial/stream-json-lines/ ; https://fastapi.tiangolo.com/advanced/stream-data/ ; https://fastapi.tiangolo.com/advanced/custom-response/ ; https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/ |
+| 4.9 | https://fastapi.tiangolo.com/tutorial/frontend/ ; https://fastapi.tiangolo.com/tutorial/static-files/ ; https://fastapi.tiangolo.com/advanced/custom-response/ ; https://fastapi.tiangolo.com/tutorial/cors/ |
+| 4.10 | https://fastapi.tiangolo.com/advanced/settings/ |
+| 4.11 | https://fastapi.tiangolo.com/tutorial/background-tasks/ |
+| 4.12 | https://fastapi.tiangolo.com/tutorial/testing/ ; https://fastapi.tiangolo.com/advanced/testing-events/ ; https://fastapi.tiangolo.com/advanced/async-tests/ ; https://fastapi.tiangolo.com/advanced/testing-dependencies/ |
+| 4.13 | https://fastapi.tiangolo.com/tutorial/metadata/ ; https://fastapi.tiangolo.com/tutorial/path-operation-configuration/ ; https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/ ; https://fastapi.tiangolo.com/advanced/generate-clients/ ; https://fastapi.tiangolo.com/tutorial/handling-errors/ |
+| 4.14 | https://fastapi.tiangolo.com/deployment/concepts/ |

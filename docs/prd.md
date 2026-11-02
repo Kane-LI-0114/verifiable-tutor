@@ -260,6 +260,8 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | Content | Owner |
 |---|---|
 | Provider endpoints, model ids, roles, retry and timeout values, cache and embedding settings | `config/models.yaml` |
+| App runtime settings: allowed registration domains, cookie flags, local data paths, replay speed | `config/app.yaml` |
+| Accounts, login sessions, conversations, messages, and knowledge-build state | local SQLite at `data/app/app.sqlite3`; JSONL traces under `data/app/traces/` |
 | Knowledge-base build settings: Qwen model, tensor parallel size, context length, shard size, prompt version, request and result paths, poll interval | `config/knowledge.yaml` |
 | Deadline registry | `config/deadlines.yaml` (planned), validated by pydantic |
 | Local tracing settings | `config/observability.yaml` (planned, local development only) |
