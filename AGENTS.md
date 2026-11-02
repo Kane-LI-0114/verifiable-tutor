@@ -163,7 +163,7 @@ Known gaps:
 - LangGraph and its dependency group are decided but not installed; the graph topology, the TACC import spike, and the SQLite checkpointer fallback are pending ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)).
 - Langfuse is local only; TACC runs emit no traces by design, so evaluation evidence comes from JSONL and job logs ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)).
 - Self-test answer grading and the `tacc/exec` job are planned but not implemented; the per-request TACC queue latency and the trusted-user assumption are unmeasured.
-- The knowledge-base feature is planned but not implemented: `tacc/serve/`, `scripts/tacc/run_kb_job.py`, `src/verifiable_tutor/knowledge/`, the UI build status, and the knowledge tests do not exist yet; spikes 11 and 12 are unrun.
+- The knowledge-base feature is planned but not implemented: `tacc/serve/`, `scripts/tacc/run_kb_job.py`, `src/verifiable_tutor/knowledge/`, the UI build status, and the knowledge tests do not exist yet; spike 10 is unrun.
 - The RQ2 benchmark protocol in [docs/benchmark-protocol.md](docs/benchmark-protocol.md) has not been run; no self-test benchmark data or results exist yet.
 - Multi-course support is a deliberate limitation of this deliverable and is recorded as future development in [docs/prd.md](docs/prd.md#future-development).
 
@@ -174,7 +174,7 @@ Open decisions, not settled by this repository:
 - The allowed registration domains and the email verification flow are defaults recorded in the open questions of [docs/prd.md](docs/prd.md); confirm them before implementation.
 - Self-test generation and TACC execution are P0 while answer grading is P1; code answers use per-request TACC jobs under the team account with two to three trusted demo users. Confirm the split and the acceptable queue latency.
 - The v1 proposal PDF export remains a manual, frozen step; v2 and v3 exports use the recorded `soffice` command. Neither is a project dependency.
-- Spikes 1 to 3 in [docs/tech-selection.md#verification-spikes](docs/tech-selection.md#verification-spikes) ran on 2026-10-29 and passed. Their measurements are in [docs/tacc-notes.md](docs/tacc-notes.md#verification-spike-results-2026-10-29); the raw artifacts are in `USERDIR/env-spike/`, `USERDIR/ocr-smoke/` and `USERDIR/pdf-parse/` on TACC. Spikes 4 to 12 are unrun; record their findings in the same file when they happen.
+- Spikes 1 to 3 in [docs/tech-selection.md#verification-spikes](docs/tech-selection.md#verification-spikes) ran on 2026-10-29 and passed. Their measurements are in [docs/tacc-notes.md](docs/tacc-notes.md#verification-spike-results-2026-10-29); the raw artifacts are in `USERDIR/env-spike/`, `USERDIR/ocr-smoke/` and `USERDIR/pdf-parse/` on TACC. Spikes 4 to 10 are unrun; record their findings in the same file when they happen.
 
 ## Agent skills
 
