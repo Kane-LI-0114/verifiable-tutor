@@ -8,9 +8,13 @@ version = "0.0.0"
 description = "Course-grounded tutoring agent with evidence-checked answers"
 requires-python = ">=3.12"
 dependencies = [
+  "fastapi>=0.162,<1",
+  "fastapi-cli>=0.0.32,<1",
   "openai>=3,<4",
   "pydantic>=2.13,<3",
+  "python-multipart>=0.0.33,<1",
   "PyYAML>=6,<7",
+  "uvicorn>=0.54,<1",
 ]
 
 [project.optional-dependencies]
@@ -26,3 +30,6 @@ where = ["src"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.fastapi]
+entrypoint = "verifiable_tutor.api.main:app"

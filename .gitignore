@@ -31,6 +31,8 @@ data/caches/*
 !data/caches/.gitkeep
 data/kb/*
 !data/kb/.gitkeep
+data/app/*
+!data/app/.gitkeep
 logs/
 slurm_log/
 *.log

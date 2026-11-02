@@ -1,0 +1,40 @@
+# Application configuration for the local FastAPI backend.
+#
+# This file holds no secrets. Provider keys, the SMTP authorization code, and
+# the session signing secret live in the ignored .env. The loader resolves
+# relative paths against the repository root. The backend, the UI, and the
+# stores run on the developer laptop; TACC is reached only through job
+# submission (ADR-0010, ADR-0011). The owner of each path is recorded in
+# docs/prd.md section 7.
+
+app:
+  # The origin the browser uses; used for the password reset link.
+  base_url: http://127.0.0.1:8000
+
+data:
+  data_dir: data
+  database_path: data/app/app.sqlite3
+  trace_dir: data/app/traces
+  knowledge_records_dir: data/kb/records
+  corpus_images_dir: data/corpus/images
+  ui_static_dir: src/verifiable_tutor/ui/static
+
+auth:
+  # PRD FR-A3: only configured student domains may register.
+  allowed_email_domains: [connect.ust.hk, ust.hk]
+  session_cookie_name: vt_session
+  session_ttl_days: 7
+  cookie_secure: false
+  verification_code_ttl_minutes: 10
+  reset_token_ttl_minutes: 30
+
+chat:
+  history_messages: 12
+  replay_default_speed: 1.0
+
+knowledge:
+  # Set to the local page-record JSONL from the TACC OCR job to enable builds.
+  pages_path: null
+  max_chunks_per_job: 8
+  driver: scripts/tacc/run_kb_job.py
+  build_timeout_s: 4000
