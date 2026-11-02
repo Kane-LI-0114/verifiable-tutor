@@ -156,3 +156,48 @@ def test_models_carry_swagger_examples(api):
         if "example" not in components[name] and "examples" not in components[name]
     ]
     assert missing == []
+
+
+def test_schema_fields_carry_examples_and_option_values(api):
+    schema = _schema(api)
+    schemas = schema["components"]["schemas"]
+
+    chat = schemas["ChatBody"]["properties"]
+    assert chat["message"]["example"] == "What is MPI_Allreduce?"
+    assert chat["provider"]["enum"] == ["deepseek", "mimo"]
+    assert chat["tier"]["enum"] == ["flash", "pro"]
+
+    speech = schemas["SpeechBody"]["properties"]
+    assert speech["text"]["example"] == "MPI_Allreduce combines values from all ranks."
+    assert speech["format"]["enum"] == ["wav", "mp3", "pcm", "pcm16"]
+    assert speech["model_alias"]["enum"] == ["default", "voiceclone", "voicedesign"]
+    assert speech["voice"]["enum"] == [
+        "mimo_default",
+        "冰糖",
+        "茉莉",
+        "苏打",
+        "白桦",
+        "Mia",
+        "Chloe",
+        "Milo",
+        "Dean",
+    ]
+
+    register = schemas["RegisterBody"]["properties"]
+    assert register["email"]["example"] == "student@ust.hk"
+    assert register["password"]["example"] == "correct-horse-battery"
+
+    login_user = schemas["LoginUser"]["properties"]
+    assert login_user["role"]["enum"] == ["student", "instructor"]
+    assert login_user["email"]["example"] == "student@ust.hk"
+
+    build = schemas["BuildRecord"]["properties"]
+    assert build["state"]["enum"] == ["queued", "running", "ready", "failed"]
+    assert build["job_id"]["example"] == "28067"
+
+    register_response = schemas["RegisterResponse"]["properties"]
+    assert register_response["email_delivery"]["enum"] == ["log", "smtp"]
+
+    message = schemas["MessageRecord"]["properties"]
+    assert message["content"]["example"] == "What is MPI_Allreduce?"
+    assert message["role"]["enum"] == ["user", "assistant"]

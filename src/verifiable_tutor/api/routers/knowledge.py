@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import BuildsDep, CardsDep, CurrentUser, Instructor
 from ...knowledge.service import KnowledgeBuildError
@@ -27,8 +27,16 @@ class BuildBody(BaseModel):
         },
     )
 
-    doc_id: str | None = None
-    max_chunks: int | None = None
+    doc_id: str | None = Field(
+        default=None,
+        description="Document id from the local page records; empty builds the configured file.",
+        json_schema_extra={"example": "course_project"},
+    )
+    max_chunks: int | None = Field(
+        default=None,
+        description="Chunks to process; bounded by knowledge.max_chunks_per_job.",
+        json_schema_extra={"example": 8},
+    )
 
 
 @router.get(

@@ -152,3 +152,37 @@ def test_tts_player_page_is_served_for_manual_auditioning(api):
 
     schema = api.client.get("/openapi.json").json()
     assert "/api/voice/speech/player" not in schema["paths"]
+
+
+def test_speech_get_variant_is_playable_audio(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.get(
+        "/api/voice/speech",
+        params={"text": "hello", "format": "wav", "voice": "Mia"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "audio/wav"
+    assert response.content == b"RIFFfake"
+    call = api.adapter.calls[0]
+    assert call["text"] == "hello"
+    assert call["kwargs"] == {"voice": "Mia", "format": "wav", "model_alias": "default"}
+
+
+def test_speech_get_requires_sign_in(api):
+    response = api.client.get("/api/voice/speech", params={"text": "hello"})
+
+    assert response.status_code == 401
+
+
+def test_speech_get_is_documented_as_audio_for_the_swagger_player(api):
+    schema = api.client.get("/openapi.json").json()
+
+    operation = schema["paths"]["/api/voice/speech"]["get"]
+    content = operation["responses"]["200"]["content"]
+    assert set(content) == {"audio/wav", "audio/mpeg", "audio/pcm"}
+    assert operation["summary"]
+    assert "text" in operation["parameters"][0]["name"] or any(
+        parameter["name"] == "text" for parameter in operation["parameters"]
+    )

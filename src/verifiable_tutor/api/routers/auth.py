@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ...auth.service import AuthError, AuthService
 from ..deps import CurrentUser, SettingsDep, get_auth
@@ -34,8 +34,14 @@ class RegisterBody(_StrictBody):
         },
     )
 
-    email: str
-    password: str
+    email: str = Field(
+        description="Student email address; the domain must be configured.",
+        json_schema_extra={"example": "student@ust.hk"},
+    )
+    password: str = Field(
+        description="New password; at least 8 characters.",
+        json_schema_extra={"example": "correct-horse-battery"},
+    )
 
 
 class VerifyBody(_StrictBody):
@@ -46,8 +52,14 @@ class VerifyBody(_StrictBody):
         },
     )
 
-    email: str
-    code: str
+    email: str = Field(
+        description="Student email address.",
+        json_schema_extra={"example": "student@ust.hk"},
+    )
+    code: str = Field(
+        description="Six digit verification code from the email.",
+        json_schema_extra={"example": "123456"},
+    )
 
 
 class LoginBody(_StrictBody):
@@ -61,8 +73,14 @@ class LoginBody(_StrictBody):
         },
     )
 
-    email: str
-    password: str
+    email: str = Field(
+        description="Account email address.",
+        json_schema_extra={"example": "student@ust.hk"},
+    )
+    password: str = Field(
+        description="Account password.",
+        json_schema_extra={"example": "correct-horse-battery"},
+    )
 
 
 class ResetRequestBody(_StrictBody):
@@ -71,7 +89,10 @@ class ResetRequestBody(_StrictBody):
         json_schema_extra={"example": {"email": "student@ust.hk"}},
     )
 
-    email: str
+    email: str = Field(
+        description="Account email address; the same response is returned for unknown accounts.",
+        json_schema_extra={"example": "student@ust.hk"},
+    )
 
 
 class ResetBody(_StrictBody):
@@ -85,8 +106,14 @@ class ResetBody(_StrictBody):
         },
     )
 
-    token: str
-    new_password: str
+    token: str = Field(
+        description="One-time reset token from the reset email link.",
+        json_schema_extra={"example": "one-time-reset-token"},
+    )
+    new_password: str = Field(
+        description="New password; at least 8 characters.",
+        json_schema_extra={"example": "new-password-123"},
+    )
 
 
 def _raise(exc: AuthError) -> None:

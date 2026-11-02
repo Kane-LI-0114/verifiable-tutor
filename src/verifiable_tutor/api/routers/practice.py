@@ -8,7 +8,7 @@ the contract stable until the job lands.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import CurrentUser
 
@@ -31,9 +31,21 @@ class PracticeRunBody(BaseModel):
         },
     )
 
-    pack_id: str | None = None
-    question_id: str | None = None
-    answer: str | None = None
+    pack_id: str | None = Field(
+        default=None,
+        description="Practice pack id.",
+        json_schema_extra={"example": "mpi-gemm"},
+    )
+    question_id: str | None = Field(
+        default=None,
+        description="Question id inside the pack.",
+        json_schema_extra={"example": "q1"},
+    )
+    answer: str | None = Field(
+        default=None,
+        description="Student answer to run against the reference tests.",
+        json_schema_extra={"example": "int x = 1;"},
+    )
 
 
 @router.post(

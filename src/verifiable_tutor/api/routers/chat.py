@@ -26,10 +26,27 @@ class ChatBody(BaseModel):
         },
     )
 
-    message: str = Field(min_length=1, max_length=8000)
-    session_id: str | None = None
-    provider: str | None = None
-    tier: str | None = None
+    message: str = Field(
+        min_length=1,
+        max_length=8000,
+        description="User message; the answer streams back in the AI SDK protocol.",
+        json_schema_extra={"example": "What is MPI_Allreduce?"},
+    )
+    session_id: str | None = Field(
+        default=None,
+        description="Existing conversation id; empty starts a new conversation.",
+        json_schema_extra={"example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8"},
+    )
+    provider: str | None = Field(
+        default=None,
+        description="Provider alias from config/models.yaml; the adapter default is used when empty.",
+        json_schema_extra={"example": "deepseek", "enum": ["deepseek", "mimo"]},
+    )
+    tier: str | None = Field(
+        default=None,
+        description="Model tier alias; flash is on both providers, pro only on MiMo.",
+        json_schema_extra={"example": "flash", "enum": ["flash", "pro"]},
+    )
 
 
 @router.post(

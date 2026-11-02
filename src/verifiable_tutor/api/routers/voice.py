@@ -1,18 +1,20 @@
 """Voice routes: MiMo ASR transcription and MiMo TTS speech.
 
-Swagger UI renders JSON and images, not audio responses, so the speech route
-documents its binary media types properly (downloadable from Swagger UI) and a
-small local player page at ``/api/voice/speech/player`` is served for manual
-auditioning with the same-origin session cookie.
+Swagger UI renders audio responses as its native player, but it hands the
+player the request URL, so a POST response cannot be played (the player would
+issue a GET to the POST-only route). The ``GET /api/voice/speech`` variant
+therefore carries the synthesis input in the query string; Swagger UI's player
+loads that URL and plays the audio. The POST variant stays the canonical
+client API, and ``/api/voice/speech/player`` is a standalone local player page.
 """
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import CurrentUser, ModelDep
 from ..schemas import TranscriptionResponse
@@ -33,6 +35,19 @@ _MEDIA_TYPES = {
     "pcm": "audio/pcm",
     "pcm16": "audio/pcm",
 }
+_TTS_FORMATS = ["wav", "mp3", "pcm", "pcm16"]
+_TTS_VOICES = [
+    "mimo_default",
+    "冰糖",
+    "茉莉",
+    "苏打",
+    "白桦",
+    "Mia",
+    "Chloe",
+    "Milo",
+    "Dean",
+]
+_TTS_MODEL_ALIASES = ["default", "voiceclone", "voicedesign"]
 GENERIC_UNAVAILABLE = "The model is temporarily unavailable. Please try again."
 
 _TTS_PLAYER_HTML = """<!doctype html>
@@ -129,10 +144,28 @@ class SpeechBody(BaseModel):
         },
     )
 
-    text: str
-    voice: str | None = None
-    format: str | None = None
-    model_alias: str = "default"
+    text: str = Field(
+        description="Text to synthesize.",
+        json_schema_extra={"example": "MPI_Allreduce combines values from all ranks."},
+    )
+    voice: str | None = Field(
+        default=None,
+        description=(
+            "Configured TTS voice id; one of the voices in config/models.yaml. "
+            "Empty uses the configured default."
+        ),
+        json_schema_extra={"example": "Mia", "enum": _TTS_VOICES},
+    )
+    format: str | None = Field(
+        default=None,
+        description="Audio format; one of wav, mp3, pcm, or pcm16.",
+        json_schema_extra={"example": "wav", "enum": _TTS_FORMATS},
+    )
+    model_alias: str = Field(
+        default="default",
+        description="TTS model alias; one of default, voiceclone, or voicedesign.",
+        json_schema_extra={"example": "default", "enum": _TTS_MODEL_ALIASES},
+    )
 
 
 def _model_failure(exc: Exception) -> HTTPException:
@@ -143,6 +176,37 @@ def _model_failure(exc: Exception) -> HTTPException:
     if isinstance(exc, ProviderAPIError):
         return HTTPException(status_code=503, detail=GENERIC_UNAVAILABLE)
     return HTTPException(status_code=503, detail=GENERIC_UNAVAILABLE)
+
+
+def _audio_content() -> dict[str, object]:
+    return {
+        "audio/wav": {"schema": {"type": "string", "format": "binary"}},
+        "audio/mpeg": {"schema": {"type": "string", "format": "binary"}},
+        "audio/pcm": {"schema": {"type": "string", "format": "binary"}},
+    }
+
+
+def _synthesize(
+    model: object,
+    *,
+    text: str,
+    voice: str | None,
+    format: str | None,
+    model_alias: str,
+) -> Response:
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="text must not be empty")
+    try:
+        result = model.speak(
+            text,
+            voice=voice,
+            format=format,
+            model_alias=model_alias,
+        )
+    except (CapabilityError, ModelSelectionError, ModelResponseError, ProviderAPIError) as exc:
+        raise _model_failure(exc) from exc
+    media_type = _MEDIA_TYPES.get(result.format, "application/octet-stream")
+    return Response(content=result.audio, media_type=media_type)
 
 
 @router.get("/api/voice/speech/player", include_in_schema=False)
@@ -195,26 +259,90 @@ def transcribe(
     }
 
 
+@router.get(
+    "/api/voice/speech",
+    response_class=Response,
+    summary="Synthesize speech and play it in Swagger UI",
+    description=(
+        "GET variant of the TTS route. Swagger UI's native audio player loads "
+        "the request URL, so this variant carries the synthesis input in the "
+        "query string and returns the audio bytes; executing it in Swagger UI "
+        "plays the result. It triggers one MiMo TTS call per load. Use the POST "
+        "variant for clients, longer text, and scripted calls."
+    ),
+    responses={
+        200: {
+            "description": "Audio bytes; the media type follows the requested format.",
+            "content": _audio_content(),
+        },
+        400: {"description": "Blank text or unsupported voice or format."},
+        401: {"description": "Not signed in."},
+        422: {"description": "Missing or invalid query parameter."},
+        503: {"description": "Model layer unavailable."},
+    },
+)
+def speech_get(
+    user: CurrentUser,
+    model: ModelDep,
+    text: Annotated[
+        str,
+        Query(
+            min_length=1,
+            max_length=2000,
+            description=(
+                "Text to synthesize. Keep it URL-sized; use the POST variant "
+                "for longer text."
+            ),
+            examples=["MPI_Allreduce combines values from all ranks."],
+        ),
+    ],
+    voice: Annotated[
+        str | None,
+        Query(
+            description="Configured TTS voice id; empty uses the default.",
+            examples=["Mia"],
+        ),
+    ] = None,
+    format: Annotated[
+        str | None,
+        Query(
+            description="wav, mp3, pcm, or pcm16; empty uses the default.",
+            examples=["wav"],
+        ),
+    ] = None,
+    model_alias: Annotated[
+        str,
+        Query(
+            description="TTS model alias: default, voiceclone, or voicedesign.",
+            examples=["default"],
+        ),
+    ] = "default",
+):
+    """Synthesize speech from query parameters so the player can load it."""
+
+    return _synthesize(
+        model,
+        text=text,
+        voice=voice,
+        format=format,
+        model_alias=model_alias,
+    )
+
+
 @router.post(
     "/api/voice/speech",
     response_class=Response,
     summary="Synthesize speech with MiMo TTS",
     description=(
         "Synthesize speech and return the audio bytes. The response media "
-        "type follows the requested format (wav, mp3, or pcm). Swagger UI "
-        "cannot play audio responses; open /api/voice/speech/player in a "
-        "browser with a signed-in session to audition the output."
+        "type follows the requested format (wav, mp3, or pcm). For an audio "
+        "player in Swagger UI use the GET variant on the same path; the POST "
+        "variant is the canonical client API."
     ),
     responses={
         200: {
-            "description": (
-                "Audio bytes; the media type follows the requested format."
-            ),
-            "content": {
-                "audio/wav": {"schema": {"type": "string", "format": "binary"}},
-                "audio/mpeg": {"schema": {"type": "string", "format": "binary"}},
-                "audio/pcm": {"schema": {"type": "string", "format": "binary"}},
-            },
+            "description": "Audio bytes; the media type follows the requested format.",
+            "content": _audio_content(),
         },
         400: {"description": "Blank text or unsupported voice or format."},
         401: {"description": "Not signed in."},
@@ -224,16 +352,10 @@ def transcribe(
 def speech(body: SpeechBody, user: CurrentUser, model: ModelDep):
     """Synthesize one text with MiMo TTS and return the audio bytes."""
 
-    if not body.text.strip():
-        raise HTTPException(status_code=400, detail="text must not be empty")
-    try:
-        result = model.speak(
-            body.text,
-            voice=body.voice,
-            format=body.format,
-            model_alias=body.model_alias,
-        )
-    except (CapabilityError, ModelSelectionError, ModelResponseError, ProviderAPIError) as exc:
-        raise _model_failure(exc) from exc
-    media_type = _MEDIA_TYPES.get(result.format, "application/octet-stream")
-    return Response(content=result.audio, media_type=media_type)
+    return _synthesize(
+        model,
+        text=body.text,
+        voice=body.voice,
+        format=body.format,
+        model_alias=body.model_alias,
+    )

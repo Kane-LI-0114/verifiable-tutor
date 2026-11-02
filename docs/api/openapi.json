@@ -28,10 +28,15 @@
         },
         "properties": {
           "build_id": {
+            "description": "Identifier of the queued build.",
+            "example": "kb-20261102-120000-a1b2c3",
             "title": "Build Id",
             "type": "string"
           },
           "state": {
+            "const": "queued",
+            "description": "The build was accepted and queued.",
+            "example": "queued",
             "title": "State",
             "type": "string"
           }
@@ -59,6 +64,8 @@
                 "type": "null"
               }
             ],
+            "description": "Document id from the local page records; empty builds the configured file.",
+            "example": "course_project",
             "title": "Doc Id"
           },
           "max_chunks": {
@@ -70,6 +77,8 @@
                 "type": "null"
               }
             ],
+            "description": "Chunks to process; bounded by knowledge.max_chunks_per_job.",
+            "example": 8,
             "title": "Max Chunks"
           }
         },
@@ -97,6 +106,22 @@
         },
         "properties": {
           "builds": {
+            "description": "Knowledge builds, newest first.",
+            "example": [
+              {
+                "created_at": "2026-11-02T12:00:00+00:00",
+                "id": "kb-20261102-120000-a1b2c3",
+                "job_id": "28067",
+                "records_count": 8,
+                "records_path": "data/kb/records/kb-20261102-120000-a1b2c3.jsonl",
+                "request": {
+                  "doc_id": "course_project",
+                  "max_chunks": 8
+                },
+                "state": "ready",
+                "updated_at": "2026-11-02T12:12:00+00:00"
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/BuildRecord"
             },
@@ -127,6 +152,8 @@
         },
         "properties": {
           "created_at": {
+            "description": "ISO-8601 UTC creation time.",
+            "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
           },
@@ -139,9 +166,12 @@
                 "type": "null"
               }
             ],
+            "description": "Failure message when state is failed.",
             "title": "Error"
           },
           "id": {
+            "description": "Build id.",
+            "example": "kb-20261102-120000-a1b2c3",
             "title": "Id",
             "type": "string"
           },
@@ -154,6 +184,8 @@
                 "type": "null"
               }
             ],
+            "description": "TACC job id when submitted.",
+            "example": "28067",
             "title": "Job Id"
           },
           "records_count": {
@@ -165,6 +197,8 @@
                 "type": "null"
               }
             ],
+            "description": "Number of valid records downloaded.",
+            "example": 8,
             "title": "Records Count"
           },
           "records_path": {
@@ -176,18 +210,35 @@
                 "type": "null"
               }
             ],
+            "description": "Local validated records JSONL.",
+            "example": "data/kb/records/kb-20261102-120000-a1b2c3.jsonl",
             "title": "Records Path"
           },
           "request": {
             "additionalProperties": true,
+            "description": "The request recorded when the build was queued.",
+            "example": {
+              "doc_id": "course_project",
+              "max_chunks": 8
+            },
             "title": "Request",
             "type": "object"
           },
           "state": {
+            "description": "Build state; ready means the validated records were stored.",
+            "enum": [
+              "queued",
+              "running",
+              "ready",
+              "failed"
+            ],
+            "example": "ready",
             "title": "State",
             "type": "string"
           },
           "updated_at": {
+            "description": "ISO-8601 UTC last update time.",
+            "example": "2026-11-02T12:12:00+00:00",
             "title": "Updated At",
             "type": "string"
           }
@@ -195,10 +246,6 @@
         "required": [
           "id",
           "state",
-          "job_id",
-          "records_path",
-          "records_count",
-          "error",
           "created_at",
           "updated_at",
           "request"
@@ -244,13 +291,25 @@
                 "type": "null"
               }
             ],
+            "description": "Knowledge build that produced the card.",
+            "example": "kb-20261102-120000-a1b2c3",
             "title": "Build Id"
           },
           "chunk_id": {
+            "description": "Knowledge chunk id.",
+            "example": "course_project:p001:c00",
             "title": "Chunk Id",
             "type": "string"
           },
           "citations": {
+            "description": "Page citations supporting the card.",
+            "example": [
+              {
+                "doc_id": "course_project",
+                "page_no": 1,
+                "quote": "Building an End-to-End Agent System"
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/CitationRecord"
             },
@@ -266,13 +325,22 @@
                 "type": "null"
               }
             ],
+            "description": "ISO-8601 UTC record creation time.",
+            "example": "2026-11-02T03:02:12+00:00",
             "title": "Created At"
           },
           "doc_id": {
+            "description": "Course document id.",
+            "example": "course_project",
             "title": "Doc Id",
             "type": "string"
           },
           "key_terms": {
+            "description": "Key terms for review.",
+            "example": [
+              "Course Project",
+              "Agent System"
+            ],
             "items": {
               "type": "string"
             },
@@ -288,9 +356,13 @@
                 "type": "null"
               }
             ],
+            "description": "Model that generated the card.",
+            "example": "qwen3.8-27b",
             "title": "Model"
           },
           "page_no": {
+            "description": "Page number the card covers.",
+            "example": 1,
             "title": "Page No",
             "type": "integer"
           },
@@ -303,6 +375,8 @@
                 "type": "null"
               }
             ],
+            "description": "Prompt version of the build.",
+            "example": "kb-v1",
             "title": "Prompt Version"
           },
           "section": {
@@ -314,9 +388,16 @@
                 "type": "null"
               }
             ],
+            "description": "Section title when detected.",
+            "example": "Course Project",
             "title": "Section"
           },
           "study_questions": {
+            "description": "Study questions generated from the page.",
+            "example": [
+              "What is the course project?",
+              "Which system is built?"
+            ],
             "items": {
               "type": "string"
             },
@@ -324,6 +405,8 @@
             "type": "array"
           },
           "summary": {
+            "description": "Card summary.",
+            "example": "This page introduces the course project.",
             "title": "Summary",
             "type": "string"
           }
@@ -332,15 +415,10 @@
           "chunk_id",
           "doc_id",
           "page_no",
-          "section",
           "summary",
           "key_terms",
           "study_questions",
-          "citations",
-          "model",
-          "prompt_version",
-          "build_id",
-          "created_at"
+          "citations"
         ],
         "title": "CardRecord",
         "type": "object"
@@ -380,6 +458,35 @@
         },
         "properties": {
           "cards": {
+            "description": "Page of matching cards.",
+            "example": [
+              {
+                "build_id": "kb-20261102-120000-a1b2c3",
+                "chunk_id": "course_project:p001:c00",
+                "citations": [
+                  {
+                    "doc_id": "course_project",
+                    "page_no": 1,
+                    "quote": "Building an End-to-End Agent System"
+                  }
+                ],
+                "created_at": "2026-11-02T03:02:12+00:00",
+                "doc_id": "course_project",
+                "key_terms": [
+                  "Course Project",
+                  "Agent System"
+                ],
+                "model": "qwen3.8-27b",
+                "page_no": 1,
+                "prompt_version": "kb-v1",
+                "section": "Course Project",
+                "study_questions": [
+                  "What is the course project?",
+                  "Which system is built?"
+                ],
+                "summary": "This page introduces the course project."
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/CardRecord"
             },
@@ -387,6 +494,8 @@
             "type": "array"
           },
           "total": {
+            "description": "Total matching cards before pagination.",
+            "example": 1,
             "title": "Total",
             "type": "integer"
           }
@@ -407,6 +516,8 @@
         },
         "properties": {
           "message": {
+            "description": "User message; the answer streams back in the AI SDK protocol.",
+            "example": "What is MPI_Allreduce?",
             "maxLength": 8000,
             "minLength": 1,
             "title": "Message",
@@ -421,6 +532,12 @@
                 "type": "null"
               }
             ],
+            "description": "Provider alias from config/models.yaml; the adapter default is used when empty.",
+            "enum": [
+              "deepseek",
+              "mimo"
+            ],
+            "example": "deepseek",
             "title": "Provider"
           },
           "session_id": {
@@ -432,6 +549,8 @@
                 "type": "null"
               }
             ],
+            "description": "Existing conversation id; empty starts a new conversation.",
+            "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
             "title": "Session Id"
           },
           "tier": {
@@ -443,6 +562,12 @@
                 "type": "null"
               }
             ],
+            "description": "Model tier alias; flash is on both providers, pro only on MiMo.",
+            "enum": [
+              "flash",
+              "pro"
+            ],
+            "example": "flash",
             "title": "Tier"
           }
         },
@@ -461,14 +586,20 @@
         },
         "properties": {
           "doc_id": {
+            "description": "Course document id.",
+            "example": "course_project",
             "title": "Doc Id",
             "type": "string"
           },
           "page_no": {
+            "description": "Page number the quote appears on.",
+            "example": 1,
             "title": "Page No",
             "type": "integer"
           },
           "quote": {
+            "description": "Exact quoted span on the page.",
+            "example": "Building an End-to-End Agent System",
             "title": "Quote",
             "type": "string"
           }
@@ -503,14 +634,20 @@
         },
         "properties": {
           "database": {
+            "description": "Local SQLite database health.",
+            "example": "ok",
             "title": "Database",
             "type": "string"
           },
           "status": {
+            "description": "Liveness status; ok when the backend answers.",
+            "example": "ok",
             "title": "Status",
             "type": "string"
           },
           "version": {
+            "description": "API version string.",
+            "example": "0.1.0",
             "title": "Version",
             "type": "string"
           }
@@ -531,10 +668,14 @@
         },
         "properties": {
           "email": {
+            "description": "Account email address.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "password": {
+            "description": "Account password.",
+            "example": "correct-horse-battery",
             "title": "Password",
             "type": "string"
           }
@@ -557,7 +698,8 @@
         },
         "properties": {
           "user": {
-            "$ref": "#/components/schemas/LoginUser"
+            "$ref": "#/components/schemas/LoginUser",
+            "description": "The signed-in account."
           }
         },
         "required": [
@@ -575,14 +717,24 @@
         },
         "properties": {
           "email": {
+            "description": "Account email address.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "id": {
+            "description": "Internal user id.",
+            "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
             "title": "Id",
             "type": "string"
           },
           "role": {
+            "description": "Account role; instructor can manage knowledge builds.",
+            "enum": [
+              "student",
+              "instructor"
+            ],
+            "example": "student",
             "title": "Role",
             "type": "string"
           }
@@ -605,18 +757,30 @@
         },
         "properties": {
           "created_at": {
+            "description": "ISO-8601 UTC account creation time.",
+            "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
           },
           "email": {
+            "description": "Account email address.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "id": {
+            "description": "Internal user id.",
+            "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
             "title": "Id",
             "type": "string"
           },
           "role": {
+            "description": "Account role.",
+            "enum": [
+              "student",
+              "instructor"
+            ],
+            "example": "student",
             "title": "Role",
             "type": "string"
           }
@@ -641,14 +805,20 @@
         },
         "properties": {
           "content": {
+            "description": "Message text, in the language used.",
+            "example": "What is MPI_Allreduce?",
             "title": "Content",
             "type": "string"
           },
           "created_at": {
+            "description": "ISO-8601 UTC creation time.",
+            "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
           },
           "id": {
+            "description": "Message id.",
+            "example": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
             "title": "Id",
             "type": "string"
           },
@@ -661,13 +831,22 @@
                 "type": "null"
               }
             ],
+            "description": "Model provider for assistant messages; null for user messages.",
             "title": "Provider"
           },
           "role": {
+            "description": "Who produced the message.",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "example": "user",
             "title": "Role",
             "type": "string"
           },
           "sequence": {
+            "description": "Order inside the conversation, starting at 1.",
+            "example": 1,
             "title": "Sequence",
             "type": "integer"
           },
@@ -680,6 +859,7 @@
                 "type": "null"
               }
             ],
+            "description": "Model tier for assistant messages; null for user messages.",
             "title": "Tier"
           }
         },
@@ -688,8 +868,6 @@
           "sequence",
           "role",
           "content",
-          "provider",
-          "tier",
           "created_at"
         ],
         "title": "MessageRecord",
@@ -712,6 +890,8 @@
                 "type": "null"
               }
             ],
+            "description": "Student answer to run against the reference tests.",
+            "example": "int x = 1;",
             "title": "Answer"
           },
           "pack_id": {
@@ -723,6 +903,8 @@
                 "type": "null"
               }
             ],
+            "description": "Practice pack id.",
+            "example": "mpi-gemm",
             "title": "Pack Id"
           },
           "question_id": {
@@ -734,6 +916,8 @@
                 "type": "null"
               }
             ],
+            "description": "Question id inside the pack.",
+            "example": "q1",
             "title": "Question Id"
           }
         },
@@ -748,10 +932,14 @@
         },
         "properties": {
           "email": {
+            "description": "Student email address; the domain must be configured.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "password": {
+            "description": "New password; at least 8 characters.",
+            "example": "correct-horse-battery",
             "title": "Password",
             "type": "string"
           }
@@ -773,18 +961,32 @@
         },
         "properties": {
           "email": {
+            "description": "Normalised student email address.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "email_delivery": {
+            "description": "log when SMTP is unset in development mode; smtp when mail is sent.",
+            "enum": [
+              "log",
+              "smtp"
+            ],
+            "example": "log",
             "title": "Email Delivery",
             "type": "string"
           },
           "role": {
+            "const": "student",
+            "description": "Account role created for registration.",
+            "example": "student",
             "title": "Role",
             "type": "string"
           },
           "verification": {
+            "const": "pending",
+            "description": "The account waits for the emailed six digit code.",
+            "example": "pending",
             "title": "Verification",
             "type": "string"
           }
@@ -806,10 +1008,14 @@
         },
         "properties": {
           "new_password": {
+            "description": "New password; at least 8 characters.",
+            "example": "new-password-123",
             "title": "New Password",
             "type": "string"
           },
           "token": {
+            "description": "One-time reset token from the reset email link.",
+            "example": "one-time-reset-token",
             "title": "Token",
             "type": "string"
           }
@@ -828,6 +1034,8 @@
         },
         "properties": {
           "email": {
+            "description": "Account email address; the same response is returned for unknown accounts.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           }
@@ -846,10 +1054,18 @@
         },
         "properties": {
           "email": {
+            "description": "Email the reset link was sent to.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "email_delivery": {
+            "description": "log when the link goes to the backend log in development mode.",
+            "enum": [
+              "log",
+              "smtp"
+            ],
+            "example": "log",
             "title": "Email Delivery",
             "type": "string"
           }
@@ -869,10 +1085,14 @@
         },
         "properties": {
           "email": {
+            "description": "Email whose password changed.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "sessions_invalidated": {
+            "description": "Number of server-side sessions removed by the reset.",
+            "example": 1,
             "title": "Sessions Invalidated",
             "type": "integer"
           }
@@ -899,6 +1119,16 @@
         },
         "properties": {
           "sessions": {
+            "description": "The signed-in user's conversations, newest first.",
+            "example": [
+              {
+                "created_at": "2026-11-02T12:00:00+00:00",
+                "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+                "message_count": 2,
+                "title": "What is MPI_Allreduce?",
+                "updated_at": "2026-11-02T12:00:00+00:00"
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/SessionSummary"
             },
@@ -928,6 +1158,16 @@
         },
         "properties": {
           "messages": {
+            "description": "Messages in sequence order.",
+            "example": [
+              {
+                "content": "What is MPI_Allreduce?",
+                "created_at": "2026-11-02T12:00:00+00:00",
+                "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+                "role": "user",
+                "sequence": 1
+              }
+            ],
             "items": {
               "$ref": "#/components/schemas/MessageRecord"
             },
@@ -935,6 +1175,8 @@
             "type": "array"
           },
           "session_id": {
+            "description": "Conversation id.",
+            "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
             "title": "Session Id",
             "type": "string"
           }
@@ -957,14 +1199,20 @@
         },
         "properties": {
           "created_at": {
+            "description": "ISO-8601 UTC creation time.",
+            "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
           },
           "id": {
+            "description": "Conversation id, used as session_id in the API.",
+            "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
             "title": "Id",
             "type": "string"
           },
           "message_count": {
+            "description": "Number of stored messages.",
+            "example": 2,
             "title": "Message Count",
             "type": "integer"
           },
@@ -977,16 +1225,19 @@
                 "type": "null"
               }
             ],
+            "description": "First-message title; null when untitled.",
+            "example": "What is MPI_Allreduce?",
             "title": "Title"
           },
           "updated_at": {
+            "description": "ISO-8601 UTC last update time.",
+            "example": "2026-11-02T12:00:00+00:00",
             "title": "Updated At",
             "type": "string"
           }
         },
         "required": [
           "id",
-          "title",
           "created_at",
           "updated_at",
           "message_count"
@@ -1012,14 +1263,31 @@
                 "type": "null"
               }
             ],
+            "description": "Audio format; one of wav, mp3, pcm, or pcm16.",
+            "enum": [
+              "wav",
+              "mp3",
+              "pcm",
+              "pcm16"
+            ],
+            "example": "wav",
             "title": "Format"
           },
           "model_alias": {
             "default": "default",
+            "description": "TTS model alias; one of default, voiceclone, or voicedesign.",
+            "enum": [
+              "default",
+              "voiceclone",
+              "voicedesign"
+            ],
+            "example": "default",
             "title": "Model Alias",
             "type": "string"
           },
           "text": {
+            "description": "Text to synthesize.",
+            "example": "MPI_Allreduce combines values from all ranks.",
             "title": "Text",
             "type": "string"
           },
@@ -1032,6 +1300,19 @@
                 "type": "null"
               }
             ],
+            "description": "Configured TTS voice id; one of the voices in config/models.yaml. Empty uses the configured default.",
+            "enum": [
+              "mimo_default",
+              "冰糖",
+              "茉莉",
+              "苏打",
+              "白桦",
+              "Mia",
+              "Chloe",
+              "Milo",
+              "Dean"
+            ],
+            "example": "Mia",
             "title": "Voice"
           }
         },
@@ -1051,10 +1332,14 @@
         },
         "properties": {
           "language": {
+            "description": "Detected or requested language.",
+            "example": "en",
             "title": "Language",
             "type": "string"
           },
           "model": {
+            "description": "ASR model id that produced the transcript.",
+            "example": "mimo-v2.5-asr",
             "title": "Model",
             "type": "string"
           },
@@ -1067,9 +1352,13 @@
                 "type": "null"
               }
             ],
+            "description": "Audio duration in seconds when reported.",
+            "example": 2.1,
             "title": "Seconds"
           },
           "text": {
+            "description": "Transcript of the audio file.",
+            "example": "What is MPI_Allreduce?",
             "title": "Text",
             "type": "string"
           }
@@ -1077,7 +1366,6 @@
         "required": [
           "text",
           "language",
-          "seconds",
           "model"
         ],
         "title": "TranscriptionResponse",
@@ -1131,10 +1419,14 @@
         },
         "properties": {
           "code": {
+            "description": "Six digit verification code from the email.",
+            "example": "123456",
             "title": "Code",
             "type": "string"
           },
           "email": {
+            "description": "Student email address.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           }
@@ -1154,10 +1446,15 @@
         },
         "properties": {
           "email": {
+            "description": "Verified email address.",
+            "example": "student@ust.hk",
             "title": "Email",
             "type": "string"
           },
           "status": {
+            "const": "active",
+            "description": "The account is now active.",
+            "example": "active",
             "title": "Status",
             "type": "string"
           }
@@ -1961,8 +2258,128 @@
       }
     },
     "/api/voice/speech": {
+      "get": {
+        "description": "GET variant of the TTS route. Swagger UI's native audio player loads the request URL, so this variant carries the synthesis input in the query string and returns the audio bytes; executing it in Swagger UI plays the result. It triggers one MiMo TTS call per load. Use the POST variant for clients, longer text, and scripted calls.",
+        "operationId": "speech_get_api_voice_speech_get",
+        "parameters": [
+          {
+            "description": "Text to synthesize. Keep it URL-sized; use the POST variant for longer text.",
+            "in": "query",
+            "name": "text",
+            "required": true,
+            "schema": {
+              "description": "Text to synthesize. Keep it URL-sized; use the POST variant for longer text.",
+              "examples": [
+                "MPI_Allreduce combines values from all ranks."
+              ],
+              "maxLength": 2000,
+              "minLength": 1,
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Configured TTS voice id; empty uses the default.",
+            "in": "query",
+            "name": "voice",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Configured TTS voice id; empty uses the default.",
+              "examples": [
+                "Mia"
+              ],
+              "title": "Voice"
+            }
+          },
+          {
+            "description": "wav, mp3, pcm, or pcm16; empty uses the default.",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "wav, mp3, pcm, or pcm16; empty uses the default.",
+              "examples": [
+                "wav"
+              ],
+              "title": "Format"
+            }
+          },
+          {
+            "description": "TTS model alias: default, voiceclone, or voicedesign.",
+            "in": "query",
+            "name": "model_alias",
+            "required": false,
+            "schema": {
+              "default": "default",
+              "description": "TTS model alias: default, voiceclone, or voicedesign.",
+              "examples": [
+                "default"
+              ],
+              "title": "Model Alias",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "audio/mpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "audio/pcm": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "audio/wav": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Audio bytes; the media type follows the requested format."
+          },
+          "400": {
+            "description": "Blank text or unsupported voice or format."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Missing or invalid query parameter."
+          },
+          "503": {
+            "description": "Model layer unavailable."
+          }
+        },
+        "summary": "Synthesize speech and play it in Swagger UI",
+        "tags": [
+          "voice"
+        ]
+      },
       "post": {
-        "description": "Synthesize speech and return the audio bytes. The response media type follows the requested format (wav, mp3, or pcm). Swagger UI cannot play audio responses; open /api/voice/speech/player in a browser with a signed-in session to audition the output.",
+        "description": "Synthesize speech and return the audio bytes. The response media type follows the requested format (wav, mp3, or pcm). For an audio player in Swagger UI use the GET variant on the same path; the POST variant is the canonical client API.",
         "operationId": "speech_api_voice_speech_post",
         "requestBody": {
           "content": {

@@ -42,7 +42,7 @@ The script writes `VERSION`, recomputes `SHA256SUMS`, and keeps the upstream `LI
 
 ## Notes
 
-- Swagger UI cannot play binary audio responses. For TTS, open the local player at `http://127.0.0.1:8000/api/voice/speech/player` with the backend running and a signed-in session; the player calls `POST /api/voice/speech` and plays the returned audio. The API itself returns the raw bytes with `audio/wav`, `audio/mpeg`, or `audio/pcm` media types.
+- Swagger UI's native audio player hands the *request URL* to the browser, so a POST response cannot be played. The TTS route therefore also has a GET variant: execute `GET /api/voice/speech` with the `text`, `voice`, `format`, and `model_alias` query parameters in Swagger UI and its built-in player plays the audio. `POST /api/voice/speech` stays the canonical client API and is where the raw bytes are returned (`audio/wav`, `audio/mpeg`, or `audio/pcm`). A standalone page at `http://127.0.0.1:8000/api/voice/speech/player` is available for manual auditioning with the session cookie.
 - The bundle is documentation only; it exposes the OpenAPI schema and no secrets or runtime data.
 - Do not serve this directory from a public host; the local demo is the target.
 - `/openapi.json` remains the live schema from the running app; the committed `openapi.json` is the reviewed snapshot.
