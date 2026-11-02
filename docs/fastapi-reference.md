@@ -301,7 +301,7 @@ The OpenAPI schema is the contract between the backend and the React UI, and it 
 
 The documented API must work offline, so the repository owns its Swagger UI assets instead of loading the FastAPI defaults from a CDN.
 
-- Every request body field carries a per-field `example` (and enum values for option fields such as `provider`, `tier`, `format`, `voice`, and `model_alias`), and every response model field carries an `example` or enum, so the Swagger UI Schema view documents what to fill in instead of showing empty strings.
+- Request bodies carry no schema `example` or `enum`, so Swagger UI's Edit value keeps the generated placeholder object instead of prefilling concrete values. The example text and the allowed option values for fields such as `provider`, `tier`, `format`, `voice`, and `model_alias` live in the field descriptions shown in the Schema view. Response models keep per-field `example` and enum metadata, so response examples are documented without touching the request editor.
 - `docs/api/openapi.json` is the deterministic export of `app.openapi()` (sorted keys, two-space indent, no timestamps or absolute paths).
 - `docs/api/index.html` is a generated Swagger UI page with the schema embedded inline and relative references to `vendor/swagger-ui/`; it opens offline from the file system and is served by the backend as well.
 - `docs/api/vendor/swagger-ui/` holds the pinned `swagger-ui-dist` 5.34.1 assets with `VERSION`, `SHA256SUMS`, and the Apache-2.0 license.

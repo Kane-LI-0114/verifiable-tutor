@@ -20,31 +20,22 @@ PRACTICE_UNAVAILABLE = (
 
 
 class PracticeRunBody(BaseModel):
-    model_config = ConfigDict(
-        extra="allow",
-        json_schema_extra={
-            "example": {
-                "pack_id": "mpi-gemm",
-                "question_id": "q1",
-                "answer": "int x = 1;",
-            }
-        },
-    )
+    model_config = ConfigDict(extra="allow")
 
     pack_id: str | None = Field(
         default=None,
-        description="Practice pack id.",
-        json_schema_extra={"example": "mpi-gemm"},
+        description="Practice pack id. Example: mpi-gemm.",
     )
     question_id: str | None = Field(
         default=None,
-        description="Question id inside the pack.",
-        json_schema_extra={"example": "q1"},
+        description="Question id inside the pack. Example: q1.",
     )
     answer: str | None = Field(
         default=None,
-        description="Student answer to run against the reference tests.",
-        json_schema_extra={"example": "int x = 1;"},
+        description=(
+            "Student answer to run against the reference tests. "
+            "Example: int x = 1;"
+        ),
     )
 
 

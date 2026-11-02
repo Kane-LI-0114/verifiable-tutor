@@ -20,22 +20,21 @@ router = APIRouter(tags=["knowledge"])
 
 
 class BuildBody(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {"doc_id": "course_project", "max_chunks": 8}
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
 
     doc_id: str | None = Field(
         default=None,
-        description="Document id from the local page records; empty builds the configured file.",
-        json_schema_extra={"example": "course_project"},
+        description=(
+            "Document id from the local page records; empty builds the "
+            "configured file. Example: course_project."
+        ),
     )
     max_chunks: int | None = Field(
         default=None,
-        description="Chunks to process; bounded by knowledge.max_chunks_per_job.",
-        json_schema_extra={"example": 8},
+        description=(
+            "Chunks to process; bounded by knowledge.max_chunks_per_job. "
+            "Example: 8."
+        ),
     )
 
 

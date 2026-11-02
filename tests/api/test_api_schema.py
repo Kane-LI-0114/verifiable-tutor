@@ -115,77 +115,92 @@ def test_audio_response_documents_binary_content_only(api):
     assert "application/json" not in content
 
 
-def test_models_carry_swagger_examples(api):
+RESPONSE_MODELS = {
+    "HealthResponse",
+    "RegisterResponse",
+    "VerifyResponse",
+    "LoginUser",
+    "LoginResponse",
+    "MeResponse",
+    "ResetRequestResponse",
+    "ResetResponse",
+    "SessionSummary",
+    "SessionListResponse",
+    "MessageRecord",
+    "SessionMessagesResponse",
+    "TranscriptionResponse",
+    "CitationRecord",
+    "CardRecord",
+    "CardsResponse",
+    "BuildAcceptedResponse",
+    "BuildRecord",
+    "BuildListResponse",
+}
+
+REQUEST_BODY_MODELS = {
+    "RegisterBody",
+    "VerifyBody",
+    "LoginBody",
+    "ResetRequestBody",
+    "ResetBody",
+    "ChatBody",
+    "BuildBody",
+    "SpeechBody",
+    "PracticeRunBody",
+}
+
+
+def test_response_models_carry_swagger_examples(api):
     schema = _schema(api)
     components = schema["components"]["schemas"]
-    expected = {
-        "HealthResponse",
-        "RegisterResponse",
-        "VerifyResponse",
-        "LoginUser",
-        "LoginResponse",
-        "MeResponse",
-        "ResetRequestResponse",
-        "ResetResponse",
-        "SessionSummary",
-        "SessionListResponse",
-        "MessageRecord",
-        "SessionMessagesResponse",
-        "TranscriptionResponse",
-        "CitationRecord",
-        "CardRecord",
-        "CardsResponse",
-        "BuildAcceptedResponse",
-        "BuildRecord",
-        "BuildListResponse",
-        "RegisterBody",
-        "VerifyBody",
-        "LoginBody",
-        "ResetRequestBody",
-        "ResetBody",
-        "ChatBody",
-        "BuildBody",
-        "SpeechBody",
-        "PracticeRunBody",
-    }
-    assert expected <= set(components)
 
     missing = [
         name
-        for name in sorted(expected)
+        for name in sorted(RESPONSE_MODELS)
         if "example" not in components[name] and "examples" not in components[name]
     ]
     assert missing == []
 
 
-def test_schema_fields_carry_examples_and_option_values(api):
+def test_request_body_schemas_do_not_prefill_the_edit_value(api):
+    schema = _schema(api)
+    components = schema["components"]["schemas"]
+
+    for name in sorted(REQUEST_BODY_MODELS):
+        model = components[name]
+        assert "example" not in model and "examples" not in model, name
+        for field_name, field in model["properties"].items():
+            assert "example" not in field, f"{name}.{field_name}"
+            assert "enum" not in field, f"{name}.{field_name}"
+            assert field.get("description"), f"{name}.{field_name}"
+
+
+def test_request_body_descriptions_list_examples_and_options(api):
+    schema = _schema(api)
+    components = schema["components"]["schemas"]
+
+    chat = components["ChatBody"]["properties"]
+    assert "What is MPI_Allreduce?" in chat["message"]["description"]
+    assert "deepseek" in chat["provider"]["description"]
+    assert "mimo" in chat["provider"]["description"]
+    assert "flash" in chat["tier"]["description"]
+    assert "pro" in chat["tier"]["description"]
+
+    speech = components["SpeechBody"]["properties"]
+    assert "MPI_Allreduce combines values from all ranks." in speech["text"]["description"]
+    for option in ("wav", "mp3", "pcm", "pcm16"):
+        assert option in speech["format"]["description"]
+    assert "Mia" in speech["voice"]["description"]
+    for alias in ("default", "voiceclone", "voicedesign"):
+        assert alias in speech["model_alias"]["description"]
+
+    register = components["RegisterBody"]["properties"]
+    assert "student@ust.hk" in register["email"]["description"]
+
+
+def test_response_fields_keep_examples_and_enums(api):
     schema = _schema(api)
     schemas = schema["components"]["schemas"]
-
-    chat = schemas["ChatBody"]["properties"]
-    assert chat["message"]["example"] == "What is MPI_Allreduce?"
-    assert chat["provider"]["enum"] == ["deepseek", "mimo"]
-    assert chat["tier"]["enum"] == ["flash", "pro"]
-
-    speech = schemas["SpeechBody"]["properties"]
-    assert speech["text"]["example"] == "MPI_Allreduce combines values from all ranks."
-    assert speech["format"]["enum"] == ["wav", "mp3", "pcm", "pcm16"]
-    assert speech["model_alias"]["enum"] == ["default", "voiceclone", "voicedesign"]
-    assert speech["voice"]["enum"] == [
-        "mimo_default",
-        "冰糖",
-        "茉莉",
-        "苏打",
-        "白桦",
-        "Mia",
-        "Chloe",
-        "Milo",
-        "Dean",
-    ]
-
-    register = schemas["RegisterBody"]["properties"]
-    assert register["email"]["example"] == "student@ust.hk"
-    assert register["password"]["example"] == "correct-horse-battery"
 
     login_user = schemas["LoginUser"]["properties"]
     assert login_user["role"]["enum"] == ["student", "instructor"]
@@ -201,3 +216,26 @@ def test_schema_fields_carry_examples_and_option_values(api):
     message = schemas["MessageRecord"]["properties"]
     assert message["content"]["example"] == "What is MPI_Allreduce?"
     assert message["role"]["enum"] == ["user", "assistant"]
+
+
+def test_get_speech_query_parameters_carry_examples(api):
+    schema = _schema(api)
+    parameters = schema["paths"]["/api/voice/speech"]["get"]["parameters"]
+    by_name = {parameter["name"]: parameter for parameter in parameters}
+
+    assert (
+        by_name["text"]["schema"]["example"]
+        == "MPI_Allreduce combines values from all ranks."
+    )
+    assert (
+        by_name["text"]["examples"]["default"]["value"]
+        == "MPI_Allreduce combines values from all ranks."
+    )
+    assert by_name["voice"]["schema"]["example"] == "Mia"
+    assert by_name["voice"]["examples"]["default"]["value"] == "Mia"
+    assert by_name["format"]["schema"]["enum"] == ["wav", "mp3", "pcm", "pcm16"]
+    assert by_name["model_alias"]["schema"]["enum"] == [
+        "default",
+        "voiceclone",
+        "voicedesign",
+    ]

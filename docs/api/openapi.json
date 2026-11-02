@@ -50,10 +50,6 @@
       },
       "BuildBody": {
         "additionalProperties": false,
-        "example": {
-          "doc_id": "course_project",
-          "max_chunks": 8
-        },
         "properties": {
           "doc_id": {
             "anyOf": [
@@ -64,8 +60,7 @@
                 "type": "null"
               }
             ],
-            "description": "Document id from the local page records; empty builds the configured file.",
-            "example": "course_project",
+            "description": "Document id from the local page records; empty builds the configured file. Example: course_project.",
             "title": "Doc Id"
           },
           "max_chunks": {
@@ -77,8 +72,7 @@
                 "type": "null"
               }
             ],
-            "description": "Chunks to process; bounded by knowledge.max_chunks_per_job.",
-            "example": 8,
+            "description": "Chunks to process; bounded by knowledge.max_chunks_per_job. Example: 8.",
             "title": "Max Chunks"
           }
         },
@@ -509,15 +503,9 @@
       },
       "ChatBody": {
         "additionalProperties": false,
-        "example": {
-          "message": "What is MPI_Allreduce?",
-          "provider": "deepseek",
-          "tier": "flash"
-        },
         "properties": {
           "message": {
-            "description": "User message; the answer streams back in the AI SDK protocol.",
-            "example": "What is MPI_Allreduce?",
+            "description": "User message; the answer streams back in the AI SDK protocol. Example: What is MPI_Allreduce?",
             "maxLength": 8000,
             "minLength": 1,
             "title": "Message",
@@ -532,12 +520,7 @@
                 "type": "null"
               }
             ],
-            "description": "Provider alias from config/models.yaml; the adapter default is used when empty.",
-            "enum": [
-              "deepseek",
-              "mimo"
-            ],
-            "example": "deepseek",
+            "description": "Provider alias from config/models.yaml; one of deepseek or mimo. Empty uses the adapter default.",
             "title": "Provider"
           },
           "session_id": {
@@ -549,8 +532,7 @@
                 "type": "null"
               }
             ],
-            "description": "Existing conversation id; empty starts a new conversation.",
-            "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+            "description": "Existing conversation id; empty starts a new conversation. Example: 6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8.",
             "title": "Session Id"
           },
           "tier": {
@@ -562,12 +544,7 @@
                 "type": "null"
               }
             ],
-            "description": "Model tier alias; flash is on both providers, pro only on MiMo.",
-            "enum": [
-              "flash",
-              "pro"
-            ],
-            "example": "flash",
+            "description": "Model tier alias; one of flash or pro (pro is MiMo only). Empty uses the default.",
             "title": "Tier"
           }
         },
@@ -662,20 +639,14 @@
       },
       "LoginBody": {
         "additionalProperties": false,
-        "example": {
-          "email": "student@ust.hk",
-          "password": "correct-horse-battery"
-        },
         "properties": {
           "email": {
-            "description": "Account email address.",
-            "example": "student@ust.hk",
+            "description": "Account email address. Example: student@ust.hk.",
             "title": "Email",
             "type": "string"
           },
           "password": {
-            "description": "Account password.",
-            "example": "correct-horse-battery",
+            "description": "Account password. Example: correct-horse-battery.",
             "title": "Password",
             "type": "string"
           }
@@ -875,11 +846,6 @@
       },
       "PracticeRunBody": {
         "additionalProperties": true,
-        "example": {
-          "answer": "int x = 1;",
-          "pack_id": "mpi-gemm",
-          "question_id": "q1"
-        },
         "properties": {
           "answer": {
             "anyOf": [
@@ -890,8 +856,7 @@
                 "type": "null"
               }
             ],
-            "description": "Student answer to run against the reference tests.",
-            "example": "int x = 1;",
+            "description": "Student answer to run against the reference tests. Example: int x = 1;",
             "title": "Answer"
           },
           "pack_id": {
@@ -903,8 +868,7 @@
                 "type": "null"
               }
             ],
-            "description": "Practice pack id.",
-            "example": "mpi-gemm",
+            "description": "Practice pack id. Example: mpi-gemm.",
             "title": "Pack Id"
           },
           "question_id": {
@@ -916,8 +880,7 @@
                 "type": "null"
               }
             ],
-            "description": "Question id inside the pack.",
-            "example": "q1",
+            "description": "Question id inside the pack. Example: q1.",
             "title": "Question Id"
           }
         },
@@ -926,20 +889,14 @@
       },
       "RegisterBody": {
         "additionalProperties": false,
-        "example": {
-          "email": "student@ust.hk",
-          "password": "correct-horse-battery"
-        },
         "properties": {
           "email": {
-            "description": "Student email address; the domain must be configured.",
-            "example": "student@ust.hk",
+            "description": "Student email address; the domain must be configured. Example: student@ust.hk.",
             "title": "Email",
             "type": "string"
           },
           "password": {
-            "description": "New password; at least 8 characters.",
-            "example": "correct-horse-battery",
+            "description": "New password; at least 8 characters. Example: correct-horse-battery.",
             "title": "Password",
             "type": "string"
           }
@@ -1002,20 +959,14 @@
       },
       "ResetBody": {
         "additionalProperties": false,
-        "example": {
-          "new_password": "new-password-123",
-          "token": "one-time-reset-token"
-        },
         "properties": {
           "new_password": {
-            "description": "New password; at least 8 characters.",
-            "example": "new-password-123",
+            "description": "New password; at least 8 characters. Example: new-password-123.",
             "title": "New Password",
             "type": "string"
           },
           "token": {
-            "description": "One-time reset token from the reset email link.",
-            "example": "one-time-reset-token",
+            "description": "One-time reset token from the reset email link. Example: one-time-reset-token.",
             "title": "Token",
             "type": "string"
           }
@@ -1029,13 +980,9 @@
       },
       "ResetRequestBody": {
         "additionalProperties": false,
-        "example": {
-          "email": "student@ust.hk"
-        },
         "properties": {
           "email": {
-            "description": "Account email address; the same response is returned for unknown accounts.",
-            "example": "student@ust.hk",
+            "description": "Account email address; the same response is returned for unknown accounts. Example: student@ust.hk.",
             "title": "Email",
             "type": "string"
           }
@@ -1247,12 +1194,6 @@
       },
       "SpeechBody": {
         "additionalProperties": false,
-        "example": {
-          "format": "wav",
-          "model_alias": "default",
-          "text": "MPI_Allreduce combines values from all ranks.",
-          "voice": "Mia"
-        },
         "properties": {
           "format": {
             "anyOf": [
@@ -1263,31 +1204,17 @@
                 "type": "null"
               }
             ],
-            "description": "Audio format; one of wav, mp3, pcm, or pcm16.",
-            "enum": [
-              "wav",
-              "mp3",
-              "pcm",
-              "pcm16"
-            ],
-            "example": "wav",
+            "description": "Audio format; one of wav, mp3, pcm, or pcm16. Example: wav.",
             "title": "Format"
           },
           "model_alias": {
             "default": "default",
-            "description": "TTS model alias; one of default, voiceclone, or voicedesign.",
-            "enum": [
-              "default",
-              "voiceclone",
-              "voicedesign"
-            ],
-            "example": "default",
+            "description": "TTS model alias; one of default, voiceclone, or voicedesign. Example: default.",
             "title": "Model Alias",
             "type": "string"
           },
           "text": {
-            "description": "Text to synthesize.",
-            "example": "MPI_Allreduce combines values from all ranks.",
+            "description": "Text to synthesize. Example: MPI_Allreduce combines values from all ranks.",
             "title": "Text",
             "type": "string"
           },
@@ -1300,19 +1227,7 @@
                 "type": "null"
               }
             ],
-            "description": "Configured TTS voice id; one of the voices in config/models.yaml. Empty uses the configured default.",
-            "enum": [
-              "mimo_default",
-              "冰糖",
-              "茉莉",
-              "苏打",
-              "白桦",
-              "Mia",
-              "Chloe",
-              "Milo",
-              "Dean"
-            ],
-            "example": "Mia",
+            "description": "Configured TTS voice id; options: mimo_default, 冰糖, 茉莉, 苏打, 白桦, Mia, Chloe, Milo, Dean. Empty uses the configured default.",
             "title": "Voice"
           }
         },
@@ -1413,20 +1328,14 @@
       },
       "VerifyBody": {
         "additionalProperties": false,
-        "example": {
-          "code": "123456",
-          "email": "student@ust.hk"
-        },
         "properties": {
           "code": {
-            "description": "Six digit verification code from the email.",
-            "example": "123456",
+            "description": "Six digit verification code from the email. Example: 123456.",
             "title": "Code",
             "type": "string"
           },
           "email": {
-            "description": "Student email address.",
-            "example": "student@ust.hk",
+            "description": "Student email address. Example: student@ust.hk.",
             "title": "Email",
             "type": "string"
           }
@@ -2264,14 +2173,18 @@
         "parameters": [
           {
             "description": "Text to synthesize. Keep it URL-sized; use the POST variant for longer text.",
+            "examples": {
+              "default": {
+                "summary": "Course question text",
+                "value": "MPI_Allreduce combines values from all ranks."
+              }
+            },
             "in": "query",
             "name": "text",
             "required": true,
             "schema": {
               "description": "Text to synthesize. Keep it URL-sized; use the POST variant for longer text.",
-              "examples": [
-                "MPI_Allreduce combines values from all ranks."
-              ],
+              "example": "MPI_Allreduce combines values from all ranks.",
               "maxLength": 2000,
               "minLength": 1,
               "title": "Text",
@@ -2280,6 +2193,12 @@
           },
           {
             "description": "Configured TTS voice id; empty uses the default.",
+            "examples": {
+              "default": {
+                "summary": "A configured voice",
+                "value": "Mia"
+              }
+            },
             "in": "query",
             "name": "voice",
             "required": false,
@@ -2293,14 +2212,29 @@
                 }
               ],
               "description": "Configured TTS voice id; empty uses the default.",
-              "examples": [
-                "Mia"
+              "enum": [
+                "mimo_default",
+                "冰糖",
+                "茉莉",
+                "苏打",
+                "白桦",
+                "Mia",
+                "Chloe",
+                "Milo",
+                "Dean"
               ],
+              "example": "Mia",
               "title": "Voice"
             }
           },
           {
             "description": "wav, mp3, pcm, or pcm16; empty uses the default.",
+            "examples": {
+              "default": {
+                "summary": "WAV audio",
+                "value": "wav"
+              }
+            },
             "in": "query",
             "name": "format",
             "required": false,
@@ -2314,23 +2248,36 @@
                 }
               ],
               "description": "wav, mp3, pcm, or pcm16; empty uses the default.",
-              "examples": [
-                "wav"
+              "enum": [
+                "wav",
+                "mp3",
+                "pcm",
+                "pcm16"
               ],
+              "example": "wav",
               "title": "Format"
             }
           },
           {
             "description": "TTS model alias: default, voiceclone, or voicedesign.",
+            "examples": {
+              "default": {
+                "summary": "The default TTS model",
+                "value": "default"
+              }
+            },
             "in": "query",
             "name": "model_alias",
             "required": false,
             "schema": {
               "default": "default",
               "description": "TTS model alias: default, voiceclone, or voicedesign.",
-              "examples": [
-                "default"
+              "enum": [
+                "default",
+                "voiceclone",
+                "voicedesign"
               ],
+              "example": "default",
               "title": "Model Alias",
               "type": "string"
             }

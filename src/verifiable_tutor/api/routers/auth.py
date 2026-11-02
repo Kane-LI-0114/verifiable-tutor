@@ -24,95 +24,71 @@ class _StrictBody(BaseModel):
 
 
 class RegisterBody(_StrictBody):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {
-                "email": "student@ust.hk",
-                "password": "correct-horse-battery",
-            }
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
 
     email: str = Field(
-        description="Student email address; the domain must be configured.",
-        json_schema_extra={"example": "student@ust.hk"},
+        description=(
+            "Student email address; the domain must be configured. "
+            "Example: student@ust.hk."
+        )
     )
     password: str = Field(
-        description="New password; at least 8 characters.",
-        json_schema_extra={"example": "correct-horse-battery"},
+        description=(
+            "New password; at least 8 characters. "
+            "Example: correct-horse-battery."
+        )
     )
 
 
 class VerifyBody(_StrictBody):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {"email": "student@ust.hk", "code": "123456"}
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
 
     email: str = Field(
-        description="Student email address.",
-        json_schema_extra={"example": "student@ust.hk"},
+        description="Student email address. Example: student@ust.hk."
     )
     code: str = Field(
-        description="Six digit verification code from the email.",
-        json_schema_extra={"example": "123456"},
+        description=(
+            "Six digit verification code from the email. Example: 123456."
+        )
     )
 
 
 class LoginBody(_StrictBody):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {
-                "email": "student@ust.hk",
-                "password": "correct-horse-battery",
-            }
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
 
     email: str = Field(
-        description="Account email address.",
-        json_schema_extra={"example": "student@ust.hk"},
+        description="Account email address. Example: student@ust.hk."
     )
     password: str = Field(
-        description="Account password.",
-        json_schema_extra={"example": "correct-horse-battery"},
+        description="Account password. Example: correct-horse-battery."
     )
 
 
 class ResetRequestBody(_StrictBody):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={"example": {"email": "student@ust.hk"}},
-    )
+    model_config = ConfigDict(extra="forbid")
 
     email: str = Field(
-        description="Account email address; the same response is returned for unknown accounts.",
-        json_schema_extra={"example": "student@ust.hk"},
+        description=(
+            "Account email address; the same response is returned for unknown "
+            "accounts. Example: student@ust.hk."
+        )
     )
 
 
 class ResetBody(_StrictBody):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {
-                "token": "one-time-reset-token",
-                "new_password": "new-password-123",
-            }
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
 
     token: str = Field(
-        description="One-time reset token from the reset email link.",
-        json_schema_extra={"example": "one-time-reset-token"},
+        description=(
+            "One-time reset token from the reset email link. "
+            "Example: one-time-reset-token."
+        )
     )
     new_password: str = Field(
-        description="New password; at least 8 characters.",
-        json_schema_extra={"example": "new-password-123"},
+        description=(
+            "New password; at least 8 characters. "
+            "Example: new-password-123."
+        )
     )
 
 

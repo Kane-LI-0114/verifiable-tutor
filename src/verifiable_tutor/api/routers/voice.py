@@ -132,39 +132,33 @@ playButton.addEventListener("click", async () => {
 
 
 class SpeechBody(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {
-                "text": "MPI_Allreduce combines values from all ranks.",
-                "voice": "Mia",
-                "format": "wav",
-                "model_alias": "default",
-            }
-        },
-    )
+    model_config = ConfigDict(extra="forbid")
 
     text: str = Field(
-        description="Text to synthesize.",
-        json_schema_extra={"example": "MPI_Allreduce combines values from all ranks."},
+        description=(
+            "Text to synthesize. "
+            "Example: MPI_Allreduce combines values from all ranks."
+        )
     )
     voice: str | None = Field(
         default=None,
         description=(
-            "Configured TTS voice id; one of the voices in config/models.yaml. "
-            "Empty uses the configured default."
+            "Configured TTS voice id; options: mimo_default, 冰糖, 茉莉, 苏打, "
+            "白桦, Mia, Chloe, Milo, Dean. Empty uses the configured default."
         ),
-        json_schema_extra={"example": "Mia", "enum": _TTS_VOICES},
     )
     format: str | None = Field(
         default=None,
-        description="Audio format; one of wav, mp3, pcm, or pcm16.",
-        json_schema_extra={"example": "wav", "enum": _TTS_FORMATS},
+        description=(
+            "Audio format; one of wav, mp3, pcm, or pcm16. Example: wav."
+        ),
     )
     model_alias: str = Field(
         default="default",
-        description="TTS model alias; one of default, voiceclone, or voicedesign.",
-        json_schema_extra={"example": "default", "enum": _TTS_MODEL_ALIASES},
+        description=(
+            "TTS model alias; one of default, voiceclone, or voicedesign. "
+            "Example: default."
+        ),
     )
 
 
@@ -293,28 +287,48 @@ def speech_get(
                 "Text to synthesize. Keep it URL-sized; use the POST variant "
                 "for longer text."
             ),
-            examples=["MPI_Allreduce combines values from all ranks."],
+            json_schema_extra={
+                "example": "MPI_Allreduce combines values from all ranks."
+            },
+            openapi_examples={
+                "default": {
+                    "summary": "Course question text",
+                    "value": "MPI_Allreduce combines values from all ranks.",
+                }
+            },
         ),
     ],
     voice: Annotated[
         str | None,
         Query(
             description="Configured TTS voice id; empty uses the default.",
-            examples=["Mia"],
+            json_schema_extra={"example": "Mia", "enum": _TTS_VOICES},
+            openapi_examples={
+                "default": {"summary": "A configured voice", "value": "Mia"}
+            },
         ),
     ] = None,
     format: Annotated[
         str | None,
         Query(
             description="wav, mp3, pcm, or pcm16; empty uses the default.",
-            examples=["wav"],
+            json_schema_extra={"example": "wav", "enum": _TTS_FORMATS},
+            openapi_examples={
+                "default": {"summary": "WAV audio", "value": "wav"}
+            },
         ),
     ] = None,
     model_alias: Annotated[
         str,
         Query(
             description="TTS model alias: default, voiceclone, or voicedesign.",
-            examples=["default"],
+            json_schema_extra={
+                "example": "default",
+                "enum": _TTS_MODEL_ALIASES,
+            },
+            openapi_examples={
+                "default": {"summary": "The default TTS model", "value": "default"}
+            },
         ),
     ] = "default",
 ):
