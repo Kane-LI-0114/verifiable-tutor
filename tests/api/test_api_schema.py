@@ -105,3 +105,54 @@ def test_key_error_responses_are_documented(api):
     assert "403" in build
     assert "409" in build
     assert "503" in build
+
+
+def test_audio_response_documents_binary_content_only(api):
+    schema = _schema(api)
+
+    content = schema["paths"]["/api/voice/speech"]["post"]["responses"]["200"]["content"]
+    assert set(content) == {"audio/wav", "audio/mpeg", "audio/pcm"}
+    assert "application/json" not in content
+
+
+def test_models_carry_swagger_examples(api):
+    schema = _schema(api)
+    components = schema["components"]["schemas"]
+    expected = {
+        "HealthResponse",
+        "RegisterResponse",
+        "VerifyResponse",
+        "LoginUser",
+        "LoginResponse",
+        "MeResponse",
+        "ResetRequestResponse",
+        "ResetResponse",
+        "SessionSummary",
+        "SessionListResponse",
+        "MessageRecord",
+        "SessionMessagesResponse",
+        "TranscriptionResponse",
+        "CitationRecord",
+        "CardRecord",
+        "CardsResponse",
+        "BuildAcceptedResponse",
+        "BuildRecord",
+        "BuildListResponse",
+        "RegisterBody",
+        "VerifyBody",
+        "LoginBody",
+        "ResetRequestBody",
+        "ResetBody",
+        "ChatBody",
+        "BuildBody",
+        "SpeechBody",
+        "PracticeRunBody",
+    }
+    assert expected <= set(components)
+
+    missing = [
+        name
+        for name in sorted(expected)
+        if "example" not in components[name] and "examples" not in components[name]
+    ]
+    assert missing == []

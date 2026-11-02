@@ -301,12 +301,14 @@ The OpenAPI schema is the contract between the backend and the React UI, and it 
 
 The documented API must work offline, so the repository owns its Swagger UI assets instead of loading the FastAPI defaults from a CDN.
 
+- Every response model and request body carries a realistic `example`, so Swagger UI shows prefilled values instead of empty schemas.
 - `docs/api/openapi.json` is the deterministic export of `app.openapi()` (sorted keys, two-space indent, no timestamps or absolute paths).
 - `docs/api/index.html` is a generated Swagger UI page with the schema embedded inline and relative references to `vendor/swagger-ui/`; it opens offline from the file system and is served by the backend as well.
 - `docs/api/vendor/swagger-ui/` holds the pinned `swagger-ui-dist` 5.34.1 assets with `VERSION`, `SHA256SUMS`, and the Apache-2.0 license.
 - `/docs` is a custom route that calls `get_swagger_ui_html` with the local asset URLs; `/api-docs/` mounts `docs/api/` as static files; `/openapi.json` remains the live schema; ReDoc is disabled because it has no local assets.
 - `create_app(..., docs_api_dir=...)` accepts the bundle location; when it is absent the two documentation routes are disabled with a warning and the API keeps working.
 - Regenerate with `.venv/bin/python scripts/build_api_docs.py`; `.venv/bin/python scripts/build_api_docs.py --check` fails when the bundle is stale, and the check runs in `tests/api/`. Upgrade the assets only through `bash scripts/vendor_swagger_ui.sh`, then regenerate.
+- Audio responses: the TTS route declares `response_class=Response` and documents only `audio/wav`, `audio/mpeg`, and `audio/pcm`, so Swagger UI shows binary content instead of trying to parse JSON. Swagger UI has no audio player, so a small local page at `/api/voice/speech/player` (not in the OpenAPI schema) calls the route with the session cookie and plays the result.
 - The decision and trade-offs are in [ADR-0013](adr/0013-local-offline-swagger-ui.md); the file-level procedure is in [docs/api/README.md](api/README.md).
 
 ## 5. Implemented interface surface

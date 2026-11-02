@@ -24,25 +24,67 @@ class _StrictBody(BaseModel):
 
 
 class RegisterBody(_StrictBody):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "email": "student@ust.hk",
+                "password": "correct-horse-battery",
+            }
+        },
+    )
+
     email: str
     password: str
 
 
 class VerifyBody(_StrictBody):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {"email": "student@ust.hk", "code": "123456"}
+        },
+    )
+
     email: str
     code: str
 
 
 class LoginBody(_StrictBody):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "email": "student@ust.hk",
+                "password": "correct-horse-battery",
+            }
+        },
+    )
+
     email: str
     password: str
 
 
 class ResetRequestBody(_StrictBody):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"example": {"email": "student@ust.hk"}},
+    )
+
     email: str
 
 
 class ResetBody(_StrictBody):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "token": "one-time-reset-token",
+                "new_password": "new-password-123",
+            }
+        },
+    )
+
     token: str
     new_password: str
 

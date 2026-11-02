@@ -139,3 +139,16 @@ def test_speech_without_a_model_layer_returns_503(api):
     response = api.client.post("/api/voice/speech", json={"text": "hello"})
 
     assert response.status_code == 503
+
+
+def test_tts_player_page_is_served_for_manual_auditioning(api):
+    response = api.client.get("/api/voice/speech/player")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "<audio" in response.text
+    assert "/api/voice/speech" in response.text
+    assert "Play" in response.text
+
+    schema = api.client.get("/openapi.json").json()
+    assert "/api/voice/speech/player" not in schema["paths"]

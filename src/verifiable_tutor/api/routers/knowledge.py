@@ -20,7 +20,12 @@ router = APIRouter(tags=["knowledge"])
 
 
 class BuildBody(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {"doc_id": "course_project", "max_chunks": 8}
+        },
+    )
 
     doc_id: str | None = None
     max_chunks: int | None = None

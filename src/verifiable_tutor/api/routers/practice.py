@@ -20,7 +20,16 @@ PRACTICE_UNAVAILABLE = (
 
 
 class PracticeRunBody(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
+            "example": {
+                "pack_id": "mpi-gemm",
+                "question_id": "q1",
+                "answer": "int x = 1;",
+            }
+        },
+    )
 
     pack_id: str | None = None
     question_id: str | None = None

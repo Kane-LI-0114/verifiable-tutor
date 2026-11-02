@@ -14,7 +14,17 @@ router = APIRouter(tags=["chat"])
 
 
 class ChatBody(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "message": "What is MPI_Allreduce?",
+                "session_id": None,
+                "provider": "deepseek",
+                "tier": "flash",
+            }
+        },
+    )
 
     message: str = Field(min_length=1, max_length=8000)
     session_id: str | None = None

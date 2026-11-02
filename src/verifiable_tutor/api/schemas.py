@@ -2,7 +2,9 @@
 
 The response bodies are unchanged; these models exist so the OpenAPI schema
 (and the local Swagger UI) shows the actual field names, types, and nullability
-instead of generic objects. Keep the models in sync with the route returns.
+instead of generic objects. Each model carries a realistic example so Swagger
+UI can prefill and illustrate the contract. Keep the models in sync with the
+route returns.
 """
 
 from __future__ import annotations
@@ -58,57 +60,110 @@ OPENAPI_TAGS: list[dict[str, str]] = [
     },
 ]
 
+_SESSION_ID = "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8"
+_CREATED_AT = "2026-11-02T12:00:00+00:00"
 
-class _Model(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+
+def _example(data: dict[str, Any]) -> ConfigDict:
+    return ConfigDict(extra="forbid", json_schema_extra={"example": data})
 
 
-class HealthResponse(_Model):
+class HealthResponse(BaseModel):
+    model_config = _example(
+        {"status": "ok", "version": "0.1.0", "database": "ok"}
+    )
+
     status: str
     version: str
     database: str
 
 
-class RegisterResponse(_Model):
+class RegisterResponse(BaseModel):
+    model_config = _example(
+        {
+            "email": "student@ust.hk",
+            "role": "student",
+            "verification": "pending",
+            "email_delivery": "log",
+        }
+    )
+
     email: str
     role: str
     verification: str
     email_delivery: str
 
 
-class VerifyResponse(_Model):
+class VerifyResponse(BaseModel):
+    model_config = _example({"email": "student@ust.hk", "status": "active"})
+
     email: str
     status: str
 
 
-class LoginUser(_Model):
+class LoginUser(BaseModel):
+    model_config = _example(
+        {"id": _SESSION_ID, "email": "student@ust.hk", "role": "student"}
+    )
+
     id: str
     email: str
     role: str
 
 
-class LoginResponse(_Model):
+class LoginResponse(BaseModel):
+    model_config = _example(
+        {"user": {"id": _SESSION_ID, "email": "student@ust.hk", "role": "student"}}
+    )
+
     user: LoginUser
 
 
-class MeResponse(_Model):
+class MeResponse(BaseModel):
+    model_config = _example(
+        {
+            "id": _SESSION_ID,
+            "email": "student@ust.hk",
+            "role": "student",
+            "created_at": _CREATED_AT,
+        }
+    )
+
     id: str
     email: str
     role: str
     created_at: str
 
 
-class ResetRequestResponse(_Model):
+class ResetRequestResponse(BaseModel):
+    model_config = _example(
+        {"email": "student@ust.hk", "email_delivery": "log"}
+    )
+
     email: str
     email_delivery: str
 
 
-class ResetResponse(_Model):
+class ResetResponse(BaseModel):
+    model_config = _example(
+        {"email": "student@ust.hk", "sessions_invalidated": 1}
+    )
+
     email: str
     sessions_invalidated: int
 
 
-class SessionSummary(_Model):
+class SessionSummary(BaseModel):
+    model_config = _example(
+        {
+            "id": _SESSION_ID,
+            "title": "What is MPI_Allreduce?",
+            "created_at": _CREATED_AT,
+            "updated_at": _CREATED_AT,
+            "message_count": 2,
+        }
+    )
+
     id: str
     title: str | None
     created_at: str
@@ -116,11 +171,37 @@ class SessionSummary(_Model):
     message_count: int
 
 
-class SessionListResponse(_Model):
+class SessionListResponse(BaseModel):
+    model_config = _example(
+        {
+            "sessions": [
+                {
+                    "id": _SESSION_ID,
+                    "title": "What is MPI_Allreduce?",
+                    "created_at": _CREATED_AT,
+                    "updated_at": _CREATED_AT,
+                    "message_count": 2,
+                }
+            ]
+        }
+    )
+
     sessions: list[SessionSummary]
 
 
-class MessageRecord(_Model):
+class MessageRecord(BaseModel):
+    model_config = _example(
+        {
+            "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+            "sequence": 1,
+            "role": "user",
+            "content": "What is MPI_Allreduce?",
+            "provider": None,
+            "tier": None,
+            "created_at": _CREATED_AT,
+        }
+    )
+
     id: str
     sequence: int
     role: str
@@ -130,25 +211,85 @@ class MessageRecord(_Model):
     created_at: str
 
 
-class SessionMessagesResponse(_Model):
+class SessionMessagesResponse(BaseModel):
+    model_config = _example(
+        {
+            "session_id": _SESSION_ID,
+            "messages": [
+                {
+                    "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+                    "sequence": 1,
+                    "role": "user",
+                    "content": "What is MPI_Allreduce?",
+                    "provider": None,
+                    "tier": None,
+                    "created_at": _CREATED_AT,
+                }
+            ],
+        }
+    )
+
     session_id: str
     messages: list[MessageRecord]
 
 
-class TranscriptionResponse(_Model):
+class TranscriptionResponse(BaseModel):
+    model_config = _example(
+        {
+            "text": "What is MPI_Allreduce?",
+            "language": "en",
+            "seconds": 2.1,
+            "model": "mimo-v2.5-asr",
+        }
+    )
+
     text: str
     language: str
     seconds: float | None
     model: str
 
 
-class CitationRecord(_Model):
+class CitationRecord(BaseModel):
+    model_config = _example(
+        {
+            "doc_id": "course_project",
+            "page_no": 1,
+            "quote": "Building an End-to-End Agent System",
+        }
+    )
+
     doc_id: str
     page_no: int
     quote: str
 
 
-class CardRecord(_Model):
+class CardRecord(BaseModel):
+    model_config = _example(
+        {
+            "chunk_id": "course_project:p001:c00",
+            "doc_id": "course_project",
+            "page_no": 1,
+            "section": "Course Project",
+            "summary": "This page introduces the course project.",
+            "key_terms": ["Course Project", "Agent System"],
+            "study_questions": [
+                "What is the course project?",
+                "Which system is built?",
+            ],
+            "citations": [
+                {
+                    "doc_id": "course_project",
+                    "page_no": 1,
+                    "quote": "Building an End-to-End Agent System",
+                }
+            ],
+            "model": "qwen3.8-27b",
+            "prompt_version": "kb-v1",
+            "build_id": "kb-20261102-120000-a1b2c3",
+            "created_at": "2026-11-02T03:02:12+00:00",
+        }
+    )
+
     chunk_id: str
     doc_id: str
     page_no: int
@@ -163,17 +304,66 @@ class CardRecord(_Model):
     created_at: str | None
 
 
-class CardsResponse(_Model):
+class CardsResponse(BaseModel):
+    model_config = _example(
+        {
+            "cards": [
+                {
+                    "chunk_id": "course_project:p001:c00",
+                    "doc_id": "course_project",
+                    "page_no": 1,
+                    "section": "Course Project",
+                    "summary": "This page introduces the course project.",
+                    "key_terms": ["Course Project", "Agent System"],
+                    "study_questions": [
+                        "What is the course project?",
+                        "Which system is built?",
+                    ],
+                    "citations": [
+                        {
+                            "doc_id": "course_project",
+                            "page_no": 1,
+                            "quote": "Building an End-to-End Agent System",
+                        }
+                    ],
+                    "model": "qwen3.8-27b",
+                    "prompt_version": "kb-v1",
+                    "build_id": "kb-20261102-120000-a1b2c3",
+                    "created_at": "2026-11-02T03:02:12+00:00",
+                }
+            ],
+            "total": 1,
+        }
+    )
+
     cards: list[CardRecord]
     total: int
 
 
-class BuildAcceptedResponse(_Model):
+class BuildAcceptedResponse(BaseModel):
+    model_config = _example(
+        {"build_id": "kb-20261102-120000-a1b2c3", "state": "queued"}
+    )
+
     build_id: str
     state: str
 
 
-class BuildRecord(_Model):
+class BuildRecord(BaseModel):
+    model_config = _example(
+        {
+            "id": "kb-20261102-120000-a1b2c3",
+            "state": "ready",
+            "job_id": "28067",
+            "records_path": "data/kb/records/kb-20261102-120000-a1b2c3.jsonl",
+            "records_count": 8,
+            "error": None,
+            "created_at": _CREATED_AT,
+            "updated_at": "2026-11-02T12:12:00+00:00",
+            "request": {"doc_id": "course_project", "max_chunks": 8},
+        }
+    )
+
     id: str
     state: str
     job_id: str | None
@@ -185,5 +375,23 @@ class BuildRecord(_Model):
     request: dict[str, Any]
 
 
-class BuildListResponse(_Model):
+class BuildListResponse(BaseModel):
+    model_config = _example(
+        {
+            "builds": [
+                {
+                    "id": "kb-20261102-120000-a1b2c3",
+                    "state": "ready",
+                    "job_id": "28067",
+                    "records_path": "data/kb/records/kb-20261102-120000-a1b2c3.jsonl",
+                    "records_count": 8,
+                    "error": None,
+                    "created_at": _CREATED_AT,
+                    "updated_at": "2026-11-02T12:12:00+00:00",
+                    "request": {"doc_id": "course_project", "max_chunks": 8},
+                }
+            ]
+        }
+    )
+
     builds: list[BuildRecord]

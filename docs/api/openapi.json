@@ -22,6 +22,10 @@
       },
       "BuildAcceptedResponse": {
         "additionalProperties": false,
+        "example": {
+          "build_id": "kb-20261102-120000-a1b2c3",
+          "state": "queued"
+        },
         "properties": {
           "build_id": {
             "title": "Build Id",
@@ -41,6 +45,10 @@
       },
       "BuildBody": {
         "additionalProperties": false,
+        "example": {
+          "doc_id": "course_project",
+          "max_chunks": 8
+        },
         "properties": {
           "doc_id": {
             "anyOf": [
@@ -70,6 +78,23 @@
       },
       "BuildListResponse": {
         "additionalProperties": false,
+        "example": {
+          "builds": [
+            {
+              "created_at": "2026-11-02T12:00:00+00:00",
+              "id": "kb-20261102-120000-a1b2c3",
+              "job_id": "28067",
+              "records_count": 8,
+              "records_path": "data/kb/records/kb-20261102-120000-a1b2c3.jsonl",
+              "request": {
+                "doc_id": "course_project",
+                "max_chunks": 8
+              },
+              "state": "ready",
+              "updated_at": "2026-11-02T12:12:00+00:00"
+            }
+          ]
+        },
         "properties": {
           "builds": {
             "items": {
@@ -87,6 +112,19 @@
       },
       "BuildRecord": {
         "additionalProperties": false,
+        "example": {
+          "created_at": "2026-11-02T12:00:00+00:00",
+          "id": "kb-20261102-120000-a1b2c3",
+          "job_id": "28067",
+          "records_count": 8,
+          "records_path": "data/kb/records/kb-20261102-120000-a1b2c3.jsonl",
+          "request": {
+            "doc_id": "course_project",
+            "max_chunks": 8
+          },
+          "state": "ready",
+          "updated_at": "2026-11-02T12:12:00+00:00"
+        },
         "properties": {
           "created_at": {
             "title": "Created At",
@@ -170,6 +208,32 @@
       },
       "CardRecord": {
         "additionalProperties": false,
+        "example": {
+          "build_id": "kb-20261102-120000-a1b2c3",
+          "chunk_id": "course_project:p001:c00",
+          "citations": [
+            {
+              "doc_id": "course_project",
+              "page_no": 1,
+              "quote": "Building an End-to-End Agent System"
+            }
+          ],
+          "created_at": "2026-11-02T03:02:12+00:00",
+          "doc_id": "course_project",
+          "key_terms": [
+            "Course Project",
+            "Agent System"
+          ],
+          "model": "qwen3.8-27b",
+          "page_no": 1,
+          "prompt_version": "kb-v1",
+          "section": "Course Project",
+          "study_questions": [
+            "What is the course project?",
+            "Which system is built?"
+          ],
+          "summary": "This page introduces the course project."
+        },
         "properties": {
           "build_id": {
             "anyOf": [
@@ -283,6 +347,37 @@
       },
       "CardsResponse": {
         "additionalProperties": false,
+        "example": {
+          "cards": [
+            {
+              "build_id": "kb-20261102-120000-a1b2c3",
+              "chunk_id": "course_project:p001:c00",
+              "citations": [
+                {
+                  "doc_id": "course_project",
+                  "page_no": 1,
+                  "quote": "Building an End-to-End Agent System"
+                }
+              ],
+              "created_at": "2026-11-02T03:02:12+00:00",
+              "doc_id": "course_project",
+              "key_terms": [
+                "Course Project",
+                "Agent System"
+              ],
+              "model": "qwen3.8-27b",
+              "page_no": 1,
+              "prompt_version": "kb-v1",
+              "section": "Course Project",
+              "study_questions": [
+                "What is the course project?",
+                "Which system is built?"
+              ],
+              "summary": "This page introduces the course project."
+            }
+          ],
+          "total": 1
+        },
         "properties": {
           "cards": {
             "items": {
@@ -305,6 +400,11 @@
       },
       "ChatBody": {
         "additionalProperties": false,
+        "example": {
+          "message": "What is MPI_Allreduce?",
+          "provider": "deepseek",
+          "tier": "flash"
+        },
         "properties": {
           "message": {
             "maxLength": 8000,
@@ -354,6 +454,11 @@
       },
       "CitationRecord": {
         "additionalProperties": false,
+        "example": {
+          "doc_id": "course_project",
+          "page_no": 1,
+          "quote": "Building an End-to-End Agent System"
+        },
         "properties": {
           "doc_id": {
             "title": "Doc Id",
@@ -391,6 +496,11 @@
       },
       "HealthResponse": {
         "additionalProperties": false,
+        "example": {
+          "database": "ok",
+          "status": "ok",
+          "version": "0.1.0"
+        },
         "properties": {
           "database": {
             "title": "Database",
@@ -415,6 +525,10 @@
       },
       "LoginBody": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "password": "correct-horse-battery"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -434,6 +548,13 @@
       },
       "LoginResponse": {
         "additionalProperties": false,
+        "example": {
+          "user": {
+            "email": "student@ust.hk",
+            "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+            "role": "student"
+          }
+        },
         "properties": {
           "user": {
             "$ref": "#/components/schemas/LoginUser"
@@ -447,6 +568,11 @@
       },
       "LoginUser": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+          "role": "student"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -471,6 +597,12 @@
       },
       "MeResponse": {
         "additionalProperties": false,
+        "example": {
+          "created_at": "2026-11-02T12:00:00+00:00",
+          "email": "student@ust.hk",
+          "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+          "role": "student"
+        },
         "properties": {
           "created_at": {
             "title": "Created At",
@@ -500,6 +632,13 @@
       },
       "MessageRecord": {
         "additionalProperties": false,
+        "example": {
+          "content": "What is MPI_Allreduce?",
+          "created_at": "2026-11-02T12:00:00+00:00",
+          "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+          "role": "user",
+          "sequence": 1
+        },
         "properties": {
           "content": {
             "title": "Content",
@@ -558,6 +697,11 @@
       },
       "PracticeRunBody": {
         "additionalProperties": true,
+        "example": {
+          "answer": "int x = 1;",
+          "pack_id": "mpi-gemm",
+          "question_id": "q1"
+        },
         "properties": {
           "answer": {
             "anyOf": [
@@ -598,6 +742,10 @@
       },
       "RegisterBody": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "password": "correct-horse-battery"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -617,6 +765,12 @@
       },
       "RegisterResponse": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "email_delivery": "log",
+          "role": "student",
+          "verification": "pending"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -646,6 +800,10 @@
       },
       "ResetBody": {
         "additionalProperties": false,
+        "example": {
+          "new_password": "new-password-123",
+          "token": "one-time-reset-token"
+        },
         "properties": {
           "new_password": {
             "title": "New Password",
@@ -665,6 +823,9 @@
       },
       "ResetRequestBody": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -679,6 +840,10 @@
       },
       "ResetRequestResponse": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "email_delivery": "log"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -698,6 +863,10 @@
       },
       "ResetResponse": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "sessions_invalidated": 1
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -717,6 +886,17 @@
       },
       "SessionListResponse": {
         "additionalProperties": false,
+        "example": {
+          "sessions": [
+            {
+              "created_at": "2026-11-02T12:00:00+00:00",
+              "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+              "message_count": 2,
+              "title": "What is MPI_Allreduce?",
+              "updated_at": "2026-11-02T12:00:00+00:00"
+            }
+          ]
+        },
         "properties": {
           "sessions": {
             "items": {
@@ -734,6 +914,18 @@
       },
       "SessionMessagesResponse": {
         "additionalProperties": false,
+        "example": {
+          "messages": [
+            {
+              "content": "What is MPI_Allreduce?",
+              "created_at": "2026-11-02T12:00:00+00:00",
+              "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+              "role": "user",
+              "sequence": 1
+            }
+          ],
+          "session_id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8"
+        },
         "properties": {
           "messages": {
             "items": {
@@ -756,6 +948,13 @@
       },
       "SessionSummary": {
         "additionalProperties": false,
+        "example": {
+          "created_at": "2026-11-02T12:00:00+00:00",
+          "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+          "message_count": 2,
+          "title": "What is MPI_Allreduce?",
+          "updated_at": "2026-11-02T12:00:00+00:00"
+        },
         "properties": {
           "created_at": {
             "title": "Created At",
@@ -797,6 +996,12 @@
       },
       "SpeechBody": {
         "additionalProperties": false,
+        "example": {
+          "format": "wav",
+          "model_alias": "default",
+          "text": "MPI_Allreduce combines values from all ranks.",
+          "voice": "Mia"
+        },
         "properties": {
           "format": {
             "anyOf": [
@@ -838,6 +1043,12 @@
       },
       "TranscriptionResponse": {
         "additionalProperties": false,
+        "example": {
+          "language": "en",
+          "model": "mimo-v2.5-asr",
+          "seconds": 2.1,
+          "text": "What is MPI_Allreduce?"
+        },
         "properties": {
           "language": {
             "title": "Language",
@@ -914,6 +1125,10 @@
       },
       "VerifyBody": {
         "additionalProperties": false,
+        "example": {
+          "code": "123456",
+          "email": "student@ust.hk"
+        },
         "properties": {
           "code": {
             "title": "Code",
@@ -933,6 +1148,10 @@
       },
       "VerifyResponse": {
         "additionalProperties": false,
+        "example": {
+          "email": "student@ust.hk",
+          "status": "active"
+        },
         "properties": {
           "email": {
             "title": "Email",
@@ -1743,7 +1962,7 @@
     },
     "/api/voice/speech": {
       "post": {
-        "description": "Synthesize one text with MiMo TTS and return the audio bytes.",
+        "description": "Synthesize speech and return the audio bytes. The response media type follows the requested format (wav, mp3, or pcm). Swagger UI cannot play audio responses; open /api/voice/speech/player in a browser with a signed-in session to audition the output.",
         "operationId": "speech_api_voice_speech_post",
         "requestBody": {
           "content": {
@@ -1758,9 +1977,6 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
-              },
               "audio/mpeg": {
                 "schema": {
                   "format": "binary",
