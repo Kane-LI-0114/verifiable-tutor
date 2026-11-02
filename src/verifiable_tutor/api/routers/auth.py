@@ -7,6 +7,14 @@ from pydantic import BaseModel, ConfigDict
 
 from ...auth.service import AuthError, AuthService
 from ..deps import CurrentUser, SettingsDep, get_auth
+from ..schemas import (
+    LoginResponse,
+    MeResponse,
+    RegisterResponse,
+    ResetRequestResponse,
+    ResetResponse,
+    VerifyResponse,
+)
 
 router = APIRouter(tags=["auth"])
 
@@ -56,7 +64,12 @@ def _set_session_cookie(response: Response, request: Request, value: str) -> Non
     )
 
 
-@router.post("/api/auth/register", status_code=201)
+@router.post(
+    "/api/auth/register",
+    status_code=201,
+    response_model=RegisterResponse,
+    summary="Register a student account",
+)
 def register(body: RegisterBody, request: Request, auth: AuthService = Depends(get_auth)):
     try:
         return auth.register(body.email, body.password)
@@ -64,7 +77,11 @@ def register(body: RegisterBody, request: Request, auth: AuthService = Depends(g
         _raise(exc)
 
 
-@router.post("/api/auth/verify")
+@router.post(
+    "/api/auth/verify",
+    response_model=VerifyResponse,
+    summary="Verify the registration code",
+)
 def verify(body: VerifyBody, auth: AuthService = Depends(get_auth)):
     try:
         return auth.verify(body.email, body.code)
@@ -72,7 +89,11 @@ def verify(body: VerifyBody, auth: AuthService = Depends(get_auth)):
         _raise(exc)
 
 
-@router.post("/api/auth/login")
+@router.post(
+    "/api/auth/login",
+    response_model=LoginResponse,
+    summary="Sign in and set the session cookie",
+)
 def login(
     body: LoginBody,
     request: Request,
@@ -87,19 +108,33 @@ def login(
     return {"user": result.user}
 
 
-@router.post("/api/auth/logout", status_code=204)
+@router.post(
+    "/api/auth/logout",
+    status_code=204,
+    summary="Sign out and clear the session cookie",
+    responses={204: {"description": "Session cleared"}},
+)
 def logout(request: Request, response: Response, auth: AuthService = Depends(get_auth)):
     settings = request.app.state.settings
     auth.logout(request.cookies.get(settings.session_cookie_name))
     response.delete_cookie(key=settings.session_cookie_name, path="/")
 
 
-@router.get("/api/auth/me")
+@router.get(
+    "/api/auth/me",
+    response_model=MeResponse,
+    summary="Current signed-in account",
+)
 def me(user: CurrentUser):
     return user
 
 
-@router.post("/api/auth/reset/request", status_code=202)
+@router.post(
+    "/api/auth/reset/request",
+    status_code=202,
+    response_model=ResetRequestResponse,
+    summary="Send a one-time password reset link",
+)
 def request_reset(body: ResetRequestBody, auth: AuthService = Depends(get_auth)):
     try:
         return auth.request_reset(body.email)
@@ -107,7 +142,11 @@ def request_reset(body: ResetRequestBody, auth: AuthService = Depends(get_auth))
         _raise(exc)
 
 
-@router.post("/api/auth/reset")
+@router.post(
+    "/api/auth/reset",
+    response_model=ResetResponse,
+    summary="Reset the password with the one-time token",
+)
 def reset(body: ResetBody, auth: AuthService = Depends(get_auth)):
     try:
         return auth.reset(body.token, body.new_password)

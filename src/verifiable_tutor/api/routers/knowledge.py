@@ -9,6 +9,12 @@ from pydantic import BaseModel, ConfigDict
 
 from ..deps import BuildsDep, CardsDep, CurrentUser, Instructor
 from ...knowledge.service import KnowledgeBuildError
+from ..schemas import (
+    BuildAcceptedResponse,
+    BuildListResponse,
+    BuildRecord,
+    CardsResponse,
+)
 
 router = APIRouter(tags=["knowledge"])
 
@@ -20,7 +26,11 @@ class BuildBody(BaseModel):
     max_chunks: int | None = None
 
 
-@router.get("/api/knowledge/cards")
+@router.get(
+    "/api/knowledge/cards",
+    response_model=CardsResponse,
+    summary="Browse validated knowledge cards",
+)
 def list_cards(
     user: CurrentUser,
     cards: CardsDep,
@@ -35,7 +45,19 @@ def list_cards(
     return {"cards": items, "total": total}
 
 
-@router.post("/api/knowledge/builds", status_code=202)
+@router.post(
+    "/api/knowledge/builds",
+    status_code=202,
+    response_model=BuildAcceptedResponse,
+    summary="Queue a Qwen knowledge-base build",
+    responses={
+        400: {"description": "Invalid max_chunks value."},
+        401: {"description": "Not signed in."},
+        403: {"description": "Instructor role is required."},
+        409: {"description": "Another build is already queued or running."},
+        503: {"description": "knowledge.pages_path is not configured."},
+    },
+)
 def create_build(
     body: BuildBody,
     instructor: Instructor,
@@ -55,14 +77,27 @@ def create_build(
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
 
 
-@router.get("/api/knowledge/builds")
+@router.get(
+    "/api/knowledge/builds",
+    response_model=BuildListResponse,
+    summary="List knowledge-base builds",
+)
 def list_builds(instructor: Instructor, builds: BuildsDep):
     """List knowledge-base builds, newest first."""
 
     return {"builds": builds.list()}
 
 
-@router.get("/api/knowledge/builds/{build_id}")
+@router.get(
+    "/api/knowledge/builds/{build_id}",
+    response_model=BuildRecord,
+    summary="Knowledge-base build state",
+    responses={
+        401: {"description": "Not signed in."},
+        403: {"description": "Instructor role is required."},
+        404: {"description": "Build not found."},
+    },
+)
 def get_build(build_id: str, instructor: Instructor, builds: BuildsDep):
     """Return one build's state, job id, and record count."""
 

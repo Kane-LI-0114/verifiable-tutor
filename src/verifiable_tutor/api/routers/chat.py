@@ -22,7 +22,26 @@ class ChatBody(BaseModel):
     tier: str | None = None
 
 
-@router.post("/api/chat")
+@router.post(
+    "/api/chat",
+    summary="Stream one assistant turn",
+    responses={
+        200: {
+            "description": "AI SDK UI message stream version 1 frames.",
+            "content": {
+                "text/event-stream": {"schema": {"type": "string"}}
+            },
+        },
+        400: {"description": "Invalid body or model selection."},
+        401: {"description": "Not signed in."},
+        404: {"description": "Conversation not found or not owned by the caller."},
+        503: {
+            "description": (
+                "Model layer unavailable or the model failed before the first frame."
+            )
+        },
+    },
+)
 def create_turn(
     body: ChatBody,
     user: CurrentUser,

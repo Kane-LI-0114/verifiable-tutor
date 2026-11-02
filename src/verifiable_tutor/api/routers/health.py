@@ -6,12 +6,17 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from .. import API_VERSION
 from ..deps import get_storage
+from ..schemas import HealthResponse
 from ...storage import Storage
 
 router = APIRouter(tags=["health"])
 
 
-@router.get("/api/health")
+@router.get(
+    "/api/health",
+    response_model=HealthResponse,
+    summary="Liveness and database state",
+)
 def health(storage: Storage = Depends(get_storage)) -> dict[str, str]:
     """Report liveness and the database connection state."""
 

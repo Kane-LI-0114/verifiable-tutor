@@ -8,12 +8,16 @@ never call a provider, an SMTP server, or TACC.
 
 from __future__ import annotations
 
+import logging
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable
 
 from fastapi import FastAPI
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.staticfiles import StaticFiles
 
 from . import API_VERSION
 from ..auth.service import AuthService
@@ -22,11 +26,14 @@ from ..auth.email import EmailSender, build_email_sender
 from ..knowledge.service import CardStore, DriverBuildRunner, KnowledgeBuildService
 from .replay import ReplayService
 from .routers import auth, chat, corpus, health, knowledge, practice, sessions, voice
+from .schemas import OPENAPI_TAGS
 from ..settings import AppSettings, ensure_runtime_directories, load_settings
 from ..storage import Storage
 from ..trace import SessionTrace, utc_now
 
 AdapterFactory = Callable[[], Any]
+
+logger = logging.getLogger(__name__)
 
 
 def _default_adapter_factory(settings: AppSettings) -> AdapterFactory:
@@ -53,6 +60,7 @@ def create_app(
     adapter_factory: AdapterFactory | None = None,
     email_sender: EmailSender | None = None,
     build_runner: Any | None = None,
+    docs_api_dir: str | Path | None = None,
 ) -> FastAPI:
     """Build the application; collaborators are injected for tests."""
 
@@ -66,6 +74,15 @@ def create_app(
         adapter_factory
         if adapter_factory is not None
         else _default_adapter_factory(resolved)
+    )
+    docs_root = (
+        Path(docs_api_dir)
+        if docs_api_dir is not None
+        else Path(__file__).resolve().parents[3] / "docs" / "api"
+    )
+    local_docs = (
+        (docs_root / "index.html").is_file()
+        and (docs_root / "vendor" / "swagger-ui" / "swagger-ui-bundle.js").is_file()
     )
 
     @asynccontextmanager
@@ -126,6 +143,9 @@ def create_app(
             "jobs; this API never exposes a TACC service."
         ),
         lifespan=lifespan,
+        openapi_tags=OPENAPI_TAGS,
+        docs_url=None,
+        redoc_url=None,
     )
     router_modules: list[Any] = [
         health,
@@ -139,6 +159,31 @@ def create_app(
     ]
     for module in router_modules:
         app.include_router(module.router)
+    if local_docs:
+        app.mount(
+            "/api-docs",
+            StaticFiles(directory=str(docs_root), html=True),
+            name="api-docs",
+        )
+
+        @app.get("/docs", include_in_schema=False)
+        def swagger_ui() -> Any:
+            return get_swagger_ui_html(
+                openapi_url=app.openapi_url,
+                title=f"{app.title} - Swagger UI",
+                swagger_js_url=(
+                    "/api-docs/vendor/swagger-ui/swagger-ui-bundle.js"
+                ),
+                swagger_css_url="/api-docs/vendor/swagger-ui/swagger-ui.css",
+                swagger_favicon_url=(
+                    "/api-docs/vendor/swagger-ui/favicon-32x32.png"
+                ),
+            )
+    else:
+        logger.warning(
+            "local API docs bundle missing at %s; /docs and /api-docs are disabled",
+            docs_root,
+        )
     if (resolved.ui_static_dir / "index.html").is_file():
         app.frontend(
             "/",

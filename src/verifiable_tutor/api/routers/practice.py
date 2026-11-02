@@ -27,7 +27,14 @@ class PracticeRunBody(BaseModel):
     answer: str | None = None
 
 
-@router.post("/api/practice/runs")
+@router.post(
+    "/api/practice/runs",
+    summary="Submit a practice run",
+    responses={
+        401: {"description": "Not signed in."},
+        503: {"description": PRACTICE_UNAVAILABLE},
+    },
+)
 def submit_practice_run(user: CurrentUser, body: PracticeRunBody | None = None):
     """Scaffold: report that TACC execution is not available yet."""
 

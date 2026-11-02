@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from .. import streaming
 from ..deps import CurrentUser, ReplayDep, StorageDep
 from ..replay import ReplayError
+from ..schemas import SessionListResponse, SessionMessagesResponse
 
 router = APIRouter(tags=["sessions"])
 
@@ -21,7 +22,11 @@ def _conversation_or_404(storage, session_id: str, user: dict):
     return conversation
 
 
-@router.get("/api/sessions")
+@router.get(
+    "/api/sessions",
+    response_model=SessionListResponse,
+    summary="List the signed-in user's conversations",
+)
 def list_sessions(user: CurrentUser, storage: StorageDep):
     """List the signed-in user's conversations, newest first."""
 
@@ -38,7 +43,11 @@ def list_sessions(user: CurrentUser, storage: StorageDep):
     return {"sessions": sessions}
 
 
-@router.get("/api/sessions/{session_id}/messages")
+@router.get(
+    "/api/sessions/{session_id}/messages",
+    response_model=SessionMessagesResponse,
+    summary="Conversation message history",
+)
 def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
     """Return one conversation's messages after an ownership check."""
 
@@ -58,7 +67,20 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
     return {"session_id": session_id, "messages": messages}
 
 
-@router.get("/api/sessions/{session_id}/replay")
+@router.get(
+    "/api/sessions/{session_id}/replay",
+    summary="Replay a recorded session stream",
+    responses={
+        200: {
+            "description": "Recorded AI SDK UI message stream frames.",
+            "content": {
+                "text/event-stream": {"schema": {"type": "string"}}
+            },
+        },
+        401: {"description": "Not signed in."},
+        404: {"description": "Conversation not found, not owned, or no trace."},
+    },
+)
 def replay_session(
     session_id: str,
     user: CurrentUser,

@@ -15,7 +15,21 @@ router = APIRouter(tags=["corpus"])
 _DOC_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
-@router.get("/api/corpus/{doc_id}/pages/{page_no}.webp")
+@router.get(
+    "/api/corpus/{doc_id}/pages/{page_no}.webp",
+    summary="Rendered page image for the citation panel",
+    responses={
+        200: {
+            "description": "Rendered page image.",
+            "content": {
+                "image/webp": {"schema": {"type": "string", "format": "binary"}}
+            },
+        },
+        401: {"description": "Not signed in."},
+        404: {"description": "Page image not found."},
+        422: {"description": "Invalid document id or page number."},
+    },
+)
 def page_image(
     doc_id: str,
     page_no: Annotated[int, Path(ge=1, le=9999)],

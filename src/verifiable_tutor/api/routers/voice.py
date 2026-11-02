@@ -8,6 +8,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 from pydantic import BaseModel, ConfigDict
 
 from ..deps import CurrentUser, ModelDep
+from ..schemas import TranscriptionResponse
 from ...llm.adapter import (
     CapabilityError,
     ModelResponseError,
@@ -47,7 +48,18 @@ def _model_failure(exc: Exception) -> HTTPException:
     return HTTPException(status_code=503, detail=GENERIC_UNAVAILABLE)
 
 
-@router.post("/api/voice/transcriptions")
+@router.post(
+    "/api/voice/transcriptions",
+    response_model=TranscriptionResponse,
+    summary="Transcribe an audio file with MiMo ASR",
+    responses={
+        400: {"description": "Empty or unreadable audio."},
+        401: {"description": "Not signed in."},
+        413: {"description": "Audio file is too large."},
+        415: {"description": "Unsupported audio type."},
+        503: {"description": "Model layer unavailable."},
+    },
+)
 def transcribe(
     user: CurrentUser,
     model: ModelDep,
@@ -79,7 +91,25 @@ def transcribe(
     }
 
 
-@router.post("/api/voice/speech")
+@router.post(
+    "/api/voice/speech",
+    summary="Synthesize speech with MiMo TTS",
+    responses={
+        200: {
+            "description": (
+                "Audio bytes; the media type follows the requested format."
+            ),
+            "content": {
+                "audio/wav": {"schema": {"type": "string", "format": "binary"}},
+                "audio/mpeg": {"schema": {"type": "string", "format": "binary"}},
+                "audio/pcm": {"schema": {"type": "string", "format": "binary"}},
+            },
+        },
+        400: {"description": "Blank text or unsupported voice or format."},
+        401: {"description": "Not signed in."},
+        503: {"description": "Model layer unavailable."},
+    },
+)
 def speech(body: SpeechBody, user: CurrentUser, model: ModelDep):
     """Synthesize one text with MiMo TTS and return the audio bytes."""
 

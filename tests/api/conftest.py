@@ -233,7 +233,7 @@ class Harness:
 
 
 @contextmanager
-def _harness(tmp_path: Path, settings_overrides: dict[str, Any] | None = None):
+def _harness(tmp_path: Path, settings_overrides: dict[str, Any] | None = None, **app_kwargs: Any):
     settings = make_settings(tmp_path, **(settings_overrides or {}))
     clock = FakeClock()
     adapter = FakeAdapter()
@@ -247,6 +247,7 @@ def _harness(tmp_path: Path, settings_overrides: dict[str, Any] | None = None):
         adapter_factory=lambda: adapter,
         email_sender=email,
         build_runner=runner,
+        **app_kwargs,
     )
     with TestClient(app) as client:
         yield Harness(
@@ -281,4 +282,19 @@ def ui_api(tmp_path: Path):
     static.mkdir()
     (static / "index.html").write_text("<!doctype html><h1>built ui</h1>", encoding="utf-8")
     with _harness(tmp_path, {"ui_static_dir": static}) as harness:
+        yield harness
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture
+def docs_api(tmp_path: Path):
+    with _harness(tmp_path, docs_api_dir=REPO_ROOT / "docs" / "api") as harness:
+        yield harness
+
+
+@pytest.fixture
+def missing_docs_api(tmp_path: Path):
+    with _harness(tmp_path, docs_api_dir=tmp_path / "missing-docs") as harness:
         yield harness
