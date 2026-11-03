@@ -32,7 +32,7 @@ export const PREVIEW_SESSIONS: Conversation[] = [
     title: "How does MPI_Allreduce work?",
     created_at: "2026-11-03T09:12:00+00:00",
     updated_at: "2026-11-03T09:13:20+00:00",
-    message_count: 4,
+    message_count: 2,
   },
   {
     id: "a1b2c3d4e5f60718293a4b5c6d7e8f90",
@@ -46,7 +46,7 @@ export const PREVIEW_SESSIONS: Conversation[] = [
     title: "Assignment 2 kernel layout",
     created_at: "2026-10-31T20:30:00+00:00",
     updated_at: "2026-10-31T20:35:00+00:00",
-    message_count: 6,
+    message_count: 2,
   },
 ];
 
@@ -188,6 +188,210 @@ export const PREVIEW_TURNS: ConversationTurn[] = [
     },
   },
 ];
+
+const CITATION_SOFTMAX: Citation = {
+  doc_id: "ACS_lecture_3_2026F",
+  page_no: 9,
+  quote:
+    "Subtracting the row maximum before the exponential keeps the computation numerically stable.",
+  bbox_norm: [0.1, 0.34, 0.88, 0.42],
+};
+
+const CITATION_KERNEL: Citation = {
+  doc_id: "ACS_lecture_4_2026F",
+  page_no: 5,
+  quote:
+    "Tile the score matrix so each warp reduces one row without leaving shared memory.",
+  bbox_norm: [0.12, 0.3, 0.9, 0.38],
+};
+
+const QUESTION_ATTENTION: ChatMessage = {
+  id: "message-user-attention-1",
+  sequence: 1,
+  role: "user",
+  content: "Why does the softmax in attention subtract the row maximum?",
+  provider: null,
+  tier: null,
+  created_at: "2026-11-02T14:04:02+00:00",
+};
+
+const ANSWER_ATTENTION: ChatMessage = {
+  id: "message-assistant-attention-1",
+  sequence: 2,
+  role: "assistant",
+  content: [
+    "Attention scores can be large, and `exp` overflows once a score passes about 709. Subtracting the row maximum shifts every score by the same constant, so the largest exponent becomes `exp(0) = 1` and the sum stays finite.",
+    "",
+    "$$p_{ij} = \\frac{\\exp(s_{ij} - m_i)}{\\sum_k \\exp(s_{ik} - m_i)}$$",
+    "",
+    "With $$m_i = \\max_k s_{ik}$$ every term is at most one, so the normalizer cannot overflow. The result matches the exact softmax because $$e^{s_{ij} - m_i} = e^{s_{ij}} / e^{m_i}$$ cancels between the numerator and the denominator.",
+    "",
+    "The assignment asks for this per-row maximum in every attention block, in fp32 and in the reference kernel.",
+  ].join("\n"),
+  provider: "deepseek",
+  tier: "flash",
+  created_at: "2026-11-02T14:06:10+00:00",
+};
+
+const QUESTION_KERNEL: ChatMessage = {
+  id: "message-user-kernel-1",
+  sequence: 1,
+  role: "user",
+  content: "How should I lay out the CUDA kernel for the attention assignment?",
+  provider: null,
+  tier: null,
+  created_at: "2026-10-31T20:30:04+00:00",
+};
+
+const ANSWER_KERNEL: ChatMessage = {
+  id: "message-assistant-kernel-1",
+  sequence: 2,
+  role: "assistant",
+  content: [
+    "Start from the tile the assignment describes: one block owns a tile of the score matrix, and each warp owns one row of that tile.",
+    "",
+    "1. Load the query tile and the key tile into shared memory once per block.",
+    "2. Each warp computes the dot products for its row and keeps the row maximum in registers.",
+    "3. Apply the exponential after subtracting the row maximum, then accumulate the row sum.",
+    "4. Write the normalized tile back to global memory.",
+    "",
+    "The assignment scores the layout and the stable softmax separately, so keep the row reduction inside the warp:",
+    "",
+    "```cuda",
+    "__shared__ float tile_q[TILE][HEAD_DIM];",
+    "__shared__ float tile_k[TILE][HEAD_DIM];",
+    "float row_max = warp_reduce_max(score);",
+    "```",
+  ].join("\n"),
+  provider: "deepseek",
+  tier: "flash",
+  created_at: "2026-10-31T20:35:00+00:00",
+};
+
+const ATTENTION_TURNS: ConversationTurn[] = [
+  { message: QUESTION_ATTENTION },
+  {
+    message: ANSWER_ATTENTION,
+    meta: {
+      policy_state: "active",
+      reasoning:
+        "The question asks about numerical stability rather than for the assignment kernel. The assignment is active, so I can explain the stabilization trick and leave the kernel code base to the student.",
+      citations: [CITATION_SOFTMAX],
+      tool_calls: [
+        {
+          name: "course_search",
+          command: ["course_search", "--query", "softmax row maximum", "--top-k", "5"],
+          exit_code: 0,
+          output:
+            "ACS_lecture_3_2026F p.9 (0.91)\nACS_lecture_3_2026F p.10 (0.77)\nACS_lecture_4_2026F p.5 (0.35)",
+          status: "done",
+        },
+        {
+          name: "span_verify",
+          command: ["span_verify", "--doc", "ACS_lecture_3_2026F", "--page", "9"],
+          exit_code: 0,
+          output: "1 of 1 quoted span found after normalization.",
+          status: "done",
+        },
+      ],
+      work_steps: [
+        { step: "understand", status: "done", duration_ms: 260 },
+        {
+          step: "retrieve",
+          status: "done",
+          duration_ms: 940,
+          detail: "Hybrid retrieval returned 5 pages, 1 cited.",
+        },
+        {
+          step: "verify",
+          status: "done",
+          duration_ms: 120,
+          detail: "The quoted span was found on the page.",
+        },
+        {
+          step: "decide",
+          status: "done",
+          duration_ms: 9,
+          policy: "active",
+          rule_id: "active.explain-current-topic",
+        },
+        { step: "generate", status: "done", duration_ms: 1850 },
+        { step: "cite", status: "done", duration_ms: 48 },
+      ],
+    },
+  },
+];
+
+const KERNEL_TURNS: ConversationTurn[] = [
+  { message: QUESTION_KERNEL },
+  {
+    message: ANSWER_KERNEL,
+    meta: {
+      policy_state: "active",
+      reasoning:
+        "The question is about kernel layout, which the assignment scores. The active disclosure rule allows structural guidance about the starter layout but not a finished kernel, so I describe the tile and warp mapping and stop before the full implementation.",
+      citations: [CITATION_KERNEL],
+      tool_calls: [
+        {
+          name: "course_search",
+          command: ["course_search", "--query", "attention kernel tile", "--top-k", "5"],
+          exit_code: 0,
+          output:
+            "ACS_lecture_4_2026F p.5 (0.88)\nACS_lecture_4_2026F p.6 (0.72)\nACS_lecture_3_2026F p.9 (0.41)",
+          status: "done",
+        },
+        {
+          name: "span_verify",
+          command: ["span_verify", "--doc", "ACS_lecture_4_2026F", "--page", "5"],
+          exit_code: 0,
+          output: "1 of 1 quoted span found after normalization.",
+          status: "done",
+        },
+      ],
+      work_steps: [
+        { step: "understand", status: "done", duration_ms: 300 },
+        {
+          step: "retrieve",
+          status: "done",
+          duration_ms: 1040,
+          detail: "Hybrid retrieval returned 5 pages, 1 cited.",
+        },
+        {
+          step: "verify",
+          status: "done",
+          duration_ms: 131,
+          detail: "The quoted span was found on the page.",
+        },
+        {
+          step: "decide",
+          status: "done",
+          duration_ms: 11,
+          policy: "active",
+          rule_id: "active.explain-current-topic",
+        },
+        { step: "generate", status: "done", duration_ms: 2210 },
+        { step: "cite", status: "done", duration_ms: 52 },
+      ],
+    },
+  },
+];
+
+/** Turns for each seeded conversation, keyed by conversation id. */
+export const PREVIEW_SESSION_TURNS: Record<string, ConversationTurn[]> = {
+  [PREVIEW_SESSIONS[0].id]: PREVIEW_TURNS,
+  [PREVIEW_SESSIONS[1].id]: ATTENTION_TURNS,
+  [PREVIEW_SESSIONS[2].id]: KERNEL_TURNS,
+};
+
+/** The turns a session deep-link opens with; a new chat starts empty. */
+export function previewTurnsFor(
+  sessionId: string | undefined,
+): ConversationTurn[] {
+  if (!sessionId) {
+    return [];
+  }
+  return PREVIEW_SESSION_TURNS[sessionId] ?? [];
+}
 
 export const PREVIEW_KNOWLEDGE_CARDS: KnowledgeCard[] = [
   {
@@ -353,7 +557,15 @@ export const PREVIEW_DEADLINES: DeadlineRegistry = {
       title: "Assignment 4: agent system",
       release: "2026-11-01T09:00:00+08:00",
       due: "2026-11-08T23:59:00+08:00",
-      extension_until: "2026-11-12T23:59:00+08:00",
+      extension_until: null,
+      state: "active",
+    },
+    {
+      id: "hw0",
+      title: "Assignment 0: environment check",
+      release: "2026-10-05T09:00:00+08:00",
+      due: "2026-10-30T23:59:00+08:00",
+      extension_until: "2026-11-05T23:59:00+08:00",
       state: "extension-window",
     },
     {

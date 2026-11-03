@@ -108,7 +108,9 @@ export function KnowledgePage() {
             </SelectContent>
           </Select>
           <Badge variant="secondary" className="h-8 self-start px-3">
-            {format(t.knowledge.total, { count: cards.length })}
+            {format(cards.length === 1 ? t.knowledge.totalOne : t.knowledge.total, {
+              count: cards.length,
+            })}
           </Badge>
         </div>
 
@@ -116,6 +118,11 @@ export function KnowledgePage() {
           <PageLoading label={t.knowledge.loading} />
         ) : pageState === "error" ? (
           <PageError title={t.common.errorTitle} description={t.common.errorBody} />
+        ) : pageState === "empty" ? (
+          <PageEmpty
+            title={t.common.emptyTitle}
+            description={t.common.emptyBody}
+          />
         ) : cards.length === 0 ? (
           <PageEmpty
             title={t.knowledge.emptyTitle}

@@ -1,16 +1,37 @@
 import { BookOpenCheckIcon, FileCheck2Icon, QuoteIcon } from "lucide-react";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
+import { PublicControls } from "@/components/layout/public-controls";
 import { useT } from "@/lib/i18n";
+import { useDocumentTitle } from "@/lib/use-document-title";
 
 const ICONS = [QuoteIcon, FileCheck2Icon, BookOpenCheckIcon];
 
+function authTitle(pathname: string, t: ReturnType<typeof useT>): string {
+  if (pathname.startsWith("/register")) {
+    return t.auth.registerTitle;
+  }
+  if (pathname.startsWith("/verify")) {
+    return t.auth.verifyTitle;
+  }
+  if (pathname.startsWith("/reset/confirm")) {
+    return t.auth.resetConfirmTitle;
+  }
+  if (pathname.startsWith("/reset")) {
+    return t.auth.resetTitle;
+  }
+  return t.auth.loginTitle;
+}
+
 export function AuthLayout() {
   const t = useT();
+  const { pathname } = useLocation();
+  useDocumentTitle(`${authTitle(pathname, t)} · ${t.app.name}`);
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
+      <PublicControls />
       <aside className="hidden flex-col justify-between border-r bg-muted/30 p-10 lg:flex">
         <div className="space-y-2">
           <Badge variant="secondary">{t.app.course}</Badge>

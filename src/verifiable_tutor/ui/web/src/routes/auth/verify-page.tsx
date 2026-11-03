@@ -75,7 +75,12 @@ export function VerifyPage() {
               </Alert>
             ) : null}
             <Button type="submit">{t.auth.verify}</Button>
-            <Button type="button" variant="ghost" disabled>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled
+              title={t.common.unavailable}
+            >
               {t.auth.resend}
             </Button>
           </FieldGroup>

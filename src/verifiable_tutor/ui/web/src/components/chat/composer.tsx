@@ -90,7 +90,11 @@ export function Composer({
   const canSend = value.trim().length > 0;
 
   return (
-    <div className="shrink-0 border-t bg-background p-3" aria-label={t.a11y.composer}>
+    <div
+      role="group"
+      className="shrink-0 border-t bg-background p-3"
+      aria-label={t.a11y.composer}
+    >
       {capabilityError ? (
         <Alert variant="destructive" className="mb-2">
           <AlertTitle>{t.chat.capabilityErrorTitle}</AlertTitle>
@@ -127,11 +131,17 @@ export function Composer({
           rows={2}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              if (canSend && !streaming) {
-                onSubmit();
-              }
+            if (event.key !== "Enter" || event.shiftKey) {
+              return;
+            }
+            // Enter also commits an IME candidate. While a composition is
+            // active it must not send; keyCode 229 covers older IME engines.
+            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+              return;
+            }
+            event.preventDefault();
+            if (canSend && !streaming) {
+              onSubmit();
             }
           }}
         />
@@ -200,6 +210,7 @@ export function Composer({
             variant="ghost"
             size="icon-sm"
             aria-label={t.chat.record}
+            title={t.common.unavailable}
             disabled
           >
             <MicIcon />

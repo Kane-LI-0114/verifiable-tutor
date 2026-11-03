@@ -15,6 +15,12 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
 
+const COURSE_EMAIL = /^[^\s@]+@(?:ust\.hk|connect\.ust\.hk)$/i;
+
+function isCourseEmail(value: string): boolean {
+  return COURSE_EMAIL.test(value.trim());
+}
+
 export function RegisterPage() {
   const t = useT();
   const [email, setEmail] = useState("");
@@ -23,7 +29,7 @@ export function RegisterPage() {
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email.includes("@")) {
+    if (!isCourseEmail(email)) {
       setNotice(t.auth.invalidEmail);
       return;
     }

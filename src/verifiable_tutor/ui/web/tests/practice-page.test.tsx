@@ -23,6 +23,31 @@ describe("practice page", () => {
       screen.getByText("Which MPI collective leaves the reduced value on every rank?"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("MPI_Allreduce")).toBeInTheDocument();
+    expect(screen.getByText("1 point")).toBeInTheDocument();
+  });
+
+  it("asks for an answer instead of grading an empty submission", async () => {
+    const user = userEvent.setup();
+    renderRoute("/practice");
+
+    await user.click(screen.getByRole("button", { name: "Submit the answer" }));
+
+    expect(
+      screen.getByText("Add an answer before you submit this question."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Partially correct")).not.toBeInTheDocument();
+    expect(screen.queryByText("Test results")).not.toBeInTheDocument();
+  });
+
+  it("keeps code test results off a choice question", async () => {
+    const user = userEvent.setup();
+    renderRoute("/practice");
+
+    await user.click(screen.getByLabelText("MPI_Allreduce"));
+    await user.click(screen.getByRole("button", { name: "Submit the answer" }));
+
+    expect(screen.getByText("Partially correct")).toBeInTheDocument();
+    expect(screen.queryByText("Test results")).not.toBeInTheDocument();
   });
 
   it("switches to a short answer question with a text area", async () => {
@@ -44,6 +69,7 @@ describe("practice page", () => {
     renderRoute("/practice");
 
     await chooseType(user, "Code");
+    await user.type(screen.getByLabelText("Your answer"), "MPI_Allreduce(local, global, count, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);");
     await user.click(screen.getByRole("button", { name: "Submit the answer" }));
 
     const dialog = screen.getByRole("dialog");

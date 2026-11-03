@@ -20,6 +20,15 @@ describe("authentication pages", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps the preview and language controls reachable while signed out", () => {
+    renderRoute("/login");
+
+    expect(
+      screen.getByRole("button", { name: "Preview controls" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "中文" })).toBeInTheDocument();
+  });
+
   it("rejects a short password before any network call", async () => {
     const user = userEvent.setup();
     renderRoute("/login");
@@ -42,6 +51,38 @@ describe("authentication pages", () => {
     ).toBeInTheDocument();
   });
 
+  it("rejects a registration address outside the course domains", async () => {
+    const user = userEvent.setup();
+    renderRoute("/register");
+
+    await user.type(screen.getByLabelText("Email"), "someone@gmail.com");
+    await user.type(screen.getByLabelText("Password"), "long-enough");
+    await user.click(screen.getByRole("button", { name: "Register" }));
+
+    expect(
+      screen.getByText("Enter a valid course email address."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Development mode: the code is in the backend log."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("accepts a registration address in the course domains", async () => {
+    const user = userEvent.setup();
+    renderRoute("/register");
+
+    await user.type(screen.getByLabelText("Email"), "Student@Connect.UST.HK");
+    await user.type(screen.getByLabelText("Password"), "long-enough");
+    await user.click(screen.getByRole("button", { name: "Register" }));
+
+    expect(
+      screen.getByText("Development mode: the code is in the backend log."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Enter a valid course email address."),
+    ).not.toBeInTheDocument();
+  });
+
   it("requires all six digits on the verification page", async () => {
     const user = userEvent.setup();
     renderRoute("/verify?email=student@ust.hk");
@@ -56,15 +97,50 @@ describe("authentication pages", () => {
     expect(screen.getByText("Enter all six digits.")).toBeInTheDocument();
   });
 
-  it("renders the reset request and the reset confirmation forms", () => {
+  it("explains why the verification resend control is unavailable", () => {
+    renderRoute("/verify?email=student@ust.hk");
+
+    const resend = screen.getByRole("button", { name: "Send the code again" });
+
+    expect(resend).toBeDisabled();
+    expect(resend).toHaveAttribute("title", "Not available yet");
+  });
+
+  it("renders the reset request form", () => {
     renderRoute("/reset");
+
     expect(
       screen.getByRole("heading", { name: "Reset your password" }),
     ).toBeInTheDocument();
+  });
 
+  it("asks for a new password when the reset link carries a token", () => {
     renderRoute("/reset/confirm?token=one-time-token");
+
     expect(
       screen.getByRole("heading", { name: "Set a new password" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Choose a new password for your course account."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("New password")).toBeInTheDocument();
+  });
+
+  it("explains that a reset link without a token is missing or expired", () => {
+    renderRoute("/reset/confirm");
+
+    expect(
+      screen.getByRole("heading", { name: "Set a new password" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This reset link is missing or has expired. Request a new one.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Send the link" })).toHaveAttribute(
+      "href",
+      "/reset",
+    );
+    expect(screen.queryByLabelText("New password")).not.toBeInTheDocument();
   });
 });

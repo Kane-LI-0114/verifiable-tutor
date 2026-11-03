@@ -22,6 +22,7 @@ export function CitationRow({
 
   return (
     <div
+      role="group"
       className="flex flex-wrap items-center gap-1.5"
       aria-label={t.chat.citations}
     >

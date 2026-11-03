@@ -1,11 +1,13 @@
-import { screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { PREVIEW_TURNS } from "@/lib/preview/fixtures";
+import { PREVIEW_SESSIONS, PREVIEW_TURNS } from "@/lib/preview/fixtures";
 import { renderRoute } from "./render-route";
 
 const SESSION = "/chat/6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8";
+const SESSION_ATTENTION = `/chat/${PREVIEW_SESSIONS[1].id}`;
+const SESSION_KERNEL = `/chat/${PREVIEW_SESSIONS[2].id}`;
 
 describe("chat page", () => {
   it("renders the conversation, the composer, the work chain, and the evidence panel", () => {
@@ -116,5 +118,169 @@ describe("chat page", () => {
     renderRoute(SESSION, { pageState: "loading" });
 
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+  });
+
+  it("loads the attention conversation for its own session", () => {
+    renderRoute(SESSION_ATTENTION);
+
+    expect(
+      screen.getByText(
+        "Why does the softmax in attention subtract the row maximum?",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "How does MPI_Allreduce work, and when should I use it in the GEMM assignment?",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("switches the conversation body when the route changes to another session", async () => {
+    const router = renderRoute(SESSION);
+
+    expect(
+      screen.getByText(
+        "How does MPI_Allreduce work, and when should I use it in the GEMM assignment?",
+      ),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      await router.navigate(SESSION_ATTENTION);
+    });
+
+    expect(router.state.location.pathname).toBe(SESSION_ATTENTION);
+    expect(
+      screen.getByText(
+        "Why does the softmax in attention subtract the row maximum?",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "How does MPI_Allreduce work, and when should I use it in the GEMM assignment?",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clears the conversation body when starting a new chat", async () => {
+    const router = renderRoute(SESSION);
+
+    await act(async () => {
+      await router.navigate("/chat");
+    });
+
+    expect(router.state.location.pathname).toBe("/chat");
+    expect(screen.getByText("Ask a course question")).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "How does MPI_Allreduce work, and when should I use it in the GEMM assignment?",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("gives the conversation a heading with the conversation title", () => {
+    renderRoute(SESSION);
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "How does MPI_Allreduce work?",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps a single heading for a session without preview turns", () => {
+    renderRoute("/chat/does-not-exist");
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Ask a course question" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
+
+  it("exposes the labeled chat regions as groups", () => {
+    renderRoute(SESSION);
+
+    expect(
+      screen.getByRole("group", { name: "Citations" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Work chain" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Answer actions" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Question composer" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not send an IME composition when Enter commits it", async () => {
+    const user = userEvent.setup();
+    renderRoute("/chat");
+
+    const composer = screen.getByLabelText("Your question");
+    await user.type(composer, "你好");
+
+    fireEvent.keyDown(composer, { key: "Enter", isComposing: true });
+
+    expect(screen.getByText("Ask a course question")).toBeInTheDocument();
+    expect(
+      screen.queryByText("你好", { ignore: "textarea" }),
+    ).not.toBeInTheDocument();
+    expect(composer).toHaveValue("你好");
+
+    fireEvent.keyDown(composer, { key: "Enter" });
+
+    expect(screen.getByText("你好", { ignore: "textarea" })).toBeInTheDocument();
+    expect(screen.queryByText("Ask a course question")).not.toBeInTheDocument();
+  });
+
+  it("clears the copy feedback timer when the answer unmounts", async () => {
+    const user = userEvent.setup();
+    const setTimeoutSpy = vi.spyOn(window, "setTimeout");
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+
+    try {
+      renderRoute(SESSION);
+
+      await user.click(
+        screen.getByRole("button", { name: "Copy the answer" }),
+      );
+
+      const timerIndex = setTimeoutSpy.mock.calls.findIndex(
+        (call) => call[1] === 1500,
+      );
+      expect(timerIndex).toBeGreaterThanOrEqual(0);
+      const timerId = setTimeoutSpy.mock.results[timerIndex].value;
+
+      cleanup();
+
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(timerId);
+    } finally {
+      setTimeoutSpy.mockRestore();
+      clearTimeoutSpy.mockRestore();
+    }
+  });
+
+  it("restores each conversation when switching away and back", async () => {
+    const router = renderRoute(SESSION_ATTENTION);
+
+    await act(async () => {
+      await router.navigate(SESSION_KERNEL);
+    });
+    expect(
+      screen.getByText(
+        "How should I lay out the CUDA kernel for the attention assignment?",
+      ),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      await router.navigate(SESSION);
+    });
+    expect(
+      screen.getByText(
+        "How does MPI_Allreduce work, and when should I use it in the GEMM assignment?",
+      ),
+    ).toBeInTheDocument();
   });
 });

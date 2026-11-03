@@ -25,7 +25,7 @@ describe("knowledge page", () => {
 
     await user.type(screen.getByLabelText("Search cards"), "MPI_Allreduce");
 
-    expect(screen.getByText("1 cards")).toBeInTheDocument();
+    expect(screen.getByText("1 card")).toBeInTheDocument();
     expect(
       screen.queryByText(/This page introduces the course project/),
     ).not.toBeInTheDocument();
@@ -54,6 +54,13 @@ describe("knowledge page", () => {
     await user.type(screen.getByLabelText("Search cards"), "no-such-term");
 
     expect(screen.getByText("No cards match")).toBeInTheDocument();
+  });
+
+  it("shows the empty state for the preview empty state", () => {
+    renderRoute("/knowledge", { pageState: "empty" });
+
+    expect(screen.getByText("Nothing here yet")).toBeInTheDocument();
+    expect(screen.queryByText(/This page introduces the course project/)).not.toBeInTheDocument();
   });
 
   it("shows the loading state", () => {

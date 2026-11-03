@@ -18,8 +18,8 @@ The UI source lives under `src/verifiable_tutor/ui/web/`. The build writes to `s
 | `/verify?email=` | Public | Confirm the six digit code | Preview form |
 | `/reset` | Public | Request a password reset link | Preview form |
 | `/reset/confirm?token=` | Public | Set a new password from the link | Preview form |
-| `/chat` | Signed in | Start a new conversation | Preview fixture |
-| `/chat/:sessionId` | Signed in | Conversation, work chain, citations, evidence panel; `?replay=1` shows the replay banner | Preview fixture |
+| `/chat` | Signed in | Start a new conversation | Empty preview thread |
+| `/chat/:sessionId` | Signed in | Conversation, work chain, citations, collapsible evidence panel; `?replay=1` shows the replay banner | Per-session preview fixture |
 | `/practice` | Signed in | Practice lab and self-test, with a "My solution" tab | Preview fixture; the run action shows the documented 503 state |
 | `/knowledge` | Signed in | Browse knowledge cards, with a detail sheet | Preview fixture |
 | `/instructor/builds` | Instructor | Start and watch a Qwen knowledge-base build | Preview fixture |
@@ -32,21 +32,24 @@ Authentication routes render in a centered column without the application shell.
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
-│ Top bar: brand, page title, language switch, user menu        │
+│ Top bar: sidebar toggle, page title, language, preview        │
 ├───────────────┬───────────────────────────────┬───────────────┤
 │ Sidebar       │ Thread                        │ Evidence      │
-│ New question  │ Work chain                    │ Page number   │
-│ Chat          │ Reasoning                     │ Page image    │
-│ Practice      │ Markdown and citations        │ Highlight box │
-│ Knowledge     │ Sources, tool calls, code     │ Quoted span   │
-│ Instructor    │ Composer                      │ Empty state   │
-│ Conversations │                               │               │
+│ Logo          │ Work chain                    │ Resize handle │
+│ New question  │ Reasoning                     │ Page number   │
+│ Practice      │ Markdown and citations        │ Page image    │
+│ Knowledge     │ Sources, tool calls, code     │ Highlight box │
+│ Instructor    │ Composer                      │ Quoted span   │
+│ Conversations │                               │ Empty state   │
+│ Account menu  │                               │               │
 └───────────────┴───────────────────────────────┴───────────────┘
 ```
 
-On a narrow viewport the sidebar becomes a sheet and the evidence panel opens as a sheet from a citation chip. The other pages use one centered column with a page header.
+The sidebar has no separate Chat entry: New question opens an empty conversation and the conversation list opens an existing one. The sidebar collapses to a 48px icon rail; in that state only the logo, the nav icons, and the account avatar remain, and the account name is reachable through the avatar menu. The account menu and sign out live in the sidebar footer, not in the top bar.
 
-The authentication pages use two columns on a wide viewport: product framing on the left and the form card on the right. A narrow viewport shows only the form card.
+On a narrow viewport the sidebar becomes a sheet that closes when a destination is chosen, and the evidence panel opens as a sheet from a citation chip. The other pages use one centered column with a page header.
+
+The authentication pages use two columns on a wide viewport: product framing on the left and the form card on the right. A narrow viewport shows only the form card. The authentication pages and the not-found page render without the shell but keep the language switch and the preview controls in the top right corner, so a reviewer can always change role or language.
 
 ## Page composition
 
@@ -58,16 +61,20 @@ The authentication pages use two columns on a wide viewport: product framing on 
 | Work chain | Trace, Task, Badge | Steps: understand, retrieve, verify, decide, generate, cite. The decide step shows the policy state |
 | Thinking | Reasoning | Collapsed by default |
 | Answer | Markdown with the math and code plugins | Formulas through KaTeX, code through Shiki |
-| Citations | Inline Citation, Sources | A chip opens the evidence panel. Citations sit in a row after the answer in milestone 1; inline placement in prose arrives with the `source-document` frames |
+| Citations | Inline Citation, Sources | A chip opens the evidence panel and expands it if it was collapsed. Citations sit in a row after the answer in milestone 1; inline placement in prose arrives with the `source-document` frames |
 | Tool calls | Tool, Terminal, Code Block | Exact command line, exit code, truncated output |
 | Actions | Button, Tooltip | Copy, retry, speak. The speak action uses a button and an audio element |
-| Composer | Input Group, Model Selector, Attachment | Provider and tier, thinking level, audio attachment (MiMo only), microphone control, send and stop |
+| Composer | Input Group, Model Selector, Attachment | Provider and tier, thinking level, audio attachment (MiMo only), microphone control, send and stop. Enter sends, Shift+Enter inserts a newline, and Enter during an IME composition confirms the candidate instead of sending |
 
 The model selector offers DeepSeek Flash, MiMo Flash, and MiMo Pro, plus the four thinking levels. An audio attachment with DeepSeek selected renders the capability error instead of sending.
 
+Changing the route from `/chat` to `/chat/:sessionId`, or to another session, remounts the conversation state. The preview fixtures carry one seeded conversation per session (MPI collectives, attention softmax stability, and CUDA kernel layout), so switching sessions changes the visible thread; `/chat` always starts empty. When the conversation is non-empty, a visually hidden `h1` names the conversation.
+
 ### Evidence panel
 
-The panel shows the document id, the page number, previous and next page controls, the page image, highlight rectangles, and the quoted span. It uses the real image URL `/api/corpus/<doc_id>/pages/<page_no>.webp` and a placeholder frame in the preview build. Highlight rectangles come from `bbox_norm`, a normalized `[x1, y1, x2, y2]` box from [corpus-schema.md](corpus-schema.md). The panel must not claim that a span is verified until the deterministic verifier supplies that result.
+The panel shows the document id, the page number, previous and next page controls, the page image, highlight rectangles, and the quoted span. It uses the real image URL `/api/corpus/<doc_id>/pages/<page_no>.webp` and an explicit preview notice instead of a fake loading frame; the notice says the page image is not included in the preview build rather than printing the raw API URL. The corpus mirror under `data/corpus/images/` is empty until the OCR pipeline produces it, so the live image path degrades to the not-found notice. Highlight rectangles come from `bbox_norm`, a normalized `[x1, y1, x2, y2]` box from [corpus-schema.md](corpus-schema.md). The panel must not claim that a span is verified until the deterministic verifier supplies that result.
+
+On a wide viewport the panel can be collapsed and resized. The default width is 380px, the minimum is 280px, and the maximum is `min(640px, 55% of the viewport)`. The drag handle on the panel's left edge uses `cursor: col-resize` and pointer capture; the same handle is a focusable separator with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`, arrow-key resizing in 16px steps, and Home/End for the bounds. A double click resets the width to 380px. Collapsing leaves a 44px rail with a labelled expand button, and the collapsed state plus the width persist in local storage (`vt.evidence.width`, `vt.evidence.collapsed`). Opening a citation from a collapsed state expands the panel.
 
 ### Practice and self-test
 
@@ -118,7 +125,7 @@ Not used in milestone 1: Plan, Context, Chain of Thought, Questionnaire, the aud
 
 ## States and preview mode
 
-Every page renders loading, empty, error, and forbidden states. The shell redirects an unauthenticated visitor to `/login?next=`. In the preview build, `?preview=loading`, `?preview=empty`, and `?preview=error` select a state, and the developer controls switch between signed out, student, and instructor. `?previewRole=instructor` selects a role on first load, and the choice persists in local storage so a reviewer can move between pages.
+Every page renders loading, empty, error, and forbidden states. The shell redirects an unauthenticated visitor to `/login?next=`. In the preview build, `?preview=loading`, `?preview=empty`, and `?preview=error` select a state, and the developer controls switch between signed out, student, and instructor. `?previewRole=instructor` selects a role on first load, and the choice persists in local storage so a reviewer can move between pages. The authentication layout and the not-found page keep the language switch and the preview controls in their top right corner, so a signed-out reviewer can return to a role without clearing storage. Choosing a signed-in role while on an authentication page navigates back into the app: the preserved `next` path is used when it is a safe same-origin path, an instructor-only destination falls back to `/chat` for a student, and a missing, off-site, or authentication-path destination falls back to `/chat`.
 
 The preview build makes no API request. `VITE_PREVIEW=0` disables the preview data at build time; the live wiring is milestone 2.
 
@@ -138,7 +145,7 @@ The TypeScript types in `src/verifiable_tutor/ui/web/src/lib/types.ts` mirror th
 | Knowledge builds | `GET` and `POST /api/knowledge/builds` | Implemented, no downloading state | Fixture with four states |
 | Deadline registry | None | Missing | Read-only fixture |
 | Voice | `/api/voice/*` | Implemented | Control structure |
-| Page image | `/api/corpus/{doc_id}/pages/{page_no}.webp` | Implemented | Real URL, placeholder frame |
+| Page image | `/api/corpus/{doc_id}/pages/{page_no}.webp` | Implemented, corpus mirror empty | Real URL, explicit preview notice |
 
 ## TDD seams
 
@@ -147,7 +154,10 @@ The UI follows the red, green, refactor loop at these seams. The tests live in `
 | Seam | Test | Catches | Misses |
 |---|---|---|---|
 | Routes and guards | `router.test.tsx` | Default route, unauthenticated redirect, role leak, unknown path | Server-side authorization, which the API tests own |
-| Page composition | `chat-page.test.tsx`, `auth-pages.test.tsx`, `knowledge-page.test.tsx`, `practice-page.test.tsx`, `deadlines-page.test.tsx` | Missing regions, unlabeled controls, missing components | Visual layout and CSS overflow |
+| Page composition | `chat-page.test.tsx`, `auth-pages.test.tsx`, `knowledge-page.test.tsx`, `practice-page.test.tsx`, `builds-page.test.tsx`, `deadlines-page.test.tsx` | Missing regions, unlabeled controls, missing components | Visual layout and CSS overflow |
+| App shell | `app-shell.test.tsx` | Nav that should not exist, collapsed logo, footer account menu and sign out, sidebar state restore, mobile sheet close, page title, focus move | Server rendering, visual transitions |
+| Evidence pane | `evidence-pane.test.tsx` | Collapse, resize bounds and keyboard steps, persistence, citation auto-expand, honest preview notice | Pointer feel and CSS cursor |
+| Preview role escape | `preview-controls.test.tsx` | Signed-out dead end, safe `next` handling, instructor/student destination choice | Real authentication |
 | Interaction | The page tests, driven by user events | Citation to panel, work-chain expansion, retry, code confirmation, model choice | Network behavior |
 | Translation completeness | `i18n.test.tsx` | Missing keys in one language, stale `lang` attribute | Translation quality |
 | Markdown | `markdown.test.tsx` | Math and code plugins not applied | Visual fidelity |
@@ -175,6 +185,8 @@ A fresh checkout has no `static/` directory. The build creates it, Git ignores i
 ## Language and accessibility
 
 The UI ships English and Chinese resources with a header switch. The switch updates the `lang` attribute and persists the choice. The default is English. Controls are keyboard reachable and carry labels; the main flows meet the readability target in NFR-9. The theme is light only; the shadcn design tokens keep a dark theme possible later.
+
+Each page sets `document.title` from its page name, and a client-side navigation moves focus to the `main` region. Labelled groups that are plain `div`s carry an explicit `role="group"`, and disabled controls that have no other explanation carry a title. The chat composer ignores Enter while an IME composition is active.
 
 ## Milestone boundary
 

@@ -18,7 +18,7 @@ import { useT } from "@/lib/i18n";
 export function ResetConfirmPage() {
   const t = useT();
   const [params] = useSearchParams();
-  const token = params.get("token") ?? "";
+  const token = (params.get("token") ?? "").trim();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -42,53 +42,68 @@ export function ResetConfirmPage() {
         <CardTitle>
           <h1 className="text-lg font-semibold">{t.auth.resetConfirmTitle}</h1>
         </CardTitle>
-        <CardDescription>{t.auth.resetSubtitle}</CardDescription>
+        <CardDescription>{t.auth.resetConfirmSubtitle}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={submit} noValidate>
-          <FieldGroup>
-            {token ? (
-              <p className="text-xs text-muted-foreground">
-                {token.slice(0, 8)}…
-              </p>
-            ) : null}
-            <Field>
-              <FieldLabel htmlFor="new-password">{t.auth.newPassword}</FieldLabel>
-              <Input
-                id="new-password"
-                name="new-password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="confirm-password">
-                {t.auth.confirmPassword}
-              </FieldLabel>
-              <Input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                autoComplete="new-password"
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-              />
-            </Field>
-            {notice ? (
-              <Alert>
-                <AlertDescription>{notice}</AlertDescription>
-              </Alert>
-            ) : null}
-            <Button type="submit">{t.auth.updatePassword}</Button>
-          </FieldGroup>
-        </form>
+        {token ? (
+          <form onSubmit={submit} noValidate>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="new-password">
+                  {t.auth.newPassword}
+                </FieldLabel>
+                <Input
+                  id="new-password"
+                  name="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="confirm-password">
+                  {t.auth.confirmPassword}
+                </FieldLabel>
+                <Input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmation}
+                  onChange={(event) => setConfirmation(event.target.value)}
+                />
+              </Field>
+              {notice ? (
+                <Alert>
+                  <AlertDescription>{notice}</AlertDescription>
+                </Alert>
+              ) : null}
+              <Button type="submit">{t.auth.updatePassword}</Button>
+            </FieldGroup>
+          </form>
+        ) : (
+          <Alert>
+            <AlertDescription>{t.auth.invalidResetToken}</AlertDescription>
+          </Alert>
+        )}
       </CardContent>
       <CardFooter className="text-sm">
-        <Link to="/login" className="text-muted-foreground underline underline-offset-4">
-          {t.auth.backToSignIn}
-        </Link>
+        {token ? (
+          <Link
+            to="/login"
+            className="text-muted-foreground underline underline-offset-4"
+          >
+            {t.auth.backToSignIn}
+          </Link>
+        ) : (
+          <Link
+            to="/reset"
+            className="text-muted-foreground underline underline-offset-4"
+          >
+            {t.auth.requestReset}
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );

@@ -10,13 +10,17 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { PublicControls } from "@/components/layout/public-controls";
 import { useT } from "@/lib/i18n";
+import { useDocumentTitle } from "@/lib/use-document-title";
 
 export function NotFoundPage() {
   const t = useT();
+  useDocumentTitle(`${t.common.notFoundTitle} · ${t.app.name}`);
 
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
+      <PublicControls />
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">

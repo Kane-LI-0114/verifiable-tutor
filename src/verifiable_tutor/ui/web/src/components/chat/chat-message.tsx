@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon, RotateCcwIcon, Volume2Icon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
@@ -24,19 +24,39 @@ function AnswerActions({
 }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<number | null>(null);
+
+  // The feedback timer must not outlive the answer it belongs to.
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current !== null) {
+        window.clearTimeout(copyTimer.current);
+      }
+    };
+  }, []);
 
   async function copy() {
     try {
       await navigator.clipboard?.writeText(content);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      if (copyTimer.current !== null) {
+        window.clearTimeout(copyTimer.current);
+      }
+      copyTimer.current = window.setTimeout(() => {
+        setCopied(false);
+        copyTimer.current = null;
+      }, 1500);
     } catch {
       setCopied(false);
     }
   }
 
   return (
-    <MessageFooter className="gap-1" aria-label={t.chat.answerActions}>
+    <MessageFooter
+      role="group"
+      className="gap-1"
+      aria-label={t.chat.answerActions}
+    >
       <Button
         type="button"
         variant="ghost"

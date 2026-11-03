@@ -32,7 +32,10 @@ export function TestResults({ suites }: { suites: TestSuite[] }) {
             </TraceIcon>
             <TraceTitle>{t.practice.testResults}</TraceTitle>
             <TraceDescription>
-              {format(t.practice.suites, { passed, total: cases.length })}
+              {format(
+                cases.length === 1 ? t.practice.suitesOne : t.practice.suites,
+                { passed, total: cases.length },
+              )}
             </TraceDescription>
           </TraceLine>
         </TraceCollapsibleTrigger>

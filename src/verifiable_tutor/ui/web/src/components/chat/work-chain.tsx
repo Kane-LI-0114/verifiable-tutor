@@ -75,7 +75,7 @@ export function WorkChain({
   const done = steps.filter((step) => step.status === "done").length;
 
   return (
-    <Trace aria-label={t.a11y.workChain}>
+    <Trace role="group" aria-label={t.a11y.workChain}>
       <TraceCollapsible>
         <TraceCollapsibleTrigger>
           <TraceLine>

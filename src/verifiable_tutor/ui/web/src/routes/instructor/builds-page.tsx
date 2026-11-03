@@ -28,13 +28,30 @@ import {
   TraceLine,
   TraceTitle,
 } from "@/components/ui/trace";
-import { CheckCircle2Icon, CircleDashedIcon, Loader2Icon, XCircleIcon } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import {
+  CheckCircle2Icon,
+  CircleDashedIcon,
+  Loader2Icon,
+  RotateCcwIcon,
+  XCircleIcon,
+} from "lucide-react";
+import { format, useI18n, useT } from "@/lib/i18n";
 import { usePreview } from "@/lib/preview/context";
 import { PREVIEW_BUILDS } from "@/lib/preview/fixtures";
 import type { BuildState, KnowledgeBuild } from "@/lib/types";
 
 const TIMELINE: BuildState[] = ["queued", "running", "ready"];
+
+function formatTimestamp(value: string, locale: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
 
 function stateIcon(state: BuildState) {
   if (state === "ready") {
@@ -58,6 +75,8 @@ function timelineFor(build: KnowledgeBuild): BuildState[] {
 
 export function BuildsPage() {
   const t = useT();
+  const { lang } = useI18n();
+  const locale = lang === "zh" ? "zh-CN" : "en-GB";
   const { pageState } = usePreview();
   const [selectedId, setSelectedId] = useState(PREVIEW_BUILDS[0]?.id ?? null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -89,7 +108,7 @@ export function BuildsPage() {
           <PageEmpty title={t.builds.emptyTitle} description={t.builds.emptyBody} />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-            <div className="space-y-2" aria-label={t.builds.title}>
+            <div className="space-y-2" role="group" aria-label={t.builds.title}>
               {PREVIEW_BUILDS.map((build) => (
                 <Item
                   key={build.id}
@@ -104,12 +123,19 @@ export function BuildsPage() {
                     <ItemContent>
                       <ItemTitle>{build.id}</ItemTitle>
                       <ItemDescription>
-                        {build.job_id
-                          ? `${t.builds.jobId}: ${build.job_id}`
-                          : t.builds.states[build.state]}
-                        {build.records_count === null
-                          ? ""
-                          : ` · ${build.records_count}`}
+                        {[
+                          `${t.builds.docId}: ${build.request.doc_id}`,
+                          build.job_id
+                            ? `${t.builds.jobId}: ${build.job_id}`
+                            : null,
+                          build.records_count === null
+                            ? null
+                            : format(t.builds.recordsCount, {
+                                count: build.records_count,
+                              }),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </ItemDescription>
                     </ItemContent>
                     <ItemActions>
@@ -152,9 +178,13 @@ export function BuildsPage() {
                         : selected.records_count}
                     </dd>
                     <dt className="text-muted-foreground">{t.builds.createdAt}</dt>
-                    <dd className="text-xs">{selected.created_at}</dd>
+                    <dd className="text-xs">
+                      {formatTimestamp(selected.created_at, locale)}
+                    </dd>
                     <dt className="text-muted-foreground">{t.builds.updatedAt}</dt>
-                    <dd className="text-xs">{selected.updated_at}</dd>
+                    <dd className="text-xs">
+                      {formatTimestamp(selected.updated_at, locale)}
+                    </dd>
                   </dl>
 
                   <section className="space-y-1">
@@ -181,7 +211,19 @@ export function BuildsPage() {
                   {selected.error ? (
                     <Alert variant="destructive">
                       <AlertTitle>{t.builds.error}</AlertTitle>
-                      <AlertDescription>{selected.error}</AlertDescription>
+                      <AlertDescription className="space-y-2">
+                        <span className="block">{selected.error}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          title={t.common.unavailable}
+                        >
+                          <RotateCcwIcon />
+                          {t.builds.retry}
+                        </Button>
+                      </AlertDescription>
                     </Alert>
                   ) : null}
                 </CardContent>
@@ -195,7 +237,7 @@ export function BuildsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t.builds.newBuild}</DialogTitle>
-            <DialogDescription>{t.builds.subtitle}</DialogDescription>
+            <DialogDescription>{t.builds.newBuildDescription}</DialogDescription>
           </DialogHeader>
           <FieldGroup>
             <Field>

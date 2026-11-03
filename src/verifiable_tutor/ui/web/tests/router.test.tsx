@@ -62,6 +62,15 @@ describe("routes and guards", () => {
     expect(screen.getByRole("link", { name: "Deadlines" })).toBeInTheDocument();
   });
 
+  it("keeps the preview and language controls on the not-found page", () => {
+    renderAt("/no-such-page", "student");
+
+    expect(
+      screen.getByRole("button", { name: "Preview controls" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "中文" })).toBeInTheDocument();
+  });
+
   it("renders the not-found page for an unknown path", () => {
     renderAt("/no-such-page", "student");
 

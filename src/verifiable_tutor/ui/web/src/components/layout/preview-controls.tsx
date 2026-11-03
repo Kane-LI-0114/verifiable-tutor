@@ -1,4 +1,5 @@
 import { FlaskConicalIcon } from "lucide-react";
+import { useLocation, useNavigate } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  destinationAfterRoleSwitch,
+  isAuthPath,
+} from "@/lib/auth/redirect";
 import { useT } from "@/lib/i18n";
 import { usePreview } from "@/lib/preview/context";
 import type { PreviewRole } from "@/lib/preview/session";
@@ -32,9 +37,23 @@ function roleLabel(t: ReturnType<typeof useT>, role: PreviewRole): string {
 export function PreviewControls() {
   const t = useT();
   const { isPreview, role, pageState, setRole, setPageState } = usePreview();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   if (!isPreview) {
     return null;
+  }
+
+  function selectRole(value: string): void {
+    const nextRole = value as PreviewRole;
+    setRole(nextRole);
+    if (nextRole === "signed-out" || !isAuthPath(location.pathname)) {
+      return;
+    }
+    const requested = new URLSearchParams(location.search).get("next");
+    navigate(destinationAfterRoleSwitch(requested, nextRole), {
+      replace: true,
+    });
   }
 
   return (
@@ -47,10 +66,7 @@ export function PreviewControls() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel>{t.preview.role}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={role}
-          onValueChange={(value) => setRole(value as PreviewRole)}
-        >
+        <DropdownMenuRadioGroup value={role} onValueChange={selectRole}>
           {ROLES.map((item) => (
             <DropdownMenuRadioItem key={item} value={item}>
               {roleLabel(t, item)}

@@ -2,7 +2,6 @@ import {
   BookOpenIcon,
   CalendarClockIcon,
   HammerIcon,
-  LanguagesIcon,
   LogOutIcon,
   MessageSquareIcon,
   PlusIcon,
@@ -10,12 +9,11 @@ import {
   UserIcon,
   WaypointsIcon,
 } from "lucide-react";
-import type { ComponentType } from "react";
+import { useEffect, useRef, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation, useParams } from "react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,10 +38,13 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth/session";
-import { useI18n, useT } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
+import { useDocumentTitle } from "@/lib/use-document-title";
 import { PREVIEW_SESSIONS } from "@/lib/preview/fixtures";
+import { LanguageToggle } from "@/components/layout/language-toggle";
 import { PreviewControls } from "@/components/layout/preview-controls";
 
 interface NavItem {
@@ -51,6 +52,16 @@ interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
   end?: boolean;
+}
+
+// The sidebar component stores its state in a cookie. A single-page shell has no
+// server to read it back, so restore the last choice before the first paint.
+function readSidebarCookie(): boolean {
+  if (typeof document === "undefined") {
+    return true;
+  }
+  const match = document.cookie.match(/(?:^|;\s*)sidebar_state=(true|false)/);
+  return match ? match[1] === "true" : true;
 }
 
 function currentTitle(pathname: string, t: ReturnType<typeof useT>): string {
@@ -90,13 +101,71 @@ function SidebarNavItem({ item }: { item: NavItem }) {
   );
 }
 
+function SidebarAccountMenu({ showDetails }: { showDetails: boolean }) {
+  const t = useT();
+  const { user, signOut } = useSession();
+  const roleLabel =
+    user?.role === "instructor" ? t.common.instructor : t.common.student;
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              aria-label={user?.email ?? t.nav.account}
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <Avatar className="size-8 shrink-0">
+                <AvatarFallback>
+                  <UserIcon className="size-4" />
+                </AvatarFallback>
+              </Avatar>
+              {showDetails ? (
+                <span className="flex min-w-0 flex-col text-left">
+                  <span className="truncate text-sm">
+                    {user?.email ?? t.nav.account}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {roleLabel}
+                  </span>
+                </span>
+              ) : null}
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuLabel className="flex items-center justify-between gap-2">
+              <span className="truncate">{user?.email ?? t.nav.account}</span>
+              <Badge variant="secondary">{roleLabel}</Badge>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => signOut()}>
+              <LogOutIcon />
+              {t.common.signOut}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
 function AppSidebar() {
   const t = useT();
   const { user } = useSession();
   const { sessionId } = useParams();
+  const { pathname } = useLocation();
+  const { state, setOpenMobile } = useSidebar();
+  const expanded = state === "expanded";
+
+  // On a phone the navigation lives in a sheet; a destination tap has to close
+  // it or the reviewer lands on a page they cannot see.
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
 
   const primary: NavItem[] = [
-    { to: "/chat", label: t.nav.chat, icon: MessageSquareIcon },
     { to: "/practice", label: t.nav.practice, icon: WaypointsIcon },
     { to: "/knowledge", label: t.nav.knowledge, icon: BookOpenIcon },
   ];
@@ -120,16 +189,20 @@ function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" tooltip={t.app.name}>
-              <NavLink to="/chat">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <NavLink to="/chat" aria-label={t.app.name}>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <ShieldCheckIcon className="size-4" />
                 </span>
-                <span className="flex min-w-0 flex-col text-left">
-                  <span className="truncate text-sm font-semibold">{t.app.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {t.app.course}
+                {expanded ? (
+                  <span className="flex min-w-0 flex-col text-left">
+                    <span className="truncate text-sm font-semibold">
+                      {t.app.name}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {t.app.course}
+                    </span>
                   </span>
-                </span>
+                ) : null}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -140,7 +213,11 @@ function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={t.nav.newChat}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/chat"}
+                  tooltip={t.nav.newChat}
+                >
                   <NavLink to="/chat">
                     <PlusIcon />
                     <span>{t.nav.newChat}</span>
@@ -196,27 +273,7 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" tooltip={user?.email ?? t.nav.account}>
-              <NavLink to="/chat">
-                <Avatar className="size-8">
-                  <AvatarFallback>
-                    <UserIcon className="size-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <span className="flex min-w-0 flex-col text-left">
-                  <span className="truncate text-sm">{user?.email ?? t.nav.account}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user?.role === "instructor"
-                      ? t.common.instructor
-                      : t.common.student}
-                  </span>
-                </span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarAccountMenu showDetails={expanded} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
@@ -226,53 +283,19 @@ function AppSidebar() {
 function TopBar() {
   const t = useT();
   const { pathname } = useLocation();
-  const { user, signOut } = useSession();
-  const { lang, toggleLang } = useI18n();
+  const title = currentTitle(pathname, t);
+  useDocumentTitle(`${title} · ${t.app.name}`);
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
       <SidebarTrigger aria-label={t.common.openNavigation} />
-      <Separator orientation="vertical" className="h-4" />
-      <span className="truncate text-sm font-medium">{currentTitle(pathname, t)}</span>
+      <span className="flex h-4 shrink-0 items-center">
+        <Separator orientation="vertical" className="h-4" />
+      </span>
+      <span className="truncate text-sm font-medium">{title}</span>
       <div className="ml-auto flex items-center gap-1">
         <PreviewControls />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleLang}
-          aria-label={t.common.language}
-        >
-          <LanguagesIcon />
-          <span className="hidden sm:inline">
-            {lang === "en" ? "中文" : "English"}
-          </span>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" aria-label={user?.email ?? t.nav.account}>
-              <Avatar className="size-6">
-                <AvatarFallback>
-                  <UserIcon className="size-3.5" />
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="flex items-center justify-between gap-2">
-              <span className="truncate">{user?.email ?? t.nav.account}</span>
-              <Badge variant="secondary">
-                {user?.role === "instructor"
-                  ? t.common.instructor
-                  : t.common.student}
-              </Badge>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => signOut()}>
-              <LogOutIcon />
-              {t.common.signOut}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LanguageToggle />
       </div>
     </header>
   );
@@ -280,9 +303,21 @@ function TopBar() {
 
 export function AppShell() {
   const t = useT();
+  const { pathname } = useLocation();
+  const firstRender = useRef(true);
+
+  // A client-side navigation does not move focus by itself. Put it on the new
+  // main region so keyboard and screen-reader users start at the new content.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    document.getElementById("main")?.focus({ preventScroll: true });
+  }, [pathname]);
 
   return (
-    <SidebarProvider className="h-svh min-h-0">
+    <SidebarProvider className="h-svh min-h-0" defaultOpen={readSidebarCookie()}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:shadow"
@@ -290,9 +325,9 @@ export function AppShell() {
         {t.common.skipToContent}
       </a>
       <AppSidebar />
-      <SidebarInset id="main" className="min-h-0">
+      <SidebarInset id="main" tabIndex={-1} className="min-h-0 min-w-0 focus:outline-none">
         <TopBar />
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <Outlet />
         </div>
       </SidebarInset>

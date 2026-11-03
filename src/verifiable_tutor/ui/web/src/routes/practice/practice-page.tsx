@@ -64,6 +64,7 @@ export function PracticePage() {
   const [answer, setAnswer] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [graded, setGraded] = useState(false);
+  const [missingAnswer, setMissingAnswer] = useState(false);
   const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
 
   const question = useMemo(
@@ -76,7 +77,19 @@ export function PracticePage() {
       ? null
       : Math.max(result.citations.indexOf(activeCitation), 0);
 
+  const answered =
+    type === "single-choice" || type === "true-false"
+      ? choice !== ""
+      : type === "multiple-choice"
+        ? selected.length > 0
+        : answer.trim() !== "";
+
   function submit() {
+    if (!answered) {
+      setMissingAnswer(true);
+      return;
+    }
+    setMissingAnswer(false);
     if (type === "code") {
       setConfirmOpen(true);
       return;
@@ -136,6 +149,7 @@ export function PracticePage() {
                       onValueChange={(value) => {
                         setType(value as QuestionType);
                         setGraded(false);
+                        setMissingAnswer(false);
                         setChoice("");
                         setSelected([]);
                       }}
@@ -204,7 +218,12 @@ export function PracticePage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{t.practice.types[question.type]}</Badge>
                     <Badge variant="outline">
-                      {format(t.practice.points, { count: question.points })}
+                      {format(
+                        question.points === 1
+                          ? t.practice.pointsOne
+                          : t.practice.points,
+                        { count: question.points },
+                      )}
                     </Badge>
                     {question.citations.map((citation) => (
                       <Badge key={citation.doc_id + citation.page_no} variant="outline">
@@ -308,6 +327,12 @@ export function PracticePage() {
                     {t.practice.submit}
                   </Button>
 
+                  {missingAnswer && !graded ? (
+                    <Alert>
+                      <AlertDescription>{t.practice.answerRequired}</AlertDescription>
+                    </Alert>
+                  ) : null}
+
                   {graded ? (
                     <div className="space-y-3 rounded-lg border p-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -333,7 +358,7 @@ export function PracticePage() {
                         citations={result.citations}
                         onOpen={setActiveCitation}
                       />
-                      {result.test_suites ? (
+                      {result.test_suites && question.type === "code" ? (
                         <TestResults suites={result.test_suites} />
                       ) : null}
                     </div>

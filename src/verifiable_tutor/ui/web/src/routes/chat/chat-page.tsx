@@ -5,6 +5,11 @@ import { ChatEmpty } from "@/components/chat/chat-empty";
 import { ChatMessageView } from "@/components/chat/chat-message";
 import { Composer } from "@/components/chat/composer";
 import { EvidencePanel } from "@/components/chat/evidence-panel";
+import {
+  EvidencePane,
+  readEvidenceCollapsed,
+  writeEvidenceCollapsed,
+} from "@/components/chat/evidence-pane";
 import { PageLoading } from "@/components/layout/page-states";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,7 +36,11 @@ import {
 import { useT } from "@/lib/i18n";
 import type { ModelId, ThinkingLevel } from "@/lib/models";
 import { usePreview } from "@/lib/preview/context";
-import { PREVIEW_TURNS } from "@/lib/preview/fixtures";
+import {
+  PREVIEW_SESSIONS,
+  PREVIEW_TURNS,
+  previewTurnsFor,
+} from "@/lib/preview/fixtures";
 import type { Citation, ConversationTurn } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -40,27 +49,50 @@ function turnWithId(turn: ConversationTurn, id: string): ConversationTurn {
 }
 
 export function ChatPage() {
-  const t = useT();
   const { sessionId } = useParams();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const draft = (location.state as { draft?: string } | null)?.draft;
+
+  // /chat and /chat/:sessionId render this page from one element, so React
+  // keeps the component mounted across a conversation switch. The key forces
+  // a fresh state tree per conversation, which is what makes a switch reset
+  // the turns, the composer, and the evidence selection.
+  return (
+    <ChatSession key={sessionId ?? "new"} sessionId={sessionId} draft={draft} />
+  );
+}
+
+function ChatSession({
+  sessionId,
+  draft,
+}: {
+  sessionId: string | undefined;
+  draft: string | undefined;
+}) {
+  const t = useT();
+  const [searchParams] = useSearchParams();
   const replay = searchParams.get("replay") === "1";
   const { pageState, setPageState } = usePreview();
   const isNarrow = useMediaQuery("(max-width: 1023px)");
 
-  const [turns, setTurns] = useState<ConversationTurn[]>(
-    sessionId ? PREVIEW_TURNS : [],
+  const [turns, setTurns] = useState<ConversationTurn[]>(() =>
+    previewTurnsFor(sessionId),
   );
   const [composer, setComposer] = useState(draft ?? "");
   const [model, setModel] = useState<ModelId>("deepseek-flash");
   const [thinking, setThinking] = useState<ThinkingLevel>("off");
   const [audioAttached, setAudioAttached] = useState(false);
   const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
+  const [evidenceCollapsed, setEvidenceCollapsed] = useState<boolean>(() =>
+    readEvidenceCollapsed(),
+  );
   const [replaySpeed, setReplaySpeed] = useState("1");
   const nextId = useRef(1);
 
   const citations = turns.flatMap((turn) => turn.meta?.citations ?? []);
+  const conversationTitle =
+    PREVIEW_SESSIONS.find((session) => session.id === sessionId)?.title ??
+    t.chat.title;
   const activeIndex =
     activeCitation === null ? null : Math.max(citations.indexOf(activeCitation), 0);
   const capabilityError =
@@ -90,12 +122,25 @@ export function ChatPage() {
     setActiveCitation(null);
   }
 
+  function setCollapsed(collapsed: boolean) {
+    setEvidenceCollapsed(collapsed);
+    writeEvidenceCollapsed(collapsed);
+  }
+
+  // A citation chip must reveal the cited page even when the pane is collapsed.
+  function openCitation(citation: Citation) {
+    setActiveCitation(citation);
+    if (evidenceCollapsed) {
+      setCollapsed(false);
+    }
+  }
+
   function retry() {
     setPageState("normal");
   }
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="flex min-h-0 min-w-0 flex-1">
       <section
         className="flex min-w-0 flex-1 flex-col"
         aria-label={t.a11y.messages}
@@ -127,7 +172,8 @@ export function ChatPage() {
         ) : turns.length === 0 ? (
           <ChatEmpty onPick={setComposer} />
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <h1 className="sr-only">{conversationTitle}</h1>
             <MessageScrollerProvider>
               <MessageScroller className="flex-1">
                 <MessageScrollerViewport>
@@ -143,7 +189,7 @@ export function ChatPage() {
                           failed={
                             pageState === "error" && turn.message.role === "assistant"
                           }
-                          onOpenCitation={setActiveCitation}
+                          onOpenCitation={openCitation}
                           onRetry={retry}
                         />
                       </MessageScrollerItem>
@@ -172,20 +218,13 @@ export function ChatPage() {
         />
       </section>
 
-      <aside
-        className="hidden w-[380px] shrink-0 flex-col border-l lg:flex"
-        aria-label={t.a11y.evidence}
-      >
-        <div className="border-b px-3 py-2 text-sm font-medium">
-          {t.chat.evidenceTitle}
-        </div>
-        <EvidencePanel
-          citations={citations}
-          activeIndex={activeIndex}
-          onSelect={(index) => setActiveCitation(citations[index] ?? null)}
-          className="min-h-0 flex-1"
-        />
-      </aside>
+      <EvidencePane
+        citations={citations}
+        activeIndex={activeIndex}
+        onSelect={(index) => setActiveCitation(citations[index] ?? null)}
+        collapsed={evidenceCollapsed}
+        onCollapsedChange={setCollapsed}
+      />
 
       {isNarrow ? (
         <Sheet

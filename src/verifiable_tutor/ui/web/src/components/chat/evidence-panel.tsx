@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon, FileImageIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,12 @@ export function EvidencePanel({
   const [imageFailed, setImageFailed] = useState(false);
 
   const active = activeIndex === null ? null : citations[activeIndex] ?? null;
+  const activeKey = active ? `${active.doc_id}:${active.page_no}` : "";
+
+  // A new citation is a new image; an earlier load failure must not stick.
+  useEffect(() => {
+    setImageFailed(false);
+  }, [activeKey]);
 
   if (pageState === "loading") {
     return (
@@ -134,8 +140,9 @@ export function EvidencePanel({
           {isPreview ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-xs text-muted-foreground">
               <FileImageIcon className="size-6" />
-              <span>{t.chat.evidenceLoading}</span>
-              <span>{imageUrl}</span>
+              <span className="font-medium text-foreground">
+                {t.chat.evidencePreviewNotice}
+              </span>
             </div>
           ) : imageFailed ? (
             <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-xs text-muted-foreground">
