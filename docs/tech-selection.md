@@ -2,7 +2,7 @@
 
 Scope: implementation technology for this repository. It tracks proposal v3 (dated 2026-11-01); proposal v1 remains the submitted artifact and proposal v2 is a previous draft. Platform constraints are owned by [tacc-notes.md](tacc-notes.md); this document owns the choices, the operational plan, and the verification list. The architectural choices are argued in [`docs/adr/`](adr/), and the repository layout is owned by [README.md](../README.md#repository-layout).
 
-Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, and updated on 2026-11-01 for the required TACC model-serving backend and knowledge base ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)), aligned with proposal v3 (dated 2026-11-01). The model layer, its tests, its live smoke script, and the first FastAPI backend surface are implemented, and the Qwen knowledge-base job and its file round trip are verified on TACC; retrieval, the disclosure gate, orchestration, practice execution, the UI, and the evaluation harness are planned. Spikes 1 to 3 ran on 2026-10-29, spike 10 ran on 2026-11-02, and spikes 4 to 9 are unrun. The first FastAPI backend surface was implemented on 2026-11-02 (health, accounts and sessions, chat streaming with the AI SDK stream and JSONL trace, replay, voice, knowledge cards and builds, corpus page images, and the practice-run scaffold) with `tests/api/`; its decisions are recorded in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
+Status: decided on 2026-10-28, updated on 2026-10-29 for the external model APIs, the retry policy, Langfuse tracing, and LangGraph, updated on 2026-11-01 for the required TACC model-serving backend and knowledge base ([ADR-0011](adr/0011-tacc-as-required-model-serving-backend.md)), and updated on 2026-11-03 for the UI page structure ([ui-structure.md](ui-structure.md)), aligned with proposal v3 (dated 2026-11-01). The model layer, its tests, its live smoke script, and the first FastAPI backend surface are implemented, and the Qwen knowledge-base job and its file round trip are verified on TACC; retrieval, the disclosure gate, orchestration, practice execution, live UI wiring, and the evaluation harness are planned; the UI page structure and preview build were implemented on 2026-11-03. Spikes 1 to 3 ran on 2026-10-29, spike 10 ran on 2026-11-02, and spikes 4 to 9 are unrun. The first FastAPI backend surface was implemented on 2026-11-02 (health, accounts and sessions, chat streaming with the AI SDK stream and JSONL trace, replay, voice, knowledge cards and builds, corpus page images, and the practice-run scaffold) with `tests/api/`; its decisions are recorded in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
 
 ## Decisions at a glance
 
@@ -92,13 +92,13 @@ See [ADR-0004](adr/0004-hybrid-retrieval-with-bge-m3.md) for the argument. Opera
 
 ## UI and streaming protocol
 
-The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elements.md). Implementation points:
+The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elements.md). The page structure, routes, component map, preview data, and TDD seams are in [ui-structure.md](ui-structure.md). Implementation points:
 
 - The FastAPI adapter emits the AI SDK UI message stream protocol. Events used by this project: `start`, `text-start`, `text-delta`, `text-end`, `data-step` for the progress timeline, `source-document` for citations, `finish`, and `error`.
 - The same event stream is recorded to JSONL per session. Replay re-emits recorded events at a speed factor, so the offline demo runs the production frontend path with no model.
-- The build runs locally. `npm ci && npm run build` writes to `src/verifiable_tutor/ui/static/`, which is generated and ignored by Git; `package-lock.json` is committed. The local backend serves the build, and no TACC job serves the UI ([ADR-0010](adr/0010-tacc-as-offline-compute.md)).
+- The build runs locally. `npm ci && npm run build` writes to `src/verifiable_tutor/ui/static/`, which is generated and ignored by Git and has no `.gitkeep`; `package-lock.json` is committed. The local backend serves the build, and no TACC job serves the UI ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The UI source lives in `src/verifiable_tutor/ui/web/` and uses `npm run dev`, `npm run typecheck`, and `npm run test` besides the build; `npm run dev` proxies `/api` to `127.0.0.1:8000`.
 - Evidence panel: page WebP plus highlight rectangles from the OCR block boxes, no PDF viewer, no CDN, self-hosted KaTeX fonts, system CJK font stack.
-- Chinese and English UI strings are kept in one translation resource with a header toggle.
+- Chinese and English UI strings are kept in one translation resource with a header toggle. The first milestone renders preview fixtures and makes no API request; `VITE_PREVIEW=0` is reserved for the live build.
 
 ## Implemented backend surface (2026-11-02)
 
@@ -109,7 +109,7 @@ The local backend exists and is tested with `tests/api/`. It follows the convent
 - Storage: SQLite at `data/app/app.sqlite3` (accounts, login sessions, codes, conversations, messages, build state) and JSONL traces under `data/app/traces/`; both are runtime state, and `data/app/` contents are gitignored.
 - Chat: the request body is project-owned; the response is the AI SDK UI message stream v1 with `data-step` parts, the `x-conversation-id` response header, and a `[DONE]` terminator. Replay re-emits the recorded frames with scaled gaps.
 - Knowledge: builds submit the existing `scripts/tacc/run_kb_job.py` driver through a subprocess runner seam; cards are read from `data/kb/records/`. A build is unavailable until `knowledge.pages_path` points at local page records.
-- Practice: the run route is a documented 503 until `tacc/exec` exists. Retrieval, the disclosure gate, LangGraph orchestration, and the React UI remain planned.
+- Practice: the run route is a documented 503 until `tacc/exec` exists. Retrieval, the disclosure gate, LangGraph orchestration, and live React UI wiring remain planned; the UI page structure and preview build exist ([ui-structure.md](ui-structure.md)).
 - API documentation: the committed bundle under `docs/api/` is the maintained Swagger UI (deterministic `openapi.json`, generated offline `index.html`, and pinned swagger-ui-dist 5.34.1 assets); it is served at `/docs` and `/api-docs/`, regenerated by `scripts/build_api_docs.py`, and guarded by `--check` in the test suite. The decision is [ADR-0013](adr/0013-local-offline-swagger-ui.md).
 - Commands: install, run, seed, docs, and test commands are recorded in [AGENTS.md](../AGENTS.md#toolchain-and-commands).
 
@@ -166,7 +166,7 @@ The authoritative directory table is in [README.md](../README.md#repository-layo
 - `src/verifiable_tutor/knowledge/`: knowledge-base build orchestration, record validation, local storage, and build state.
 - `scripts/tacc/run_kb_job.py`: local submit, poll, and download interface for one knowledge-base job.
 - `docs/knowledge-schema.md`: request, progress, and record contracts for the knowledge base.
-- `src/verifiable_tutor/ui/web/`: React source; build output in `src/verifiable_tutor/ui/static/` (ignored).
+- `src/verifiable_tutor/ui/web/`: React source with routes, layout, page components, preview fixtures, and Vitest tests (present: page shell and preview build); build output in `src/verifiable_tutor/ui/static/` (ignored).
 - `tacc/serve/`: the required Qwen knowledge-base job.
 - `tacc/ocr/` and `tacc/index/`: the two batch job directories above.
 - `tacc/exec/`: the per-request execution job for reference tests and self-test code answers.
@@ -223,7 +223,7 @@ Spikes 1 to 3 ran on 2026-10-29 and passed every exit criterion; the measurement
 - The Qwen knowledge-base job paid a 434 s vLLM cold start on 2026-11-02 (job 28067) and must fit one hour: shard by document, keep outputs resumable, and pre-build the demo knowledge base. Malformed records are repaired once; a failed shard is retried ([knowledge-schema.md](knowledge-schema.md)).
 - Group storage is 100 GB shared by three accounts; the expected footprint is a few GB for weights, about 58 MB of PDFs, a few hundred MB of OCR output and page images, and small index files.
 - The comparison between OCR output and PDF text is not a correctness oracle; human spot checks on figure-heavy slides remain part of RQ1.
-- The frontend build depends on the laptop Node toolchain; a clean machine needs Node and `npm ci` before it can serve the UI.
+- The frontend build depends on the laptop Node toolchain; a clean machine needs Node and `npm ci` before it can serve the UI. `@streamdown/code` emits lazy Shiki language chunks, so the build warns about chunk size; the initial bundle is about 1.7 MB uncompressed, and route-level code splitting or a shorter language list is a follow-up.
 - LangGraph adds a dependency group that must be pinned and import-verified on TACC, and its SQLite checkpointer depends on the native sqlite-vec extension, which may fail under PRoot; the fallback is the in-memory saver plus the JSONL session store ([ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md)).
 - The local Langfuse stack adds a six container Docker Compose dependency, about 5 to 10 GB of disk, and a startup step to the development loop; it is local only and the application must fail open when it is down ([ADR-0007](adr/0007-langfuse-for-local-model-call-tracing.md), [langfuse-local.md](langfuse-local.md)).
 - The schema is single-course by design. Multi-course support is recorded as future development in [prd.md](prd.md#future-development) and would be a data model migration, not a configuration switch.
