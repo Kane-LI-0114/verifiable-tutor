@@ -168,6 +168,8 @@ npm run build
 
 The build writes `src/verifiable_tutor/ui/static/`. The backend checks for `index.html` when it starts, so build before starting the backend. `npm run dev` serves the SPA on the Vite port and proxies `/api` to `127.0.0.1:8000`.
 
+From the repository root, `./start.sh` runs the documented path in one command: it installs UI dependencies when the lockfile is newer, builds, and starts the backend. `./start.sh --dev` runs Vite beside the backend, `--no-build` reuses the last build, and `--port` changes the backend port.
+
 A fresh checkout has no `static/` directory. The build creates it, Git ignores it, and the API works without it. The directory does not hold a `.gitkeep`: it is generated output, not a scaffold directory.
 
 ## Language and accessibility

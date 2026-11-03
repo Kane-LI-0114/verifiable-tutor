@@ -90,6 +90,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, the live model smoke, and the API documentation build and vendor scripts | present: scripts |
 | `tests/` | Test suites under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch), `tests/knowledge/` (chunks, request, schema), `tests/tacc/` (Qwen job worker, driver validation), and `tests/api/` (HTTP contracts, accounts, chat, replay, voice, knowledge, corpus, SPA deep links); the UI tests live inside the Vite project at `src/verifiable_tutor/ui/web/tests/` | present: tests |
 | `pyproject.toml`, `uv.lock` | Python packaging, dependencies, pytest configuration, and locked local environment | present: packaging |
+| `start.sh` | One-command local start: install UI dependencies when needed, build the SPA, and run the backend on one origin; flags for the Vite dev server, skipping the build, and the backend port | present: start script |
 | `examples/` | Usage examples | placeholder (`.gitkeep`) |
 | `docs/figures/` | PRD diagram sources and renders (use case, containers, sequence examples, ER), and future report figures | present: PRD diagrams |
 | `docs/prd.md` | Product requirements, scope, acceptance criteria, and milestones | present: PRD |
