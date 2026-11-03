@@ -54,3 +54,23 @@ def test_built_ui_is_served_from_the_same_origin(ui_api):
     health = ui_api.client.get("/api/health")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
+
+
+def test_browser_navigation_to_a_spa_route_returns_the_shell(ui_api):
+    """A deep link is a browser navigation: the shell must answer, not a 404.
+
+    Characterization guard for ``app.frontend(fallback="auto")``: the fallback
+    applies only when the request accepts HTML, so a ``*/*`` client still gets
+    a 404 while a browser navigation gets the SPA entry point.
+    """
+
+    browser = {"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+
+    for path in ("/login", "/chat/demo", "/practice", "/instructor/builds"):
+        response = ui_api.client.get(path, headers=browser)
+        assert response.status_code == 200, path
+        assert "built ui" in response.text, path
+
+    api_client = ui_api.client.get("/api/health", headers={"accept": "application/json"})
+    assert api_client.status_code == 200
+    assert api_client.headers["content-type"].startswith("application/json")
