@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -611,6 +611,71 @@ describe("live chat", () => {
     expect(
       screen.queryByRole("button", { name: "Reasoning" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("restores each conversation's own scroll position after a reload", async () => {
+    const secondSessionId = "second-session";
+    const secondSession: Conversation = {
+      id: secondSessionId,
+      title: "Another conversation",
+      created_at: "2026-11-03T11:00:00+00:00",
+      updated_at: "2026-11-03T11:01:00+00:00",
+      message_count: 2,
+    };
+    stub = createFetchStub([
+      { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
+      {
+        method: "GET",
+        path: "/api/sessions",
+        handler: () => jsonResponse({ sessions: [...SESSIONS, secondSession] }),
+      },
+      historyRoute((call) =>
+        jsonResponse({
+          session_id: call.path.split("/")[3],
+          messages: HISTORY,
+        }),
+      ),
+    ]);
+
+    async function viewport(): Promise<HTMLElement> {
+      await screen.findByText(QUESTION);
+      const element = document.querySelector<HTMLElement>(
+        '[data-slot="message-scroller-viewport"]',
+      );
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    }
+
+    function scrollTo(element: HTMLElement, top: number) {
+      Object.defineProperty(element, "scrollHeight", {
+        configurable: true,
+        value: 1000,
+      });
+      Object.defineProperty(element, "clientHeight", {
+        configurable: true,
+        value: 400,
+      });
+      element.scrollTop = top;
+      fireEvent.scroll(element);
+    }
+
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+    scrollTo(await viewport(), 120);
+    cleanup();
+
+    renderLiveRoute(`/chat/${secondSessionId}`);
+    scrollTo(await viewport(), 40);
+    cleanup();
+
+    // Reopening a conversation restores the position the reader left it at.
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+    const first = await viewport();
+    await waitFor(() => expect(first.scrollTop).toBe(120));
+    cleanup();
+
+    renderLiveRoute(`/chat/${secondSessionId}`);
+    const second = await viewport();
+    await waitFor(() => expect(second.scrollTop).toBe(40));
   });
 
   it("keeps an existing conversation open and refreshes the sidebar", async () => {

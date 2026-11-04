@@ -1,5 +1,11 @@
-import type { ReactNode } from "react";
-import { useState } from "react";
+import type { ReactNode, UIEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { ChatMessageView } from "@/components/chat/chat-message";
 import { EvidencePanel } from "@/components/chat/evidence-panel";
@@ -31,6 +37,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useT } from "@/lib/i18n";
+import { readChatScroll, writeChatScroll } from "@/lib/chat/scroll-memory";
 import type { Citation, ConversationTurn } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -50,6 +57,11 @@ export interface ChatSessionControls {
 export interface ChatSessionShellProps {
   /** Conversation title; rendered as the visually hidden heading above the thread. */
   title: string;
+  /**
+   * Conversation id for the remembered thread scroll position. Undefined
+   * disables remembering it, which replay and the preview demo want.
+   */
+  scrollKey?: string;
   /** The turns to show; also the source of the citations offered to the evidence pane. */
   turns: ConversationTurn[];
   /** Replaces the thread body, for pages with a loading, empty, or failed state. */
@@ -78,8 +90,11 @@ export interface ChatSessionShellProps {
  * The shell owns the evidence selection and the persisted collapse state, since
  * the citation chips and the pane that answers them live here.
  */
+const SCROLL_SAVE_DELAY_MS = 120;
+
 export function ChatSessionShell({
   title,
+  scrollKey,
   turns,
   placeholder,
   banner,
@@ -94,6 +109,64 @@ export function ChatSessionShell({
   const [evidenceCollapsed, setEvidenceCollapsed] = useState<boolean>(() =>
     readEvidenceCollapsed(),
   );
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollTop = useRef<number | null>(null);
+  const saveTimer = useRef<number | null>(null);
+
+  const flushScrollPosition = useCallback(() => {
+    if (saveTimer.current !== null) {
+      window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    if (scrollKey !== undefined && lastScrollTop.current !== null) {
+      writeChatScroll(scrollKey, lastScrollTop.current);
+    }
+  }, [scrollKey]);
+
+  // The provider applies its own default position (an end scroll) on mount.
+  // This effect runs after its layout effects, and one animation frame later
+  // wins if the provider scrolls once more after that first render.
+  useLayoutEffect(() => {
+    if (scrollKey === undefined) {
+      return;
+    }
+    const viewport = viewportRef.current;
+    if (viewport === null) {
+      return;
+    }
+    const saved = readChatScroll(scrollKey);
+    if (saved === null) {
+      return;
+    }
+    viewport.scrollTop = saved;
+    const frame = window.requestAnimationFrame(() => {
+      viewport.scrollTop = saved;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [scrollKey]);
+
+  // Leaving the page must not lose the position the reader last stopped at.
+  useEffect(() => {
+    return () => {
+      flushScrollPosition();
+    };
+  }, [flushScrollPosition]);
+
+  function handleScroll(event: UIEvent<HTMLDivElement>) {
+    if (scrollKey === undefined) {
+      return;
+    }
+    lastScrollTop.current = event.currentTarget.scrollTop;
+    if (saveTimer.current !== null) {
+      window.clearTimeout(saveTimer.current);
+    }
+    saveTimer.current = window.setTimeout(() => {
+      saveTimer.current = null;
+      if (scrollKey !== undefined && lastScrollTop.current !== null) {
+        writeChatScroll(scrollKey, lastScrollTop.current);
+      }
+    }, SCROLL_SAVE_DELAY_MS);
+  }
 
   const citations = turns.flatMap((turn) => turn.meta?.citations ?? []);
   const activeIndex =
@@ -135,7 +208,10 @@ export function ChatSessionShell({
             <h1 className="sr-only">{title}</h1>
             <MessageScrollerProvider>
               <MessageScroller className="flex-1">
-                <MessageScrollerViewport>
+                <MessageScrollerViewport
+                  ref={viewportRef}
+                  onScroll={handleScroll}
+                >
                   <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
                     {turns.map((turn, index) => {
                       const state = turnState?.(turn, index);

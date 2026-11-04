@@ -247,6 +247,7 @@ function LiveChatSession({
   return (
     <ChatSessionShell
       title={title}
+      scrollKey={sessionId ?? undefined}
       turns={chat.turns}
       placeholder={
         chat.turns.length === 0 && !chat.streaming ? (
