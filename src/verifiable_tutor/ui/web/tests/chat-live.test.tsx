@@ -1,6 +1,6 @@
-import { screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type {
   ChatMessage,
@@ -19,6 +19,7 @@ import {
   type FetchCall,
   type StubRoute,
 } from "./api-stub";
+import { installMemoryStorage } from "./memory-storage";
 import { renderLiveRoute } from "./render-live-route";
 
 const STUDENT: Me = {
@@ -234,6 +235,12 @@ function chatRoute(handler: () => Response): StubRoute {
 
 let stub: ReturnType<typeof createFetchStub> | null = null;
 
+beforeEach(() => {
+  // The composer remembers its selection in local storage; install a working
+  // store and start every test from the defaults.
+  installMemoryStorage();
+});
+
 afterEach(() => {
   stub?.restore();
   stub = null;
@@ -400,6 +407,74 @@ describe("live chat", () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`/chat/${NEW_SESSION_ID}`),
     );
+  });
+
+  it("keeps the chosen model and thinking level across a reload and another conversation", async () => {
+    const secondSessionId = "second-session";
+    const secondSession: Conversation = {
+      id: secondSessionId,
+      title: "Another conversation",
+      created_at: "2026-11-03T11:00:00+00:00",
+      updated_at: "2026-11-03T11:01:00+00:00",
+      message_count: 2,
+    };
+    stub = createFetchStub([
+      { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
+      {
+        method: "GET",
+        path: "/api/sessions",
+        handler: () => jsonResponse({ sessions: [...SESSIONS, secondSession] }),
+      },
+      historyRoute((call) =>
+        jsonResponse({
+          session_id: call.path.split("/")[3],
+          messages: HISTORY,
+        }),
+      ),
+    ]);
+    const user = userEvent.setup();
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+    await screen.findByText(QUESTION);
+
+    // Defaults until the user chooses.
+    expect(
+      screen.getByRole("button", { name: "Model selection" }),
+    ).toHaveTextContent("DeepSeek Flash");
+    expect(screen.getByRole("button", { name: "Off" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Model selection" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "MiMo Pro" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Off" }));
+    await user.click(await screen.findByRole("menuitemradio", { name: "High" }));
+
+    // A refresh remounts the route; the last selection comes back.
+    cleanup();
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+    expect(await screen.findByText(QUESTION)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Model selection" }),
+    ).toHaveTextContent("MiMo Pro");
+    expect(screen.getByRole("button", { name: "High" })).toBeInTheDocument();
+
+    // Switching to another conversation keeps the same last selection.
+    cleanup();
+    renderLiveRoute(`/chat/${secondSessionId}`);
+    expect(await screen.findByText(QUESTION)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Model selection" }),
+    ).toHaveTextContent("MiMo Pro");
+    expect(screen.getByRole("button", { name: "High" })).toBeInTheDocument();
+
+    // A new conversation keeps the last choice too.
+    cleanup();
+    renderLiveRoute("/chat");
+    expect(await screen.findByLabelText("Your question")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Model selection" }),
+    ).toHaveTextContent("MiMo Pro");
+    expect(screen.getByRole("button", { name: "High" })).toBeInTheDocument();
   });
 
   it("streams the answer progressively and then opens the new conversation", async () => {

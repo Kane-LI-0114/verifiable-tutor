@@ -8,6 +8,10 @@ import { type ModelId, type ThinkingLevel } from "@/lib/models";
 import { useConversations } from "@/lib/session/conversations";
 import type { ChatMessage } from "@/lib/types";
 
+import {
+  readComposerSelection,
+  saveComposerSelection,
+} from "./composer-selection";
 import { ChatApiError, TutorChatTransport, type TutorSelection } from "./tutor-transport";
 import { toConversationTurns, type TutorUIMessage } from "./ui-message";
 
@@ -75,10 +79,20 @@ export function useTutorChat({
   const conversations = useConversations();
   const { expire } = useSession();
 
-  const [model, setModel] = useState<ModelId>("deepseek-flash");
-  const [thinking, setThinking] = useState<ThinkingLevel>("off");
+  const [model, setModel] = useState<ModelId>(
+    () => readComposerSelection().model,
+  );
+  const [thinking, setThinking] = useState<ThinkingLevel>(
+    () => readComposerSelection().thinking,
+  );
   const selection = useRef<TutorSelection>({ model, thinking });
   selection.current = { model, thinking };
+
+  // The composer selection is a browser preference: a refresh or another
+  // conversation keeps the last choice instead of resetting to the defaults.
+  useEffect(() => {
+    saveComposerSelection({ model, thinking });
+  }, [model, thinking]);
 
   const conversationId = useRef<string | null>(sessionId);
   const failed = useRef(false);

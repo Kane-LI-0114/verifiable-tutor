@@ -64,7 +64,7 @@ The authentication pages use two columns on a wide viewport: product framing on 
 | Citations | Inline Citation, Sources | A chip opens the evidence panel and expands it if it was collapsed. Citations sit in a row after the answer; fresh answers have none until the evidence layer emits `source-document` frames, and inline placement in prose arrives with them |
 | Tool calls | Tool, Terminal, Code Block | Exact command line, exit code, truncated output |
 | Actions | Button, Tooltip | Copy, retry, speak. The speak action uses a button and an audio element |
-| Composer | Input Group, Model Selector, Attachment | Provider and tier, thinking level, audio attachment (MiMo only), microphone control, send and stop. Enter sends, Shift+Enter inserts a newline, and Enter during an IME composition confirms the candidate instead of sending |
+| Composer | Input Group, Model Selector, Attachment | Provider and tier, thinking level, audio attachment (MiMo only), microphone control, send and stop. Enter sends, Shift+Enter inserts a newline, and Enter during an IME composition confirms the candidate instead of sending. The model and thinking choice persists in browser local storage (`vt.composer.selection`), so a refresh or another conversation keeps the last choice; missing or invalid stored data falls back to DeepSeek Flash with thinking off |
 
 The model selector offers DeepSeek Flash, MiMo Flash, and MiMo Pro, plus the four thinking levels, and all three values are sent with the live turn. In live mode the audio attachment and microphone controls stay disabled until the voice wiring lands; the preview demo keeps the attachment state and the DeepSeek capability error.
 
