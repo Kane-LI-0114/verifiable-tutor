@@ -47,8 +47,11 @@ export function LoginPage() {
     if (pending) {
       return;
     }
+    // Sign-in never shows the password *policy*: any rejected credential,
+    // including one shorter than the registration minimum, is a failed
+    // sign-in and gets the generic copy (mirrors the backend's 401 detail).
     if (password.length < 8) {
-      setNotice(t.auth.shortPassword);
+      setNotice(t.auth.invalidCredentials);
       return;
     }
     if (isPreview) {

@@ -29,7 +29,7 @@ describe("authentication pages", () => {
     expect(screen.getByRole("button", { name: "中文" })).toBeInTheDocument();
   });
 
-  it("rejects a short password before any network call", async () => {
+  it("explains a short password at sign-in as invalid credentials, not as a password rule", async () => {
     const user = userEvent.setup();
     renderRoute("/login");
 
@@ -37,7 +37,22 @@ describe("authentication pages", () => {
     await user.type(screen.getByLabelText("Password"), "short");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(screen.getByText("Use at least 8 characters.")).toBeInTheDocument();
+    expect(screen.getByText("Incorrect email or password.")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Use at least 8 characters."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses the same invalid credentials copy on the Chinese sign-in page", async () => {
+    const user = userEvent.setup();
+    renderRoute("/login", { lang: "zh" });
+
+    await user.type(screen.getByLabelText("邮箱"), "student@ust.hk");
+    await user.type(screen.getByLabelText("密码"), "short");
+    await user.click(screen.getByRole("button", { name: "登录" }));
+
+    expect(screen.getByText("邮箱或密码不正确。")).toBeInTheDocument();
+    expect(screen.queryByText("密码至少 8 位。")).not.toBeInTheDocument();
   });
 
   it("renders the registration form and its domain rule", () => {
