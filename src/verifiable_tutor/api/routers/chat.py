@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -45,6 +47,13 @@ class ChatBody(BaseModel):
             "Empty uses the default."
         ),
     )
+    thinking: Literal["off", "low", "high", "max"] | None = Field(
+        default=None,
+        description=(
+            "Unified thinking level; one of off, low, high, max. "
+            "Empty uses the configured role default."
+        ),
+    )
 
 
 @router.post(
@@ -82,10 +91,18 @@ def create_turn(
             message=body.message,
             provider=body.provider,
             tier=body.tier,
+            thinking=body.thinking,
             adapter=model,
         )
     except ChatError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+        headers = (
+            {"x-conversation-id": exc.conversation_id}
+            if exc.conversation_id is not None
+            else None
+        )
+        raise HTTPException(
+            status_code=exc.status_code, detail=exc.detail, headers=headers
+        ) from exc
 
     def body_stream():
         for frame in turn.frames:

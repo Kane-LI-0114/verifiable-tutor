@@ -23,12 +23,23 @@ from verifiable_tutor.api.factory import create_app
 from verifiable_tutor.settings import AppSettings, SmtpSettings
 from verifiable_tutor.llm.adapter import (
     ModelResponseError,
+    ModelSelection,
+    ModelSelectionError,
     SpeechResult,
     StreamEvent,
     TranscriptResult,
 )
 
 DEFAULT_PASSWORD = "correct-horse-battery"
+
+# Mirrors the committed chat defaults in config/models.yaml for the fake seam.
+DEFAULT_PROVIDER = "deepseek"
+DEFAULT_ALIAS = "flash"
+DEFAULT_THINKING = "off"
+MODEL_IDS = {
+    "deepseek": {"flash": "deepseek-flash"},
+    "mimo": {"flash": "mimo-v2.6-flash", "pro": "mimo-v2.6-pro"},
+}
 
 
 class FakeClock:
@@ -79,6 +90,34 @@ class FakeAdapter:
         )
         self.transcribe_error: Exception | None = None
         self.speak_error: Exception | None = None
+
+    def resolve_selection(
+        self,
+        *,
+        role: str = "chat",
+        provider: str | None = None,
+        tier: str | None = None,
+        thinking: str | None = None,
+    ) -> ModelSelection:
+        """Mirror the adapter's resolution seam with the configured defaults."""
+
+        resolved_provider = provider or DEFAULT_PROVIDER
+        aliases = MODEL_IDS.get(resolved_provider)
+        if aliases is None:
+            raise ModelSelectionError(f"unknown provider {resolved_provider!r}")
+        alias = tier or (
+            DEFAULT_ALIAS if resolved_provider == DEFAULT_PROVIDER else None
+        )
+        if alias not in aliases:
+            raise ModelSelectionError(
+                f"provider {resolved_provider!r} has no model alias {alias!r}"
+            )
+        return ModelSelection(
+            provider=resolved_provider,
+            model=aliases[alias],
+            tier=tier,
+            thinking=thinking or DEFAULT_THINKING,
+        )
 
     def chat_stream(self, messages: Sequence[Any], **kwargs: Any):
         self.calls.append({"messages": list(messages), "kwargs": dict(kwargs)})
@@ -265,6 +304,14 @@ def _harness(tmp_path: Path, settings_overrides: dict[str, Any] | None = None, *
 @pytest.fixture
 def api(tmp_path: Path):
     with _harness(tmp_path) as harness:
+        yield harness
+
+
+@pytest.fixture
+def domains_api(tmp_path: Path):
+    with _harness(
+        tmp_path, {"allowed_email_domains": ("connect.ust.hk", "ust.hk")}
+    ) as harness:
         yield harness
 
 

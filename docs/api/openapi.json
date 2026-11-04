@@ -535,6 +535,24 @@
             "description": "Existing conversation id; empty starts a new conversation. Example: 6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8.",
             "title": "Session Id"
           },
+          "thinking": {
+            "anyOf": [
+              {
+                "enum": [
+                  "off",
+                  "low",
+                  "high",
+                  "max"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unified thinking level; one of off, low, high, max. Empty uses the configured role default.",
+            "title": "Thinking"
+          },
           "tier": {
             "anyOf": [
               {
@@ -587,6 +605,34 @@
           "quote"
         ],
         "title": "CitationRecord",
+        "type": "object"
+      },
+      "DomainsResponse": {
+        "additionalProperties": false,
+        "example": {
+          "domains": [
+            "connect.ust.hk",
+            "ust.hk"
+          ]
+        },
+        "properties": {
+          "domains": {
+            "description": "Allowed registration email domains, in the configured order.",
+            "example": [
+              "connect.ust.hk",
+              "ust.hk"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Domains",
+            "type": "array"
+          }
+        },
+        "required": [
+          "domains"
+        ],
+        "title": "DomainsResponse",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1384,6 +1430,28 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/auth/domains": {
+      "get": {
+        "description": "Return the configured registration domains in their configured order.",
+        "operationId": "domains_api_auth_domains_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Allowed registration email domains",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/login": {
       "post": {
         "operationId": "login_api_auth_login_post",

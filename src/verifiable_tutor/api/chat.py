@@ -19,32 +19,41 @@ from ..llm.adapter import (
     CapabilityError,
     ConfigSelectionError,
     ModelResponseError,
+    ModelSelection,
     ModelSelectionError,
     ProviderAPIError,
     StreamEvent,
 )
 from . import streaming
+from ..prompts import load_prompt
 from ..settings import AppSettings
 from ..storage import Storage
 from ..trace import SessionTrace
 
-SYSTEM_PROMPT = (
-    "You are a tutor for the CSIT6000V course at HKUST. Answer in the "
-    "language of the question (Chinese or English), keep course terms in "
-    "their original form, and do not invent citations or course facts. "
-    "Evidence checking and the disclosure policy arrive in a later stage, so "
-    "say clearly when you are unsure."
-)
+# The chat system prompt lives in src/verifiable_tutor/prompts/chat_system.md;
+# edit that file, not this code (see AGENTS.md, prompt texts).
+SYSTEM_PROMPT = load_prompt("chat_system")
 GENERIC_STREAM_ERROR = "The model failed while answering. Please try again."
 GENERIC_UNAVAILABLE = "The model is temporarily unavailable. Please try again."
 
 
 class ChatError(Exception):
-    """A client-visible chat failure raised before the stream starts."""
+    """A client-visible chat failure raised before the stream starts.
 
-    def __init__(self, status_code: int, detail: str) -> None:
+    ``conversation_id`` is set once the turn has created or resolved its
+    conversation, so the HTTP layer can return it and the client can recover
+    instead of creating a second conversation when it retries.
+    """
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: str,
+        conversation_id: str | None = None,
+    ) -> None:
         self.status_code = status_code
         self.detail = detail
+        self.conversation_id = conversation_id
         super().__init__(detail)
 
 
@@ -54,16 +63,16 @@ class ChatTurn:
     frames: Iterable[dict[str, Any]]
 
 
-def _prestream_error(exc: Exception) -> ChatError:
+def _prestream_error(exc: Exception, *, conversation_id: str | None) -> ChatError:
     if isinstance(exc, (ModelSelectionError, ConfigSelectionError, CapabilityError)):
-        return ChatError(400, str(exc))
-    if isinstance(exc, ModelResponseError):
-        return ChatError(503, exc.user_message)
-    if isinstance(exc, ProviderAPIError):
-        return ChatError(503, GENERIC_UNAVAILABLE)
-    if isinstance(exc, AdapterError):
-        return ChatError(503, GENERIC_UNAVAILABLE)
-    return ChatError(503, "The model layer is not available.")
+        status, detail = 400, str(exc)
+    elif isinstance(exc, ModelResponseError):
+        status, detail = 503, exc.user_message
+    elif isinstance(exc, AdapterError):
+        status, detail = 503, GENERIC_UNAVAILABLE
+    else:
+        status, detail = 503, "The model layer is not available."
+    return ChatError(status, detail, conversation_id=conversation_id)
 
 
 def _stream_error_text(exc: Exception) -> str:
@@ -126,6 +135,7 @@ class ChatService:
         message: str,
         provider: str | None,
         tier: str | None,
+        thinking: str | None,
         adapter: Any,
     ) -> ChatTurn:
         message = message.strip()
@@ -152,14 +162,24 @@ class ChatService:
             kwargs["provider"] = provider
         if tier is not None:
             kwargs["tier"] = tier
+        if thinking is not None:
+            kwargs["thinking"] = thinking
         try:
+            selection = adapter.resolve_selection(
+                role="chat",
+                provider=provider,
+                tier=tier,
+                thinking=thinking,
+            )
             stream = adapter.chat_stream(messages, **kwargs)
             first_event = next(stream)
         except StopIteration:
             stream = iter(())
             first_event = None
         except Exception as exc:  # model boundary failures become HTTP errors
-            raise _prestream_error(exc) from exc
+            raise _prestream_error(
+                exc, conversation_id=conversation["id"]
+            ) from exc
 
         message_id = uuid.uuid4().hex
         frames = self._frame_stream(
@@ -168,6 +188,7 @@ class ChatService:
             message_id=message_id,
             provider=provider,
             tier=tier,
+            selection=selection,
             first_event=first_event,
             stream=stream,
         )
@@ -182,6 +203,7 @@ class ChatService:
         message_id: str,
         provider: str | None,
         tier: str | None,
+        selection: ModelSelection,
         first_event: StreamEvent | None,
         stream: Iterator[StreamEvent],
     ) -> Iterator[dict[str, Any]]:
@@ -198,8 +220,10 @@ class ChatService:
             {
                 "conversation_id": session_id,
                 "message_id": message_id,
-                "provider": provider,
-                "tier": tier,
+                "provider": selection.provider,
+                "model": selection.model,
+                "tier": selection.tier,
+                "thinking": selection.thinking,
                 "started_at": self._clock().isoformat(),
             },
             now=self._clock(),

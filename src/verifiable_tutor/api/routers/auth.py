@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ...auth.service import AuthError, AuthService
 from ..deps import CurrentUser, SettingsDep, get_auth
 from ..schemas import (
+    DomainsResponse,
     LoginResponse,
     MeResponse,
     RegisterResponse,
@@ -172,6 +173,17 @@ def logout(request: Request, response: Response, auth: AuthService = Depends(get
 )
 def me(user: CurrentUser):
     return user
+
+
+@router.get(
+    "/api/auth/domains",
+    response_model=DomainsResponse,
+    summary="Allowed registration email domains",
+)
+def domains(settings: SettingsDep):
+    """Return the configured registration domains in their configured order."""
+
+    return {"domains": list(settings.allowed_email_domains)}
 
 
 @router.post(

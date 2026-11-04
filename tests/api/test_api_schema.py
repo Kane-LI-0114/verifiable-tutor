@@ -19,6 +19,7 @@ EXPECTED_RESPONSE_MODELS = {
     "VerifyResponse",
     "LoginResponse",
     "MeResponse",
+    "DomainsResponse",
     "ResetRequestResponse",
     "ResetResponse",
     "SessionListResponse",
@@ -73,6 +74,10 @@ def test_json_routes_declare_response_models(api):
     assert login["application/json"]["schema"] == {
         "$ref": "#/components/schemas/LoginResponse"
     }
+    domains = schema["paths"]["/api/auth/domains"]["get"]["responses"]["200"]["content"]
+    assert domains["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/DomainsResponse"
+    }
     sessions = schema["paths"]["/api/sessions"]["get"]["responses"]["200"]["content"]
     assert sessions["application/json"]["schema"] == {
         "$ref": "#/components/schemas/SessionListResponse"
@@ -122,6 +127,7 @@ RESPONSE_MODELS = {
     "LoginUser",
     "LoginResponse",
     "MeResponse",
+    "DomainsResponse",
     "ResetRequestResponse",
     "ResetResponse",
     "SessionSummary",
@@ -212,6 +218,9 @@ def test_response_fields_keep_examples_and_enums(api):
 
     register_response = schemas["RegisterResponse"]["properties"]
     assert register_response["email_delivery"]["enum"] == ["log", "smtp"]
+
+    domains_response = schemas["DomainsResponse"]["properties"]
+    assert domains_response["domains"]["example"] == ["connect.ust.hk", "ust.hk"]
 
     message = schemas["MessageRecord"]["properties"]
     assert message["content"]["example"] == "What is MPI_Allreduce?"

@@ -6,6 +6,7 @@ EXPECTED = {
     "get": [
         "/api/health",
         "/api/auth/me",
+        "/api/auth/domains",
         "/api/sessions",
         "/api/sessions/{session_id}/messages",
         "/api/sessions/{session_id}/replay",

@@ -113,6 +113,21 @@ class StreamEvent:
 
 
 @dataclass(frozen=True)
+class ModelSelection:
+    """One chat turn's resolved provider, model, requested tier, and thinking.
+
+    ``tier`` records what the caller asked for, so an empty request stays
+    visible in the trace; ``provider``, ``model``, and ``thinking`` are the
+    effective values after the configured role defaults are applied.
+    """
+
+    provider: str
+    model: str
+    tier: str | None
+    thinking: str
+
+
+@dataclass(frozen=True)
 class TranscriptResult:
     text: str
     language: str
@@ -315,6 +330,25 @@ class ModelAdapter:
         return provider_name, model_id, request
 
     # -- public seam -------------------------------------------------------
+    def resolve_selection(
+        self,
+        *,
+        role: str = "chat",
+        provider: str | None = None,
+        tier: str | None = None,
+        thinking: str | None = None,
+    ) -> ModelSelection:
+        """Resolve a chat turn's effective provider, model, and thinking level."""
+
+        provider_name, model_id = self._resolve(role, provider, tier)
+        level = self._effective_thinking(role, thinking, None)
+        return ModelSelection(
+            provider=provider_name,
+            model=model_id,
+            tier=tier,
+            thinking=level,
+        )
+
     def chat(
         self,
         messages: Sequence[Mapping[str, Any]],

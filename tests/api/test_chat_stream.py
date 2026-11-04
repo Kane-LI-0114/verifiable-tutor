@@ -10,6 +10,7 @@ from verifiable_tutor.llm.adapter import (
     ModelSelectionError,
     StreamEvent,
 )
+from verifiable_tutor.prompts import load_prompt
 
 from helpers import parse_sse
 
@@ -19,6 +20,20 @@ PASSWORD = "correct-horse-battery"
 def _text_events(*chunks: str) -> list[StreamEvent]:
     events = [StreamEvent(kind="text", text=chunk) for chunk in chunks]
     return [*events, StreamEvent(kind="finish", finish_reason="stop")]
+
+
+def _trace_meta(api, session_id: str) -> dict:
+    """Read the meta line of the conversation trace for one turn."""
+
+    user_id = api.client.get("/api/auth/me").json()["id"]
+    trace_path = api.settings.trace_dir / user_id / f"{session_id}.jsonl"
+    records = [
+        json.loads(line)
+        for line in trace_path.read_text(encoding="utf-8").splitlines()
+    ]
+    metas = [record for record in records if record["kind"] == "meta"]
+    assert len(metas) == 1
+    return metas[0]
 
 
 def test_chat_requires_sign_in(api):
@@ -78,6 +93,19 @@ def test_chat_persists_both_messages_and_hides_them_behind_the_session(api):
     assert api.adapter.calls[0]["messages"][0]["role"] == "system"
 
 
+def test_chat_sends_the_system_prompt_from_the_prompts_package(api):
+    """The system message is the prompts-package text, not an inline copy."""
+
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post("/api/chat", json={"message": "What is MPI?"})
+
+    assert response.status_code == 200
+    first = api.adapter.calls[0]["messages"][0]
+    assert first == {"role": "system", "content": load_prompt("chat_system")}
+    assert "CSIT6000V" in first["content"]
+
+
 def test_chat_resumes_a_conversation_and_sends_its_history(api):
     api.create_active_account("alice@ust.hk")
     first = api.client.post("/api/chat", json={"message": "first question"})
@@ -126,6 +154,46 @@ def test_chat_model_failure_before_the_first_byte_returns_503(api):
     assert response.json() == {
         "detail": "The model is temporarily unavailable. Please try again."
     }
+    session_id = response.headers["x-conversation-id"]
+    sessions = api.client.get("/api/sessions").json()["sessions"]
+    assert [session["id"] for session in sessions] == [session_id]
+
+
+def test_chat_forwards_the_thinking_level(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post(
+        "/api/chat", json={"message": "hello", "thinking": "high"}
+    )
+
+    assert response.status_code == 200
+    assert api.adapter.calls[0]["kwargs"]["thinking"] == "high"
+
+
+def test_chat_rejects_an_unknown_thinking_level(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post(
+        "/api/chat", json={"message": "hello", "thinking": "bogus"}
+    )
+
+    assert response.status_code == 422
+    assert api.adapter.calls == []
+
+
+def test_chat_mid_stream_failure_records_the_error_frame_for_replay(api):
+    api.create_active_account("alice@ust.hk")
+    api.adapter.events = _text_events("Par")
+    api.adapter.fail_after = 1
+
+    live = api.client.post("/api/chat", json={"message": "hello"})
+    session_id = live.headers["x-conversation-id"]
+
+    replay = api.client.get(f"/api/sessions/{session_id}/replay")
+
+    parts = parse_sse(replay.text)
+    types = [part if part == "[DONE]" else part["type"] for part in parts]
+    assert types[-2:] == ["error", "[DONE]"]
 
 
 def test_chat_mid_stream_failure_emits_the_error_part_and_keeps_no_partial_answer(api):
@@ -162,6 +230,40 @@ def test_chat_records_the_session_trace_without_the_email(api):
     assert kinds[0] == "meta"
     assert kinds.count("frame") == 7
     assert "event" in kinds
+
+
+def test_chat_trace_records_the_requested_thinking_level(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post(
+        "/api/chat", json={"message": "hello", "thinking": "high"}
+    )
+
+    meta = _trace_meta(api, response.headers["x-conversation-id"])
+    assert meta["thinking"] == "high"
+
+
+def test_chat_trace_records_the_configured_default_thinking_level(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post("/api/chat", json={"message": "hello"})
+
+    # Independent expected value: config/models.yaml roles.chat.thinking is "off".
+    meta = _trace_meta(api, response.headers["x-conversation-id"])
+    assert meta["thinking"] == "off"
+
+
+def test_chat_trace_records_the_resolved_provider_and_model(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post("/api/chat", json={"message": "hello"})
+
+    # Independent expected values: config/models.yaml roles.chat resolves
+    # deepseek alias flash to the deepseek-flash model id.
+    meta = _trace_meta(api, response.headers["x-conversation-id"])
+    assert meta["provider"] == "deepseek"
+    assert meta["model"] == "deepseek-flash"
+    assert meta["tier"] is None
 
 
 def test_chat_invalid_model_selection_is_a_bad_request(api):

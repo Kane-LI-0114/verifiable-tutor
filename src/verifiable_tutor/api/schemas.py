@@ -239,6 +239,15 @@ class ResetResponse(BaseModel):
     )
 
 
+class DomainsResponse(BaseModel):
+    model_config = _example({"domains": ["connect.ust.hk", "ust.hk"]})
+
+    domains: list[str] = _ex(
+        ["connect.ust.hk", "ust.hk"],
+        "Allowed registration email domains, in the configured order.",
+    )
+
+
 class SessionSummary(BaseModel):
     model_config = _example(SESSION_EXAMPLE)
 

@@ -13,6 +13,20 @@ def test_register_rejects_a_foreign_email_domain(api):
     assert api.email.sent == []
 
 
+def test_allowed_domains_are_public_configuration(api):
+    response = api.client.get("/api/auth/domains")
+
+    assert response.status_code == 200
+    assert response.json() == {"domains": ["ust.hk"]}
+
+
+def test_allowed_domains_keep_the_configured_order(domains_api):
+    response = domains_api.client.get("/api/auth/domains")
+
+    assert response.status_code == 200
+    assert response.json() == {"domains": ["connect.ust.hk", "ust.hk"]}
+
+
 def test_register_rejects_an_invalid_email_address(api):
     response = api.register("not-an-email")
 
