@@ -90,7 +90,10 @@ export interface ChatSessionShellProps {
  * The shell owns the evidence selection and the persisted collapse state, since
  * the citation chips and the pane that answers them live here.
  */
+/** How long a debounced scroll write waits after the last scroll event. */
 const SCROLL_SAVE_DELAY_MS = 120;
+/** How long the thread re-applies its opening position while layout settles. */
+const SCROLL_SETTLE_MAX_MS = 1500;
 
 export function ChatSessionShell({
   title,
@@ -112,6 +115,12 @@ export function ChatSessionShell({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTop = useRef<number | null>(null);
   const saveTimer = useRef<number | null>(null);
+  const userInteracted = useRef(false);
+  const settleFrame = useRef<number | null>(null);
+
+  const markUserIntent = useCallback(() => {
+    userInteracted.current = true;
+  }, []);
 
   const flushScrollPosition = useCallback(() => {
     if (saveTimer.current !== null) {
@@ -123,9 +132,10 @@ export function ChatSessionShell({
     }
   }, [scrollKey]);
 
-  // The provider applies its own default position (an end scroll) on mount.
-  // This effect runs after its layout effects, and one animation frame later
-  // wins if the provider scrolls once more after that first render.
+  // The scroller's own end position is measured before off-screen messages have
+  // their final height, so a single programmatic scroll can land near the first
+  // question. Re-apply the opening position for a few frames until the layout is
+  // stable, unless the reader has already taken over the scroll.
   useLayoutEffect(() => {
     if (scrollKey === undefined) {
       return;
@@ -135,14 +145,43 @@ export function ChatSessionShell({
       return;
     }
     const saved = readChatScroll(scrollKey);
-    if (saved === null) {
-      return;
-    }
-    viewport.scrollTop = saved;
-    const frame = window.requestAnimationFrame(() => {
-      viewport.scrollTop = saved;
-    });
-    return () => window.cancelAnimationFrame(frame);
+    lastScrollTop.current = null;
+    userInteracted.current = false;
+    const startedAt = window.performance.now();
+    let lastMax = -1;
+    let stableFrames = 0;
+
+    const settle = () => {
+      settleFrame.current = null;
+      const element = viewportRef.current;
+      if (element === null || userInteracted.current) {
+        return;
+      }
+      const max = Math.max(0, element.scrollHeight - element.clientHeight);
+      // A new conversation opens on its latest answer; a remembered one opens
+      // where the reader left it.
+      element.scrollTop = saved === null ? max : saved;
+      const reached =
+        saved === null
+          ? Math.abs(element.scrollTop - max) <= 1
+          : max >= saved && Math.abs(element.scrollTop - saved) <= 1;
+      stableFrames = reached && max === lastMax ? stableFrames + 1 : 0;
+      lastMax = max;
+      if (
+        stableFrames >= 3 ||
+        window.performance.now() - startedAt > SCROLL_SETTLE_MAX_MS
+      ) {
+        return;
+      }
+      settleFrame.current = window.requestAnimationFrame(settle);
+    };
+    settleFrame.current = window.requestAnimationFrame(settle);
+    return () => {
+      if (settleFrame.current !== null) {
+        window.cancelAnimationFrame(settleFrame.current);
+        settleFrame.current = null;
+      }
+    };
   }, [scrollKey]);
 
   // Leaving the page must not lose the position the reader last stopped at.
@@ -153,7 +192,9 @@ export function ChatSessionShell({
   }, [flushScrollPosition]);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
-    if (scrollKey === undefined) {
+    // Only a reader's own scrolling is remembered. The programmatic positioning
+    // on mount must not overwrite the stored position with a measured guess.
+    if (scrollKey === undefined || !userInteracted.current) {
       return;
     }
     lastScrollTop.current = event.currentTarget.scrollTop;
@@ -204,13 +245,19 @@ export function ChatSessionShell({
         {placeholder !== undefined ? (
           placeholder
         ) : (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+            onPointerDown={markUserIntent}
+          >
             <h1 className="sr-only">{title}</h1>
             <MessageScrollerProvider>
               <MessageScroller className="flex-1">
                 <MessageScrollerViewport
                   ref={viewportRef}
                   onScroll={handleScroll}
+                  onWheel={markUserIntent}
+                  onTouchMove={markUserIntent}
+                  onKeyDown={markUserIntent}
                 >
                   <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
                     {turns.map((turn, index) => {

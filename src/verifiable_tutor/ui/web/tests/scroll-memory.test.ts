@@ -29,11 +29,15 @@ describe("chat scroll memory", () => {
 
   it("rounds the stored offset to whole pixels", () => {
     writeChatScroll("session-a", 120.6);
+
     expect(readChatScroll("session-a")).toBe(121);
+    expect(
+      JSON.parse(window.localStorage.getItem(chatScrollKey("session-a")) ?? "{}"),
+    ).toEqual({ top: 121 });
   });
 
   it("ignores invalid stored values", () => {
-    for (const value of ["", "abc", "-5", "NaN", "Infinity"]) {
+    for (const value of ["", "abc", "-5", "NaN", "Infinity", "120"]) {
       window.localStorage.setItem(chatScrollKey("session-a"), value);
       expect(readChatScroll("session-a")).toBeNull();
     }

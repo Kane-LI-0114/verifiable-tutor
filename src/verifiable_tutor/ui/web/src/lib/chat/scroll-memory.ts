@@ -20,8 +20,14 @@ export function readChatScroll(sessionId: string): number | null {
     if (raw === null || raw === undefined) {
       return null;
     }
-    const top = Number.parseFloat(raw);
-    return Number.isFinite(top) && top >= 0 ? top : null;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) {
+      return null;
+    }
+    const top = (parsed as Record<string, unknown>).top;
+    return typeof top === "number" && Number.isFinite(top) && top >= 0
+      ? top
+      : null;
   } catch {
     return null;
   }
@@ -37,7 +43,10 @@ export function writeChatScroll(sessionId: string, top: number): void {
     ) {
       return;
     }
-    window.localStorage?.setItem(chatScrollKey(sessionId), String(Math.round(top)));
+    window.localStorage?.setItem(
+      chatScrollKey(sessionId),
+      JSON.stringify({ top: Math.round(top) }),
+    );
   } catch {
     // Private mode or quota refusal: scrolling still works for this mount.
   }

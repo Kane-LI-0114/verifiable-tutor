@@ -655,6 +655,8 @@ describe("live chat", () => {
         configurable: true,
         value: 400,
       });
+      // A real gesture marks the intent; the shell only remembers user scrolls.
+      fireEvent.wheel(element);
       element.scrollTop = top;
       fireEvent.scroll(element);
     }
@@ -671,6 +673,14 @@ describe("live chat", () => {
     renderLiveRoute(`/chat/${SESSION_ID}`);
     const first = await viewport();
     await waitFor(() => expect(first.scrollTop).toBe(120));
+    // The scroller's own programmatic positioning must not overwrite it.
+    first.scrollTop = 0;
+    fireEvent.scroll(first);
+    cleanup();
+
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+    const reopened = await viewport();
+    await waitFor(() => expect(reopened.scrollTop).toBe(120));
     cleanup();
 
     renderLiveRoute(`/chat/${secondSessionId}`);
