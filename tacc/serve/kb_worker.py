@@ -25,17 +25,14 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-PROMPT_PATH = Path(__file__).with_name("prompt_kb_v1.md")
+# The driver stages this file next to the worker from the single prompt home,
+# src/verifiable_tutor/prompts/kb_v1.md (see AGENTS.md).
+PROMPT_PATH = Path(__file__).with_name("kb_v1.md")
 USER_MARKER = "%%USER%%"
+REPAIR_MARKER = "%%REPAIR%%"
 RECORD_SCHEMA = "vt-kb-record/1"
 PROGRESS_SCHEMA = "vt-kb-progress/1"
 SUMMARY_SCHEMA = "vt-kb-summary/1"
-REPAIR_INSTRUCTION = (
-    "The previous answer was not a valid JSON object. Reply with exactly one JSON "
-    "object and nothing else: keys summary, key_terms, study_questions, citations. "
-    "Every citations item is an object with doc_id, page_no and quote, and every "
-    "quote must be copied verbatim from the page text above."
-)
 
 
 def now_iso() -> str:
@@ -46,12 +43,17 @@ def log(message: str) -> None:
     print(f"[kb-worker] {message}", flush=True)
 
 
-def load_prompt(path: Path) -> tuple[str, str]:
+def load_prompt(path: Path) -> tuple[str, str, str]:
+    """Split the template into its system, user, and repair sections."""
+
     text = Path(path).read_text(encoding="utf-8")
     if USER_MARKER not in text:
         raise SystemExit(f"prompt template has no {USER_MARKER} marker: {path}")
-    system, user = text.split(USER_MARKER, 1)
-    return system.strip(), user.strip()
+    if REPAIR_MARKER not in text:
+        raise SystemExit(f"prompt template has no {REPAIR_MARKER} marker: {path}")
+    system, rest = text.split(USER_MARKER, 1)
+    user, repair = rest.split(REPAIR_MARKER, 1)
+    return system.strip(), user.strip(), repair.strip()
 
 
 def render_user_prompt(template: str, chunk: dict) -> str:
@@ -146,11 +148,11 @@ def chat_with_retry(server_url: str, body: dict, timeout_s: float = 180.0) -> st
 
 
 def build_messages(
-    system: str, user: str, *, repair: bool = False
+    system: str, user: str, *, repair: str | None = None
 ) -> list[dict]:
     content = user
     if repair:
-        content = f"{user}\n\n{REPAIR_INSTRUCTION}"
+        content = f"{user}\n\n{repair}"
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": content},
@@ -356,7 +358,7 @@ def main() -> int:
                 "chunks_total": total,
             }
         )
-        system_prompt, user_template = load_prompt(args.prompt)
+        system_prompt, user_template, repair_prompt = load_prompt(args.prompt)
         write_progress(
             progress_path,
             build_id=build_id,
@@ -401,7 +403,7 @@ def main() -> int:
                         {
                             **body_base,
                             "messages": build_messages(
-                                system_prompt, user_prompt, repair=True
+                                system_prompt, user_prompt, repair=repair_prompt
                             ),
                         },
                         timeout_s=args.http_timeout,

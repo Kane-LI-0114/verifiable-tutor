@@ -41,13 +41,16 @@ from verifiable_tutor.knowledge import (  # noqa: E402
     validate_progress,
     validate_record,
 )
+from verifiable_tutor.prompts import PROMPTS_DIR  # noqa: E402
 
 JOB_TEMPLATE = REPO_ROOT / "tacc" / "serve"
 SUBMIT_HELPER = REPO_ROOT / "scripts" / "tacc" / "submit.sh"
 CONFIG_PATH = REPO_ROOT / "config" / "knowledge.yaml"
 TCLOUD = shutil.which("tcloud") or "tcloud"
 FINISHED_STATES = {"CD", "CA", "F", "TO", "NF", "OOM", "BF", "PR"}
-JOB_FILES = ("job.sh", "kb_worker.py", "prompt_kb_v1.md", "tuxiv.conf")
+JOB_FILES = ("job.sh", "kb_worker.py", "tuxiv.conf")
+# The prompt texts live once under prompts/; the driver stages a copy for the job.
+JOB_PROMPT = "kb_v1.md"
 REQUEST_UPLOAD_DIR = "kb/requests"
 RESULT_UPLOAD_DIR = "kb/results"
 
@@ -168,6 +171,7 @@ def prepare_build(args, config: dict) -> dict:
     task_dir.mkdir(parents=True, exist_ok=True)
     for name in JOB_FILES:
         shutil.copyfile(JOB_TEMPLATE / name, task_dir / name)
+    shutil.copyfile(PROMPTS_DIR / JOB_PROMPT, task_dir / JOB_PROMPT)
     shutil.copyfile(request_path, task_dir / "request.json")
     shutil.copyfile(input_path, task_dir / "input.jsonl")
     return {

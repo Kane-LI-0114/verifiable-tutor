@@ -22,3 +22,6 @@ Page text:
 
 Return one JSON object with this shape:
 {"summary": "...", "key_terms": ["..."], "study_questions": ["..."], "citations": [{"doc_id": "{{DOC_ID}}", "page_no": {{PAGE_NO}}, "quote": "..."}]}
+
+%%REPAIR%%
+The previous answer was not a valid JSON object. Reply with exactly one JSON object and nothing else: keys summary, key_terms, study_questions, citations. Every citations item is an object with doc_id, page_no and quote, and every quote must be copied verbatim from the page text above.

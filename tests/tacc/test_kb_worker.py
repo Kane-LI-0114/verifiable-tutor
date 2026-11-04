@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -8,6 +9,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WORKER = REPO_ROOT / "tacc" / "serve" / "kb_worker.py"
+# The single home for prompt texts; the driver stages a copy into the task dir.
+PROMPT = REPO_ROOT / "src" / "verifiable_tutor" / "prompts" / "kb_v1.md"
 
 CHUNKS = [
     {
@@ -120,9 +123,13 @@ def write_request(tmp_path: Path, *, chunks=None, deadline=None) -> Path:
 
 def run_worker(tmp_path: Path, server: ThreadingHTTPServer, *, deadline=None):
     request_path = write_request(tmp_path, deadline=deadline)
+    # Stage the job the way the driver does: worker and prompt side by side.
+    staged_worker = tmp_path / "kb_worker.py"
+    shutil.copyfile(WORKER, staged_worker)
+    shutil.copyfile(PROMPT, tmp_path / "kb_v1.md")
     command = [
         sys.executable,
-        str(WORKER),
+        str(staged_worker),
         "--request",
         str(request_path),
         "--server-url",

@@ -147,3 +147,13 @@ def test_store_build_creates_the_storage_directories(
     stored = json.loads(summary_path.read_text(encoding="utf-8"))
     assert stored["queue_seconds"] == 2.0
     assert build_record["job_id"] == "28001"
+
+
+def test_kb_prompt_has_a_single_home_under_the_prompts_package():
+    """The driver stages the job prompt from prompts/, not from the job dir."""
+
+    driver = load_driver()
+
+    assert not (driver.JOB_TEMPLATE / "prompt_kb_v1.md").exists()
+    assert (driver.PROMPTS_DIR / "kb_v1.md").is_file()
+    assert "prompt_kb_v1.md" not in driver.JOB_FILES
