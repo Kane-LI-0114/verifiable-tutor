@@ -49,7 +49,7 @@ def list_sessions(user: CurrentUser, storage: StorageDep):
     summary="Conversation message history",
 )
 def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
-    """Return one conversation's messages after an ownership check."""
+    """Return one conversation's messages with their turn metadata."""
 
     _conversation_or_404(storage, session_id, user)
     messages = [
@@ -60,6 +60,39 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
             "content": message["content"],
             "provider": message["provider"],
             "tier": message["tier"],
+            "reasoning": message["reasoning"],
+            "model": message["model"],
+            "thinking": message["thinking"],
+            "work_steps": [
+                {
+                    "step": step["step"],
+                    "status": step["status"],
+                    "detail": step["detail"],
+                    "duration_ms": step["duration_ms"],
+                    "policy": step["policy"],
+                    "rule_id": step["rule_id"],
+                }
+                for step in message["work_steps"]
+            ],
+            "citations": [
+                {
+                    "doc_id": citation["doc_id"],
+                    "page_no": citation["page_no"],
+                    "quote": citation["quoted_span"],
+                    "bbox_norm": citation["bbox_norm"],
+                }
+                for citation in message["citations"]
+            ],
+            "tool_calls": [
+                {
+                    "name": call["name"],
+                    "command": call["command"] or [],
+                    "exit_code": call["exit_code"],
+                    "output": call["output"],
+                    "status": call["status"],
+                }
+                for call in message["tool_calls"]
+            ],
             "created_at": message["created_at"],
         }
         for message in storage.list_messages(session_id)

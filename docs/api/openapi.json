@@ -811,16 +811,113 @@
         "title": "MeResponse",
         "type": "object"
       },
+      "MessageCitationRecord": {
+        "additionalProperties": false,
+        "example": {
+          "bbox_norm": [
+            0.1,
+            0.2,
+            0.3,
+            0.4
+          ],
+          "doc_id": "course_project",
+          "page_no": 1,
+          "quote": "Building an End-to-End Agent System"
+        },
+        "properties": {
+          "bbox_norm": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Normalized page box [x1, y1, x2, y2] for the evidence panel, when the citation carries one.",
+            "example": [
+              0.1,
+              0.2,
+              0.3,
+              0.4
+            ],
+            "title": "Bbox Norm"
+          },
+          "doc_id": {
+            "description": "Course document id.",
+            "example": "course_project",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "page_no": {
+            "description": "Page number the quote appears on.",
+            "example": 1,
+            "title": "Page No",
+            "type": "integer"
+          },
+          "quote": {
+            "description": "Exact quoted span on the page.",
+            "example": "Building an End-to-End Agent System",
+            "title": "Quote",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc_id",
+          "page_no",
+          "quote"
+        ],
+        "title": "MessageCitationRecord",
+        "type": "object"
+      },
       "MessageRecord": {
         "additionalProperties": false,
         "example": {
-          "content": "What is MPI_Allreduce?",
+          "citations": [
+            {
+              "doc_id": "course_project",
+              "page_no": 1,
+              "quote": "Building an End-to-End Agent System"
+            }
+          ],
+          "content": "MPI_Allreduce reduces a value across all ranks.",
           "created_at": "2026-11-02T12:00:00+00:00",
           "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
-          "role": "user",
-          "sequence": 1
+          "model": "deepseek-flash",
+          "provider": "deepseek",
+          "reasoning": "The question asks about a collective operation.",
+          "role": "assistant",
+          "sequence": 2,
+          "thinking": "high",
+          "tier": "flash",
+          "tool_calls": [],
+          "work_steps": [
+            {
+              "duration_ms": 812,
+              "status": "done",
+              "step": "generate"
+            }
+          ]
         },
         "properties": {
+          "citations": {
+            "description": "Page citations carried by the answer, in display order.",
+            "example": [
+              {
+                "doc_id": "course_project",
+                "page_no": 1,
+                "quote": "Building an End-to-End Agent System"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MessageCitationRecord"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
           "content": {
             "description": "Message text, in the language used.",
             "example": "What is MPI_Allreduce?",
@@ -839,6 +936,19 @@
             "title": "Id",
             "type": "string"
           },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolved model id for assistant messages; null for user messages or legacy answers.",
+            "example": "deepseek-flash",
+            "title": "Model"
+          },
           "provider": {
             "anyOf": [
               {
@@ -850,6 +960,18 @@
             ],
             "description": "Model provider for assistant messages; null for user messages.",
             "title": "Provider"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Streamed model thinking for assistant messages; null when the model produced none or the message predates turn metadata.",
+            "title": "Reasoning"
           },
           "role": {
             "description": "Who produced the message.",
@@ -867,6 +989,19 @@
             "title": "Sequence",
             "type": "integer"
           },
+          "thinking": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Effective thinking level for assistant messages; null for user messages or legacy answers.",
+            "example": "high",
+            "title": "Thinking"
+          },
           "tier": {
             "anyOf": [
               {
@@ -878,6 +1013,41 @@
             ],
             "description": "Model tier for assistant messages; null for user messages.",
             "title": "Tier"
+          },
+          "tool_calls": {
+            "description": "Tool calls executed for the answer, in display order.",
+            "example": [
+              {
+                "command": [
+                  "rg",
+                  "MPI_Allreduce"
+                ],
+                "exit_code": 0,
+                "name": "course_search",
+                "output": "found 2 pages",
+                "status": "done"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ToolCallRecord"
+            },
+            "title": "Tool Calls",
+            "type": "array"
+          },
+          "work_steps": {
+            "description": "Ordered work-chain steps for assistant messages; empty for user messages and legacy answers.",
+            "example": [
+              {
+                "duration_ms": 812,
+                "status": "done",
+                "step": "generate"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/WorkStepRecord"
+            },
+            "title": "Work Steps",
+            "type": "array"
           }
         },
         "required": [
@@ -885,6 +1055,9 @@
           "sequence",
           "role",
           "content",
+          "work_steps",
+          "citations",
+          "tool_calls",
           "created_at"
         ],
         "title": "MessageRecord",
@@ -1140,11 +1313,31 @@
         "example": {
           "messages": [
             {
-              "content": "What is MPI_Allreduce?",
+              "citations": [
+                {
+                  "doc_id": "course_project",
+                  "page_no": 1,
+                  "quote": "Building an End-to-End Agent System"
+                }
+              ],
+              "content": "MPI_Allreduce reduces a value across all ranks.",
               "created_at": "2026-11-02T12:00:00+00:00",
               "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
-              "role": "user",
-              "sequence": 1
+              "model": "deepseek-flash",
+              "provider": "deepseek",
+              "reasoning": "The question asks about a collective operation.",
+              "role": "assistant",
+              "sequence": 2,
+              "thinking": "high",
+              "tier": "flash",
+              "tool_calls": [],
+              "work_steps": [
+                {
+                  "duration_ms": 812,
+                  "status": "done",
+                  "step": "generate"
+                }
+              ]
             }
           ],
           "session_id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8"
@@ -1154,11 +1347,31 @@
             "description": "Messages in sequence order.",
             "example": [
               {
-                "content": "What is MPI_Allreduce?",
+                "citations": [
+                  {
+                    "doc_id": "course_project",
+                    "page_no": 1,
+                    "quote": "Building an End-to-End Agent System"
+                  }
+                ],
+                "content": "MPI_Allreduce reduces a value across all ranks.",
                 "created_at": "2026-11-02T12:00:00+00:00",
                 "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
-                "role": "user",
-                "sequence": 1
+                "model": "deepseek-flash",
+                "provider": "deepseek",
+                "reasoning": "The question asks about a collective operation.",
+                "role": "assistant",
+                "sequence": 2,
+                "thinking": "high",
+                "tier": "flash",
+                "tool_calls": [],
+                "work_steps": [
+                  {
+                    "duration_ms": 812,
+                    "status": "done",
+                    "step": "generate"
+                  }
+                ]
               }
             ],
             "items": {
@@ -1281,6 +1494,83 @@
           "text"
         ],
         "title": "SpeechBody",
+        "type": "object"
+      },
+      "ToolCallRecord": {
+        "additionalProperties": false,
+        "example": {
+          "command": [
+            "rg",
+            "MPI_Allreduce"
+          ],
+          "exit_code": 0,
+          "name": "course_search",
+          "output": "found 2 pages",
+          "status": "done"
+        },
+        "properties": {
+          "command": {
+            "description": "Exact command line as an argument vector; empty when the tool has none.",
+            "example": [
+              "rg",
+              "MPI_Allreduce"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Command",
+            "type": "array"
+          },
+          "exit_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Process exit code; null while running.",
+            "example": 0,
+            "title": "Exit Code"
+          },
+          "name": {
+            "description": "Typed tool that ran during the answer.",
+            "example": "course_search",
+            "title": "Name",
+            "type": "string"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Truncated tool output.",
+            "example": "found 2 pages",
+            "title": "Output"
+          },
+          "status": {
+            "description": "Tool state; one of running, done, or failed.",
+            "enum": [
+              "running",
+              "done",
+              "failed"
+            ],
+            "example": "done",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "command",
+          "status"
+        ],
+        "title": "ToolCallRecord",
         "type": "object"
       },
       "TranscriptionResponse": {
@@ -1419,6 +1709,104 @@
           "status"
         ],
         "title": "VerifyResponse",
+        "type": "object"
+      },
+      "WorkStepRecord": {
+        "additionalProperties": false,
+        "example": {
+          "duration_ms": 812,
+          "status": "done",
+          "step": "generate"
+        },
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Step detail shown under the step when set.",
+            "title": "Detail"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Step duration in milliseconds when known.",
+            "example": 812,
+            "title": "Duration Ms"
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pre-release",
+                  "active",
+                  "extension-window",
+                  "post-deadline",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Disclosure policy state carried by the decide step, when decided.",
+            "title": "Policy"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Deadline-registry rule that decided the step.",
+            "title": "Rule Id"
+          },
+          "status": {
+            "description": "Step state; one of pending, started, done, or failed.",
+            "enum": [
+              "pending",
+              "started",
+              "done",
+              "failed"
+            ],
+            "example": "done",
+            "title": "Status",
+            "type": "string"
+          },
+          "step": {
+            "description": "Work-chain step; one of understand, retrieve, verify, decide, generate, or cite.",
+            "enum": [
+              "understand",
+              "retrieve",
+              "verify",
+              "decide",
+              "generate",
+              "cite"
+            ],
+            "example": "generate",
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "status"
+        ],
+        "title": "WorkStepRecord",
         "type": "object"
       }
     }
@@ -2123,7 +2511,7 @@
     },
     "/api/sessions/{session_id}/messages": {
       "get": {
-        "description": "Return one conversation's messages after an ownership check.",
+        "description": "Return one conversation's messages with their turn metadata.",
         "operationId": "session_messages_api_sessions__session_id__messages_get",
         "parameters": [
           {

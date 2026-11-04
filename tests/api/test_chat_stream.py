@@ -93,6 +93,71 @@ def test_chat_persists_both_messages_and_hides_them_behind_the_session(api):
     assert api.adapter.calls[0]["messages"][0]["role"] == "system"
 
 
+def test_chat_persists_the_turn_metadata_with_the_answer(api):
+    api.create_active_account("alice@ust.hk")
+    api.adapter.events = _text_events("Hello")
+
+    response = api.client.post(
+        "/api/chat",
+        json={
+            "message": "hello",
+            "provider": "deepseek",
+            "tier": "flash",
+            "thinking": "high",
+        },
+    )
+    streamed_message_id = parse_sse(response.text)[0]["messageId"]
+    session_id = response.headers["x-conversation-id"]
+    history = api.client.get(f"/api/sessions/{session_id}/messages").json()["messages"]
+
+    assert [message["role"] for message in history] == ["user", "assistant"]
+    question, answer = history
+    assert question["reasoning"] is None
+    assert question["model"] is None
+    assert question["thinking"] is None
+    assert question["work_steps"] == []
+    assert question["citations"] == []
+    assert question["tool_calls"] == []
+
+    # The streamed start id is the stored message id, so live and history match.
+    assert answer["id"] == streamed_message_id
+    assert answer["reasoning"] is None
+    # Independent expected values: the fake adapter resolves deepseek/flash to
+    # deepseek-flash and forwards the requested thinking level.
+    assert answer["model"] == "deepseek-flash"
+    assert answer["thinking"] == "high"
+    assert answer["work_steps"] == [
+        {
+            "step": "generate",
+            "status": "done",
+            "detail": None,
+            "duration_ms": None,
+            "policy": None,
+            "rule_id": None,
+        }
+    ]
+    assert answer["citations"] == []
+    assert answer["tool_calls"] == []
+
+
+def test_chat_persists_the_streamed_reasoning_text(api):
+    api.create_active_account("alice@ust.hk")
+    api.adapter.events = [
+        StreamEvent(kind="reasoning", text="Because "),
+        StreamEvent(kind="reasoning", text="the rows move."),
+        *_text_events("Hello"),
+    ]
+
+    response = api.client.post("/api/chat", json={"message": "hello"})
+    session_id = response.headers["x-conversation-id"]
+    answer = api.client.get(
+        f"/api/sessions/{session_id}/messages"
+    ).json()["messages"][-1]
+
+    assert answer["reasoning"] == "Because the rows move."
+    assert answer["work_steps"][0]["step"] == "generate"
+
+
 def test_chat_sends_the_system_prompt_from_the_prompts_package(api):
     """The system message is the prompts-package text, not an inline copy."""
 
@@ -275,3 +340,26 @@ def test_chat_invalid_model_selection_is_a_bad_request(api):
     )
 
     assert response.status_code == 400
+
+
+def test_a_storage_failure_emits_an_error_frame_and_saves_nothing(api, monkeypatch):
+    """A turn the backend cannot persist must not claim to have finished."""
+
+    api.create_active_account("alice@ust.hk")
+
+    def fail(**kwargs):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(api.app.state.storage, "add_assistant_turn", fail)
+
+    response = api.client.post("/api/chat", json={"message": "hello"})
+
+    assert response.status_code == 200
+    parts = parse_sse(response.text)
+    types = [part if part == "[DONE]" else part["type"] for part in parts]
+    assert types[-2:] == ["error", "[DONE]"]
+    assert "finish" not in types
+
+    session_id = response.headers["x-conversation-id"]
+    history = api.client.get(f"/api/sessions/{session_id}/messages").json()["messages"]
+    assert [message["role"] for message in history] == ["user"]

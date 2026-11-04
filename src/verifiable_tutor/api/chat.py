@@ -35,6 +35,7 @@ from ..trace import SessionTrace
 SYSTEM_PROMPT = load_prompt("chat_system")
 GENERIC_STREAM_ERROR = "The model failed while answering. Please try again."
 GENERIC_UNAVAILABLE = "The model is temporarily unavailable. Please try again."
+SAVE_ERROR = "The answer could not be saved. Please try again."
 
 
 class ChatError(Exception):
@@ -213,6 +214,9 @@ class ChatService:
         text_open = False
         reasoning_open = False
         collected: list[str] = []
+        reasoning_parts: list[str] = []
+        steps: list[dict[str, Any]] = []
+        step_positions: dict[str, int] = {}
 
         self._trace.append_meta(
             user["id"],
@@ -229,7 +233,30 @@ class ChatService:
             now=self._clock(),
         )
 
+        def record_step(frame: dict[str, Any]) -> None:
+            """Merge a data-step frame into the ordered work-chain steps."""
+
+            data = frame["data"]
+            step = {
+                "step": data["step"],
+                "status": data["status"],
+                "detail": data.get("detail"),
+                "duration_ms": data.get("duration_ms"),
+                "policy": data.get("policy"),
+                "rule_id": data.get("rule_id"),
+            }
+            position = step_positions.get(data["step"])
+            if position is None:
+                step_positions[data["step"]] = len(steps)
+                steps.append(step)
+            else:
+                steps[position] = step
+
         def emit(frame: dict[str, Any]) -> dict[str, Any]:
+            if frame["type"] == "data-step":
+                record_step(frame)
+            elif frame["type"] == "reasoning-delta":
+                reasoning_parts.append(frame.get("delta") or "")
             self._trace.append_frame(
                 user["id"], session_id, frame, now=self._clock()
             )
@@ -273,20 +300,33 @@ class ChatService:
         if text_open:
             yield emit(streaming.text_end(text_part))
         yield emit(streaming.data_step("generate", "done"))
-        yield emit(streaming.finish())
 
+        # Persist the whole turn before the finish frame: a client that sees the
+        # answer complete must be able to read it back from the history.
         now = self._clock()
-        self._storage.add_message(
-            message_id=uuid.uuid4().hex,
-            conversation_id=session_id,
-            sequence=self._storage.next_message_sequence(session_id),
-            role="assistant",
-            content="".join(collected),
-            provider=provider,
-            tier=tier,
-            created_at=now,
-        )
+        try:
+            self._storage.add_assistant_turn(
+                message_id=message_id,
+                conversation_id=session_id,
+                sequence=self._storage.next_message_sequence(session_id),
+                content="".join(collected),
+                created_at=now,
+                provider=provider,
+                tier=tier,
+                model=selection.model,
+                thinking=selection.thinking,
+                reasoning="".join(reasoning_parts) or None,
+                steps=steps,
+            )
+        except Exception:  # a storage failure must not claim a finished turn
+            self._trace.append_event(
+                user["id"], session_id, "error", {"message": SAVE_ERROR}, now=now
+            )
+            yield emit(streaming.error(SAVE_ERROR))
+            return
+
         self._storage.touch_conversation(session_id, updated_at=now)
         self._trace.append_event(
             user["id"], session_id, "finish", {"message_id": message_id}, now=now
         )
+        yield emit(streaming.finish())

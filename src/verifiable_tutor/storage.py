@@ -4,15 +4,33 @@ The database lives under the ignored ``data/app/`` directory. Each operation
 opens a short-lived connection, enables WAL and foreign keys, and commits on
 success, so sync endpoint code running in the AnyIO threadpool never shares a
 connection across threads.
+
+The schema is versioned through ``PRAGMA user_version``. ``initialize`` runs
+the full current schema (fresh databases) and then applies the column additions
+a legacy database is missing (existing databases), so an upgrade never drops
+stored conversations, messages, or accounts.
 """
 
 from __future__ import annotations
 
+import json
 import sqlite3
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator, Mapping
+from typing import Any, Iterator, Mapping, Sequence
+
+SCHEMA_VERSION = 1
+
+# The turn-metadata columns added to ``messages`` by schema version 1. They are
+# appended after ``created_at`` so a fresh database and an upgraded database
+# share the same column order.
+_MESSAGE_METADATA_COLUMNS = (
+    ("reasoning", "TEXT"),
+    ("model", "TEXT"),
+    ("thinking", "TEXT"),
+)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -65,10 +83,58 @@ CREATE TABLE IF NOT EXISTS messages (
     provider TEXT,
     tier TEXT,
     created_at TEXT NOT NULL,
+    reasoning TEXT,
+    model TEXT,
+    thinking TEXT,
     UNIQUE (conversation_id, sequence)
 );
 CREATE INDEX IF NOT EXISTS idx_messages_conversation
     ON messages(conversation_id, sequence);
+
+CREATE TABLE IF NOT EXISTS message_steps (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    step TEXT NOT NULL CHECK (
+        step IN ('understand', 'retrieve', 'verify', 'decide', 'generate', 'cite')
+    ),
+    status TEXT NOT NULL CHECK (
+        status IN ('pending', 'started', 'done', 'failed')
+    ),
+    detail TEXT,
+    duration_ms INTEGER,
+    policy TEXT CHECK (
+        policy IS NULL OR policy IN (
+            'pre-release', 'active', 'extension-window', 'post-deadline', 'unknown'
+        )
+    ),
+    rule_id TEXT,
+    UNIQUE (message_id, position)
+);
+
+CREATE TABLE IF NOT EXISTS citations (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    doc_id TEXT NOT NULL,
+    page_no INTEGER NOT NULL,
+    quoted_span TEXT NOT NULL,
+    bbox_norm TEXT,
+    verified_at TEXT,
+    UNIQUE (message_id, position)
+);
+
+CREATE TABLE IF NOT EXISTS tool_calls (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    command_json TEXT,
+    exit_code INTEGER,
+    output TEXT,
+    status TEXT NOT NULL CHECK (status IN ('running', 'done', 'failed')),
+    UNIQUE (message_id, position)
+);
 
 CREATE TABLE IF NOT EXISTS knowledge_builds (
     id TEXT PRIMARY KEY,
@@ -99,6 +165,48 @@ def parse_iso(value: str) -> datetime:
     return datetime.fromisoformat(value)
 
 
+def _encode_json(value: Any) -> str | None:
+    """Serialize a list or mapping for a TEXT column, preserving null."""
+
+    if value is None:
+        return None
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _decode_json(value: str | None) -> Any:
+    """Parse a TEXT JSON column written by :func:`_encode_json`."""
+
+    if value is None:
+        return None
+    return json.loads(value)
+
+
+def _insert_step(
+    connection: sqlite3.Connection,
+    message_id: str,
+    position: int,
+    step: Mapping[str, Any],
+) -> None:
+    """Insert one ordered work-chain step for a stored assistant message."""
+
+    connection.execute(
+        "INSERT INTO message_steps"
+        " (id, message_id, position, step, status, detail, duration_ms,"
+        "  policy, rule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            uuid.uuid4().hex,
+            message_id,
+            position,
+            step["step"],
+            step["status"],
+            step.get("detail"),
+            step.get("duration_ms"),
+            step.get("policy"),
+            step.get("rule_id"),
+        ),
+    )
+
+
 class Storage:
     """Repository for the local SQLite database."""
 
@@ -126,6 +234,21 @@ class Storage:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
             connection.executescript(_SCHEMA)
+            self._add_missing_message_columns(connection)
+            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+
+    @staticmethod
+    def _add_missing_message_columns(connection: sqlite3.Connection) -> None:
+        """Add turn-metadata columns a database created before version 1 lacks."""
+
+        existing = {
+            row[1] for row in connection.execute("PRAGMA table_info(messages)")
+        }
+        for name, sql_type in _MESSAGE_METADATA_COLUMNS:
+            if name not in existing:
+                connection.execute(
+                    f"ALTER TABLE messages ADD COLUMN {name} {sql_type}"
+                )
 
     def ping(self) -> bool:
         try:
@@ -387,13 +510,174 @@ class Storage:
         }
 
     def list_messages(self, conversation_id: str) -> list[dict[str, Any]]:
+        """Return a conversation's messages with their persisted turn metadata."""
+
         with self._connect() as connection:
             rows = connection.execute(
                 "SELECT * FROM messages WHERE conversation_id = ?"
                 " ORDER BY sequence",
                 (conversation_id,),
             ).fetchall()
-        return [dict(row) for row in rows]
+            messages = [dict(row) for row in rows]
+            by_id = {message["id"]: message for message in messages}
+            for message in messages:
+                message["work_steps"] = []
+                message["citations"] = []
+                message["tool_calls"] = []
+
+            steps = connection.execute(
+                "SELECT s.* FROM message_steps s"
+                " JOIN messages m ON m.id = s.message_id"
+                " WHERE m.conversation_id = ?"
+                " ORDER BY s.message_id, s.position",
+                (conversation_id,),
+            ).fetchall()
+            for row in steps:
+                by_id[row["message_id"]]["work_steps"].append(
+                    {
+                        "position": row["position"],
+                        "step": row["step"],
+                        "status": row["status"],
+                        "detail": row["detail"],
+                        "duration_ms": row["duration_ms"],
+                        "policy": row["policy"],
+                        "rule_id": row["rule_id"],
+                    }
+                )
+
+            citations = connection.execute(
+                "SELECT c.* FROM citations c"
+                " JOIN messages m ON m.id = c.message_id"
+                " WHERE m.conversation_id = ?"
+                " ORDER BY c.message_id, c.position",
+                (conversation_id,),
+            ).fetchall()
+            for row in citations:
+                by_id[row["message_id"]]["citations"].append(
+                    {
+                        "position": row["position"],
+                        "doc_id": row["doc_id"],
+                        "page_no": row["page_no"],
+                        "quoted_span": row["quoted_span"],
+                        "bbox_norm": _decode_json(row["bbox_norm"]),
+                        "verified_at": row["verified_at"],
+                    }
+                )
+
+            tool_calls = connection.execute(
+                "SELECT t.* FROM tool_calls t"
+                " JOIN messages m ON m.id = t.message_id"
+                " WHERE m.conversation_id = ?"
+                " ORDER BY t.message_id, t.position",
+                (conversation_id,),
+            ).fetchall()
+            for row in tool_calls:
+                by_id[row["message_id"]]["tool_calls"].append(
+                    {
+                        "position": row["position"],
+                        "name": row["name"],
+                        "command": _decode_json(row["command_json"]),
+                        "exit_code": row["exit_code"],
+                        "output": row["output"],
+                        "status": row["status"],
+                    }
+                )
+        return messages
+
+    def add_assistant_turn(
+        self,
+        *,
+        message_id: str,
+        conversation_id: str,
+        sequence: int,
+        content: str,
+        created_at: datetime,
+        provider: str | None = None,
+        tier: str | None = None,
+        model: str | None = None,
+        thinking: str | None = None,
+        reasoning: str | None = None,
+        steps: Sequence[Mapping[str, Any]] = (),
+        citations: Sequence[Mapping[str, Any]] = (),
+        tool_calls: Sequence[Mapping[str, Any]] = (),
+    ) -> dict[str, Any]:
+        """Persist one assistant turn and its turn metadata in one transaction.
+
+        A failure while inserting a child row rolls the whole turn back, so a
+        stored answer either has all of its metadata or none of it.
+        """
+
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO messages"
+                " (id, conversation_id, sequence, role, content, provider, tier,"
+                "  created_at, reasoning, model, thinking)"
+                " VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    message_id,
+                    conversation_id,
+                    sequence,
+                    content,
+                    provider,
+                    tier,
+                    iso(created_at),
+                    reasoning,
+                    model,
+                    thinking,
+                ),
+            )
+            for position, step in enumerate(steps):
+                _insert_step(connection, message_id, position, step)
+            for position, citation in enumerate(citations):
+                connection.execute(
+                    "INSERT INTO citations"
+                    " (id, message_id, position, doc_id, page_no, quoted_span,"
+                    "  bbox_norm, verified_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        uuid.uuid4().hex,
+                        message_id,
+                        position,
+                        citation["doc_id"],
+                        citation["page_no"],
+                        citation["quoted_span"],
+                        _encode_json(citation.get("bbox_norm")),
+                        citation.get("verified_at"),
+                    ),
+                )
+            for position, call in enumerate(tool_calls):
+                connection.execute(
+                    "INSERT INTO tool_calls"
+                    " (id, message_id, position, name, command_json, exit_code,"
+                    "  output, status)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        uuid.uuid4().hex,
+                        message_id,
+                        position,
+                        call["name"],
+                        _encode_json(call.get("command")),
+                        call.get("exit_code"),
+                        call.get("output"),
+                        call["status"],
+                    ),
+                )
+        return {
+            "id": message_id,
+            "conversation_id": conversation_id,
+            "sequence": sequence,
+            "role": "assistant",
+            "content": content,
+            "provider": provider,
+            "tier": tier,
+            "created_at": iso(created_at),
+            "reasoning": reasoning,
+            "model": model,
+            "thinking": thinking,
+            "work_steps": list(steps),
+            "citations": list(citations),
+            "tool_calls": list(tool_calls),
+        }
 
     # -- knowledge builds --------------------------------------------------
     def create_build(

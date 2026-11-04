@@ -71,19 +71,40 @@ SESSION_EXAMPLE: dict[str, Any] = {
     "updated_at": _CREATED_AT,
     "message_count": 2,
 }
-MESSAGE_EXAMPLE: dict[str, Any] = {
-    "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
-    "sequence": 1,
-    "role": "user",
-    "content": "What is MPI_Allreduce?",
-    "provider": None,
-    "tier": None,
-    "created_at": _CREATED_AT,
-}
 CITATION_EXAMPLE: dict[str, Any] = {
     "doc_id": "course_project",
     "page_no": 1,
     "quote": "Building an End-to-End Agent System",
+}
+WORK_STEP_EXAMPLE: dict[str, Any] = {
+    "step": "generate",
+    "status": "done",
+    "detail": None,
+    "duration_ms": 812,
+    "policy": None,
+    "rule_id": None,
+}
+TOOL_CALL_EXAMPLE: dict[str, Any] = {
+    "name": "course_search",
+    "command": ["rg", "MPI_Allreduce"],
+    "exit_code": 0,
+    "output": "found 2 pages",
+    "status": "done",
+}
+MESSAGE_EXAMPLE: dict[str, Any] = {
+    "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+    "sequence": 2,
+    "role": "assistant",
+    "content": "MPI_Allreduce reduces a value across all ranks.",
+    "provider": "deepseek",
+    "tier": "flash",
+    "reasoning": "The question asks about a collective operation.",
+    "model": "deepseek-flash",
+    "thinking": "high",
+    "work_steps": [WORK_STEP_EXAMPLE],
+    "citations": [CITATION_EXAMPLE],
+    "tool_calls": [],
+    "created_at": _CREATED_AT,
 }
 CARD_EXAMPLE: dict[str, Any] = {
     "chunk_id": "course_project:p001:c00",
@@ -268,6 +289,54 @@ class SessionListResponse(BaseModel):
     )
 
 
+class WorkStepRecord(BaseModel):
+    model_config = _example(WORK_STEP_EXAMPLE)
+
+    step: Literal[
+        "understand", "retrieve", "verify", "decide", "generate", "cite"
+    ] = _ex(
+        "generate",
+        "Work-chain step; one of understand, retrieve, verify, decide, "
+        "generate, or cite.",
+    )
+    status: Literal["pending", "started", "done", "failed"] = _ex(
+        "done",
+        "Step state; one of pending, started, done, or failed.",
+    )
+    detail: str | None = _opt(None, "Step detail shown under the step when set.")
+    duration_ms: int | None = _opt(812, "Step duration in milliseconds when known.")
+    policy: (
+        Literal[
+            "pre-release",
+            "active",
+            "extension-window",
+            "post-deadline",
+            "unknown",
+        ]
+        | None
+    ) = _opt(
+        None,
+        "Disclosure policy state carried by the decide step, when decided.",
+    )
+    rule_id: str | None = _opt(None, "Deadline-registry rule that decided the step.")
+
+
+class ToolCallRecord(BaseModel):
+    model_config = _example(TOOL_CALL_EXAMPLE)
+
+    name: str = _ex("course_search", "Typed tool that ran during the answer.")
+    command: list[str] = _ex(
+        ["rg", "MPI_Allreduce"],
+        "Exact command line as an argument vector; empty when the tool has none.",
+    )
+    exit_code: int | None = _opt(0, "Process exit code; null while running.")
+    output: str | None = _opt("found 2 pages", "Truncated tool output.")
+    status: Literal["running", "done", "failed"] = _ex(
+        "done",
+        "Tool state; one of running, done, or failed.",
+    )
+
+
 class MessageRecord(BaseModel):
     model_config = _example(MESSAGE_EXAMPLE)
 
@@ -284,6 +353,34 @@ class MessageRecord(BaseModel):
     )
     tier: str | None = _opt(
         None, "Model tier for assistant messages; null for user messages."
+    )
+    reasoning: str | None = _opt(
+        None,
+        "Streamed model thinking for assistant messages; null when the model "
+        "produced none or the message predates turn metadata.",
+    )
+    model: str | None = _opt(
+        "deepseek-flash",
+        "Resolved model id for assistant messages; null for user messages or "
+        "legacy answers.",
+    )
+    thinking: str | None = _opt(
+        "high",
+        "Effective thinking level for assistant messages; null for user "
+        "messages or legacy answers.",
+    )
+    work_steps: list[WorkStepRecord] = _ex(
+        [WORK_STEP_EXAMPLE],
+        "Ordered work-chain steps for assistant messages; empty for user "
+        "messages and legacy answers.",
+    )
+    citations: list[MessageCitationRecord] = _ex(
+        [{**CITATION_EXAMPLE, "bbox_norm": None}],
+        "Page citations carried by the answer, in display order.",
+    )
+    tool_calls: list[ToolCallRecord] = _ex(
+        [TOOL_CALL_EXAMPLE],
+        "Tool calls executed for the answer, in display order.",
     )
     created_at: str = _ex(_CREATED_AT, "ISO-8601 UTC creation time.")
 
@@ -321,6 +418,16 @@ class CitationRecord(BaseModel):
     quote: str = _ex(
         "Building an End-to-End Agent System",
         "Exact quoted span on the page.",
+    )
+
+
+class MessageCitationRecord(CitationRecord):
+    model_config = _example({**CITATION_EXAMPLE, "bbox_norm": [0.1, 0.2, 0.3, 0.4]})
+
+    bbox_norm: list[float] | None = _opt(
+        [0.1, 0.2, 0.3, 0.4],
+        "Normalized page box [x1, y1, x2, y2] for the evidence panel, when the "
+        "citation carries one.",
     )
 
 

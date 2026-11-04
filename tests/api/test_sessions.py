@@ -52,3 +52,48 @@ def test_sessions_list_only_the_current_user(api):
 
     assert response.status_code == 200
     assert response.json() == {"sessions": []}
+
+
+def test_history_returns_empty_turn_metadata_for_a_legacy_answer(api):
+    """Rows written before turn metadata existed stay readable and unadorned."""
+
+    api.create_active_account("alice@ust.hk")
+    user_id = api.client.get("/api/auth/me").json()["id"]
+    storage = api.app.state.storage
+    storage.create_conversation(
+        conversation_id="legacy-conversation",
+        user_id=user_id,
+        title="Legacy question",
+        created_at=api.clock(),
+    )
+    storage.add_message(
+        message_id="legacy-question",
+        conversation_id="legacy-conversation",
+        sequence=1,
+        role="user",
+        content="old question",
+        created_at=api.clock(),
+    )
+    storage.add_message(
+        message_id="legacy-answer",
+        conversation_id="legacy-conversation",
+        sequence=2,
+        role="assistant",
+        content="old answer",
+        provider="deepseek",
+        tier="flash",
+        created_at=api.clock(),
+    )
+
+    response = api.client.get("/api/sessions/legacy-conversation/messages")
+
+    assert response.status_code == 200
+    question, answer = response.json()["messages"]
+    for message in (question, answer):
+        assert message["reasoning"] is None
+        assert message["model"] is None
+        assert message["thinking"] is None
+        assert message["work_steps"] == []
+        assert message["citations"] == []
+        assert message["tool_calls"] == []
+    assert answer["content"] == "old answer"
