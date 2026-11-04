@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -286,9 +286,14 @@ describe("live chat", () => {
     expect(
       await screen.findByRole("heading", { name: "Ask a course question" }),
     ).toBeInTheDocument();
-    expect(stub.calls.filter((call) => MESSAGES_PATH.test(call.path))).toHaveLength(
-      0,
-    );
+    // The sidebar warms the listed conversations; the new chat loads none of
+    // its own history because it has no conversation yet.
+    expect(
+      stub.calls.filter(
+        (call) =>
+          MESSAGES_PATH.test(call.path) && !call.path.includes(SESSION_ID),
+      ),
+    ).toHaveLength(0);
   });
 
   it("offers a new question when the conversation is missing", async () => {
@@ -310,17 +315,22 @@ describe("live chat", () => {
 
   it("shows the history failure copy and recovers on retry", async () => {
     let attempt = 0;
-    stub = createFetchStub(
-      routes([
-        historyRoute(() => {
-          attempt += 1;
-          if (attempt === 1) {
-            throw new TypeError("fetch failed");
-          }
-          return jsonResponse({ session_id: SESSION_ID, messages: HISTORY });
-        }),
-      ]),
-    );
+    stub = createFetchStub([
+      { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
+      // No sidebar conversations, so the retry below is the only history load.
+      {
+        method: "GET",
+        path: "/api/sessions",
+        handler: () => jsonResponse({ sessions: [] }),
+      },
+      historyRoute(() => {
+        attempt += 1;
+        if (attempt === 1) {
+          throw new TypeError("fetch failed");
+        }
+        return jsonResponse({ session_id: SESSION_ID, messages: HISTORY });
+      }),
+    ]);
     const user = userEvent.setup();
 
     renderLiveRoute(`/chat/${SESSION_ID}`);
@@ -686,6 +696,104 @@ describe("live chat", () => {
     renderLiveRoute(`/chat/${secondSessionId}`);
     const second = await viewport();
     await waitFor(() => expect(second.scrollTop).toBe(40));
+  });
+
+  it("revisits a conversation from cache without a loading flash", async () => {
+    const secondSessionId = "second-session";
+    const secondSession: Conversation = {
+      id: secondSessionId,
+      title: "Another conversation",
+      created_at: "2026-11-03T11:00:00+00:00",
+      updated_at: "2026-11-03T11:01:00+00:00",
+      message_count: 2,
+    };
+    let releaseSecond: (() => void) | null = null;
+    const secondHistory = new Promise<void>((resolve) => {
+      releaseSecond = resolve;
+    });
+    stub = createFetchStub([
+      { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
+      {
+        method: "GET",
+        path: "/api/sessions",
+        handler: () => jsonResponse({ sessions: [...SESSIONS, secondSession] }),
+      },
+      historyRoute(async (call) => {
+        if (call.path.includes(secondSessionId)) {
+          await secondHistory;
+        }
+        return jsonResponse({
+          session_id: call.path.split("/")[3],
+          messages: HISTORY,
+        });
+      }),
+    ]);
+    const router = renderLiveRoute(`/chat/${SESSION_ID}`);
+    expect(await screen.findByText(QUESTION)).toBeInTheDocument();
+
+    // First visit to another conversation still shows the loading state.
+    await act(async () => {
+      await router.navigate(`/chat/${secondSessionId}`);
+    });
+    expect(
+      screen.getByRole("status", { name: "Loading" }),
+    ).toBeInTheDocument();
+    await act(async () => {
+      releaseSecond?.();
+    });
+    expect(await screen.findByText(QUESTION)).toBeInTheDocument();
+
+    // Switching back renders the cached conversation immediately.
+    await act(async () => {
+      await router.navigate(`/chat/${SESSION_ID}`);
+    });
+    expect(
+      screen.queryByRole("status", { name: "Loading" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(QUESTION)).toBeInTheDocument();
+  });
+
+  it("prefetches the sidebar conversations so switching has no loading flash", async () => {
+    const secondSessionId = "prefetch-session";
+    const secondSession: Conversation = {
+      id: secondSessionId,
+      title: "Prefetched conversation",
+      created_at: "2026-11-03T11:00:00+00:00",
+      updated_at: "2026-11-03T11:01:00+00:00",
+      message_count: 2,
+    };
+    stub = createFetchStub([
+      { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
+      {
+        method: "GET",
+        path: "/api/sessions",
+        handler: () => jsonResponse({ sessions: [...SESSIONS, secondSession] }),
+      },
+      historyRoute(async (call) => {
+        if (call.path.includes(secondSessionId)) {
+          await new Promise((resolve) => setTimeout(resolve, 40));
+        }
+        return jsonResponse({
+          session_id: call.path.split("/")[3],
+          messages: HISTORY,
+        });
+      }),
+    ]);
+    const router = renderLiveRoute(`/chat/${SESSION_ID}`);
+    expect(await screen.findByText(QUESTION)).toBeInTheDocument();
+
+    await waitFor(() => expect(messageCalls(secondSessionId)).toBe(1));
+    // Let the warm-up land in the cache before the reader opens it.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    await act(async () => {
+      await router.navigate(`/chat/${secondSessionId}`);
+    });
+
+    expect(
+      screen.queryByRole("status", { name: "Loading" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(QUESTION)).toBeInTheDocument();
   });
 
   it("keeps an existing conversation open and refreshes the sidebar", async () => {

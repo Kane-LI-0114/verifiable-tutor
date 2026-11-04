@@ -12,6 +12,7 @@ import {
   readComposerSelection,
   saveComposerSelection,
 } from "./composer-selection";
+import { forgetCachedHistory } from "./history-cache";
 import { ChatApiError, TutorChatTransport, type TutorSelection } from "./tutor-transport";
 import { toConversationTurns, type TutorUIMessage } from "./ui-message";
 
@@ -171,6 +172,12 @@ export function useTutorChat({
       setFailure(null);
       failed.current = false;
       questioned.current = question;
+      // The stored history changes once this turn finishes; the next visit
+      // should load it fresh instead of from the in-memory cache.
+      const currentId = conversationId.current;
+      if (currentId !== null) {
+        forgetCachedHistory(currentId);
+      }
       await chat.sendMessage({ text: question });
     },
     [chat],

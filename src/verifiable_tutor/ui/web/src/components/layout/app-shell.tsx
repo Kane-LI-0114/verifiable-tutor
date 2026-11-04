@@ -167,6 +167,7 @@ function AppSidebar() {
     sessions,
     status: conversationsStatus,
     refresh: refreshConversations,
+    prefetchHistory,
   } = useConversations();
   const expanded = state === "expanded";
 
@@ -293,7 +294,11 @@ function AppSidebar() {
                       isActive={sessionId === session.id}
                       tooltip={session.title ?? session.id}
                     >
-                      <NavLink to={`/chat/${session.id}`}>
+                      <NavLink
+                        to={`/chat/${session.id}`}
+                        onPointerEnter={() => prefetchHistory(session.id)}
+                        onFocus={() => prefetchHistory(session.id)}
+                      >
                         <MessageSquareIcon />
                         <span>{session.title ?? session.id}</span>
                       </NavLink>

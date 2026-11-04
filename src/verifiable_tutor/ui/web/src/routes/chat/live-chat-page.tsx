@@ -11,6 +11,10 @@ import { PageEmpty, PageError, PageLoading } from "@/components/layout/page-stat
 import { ApiError } from "@/lib/api/client";
 import { sessionsApi } from "@/lib/api/sessions";
 import { useSession } from "@/lib/auth/session";
+import {
+  readCachedHistory,
+  writeCachedHistory,
+} from "@/lib/chat/history-cache";
 import { useReplayStream } from "@/lib/chat/use-replay-stream";
 import { useTutorChat } from "@/lib/chat/use-tutor-chat";
 import {
@@ -38,10 +42,11 @@ interface HistoryValue {
  */
 function useSessionHistory(sessionId: string | null): HistoryValue {
   const { expire } = useSession();
+  const cached = sessionId === null ? null : readCachedHistory(sessionId);
   const [status, setStatus] = useState<HistoryStatus>(
-    sessionId === null ? "ready" : "loading",
+    sessionId === null ? "ready" : cached === null ? "loading" : "ready",
   );
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(cached ?? []);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => {
     setAttempt((current) => current + 1);
@@ -54,13 +59,20 @@ function useSessionHistory(sessionId: string | null): HistoryValue {
       return;
     }
     let cancelled = false;
-    setStatus("loading");
+    const cachedMessages = readCachedHistory(sessionId);
+    if (cachedMessages === null) {
+      setStatus("loading");
+    } else {
+      setMessages(cachedMessages);
+      setStatus("ready");
+    }
     sessionsApi
       .messages(sessionId)
       .then((response) => {
         if (cancelled) {
           return;
         }
+        writeCachedHistory(sessionId, response.messages);
         setMessages(response.messages);
         setStatus("ready");
       })
@@ -70,6 +82,11 @@ function useSessionHistory(sessionId: string | null): HistoryValue {
         }
         if (error instanceof ApiError && error.status === 401) {
           expire();
+          return;
+        }
+        if (cachedMessages !== null) {
+          // A cached conversation stays readable while the backend is down.
+          setStatus("ready");
           return;
         }
         setStatus(error instanceof ApiError && error.status === 404 ? "missing" : "error");

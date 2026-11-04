@@ -195,9 +195,13 @@ describe("replay", () => {
       await screen.findByText("Open a conversation before replaying it."),
     ).toBeInTheDocument();
     expect(replayCalls()).toHaveLength(0);
-    expect(stub.calls.filter((call) => MESSAGES_PATH.test(call.path))).toHaveLength(
-      0,
-    );
+    // The sidebar warms the listed conversations; replay itself asks for none.
+    expect(
+      stub.calls.filter(
+        (call) =>
+          MESSAGES_PATH.test(call.path) && !call.path.includes(SESSION_ID),
+      ),
+    ).toHaveLength(0);
   });
 
   it("replays an answer when the stored assistant message is missing", async () => {

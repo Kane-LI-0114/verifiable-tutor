@@ -93,7 +93,7 @@ export interface ChatSessionShellProps {
 /** How long a debounced scroll write waits after the last scroll event. */
 const SCROLL_SAVE_DELAY_MS = 120;
 /** How long the thread re-applies its opening position while layout settles. */
-const SCROLL_SETTLE_MAX_MS = 1500;
+const SCROLL_SETTLE_MAX_MS = 1000;
 
 export function ChatSessionShell({
   title,
@@ -147,6 +147,13 @@ export function ChatSessionShell({
     const saved = readChatScroll(scrollKey);
     lastScrollTop.current = null;
     userInteracted.current = false;
+    // Apply the opening position before the first paint; the frames below only
+    // correct it while message heights settle.
+    const initialMax = Math.max(
+      0,
+      viewport.scrollHeight - viewport.clientHeight,
+    );
+    viewport.scrollTop = saved === null ? initialMax : saved;
     const startedAt = window.performance.now();
     let lastMax = -1;
     let stableFrames = 0;
@@ -161,11 +168,7 @@ export function ChatSessionShell({
       // A new conversation opens on its latest answer; a remembered one opens
       // where the reader left it.
       element.scrollTop = saved === null ? max : saved;
-      const reached =
-        saved === null
-          ? Math.abs(element.scrollTop - max) <= 1
-          : max >= saved && Math.abs(element.scrollTop - saved) <= 1;
-      stableFrames = reached && max === lastMax ? stableFrames + 1 : 0;
+      stableFrames = max === lastMax ? stableFrames + 1 : 0;
       lastMax = max;
       if (
         stableFrames >= 3 ||

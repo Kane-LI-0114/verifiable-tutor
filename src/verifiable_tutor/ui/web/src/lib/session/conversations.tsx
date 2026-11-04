@@ -10,6 +10,11 @@ import {
 } from "react";
 
 import { isUnauthorized } from "@/lib/api/client";
+import {
+  clearHistoryCache,
+  readCachedHistory,
+  writeCachedHistory,
+} from "@/lib/chat/history-cache";
 import { sessionsApi } from "@/lib/api/sessions";
 import { useSession } from "@/lib/auth/session";
 import { usePreview } from "@/lib/preview/context";
@@ -22,6 +27,8 @@ interface ConversationsValue {
   sessions: Conversation[];
   status: ConversationsStatus;
   refresh: () => Promise<void>;
+  /** Warm the history cache for a conversation the reader is about to open. */
+  prefetchHistory: (sessionId: string) => void;
 }
 
 const ConversationsContext = createContext<ConversationsValue | null>(null);
@@ -41,6 +48,26 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
   );
   const requestId = useRef(0);
 
+  const warmHistory = useCallback(
+    (sessionId: string) => {
+      if (isPreview || sessionStatus !== "authenticated") {
+        return;
+      }
+      if (readCachedHistory(sessionId) !== null) {
+        return;
+      }
+      void sessionsApi
+        .messages(sessionId)
+        .then((response) => {
+          writeCachedHistory(sessionId, response.messages);
+        })
+        .catch(() => {
+          // A warm-up failure is invisible; opening the conversation retries.
+        });
+    },
+    [isPreview, sessionStatus],
+  );
+
   const load = useCallback(async () => {
     if (isPreview) {
       setSessions(PREVIEW_SESSIONS);
@@ -48,6 +75,7 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (sessionStatus !== "authenticated") {
+      clearHistoryCache();
       setSessions([]);
       setStatus("ready");
       return;
@@ -60,6 +88,11 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
       if (requestId.current === current) {
         setSessions(response.sessions);
         setStatus("ready");
+        // Warm the listed histories so switching conversations does not flash
+        // the loading state for a conversation the reader has not opened yet.
+        for (const session of response.sessions) {
+          warmHistory(session.id);
+        }
       }
     } catch (error) {
       if (requestId.current !== current) {
@@ -74,7 +107,7 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
       }
       setStatus("error");
     }
-  }, [expire, isPreview, sessionStatus]);
+  }, [expire, isPreview, sessionStatus, warmHistory]);
 
   useEffect(() => {
     if (isPreview) {
@@ -86,13 +119,17 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
       void load();
       return;
     }
+    // A cache entry must not outlive the signed-in user it belongs to.
+    clearHistoryCache();
     setSessions([]);
     setStatus(sessionStatus === "loading" ? "loading" : "ready");
   }, [isPreview, load, sessionStatus]);
 
+  const prefetchHistory = warmHistory;
+
   const value = useMemo<ConversationsValue>(
-    () => ({ sessions, status, refresh: load }),
-    [load, sessions, status],
+    () => ({ sessions, status, refresh: load, prefetchHistory }),
+    [load, prefetchHistory, sessions, status],
   );
 
   return (
