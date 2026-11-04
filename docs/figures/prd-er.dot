@@ -40,7 +40,31 @@ digraph prd_er {
       <TR><TD ALIGN="LEFT">conversation_id</TD><TD ALIGN="LEFT">FK</TD></TR>
       <TR><TD ALIGN="LEFT">role</TD><TD ALIGN="LEFT"> </TD></TR>
       <TR><TD ALIGN="LEFT">content</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">reasoning</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">model</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">thinking</TD><TD ALIGN="LEFT"> </TD></TR>
       <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    workstep [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>WORK_STEP</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">message_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">step</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">detail</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">duration_ms</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">policy</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">rule_id</TD><TD ALIGN="LEFT"> </TD></TR>
+    </TABLE>>];
+    toolcall [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>TOOL_CALL</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">message_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">command</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">exit_code</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">output</TD><TD ALIGN="LEFT"> </TD></TR>
+      <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"> </TD></TR>
     </TABLE>>];
     citation [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>CITATION</B></TD></TR>
@@ -192,6 +216,8 @@ digraph prd_er {
   user -> answer;
   conversation -> message;
   message -> citation;
+  message -> workstep;
+  message -> toolcall;
   document -> page;
   page -> chunk;
   page -> citation;

@@ -261,7 +261,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 |---|---|
 | Provider endpoints, model ids, roles, retry and timeout values, cache and embedding settings | `config/models.yaml` |
 | App runtime settings: allowed registration domains, cookie flags, local data paths, replay speed | `config/app.yaml` |
-| Accounts, login sessions, conversations, messages, and knowledge-build state | local SQLite at `data/app/app.sqlite3`; JSONL traces under `data/app/traces/` |
+| Accounts, login sessions, conversations, and messages with their turn metadata (work steps, thinking, model profile, citations, tool calls), plus knowledge-build state | local SQLite at `data/app/app.sqlite3`; JSONL traces under `data/app/traces/` |
 | Knowledge-base build settings: Qwen model, tensor parallel size, context length, shard size, prompt version, request and result paths, poll interval | `config/knowledge.yaml` |
 | Deadline registry | `config/deadlines.yaml` (planned), validated by pydantic |
 | Local tracing settings | `config/observability.yaml` (planned, local development only) |
@@ -276,11 +276,11 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 
 ### Data model
 
-Figure 6 shows the relational entities, including the knowledge-base build and card tables. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners.
+Figure 6 shows the logical relational entities, including the conversation work chain (`WORK_STEP` and `TOOL_CALL`), and the knowledge-base build and card tables. Session traces, benchmark results, the response cache, page images, and corpus or index binaries are files rather than tables and are not shown; the table of contents in section 7 records their owners. The physical SQLite schema the backend actually creates is generated separately in [physical-data-model.md](physical-data-model.md), which lists the implemented tables, columns, keys, checks, and schema version and calls out where it differs from this logical model.
 
 ![Figure 6. Relational entities](figures/prd-er.png)
 
-*Figure 6. Relational entities and relationships, including the knowledge base. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`.*
+*Figure 6. Logical relational entities and relationships, including the conversation work chain and the knowledge base. Source: [figures/prd-er.dot](figures/prd-er.dot); regenerate with `dot -Gdpi=200 -Tpng figures/prd-er.dot -o figures/prd-er.png`. The implemented physical schema is documented in [physical-data-model.md](physical-data-model.md).*
 
 ## 8. Acceptance and evaluation targets
 
