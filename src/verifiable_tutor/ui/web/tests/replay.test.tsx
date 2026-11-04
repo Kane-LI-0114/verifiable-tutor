@@ -33,6 +33,12 @@ const HISTORY: ChatMessage[] = [
     provider: null,
     tier: null,
     created_at: "2026-11-02T14:04:00+00:00",
+    reasoning: null,
+    model: null,
+    thinking: null,
+    work_steps: [],
+    citations: [],
+    tool_calls: [],
   },
   {
     id: "message-assistant-1",
@@ -42,6 +48,12 @@ const HISTORY: ChatMessage[] = [
     provider: "deepseek",
     tier: "flash",
     created_at: "2026-11-02T14:04:30+00:00",
+    reasoning: null,
+    model: null,
+    thinking: null,
+    work_steps: [],
+    citations: [],
+    tool_calls: [],
   },
 ];
 

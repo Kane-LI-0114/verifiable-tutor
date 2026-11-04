@@ -2,13 +2,21 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { ChatMessage, Conversation, Me } from "@/lib/types";
+import type {
+  ChatMessage,
+  Citation,
+  Conversation,
+  Me,
+  ToolCall,
+  WorkStep,
+} from "@/lib/types";
 
 import {
   createFetchStub,
   errorResponse,
   jsonResponse,
   sseResponse,
+  type FetchCall,
   type StubRoute,
 } from "./api-stub";
 import { renderLiveRoute } from "./render-live-route";
@@ -26,6 +34,53 @@ const QUESTION = "How does the halo exchange work?";
 const ANSWER = "The halo exchange trades boundary rows between neighboring ranks.";
 const FOLLOW_UP = "Why is the row maximum subtracted?";
 
+const STORED_REASONING =
+  "The stored trace explains how the halo exchange answer was reached.";
+const STORED_STEP_DETAIL = "Parsed the halo exchange question.";
+const STORED_CITATION: Citation = {
+  doc_id: "ACS_lecture_2_2026F",
+  page_no: 12,
+  quote:
+    "MPI_Allreduce combines values from all ranks and distributes the result to all ranks.",
+  bbox_norm: [0.08, 0.22, 0.9, 0.3],
+};
+const STORED_TOOL_CALL: ToolCall = {
+  name: "course_search",
+  command: ["course_search", "--query", "halo exchange", "--top-k", "5"],
+  exit_code: 0,
+  output: "ACS_lecture_2_2026F p.12 (0.84)",
+  status: "done",
+};
+const STORED_STEPS: WorkStep[] = [
+  {
+    step: "understand",
+    status: "done",
+    duration_ms: 320,
+    detail: STORED_STEP_DETAIL,
+  },
+  { step: "retrieve", status: "done", duration_ms: 1180 },
+  {
+    step: "decide",
+    status: "done",
+    duration_ms: 12,
+    policy: "post-deadline",
+    rule_id: "post-deadline.hint-only",
+  },
+  { step: "generate", status: "done", duration_ms: 2400 },
+];
+
+/** The null and empty metadata a user message persists with. */
+function noTurnMeta() {
+  return {
+    reasoning: null,
+    model: null,
+    thinking: null,
+    work_steps: [] as WorkStep[],
+    citations: [] as Citation[],
+    tool_calls: [] as ToolCall[],
+  };
+}
+
 const HISTORY: ChatMessage[] = [
   {
     id: "message-user-1",
@@ -35,6 +90,7 @@ const HISTORY: ChatMessage[] = [
     provider: null,
     tier: null,
     created_at: "2026-11-03T09:12:04+00:00",
+    ...noTurnMeta(),
   },
   {
     id: "message-assistant-1",
@@ -44,6 +100,70 @@ const HISTORY: ChatMessage[] = [
     provider: "deepseek",
     tier: "flash",
     created_at: "2026-11-03T09:13:20+00:00",
+    reasoning: STORED_REASONING,
+    model: "deepseek-flash",
+    thinking: "high",
+    work_steps: STORED_STEPS,
+    citations: [STORED_CITATION],
+    tool_calls: [STORED_TOOL_CALL],
+  },
+];
+
+/**
+ * The history a finished first answer becomes: the backend stores the streamed
+ * answer with the id the stream announced and the work steps it emitted.
+ */
+const NEW_HISTORY: ChatMessage[] = [
+  {
+    id: "message-user-new",
+    sequence: 1,
+    role: "user",
+    content: QUESTION,
+    provider: null,
+    tier: null,
+    created_at: "2026-11-03T10:00:00+00:00",
+    ...noTurnMeta(),
+  },
+  {
+    id: "streamed-message",
+    sequence: 2,
+    role: "assistant",
+    content: "Hello",
+    provider: "deepseek",
+    tier: "flash",
+    created_at: "2026-11-03T10:00:01+00:00",
+    reasoning: null,
+    model: "deepseek-flash",
+    thinking: "off",
+    work_steps: [{ step: "generate", status: "done", duration_ms: 120 }],
+    citations: [],
+    tool_calls: [],
+  },
+];
+
+/** An answer persisted before turn metadata existed: its text, and nothing else. */
+const LEGACY_ANSWER = "The legacy answer predates persisted turn metadata.";
+
+const LEGACY_HISTORY: ChatMessage[] = [
+  {
+    id: "legacy-user",
+    sequence: 1,
+    role: "user",
+    content: QUESTION,
+    provider: null,
+    tier: null,
+    created_at: "2026-11-01T09:00:00+00:00",
+    ...noTurnMeta(),
+  },
+  {
+    id: "legacy-assistant",
+    sequence: 2,
+    role: "assistant",
+    content: LEGACY_ANSWER,
+    provider: "deepseek",
+    tier: "flash",
+    created_at: "2026-11-01T09:00:30+00:00",
+    ...noTurnMeta(),
   },
 ];
 
@@ -93,15 +213,19 @@ function routes(overrides: StubRoute[] = []): StubRoute[] {
 }
 
 function historyRoute(
-  handler: () => Response | Promise<Response>,
+  handler: (call: FetchCall) => Response | Promise<Response>,
 ): StubRoute {
   return { method: "GET", path: MESSAGES_PATH, handler };
 }
 
 function history(messages: ChatMessage[] = HISTORY): StubRoute {
-  return historyRoute(() =>
-    jsonResponse({ session_id: SESSION_ID, messages }),
-  );
+  return historyRoute((call) => {
+    const isNew = call.path === `/api/sessions/${NEW_SESSION_ID}/messages`;
+    return jsonResponse({
+      session_id: isNew ? NEW_SESSION_ID : SESSION_ID,
+      messages: isNew ? NEW_HISTORY : messages,
+    });
+  });
 }
 
 function chatRoute(handler: () => Response): StubRoute {
@@ -123,6 +247,14 @@ function sessionsCalls(): number {
   return stub === null
     ? 0
     : stub.calls.filter((call) => call.path === "/api/sessions").length;
+}
+
+function messageCalls(sessionId: string): number {
+  return stub === null
+    ? 0
+    : stub.calls.filter(
+        (call) => call.path === `/api/sessions/${sessionId}/messages`,
+      ).length;
 }
 
 describe("live chat", () => {
@@ -312,6 +444,100 @@ describe("live chat", () => {
     await waitFor(() => expect(sessionsCalls()).toBe(2));
   });
 
+  it("renders the persisted work chain when the first answer opens the conversation", async () => {
+    const gate = deferred();
+    stub = createFetchStub(
+      routes([
+        chatRoute(() =>
+          sseResponse(STREAM_FRAMES, {
+            headers: { "x-conversation-id": NEW_SESSION_ID },
+          }),
+        ),
+        historyRoute(async (call) => {
+          if (call.path !== `/api/sessions/${NEW_SESSION_ID}/messages`) {
+            return jsonResponse({ session_id: SESSION_ID, messages: HISTORY });
+          }
+          await gate.promise;
+          return jsonResponse({
+            session_id: NEW_SESSION_ID,
+            messages: NEW_HISTORY,
+          });
+        }),
+      ]),
+    );
+    const user = userEvent.setup();
+    const router = renderLiveRoute("/chat");
+
+    const composer = await screen.findByLabelText("Your question");
+    await user.type(composer, QUESTION);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    // The finished stream is what opens the conversation, so the new route is
+    // the marker for "the first answer completed".
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`/chat/${NEW_SESSION_ID}`),
+    );
+
+    // The reopened conversation loads the persisted turn; it does not inherit
+    // the finished stream. While the history is pending there is no work chain.
+    await waitFor(() => expect(messageCalls(NEW_SESSION_ID)).toBe(1));
+    expect(
+      screen.queryByRole("group", { name: "Work chain" }),
+    ).not.toBeInTheDocument();
+
+    gate.resolve();
+
+    // The stored row carries the streamed answer and the generate step, so the
+    // work chain renders from persisted metadata, not from data-step parts.
+    expect(await screen.findByText("Hello")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
+    expect(screen.getByText("1 of 1 steps complete")).toBeInTheDocument();
+  });
+
+  it("renders the stored work chain, thinking, citations, and tool calls of a conversation", async () => {
+    stub = createFetchStub(routes([history()]));
+    const user = userEvent.setup();
+
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+
+    // The answer text and the turn trace both come from the stored message.
+    expect(await screen.findByText(ANSWER)).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
+    expect(screen.getByText("4 of 4 steps complete")).toBeInTheDocument();
+    // The policy state of the persisted decide step labels the work chain.
+    expect(screen.getAllByText("Post-deadline").length).toBeGreaterThan(0);
+    expect(screen.getByRole("group", { name: "Citations" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open page 12" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Tool call: course_search")).toBeInTheDocument();
+
+    // The thinking region opens the persisted reasoning text.
+    await user.click(screen.getByRole("button", { name: "Reasoning" }));
+    expect(await screen.findByText(STORED_REASONING)).toBeInTheDocument();
+
+    // The work chain expands to the persisted steps and their detail.
+    await user.click(screen.getByRole("button", { name: /Work chain/ }));
+    expect(await screen.findByText(STORED_STEP_DETAIL)).toBeInTheDocument();
+    expect(screen.getByText(/post-deadline\.hint-only/)).toBeInTheDocument();
+  });
+
+  it("renders a legacy answer without a work chain or thinking region", async () => {
+    stub = createFetchStub(routes([history(LEGACY_HISTORY)]));
+
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+
+    // An answer persisted before turn metadata existed has text but no trace
+    // to show, so no empty work chain or thinking region is rendered for it.
+    expect(await screen.findByText(LEGACY_ANSWER)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: "Work chain" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Reasoning" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps an existing conversation open and refreshes the sidebar", async () => {
     stub = createFetchStub(
       routes([
@@ -461,11 +687,15 @@ describe("live chat", () => {
     });
 
     // The retried answer is not dropped: a stale failure flag would remove the
-    // assistant turn and skip opening the conversation.
+    // assistant turn and skip opening the conversation. The reopened
+    // conversation loads the persisted turn, which carries the streamed answer.
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`/chat/${NEW_SESSION_ID}`),
     );
-    expect(await screen.findByText(ANSWER)).toBeInTheDocument();
+    expect(await screen.findByText("Hello")).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Work chain" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("The answer stopped")).not.toBeInTheDocument();
   });
 

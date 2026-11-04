@@ -80,6 +80,12 @@ function ChatSession({
         provider: null,
         tier: null,
         created_at: now,
+        reasoning: null,
+        model: null,
+        thinking: null,
+        work_steps: [],
+        citations: [],
+        tool_calls: [],
       },
     };
     const assistant = turnWithId(PREVIEW_TURNS[1], `preview-assistant-${id}`);

@@ -6,6 +6,7 @@ import { useSession } from "@/lib/auth/session";
 import type { Messages } from "@/lib/i18n/en";
 import { type ModelId, type ThinkingLevel } from "@/lib/models";
 import { useConversations } from "@/lib/session/conversations";
+import type { ChatMessage } from "@/lib/types";
 
 import { ChatApiError, TutorChatTransport, type TutorSelection } from "./tutor-transport";
 import { toConversationTurns, type TutorUIMessage } from "./ui-message";
@@ -61,10 +62,13 @@ function errorDescription(error: unknown, t: Messages): string {
 export function useTutorChat({
   sessionId,
   initialMessages,
+  storedMessages = [],
   t,
 }: {
   sessionId: string | null;
   initialMessages: TutorUIMessage[];
+  /** The persisted rows the initial messages came from, for their metadata. */
+  storedMessages?: ChatMessage[];
   t: Messages;
 }): TutorChat {
   const navigate = useNavigate();
@@ -169,8 +173,8 @@ export function useTutorChat({
   }, [failure]);
 
   const turns = useMemo(
-    () => toConversationTurns(chat.messages),
-    [chat.messages],
+    () => toConversationTurns(chat.messages, storedMessages),
+    [chat.messages, storedMessages],
   );
   const streaming = chat.status === "submitted" || chat.status === "streaming";
 

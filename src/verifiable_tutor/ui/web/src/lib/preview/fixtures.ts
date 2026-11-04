@@ -109,6 +109,12 @@ const QUESTION: ChatMessage = {
   provider: null,
   tier: null,
   created_at: "2026-11-03T09:12:04+00:00",
+  reasoning: null,
+  model: null,
+  thinking: null,
+  work_steps: [],
+  citations: [],
+  tool_calls: [],
 };
 
 const ANSWER: ChatMessage = {
@@ -133,6 +139,12 @@ const ANSWER: ChatMessage = {
   provider: "deepseek",
   tier: "flash",
   created_at: "2026-11-03T09:13:20+00:00",
+  reasoning: null,
+  model: null,
+  thinking: null,
+  work_steps: [],
+  citations: [],
+  tool_calls: [],
 };
 
 export const PREVIEW_TURNS: ConversationTurn[] = [
@@ -213,6 +225,12 @@ const QUESTION_ATTENTION: ChatMessage = {
   provider: null,
   tier: null,
   created_at: "2026-11-02T14:04:02+00:00",
+  reasoning: null,
+  model: null,
+  thinking: null,
+  work_steps: [],
+  citations: [],
+  tool_calls: [],
 };
 
 const ANSWER_ATTENTION: ChatMessage = {
@@ -231,6 +249,12 @@ const ANSWER_ATTENTION: ChatMessage = {
   provider: "deepseek",
   tier: "flash",
   created_at: "2026-11-02T14:06:10+00:00",
+  reasoning: null,
+  model: null,
+  thinking: null,
+  work_steps: [],
+  citations: [],
+  tool_calls: [],
 };
 
 const QUESTION_KERNEL: ChatMessage = {
@@ -241,6 +265,12 @@ const QUESTION_KERNEL: ChatMessage = {
   provider: null,
   tier: null,
   created_at: "2026-10-31T20:30:04+00:00",
+  reasoning: null,
+  model: null,
+  thinking: null,
+  work_steps: [],
+  citations: [],
+  tool_calls: [],
 };
 
 const ANSWER_KERNEL: ChatMessage = {
@@ -266,6 +296,12 @@ const ANSWER_KERNEL: ChatMessage = {
   provider: "deepseek",
   tier: "flash",
   created_at: "2026-10-31T20:35:00+00:00",
+  reasoning: null,
+  model: null,
+  thinking: null,
+  work_steps: [],
+  citations: [],
+  tool_calls: [],
 };
 
 const ATTENTION_TURNS: ConversationTurn[] = [

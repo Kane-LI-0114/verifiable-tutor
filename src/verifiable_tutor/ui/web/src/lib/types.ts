@@ -29,6 +29,13 @@ export interface ChatMessage {
   provider: string | null;
   tier: string | null;
   created_at: string;
+  /** Persisted turn metadata; user messages carry null and empty values. */
+  reasoning: string | null;
+  model: string | null;
+  thinking: string | null;
+  work_steps: WorkStep[];
+  citations: Citation[];
+  tool_calls: ToolCall[];
 }
 
 /** Normalized page box, [x1, y1, x2, y2], from the OCR page record. */

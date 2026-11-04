@@ -20,13 +20,14 @@ import {
 } from "@/lib/chat/ui-message";
 import { useT } from "@/lib/i18n";
 import { useConversations } from "@/lib/session/conversations";
-import type { ConversationTurn } from "@/lib/types";
+import type { ChatMessage, ConversationTurn } from "@/lib/types";
 
 type HistoryStatus = "loading" | "ready" | "error" | "missing";
 
 interface HistoryValue {
   status: HistoryStatus;
-  messages: TutorUIMessage[];
+  /** The stored rows for this conversation, which carry the turn metadata. */
+  messages: ChatMessage[];
   turns: ConversationTurn[];
   retry: () => void;
 }
@@ -40,7 +41,7 @@ function useSessionHistory(sessionId: string | null): HistoryValue {
   const [status, setStatus] = useState<HistoryStatus>(
     sessionId === null ? "ready" : "loading",
   );
-  const [messages, setMessages] = useState<TutorUIMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => {
     setAttempt((current) => current + 1);
@@ -60,7 +61,7 @@ function useSessionHistory(sessionId: string | null): HistoryValue {
         if (cancelled) {
           return;
         }
-        setMessages(toTutorMessages(response.messages));
+        setMessages(response.messages);
         setStatus("ready");
       })
       .catch((error: unknown) => {
@@ -81,7 +82,7 @@ function useSessionHistory(sessionId: string | null): HistoryValue {
   return {
     status,
     messages,
-    turns: toConversationTurns(messages),
+    turns: toConversationTurns(toTutorMessages(messages), messages),
     retry,
   };
 }
@@ -107,7 +108,14 @@ export function LiveChatPage() {
   }
 
   if (sessionId === undefined) {
-    return <LiveChatSession key="new" sessionId={null} initialMessages={[]} />;
+    return (
+      <LiveChatSession
+        key="new"
+        sessionId={null}
+        initialMessages={[]}
+        storedMessages={[]}
+      />
+    );
   }
   return <ConversationChatPage key={sessionId} sessionId={sessionId} />;
 }
@@ -171,7 +179,8 @@ function ConversationChatPage({ sessionId }: { sessionId: string }) {
         <LiveChatSession
           key={sessionId}
           sessionId={sessionId}
-          initialMessages={history.messages}
+          initialMessages={toTutorMessages(history.messages)}
+          storedMessages={history.messages}
         />
       )}
     </ChatHistoryGate>
@@ -206,13 +215,15 @@ function conversationTitle(
 function LiveChatSession({
   sessionId,
   initialMessages,
+  storedMessages,
 }: {
   sessionId: string | null;
   initialMessages: TutorUIMessage[];
+  storedMessages: ChatMessage[];
 }) {
   const t = useT();
   const { sessions } = useConversations();
-  const chat = useTutorChat({ sessionId, initialMessages, t });
+  const chat = useTutorChat({ sessionId, initialMessages, storedMessages, t });
   const [composer, setComposer] = useState("");
   const title = conversationTitle(sessions, sessionId, t.chat.title);
 

@@ -46,6 +46,12 @@ function emptyAssistant(sequence: number): ConversationTurn {
       provider: null,
       tier: null,
       created_at: "",
+      reasoning: null,
+      model: null,
+      thinking: null,
+      work_steps: [],
+      citations: [],
+      tool_calls: [],
     },
     meta: emptyMeta(),
   };

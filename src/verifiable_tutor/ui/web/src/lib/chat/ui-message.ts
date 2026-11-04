@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 
 import type {
+  AssistantMeta,
   ChatMessage,
   ConversationTurn,
   PolicyState,
@@ -34,7 +35,11 @@ export type TutorUIMessage = UIMessage<MessageMetadata, TutorDataParts>;
 
 export type TutorPart = TutorUIMessage["parts"][number];
 
-/** Stored history becomes UI messages with plain text parts. */
+/**
+ * Stored history becomes UI messages with plain text parts. The persisted turn
+ * metadata is not part of a UI message, so `toConversationTurns` applies it
+ * from the same rows.
+ */
 export function toTutorMessages(messages: ChatMessage[]): TutorUIMessage[] {
   return messages.map((message) => ({
     id: message.id,
@@ -86,14 +91,42 @@ function reasoningText(parts: TutorPart[]): string {
 }
 
 /**
+ * The turn metadata a stored assistant row carries. The first step that holds a
+ * policy labels the work chain. A row with no metadata at all is a legacy
+ * answer and yields no trace, so the thread does not show an empty work chain.
+ */
+function storedMeta(stored: ChatMessage): AssistantMeta | undefined {
+  const reasoning = stored.reasoning ?? "";
+  if (
+    stored.work_steps.length === 0 &&
+    reasoning.length === 0 &&
+    stored.citations.length === 0 &&
+    stored.tool_calls.length === 0
+  ) {
+    return undefined;
+  }
+  return {
+    work_steps: stored.work_steps,
+    reasoning,
+    citations: stored.citations,
+    tool_calls: stored.tool_calls,
+    policy_state:
+      stored.work_steps.find((step) => step.policy)?.policy ?? "active",
+  };
+}
+
+/**
  * Turn a UI message into the shape the chat components already render.
  *
- * Work steps and reasoning are stream-only for now: the backend persists the
- * answer text but not the turn trace, so a reloaded history message has none.
+ * A stored row supplies the turn metadata by message id, so a conversation
+ * reloaded from the API keeps its work chain, reasoning, citations, and tool
+ * calls. A message without a stored row (the live stream, and the replay
+ * frames) derives the same metadata from its own parts instead.
  */
 export function toConversationTurn(
   message: TutorUIMessage,
   sequence: number,
+  stored?: ChatMessage,
 ): ConversationTurn {
   const role = message.role === "user" ? "user" : "assistant";
   const content = message.parts.map(partText).join("");
@@ -107,19 +140,32 @@ export function toConversationTurn(
       provider: metadata.provider ?? null,
       tier: metadata.tier ?? null,
       created_at: "",
+      reasoning: stored?.reasoning ?? null,
+      model: stored?.model ?? null,
+      thinking: stored?.thinking ?? null,
+      work_steps: stored?.work_steps ?? [],
+      citations: stored?.citations ?? [],
+      tool_calls: stored?.tool_calls ?? [],
     },
   };
   if (role === "assistant") {
-    const steps = workSteps(message.parts);
-    const reasoning = reasoningText(message.parts);
-    if (steps.length > 0 || reasoning.length > 0) {
-      turn.meta = {
-        work_steps: steps,
-        reasoning,
-        citations: [],
-        tool_calls: [],
-        policy_state: steps.find((step) => step.policy)?.policy ?? "active",
-      };
+    if (stored !== undefined) {
+      const meta = storedMeta(stored);
+      if (meta !== undefined) {
+        turn.meta = meta;
+      }
+    } else {
+      const steps = workSteps(message.parts);
+      const reasoning = reasoningText(message.parts);
+      if (steps.length > 0 || reasoning.length > 0) {
+        turn.meta = {
+          work_steps: steps,
+          reasoning,
+          citations: [],
+          tool_calls: [],
+          policy_state: steps.find((step) => step.policy)?.policy ?? "active",
+        };
+      }
     }
   }
   return turn;
@@ -127,9 +173,13 @@ export function toConversationTurn(
 
 export function toConversationTurns(
   messages: TutorUIMessage[],
+  storedMessages: ChatMessage[] = [],
 ): ConversationTurn[] {
+  const storedById = new Map(
+    storedMessages.map((message) => [message.id, message]),
+  );
   return messages.map((message, index) =>
-    toConversationTurn(message, index + 1),
+    toConversationTurn(message, index + 1, storedById.get(message.id)),
   );
 }
 
