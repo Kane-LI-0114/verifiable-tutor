@@ -5,6 +5,7 @@
 #   ./start.sh                 build the browser UI, then run the backend on one origin
 #   ./start.sh --dev           run the backend and the Vite dev server together
 #   ./start.sh --no-build      skip npm ci and the UI build, then run the backend
+#   ./start.sh --preview       build the offline preview demo (no API calls)
 #   ./start.sh --port 8001     serve the backend on another port
 #   ./start.sh --help          show this message
 #
@@ -24,6 +25,7 @@ HOST="127.0.0.1"
 PORT="8000"
 MODE="serve"
 BUILD="1"
+PREVIEW="0"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -33,13 +35,16 @@ while [ "$#" -gt 0 ]; do
     --no-build)
       BUILD="0"
       ;;
+    --preview)
+      PREVIEW="1"
+      ;;
     --port)
       [ "$#" -ge 2 ] || { echo "start.sh: --port needs a value" >&2; exit 2; }
       PORT="$2"
       shift
       ;;
     -h|--help)
-      sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -95,12 +100,22 @@ if [ "$MODE" = "dev" ]; then
 
   echo "start.sh: starting the Vite dev server; /api proxies to http://$HOST:$PORT"
   cd "$WEB"
-  npm run dev
+  if [ "$PREVIEW" = "1" ]; then
+    echo "start.sh: preview demo mode, the browser uses fixture data"
+    VITE_PREVIEW=1 npm run dev
+  else
+    npm run dev
+  fi
 else
   install_ui_deps
   if [ "$BUILD" = "1" ]; then
-    echo "start.sh: building the UI into src/verifiable_tutor/ui/static"
-    npm run build
+    if [ "$PREVIEW" = "1" ]; then
+      echo "start.sh: building the offline preview UI into src/verifiable_tutor/ui/static"
+      VITE_PREVIEW=1 npm run build
+    else
+      echo "start.sh: building the UI into src/verifiable_tutor/ui/static"
+      npm run build
+    fi
   fi
   cd "$ROOT"
   echo "start.sh: serving http://$HOST:$PORT/ (SPA and API on one origin)"
