@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,18 +13,27 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { authApi } from "@/lib/api/auth";
+import { apiErrorMessage } from "@/lib/api/errors";
 import { useT } from "@/lib/i18n";
+import { usePreview } from "@/lib/preview/context";
 
 export function ResetConfirmPage() {
   const t = useT();
+  const navigate = useNavigate();
+  const { isPreview } = usePreview();
   const [params] = useSearchParams();
   const token = (params.get("token") ?? "").trim();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) {
+      return;
+    }
     if (password.length < 8) {
       setNotice(t.auth.shortPassword);
       return;
@@ -33,7 +42,19 @@ export function ResetConfirmPage() {
       setNotice(t.auth.passwordsDiffer);
       return;
     }
-    setNotice(t.common.previewNotice);
+    if (isPreview) {
+      setNotice(t.common.previewNotice);
+      return;
+    }
+    setPending(true);
+    setNotice(null);
+    try {
+      await authApi.reset(token, password);
+      navigate("/login?reset=1");
+    } catch (error) {
+      setNotice(apiErrorMessage(error, t));
+      setPending(false);
+    }
   }
 
   return (
@@ -79,7 +100,9 @@ export function ResetConfirmPage() {
                   <AlertDescription>{notice}</AlertDescription>
                 </Alert>
               ) : null}
-              <Button type="submit">{t.auth.updatePassword}</Button>
+              <Button type="submit" disabled={pending}>
+                {pending ? t.auth.updatingPassword : t.auth.updatePassword}
+              </Button>
             </FieldGroup>
           </form>
         ) : (

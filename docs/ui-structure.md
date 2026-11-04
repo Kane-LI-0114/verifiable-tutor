@@ -2,24 +2,24 @@
 
 | | |
 |---|---|
-| **Status** | Milestone 1, structure implemented |
+| **Status** | Milestone 2, authentication and chat wired to the local API |
 | **Date** | 2026-11-03 |
-| **Scope** | Routes, layout regions, the components each page uses, states, and the boundary between the preview build and live wiring |
+| **Scope** | Routes, layout regions, the components each page uses, states, and the boundary between live data and the offline preview demo |
 | **Owner** | This file owns the page structure. [ADR-0003](adr/0003-react-spa-with-ai-elements.md) owns the frontend stack, [prd.md](prd.md) owns the behavior, and [tech-selection.md](tech-selection.md#ui-and-streaming-protocol) owns the build and serving decisions |
 
-The UI source lives under `src/verifiable_tutor/ui/web/`. The build writes to `src/verifiable_tutor/ui/static/`, which Git ignores; the backend serves that directory on the same origin as the API ([factory.py](../src/verifiable_tutor/api/factory.py)). The first milestone fixes the page structure and uses preview data. It does not call the API, stream a real answer, or show verified citations.
+The UI source lives under `src/verifiable_tutor/ui/web/`. The build writes to `src/verifiable_tutor/ui/static/`, which Git ignores; the backend serves that directory on the same origin as the API ([factory.py](../src/verifiable_tutor/api/factory.py)). Milestone 2 wires the authentication flows, the server-side session, conversation history, streamed chat, and replay to the local API. Citations, page images, practice, the knowledge base, the deadline registry, and voice still use preview structures; the evidence layer and the OCR corpus arrive in a later milestone.
 
 ## Page map
 
-| Route | Access | Purpose | Data in milestone 1 |
+| Route | Access | Purpose | Data source |
 |---|---|---|---|
-| `/login` | Public | Sign in with email and password | Preview form |
-| `/register` | Public | Register with a student email and password | Preview form |
-| `/verify?email=` | Public | Confirm the six digit code | Preview form |
-| `/reset` | Public | Request a password reset link | Preview form |
-| `/reset/confirm?token=` | Public | Set a new password from the link | Preview form |
-| `/chat` | Signed in | Start a new conversation | Empty preview thread |
-| `/chat/:sessionId` | Signed in | Conversation, work chain, citations, collapsible evidence panel; `?replay=1` shows the replay banner | Per-session preview fixture |
+| `/login` | Public | Sign in with email and password | Live API, preview in demo mode |
+| `/register` | Public | Register with a student email and password | Live API, preview in demo mode |
+| `/verify?email=` | Public | Confirm the six digit code | Live API, preview in demo mode |
+| `/reset` | Public | Request a password reset link | Live API, preview in demo mode |
+| `/reset/confirm?token=` | Public | Set a new password from the link | Live API, preview in demo mode |
+| `/chat` | Signed in | Start a new conversation | Live empty thread |
+| `/chat/:sessionId` | Signed in | Conversation, work chain, citations, collapsible evidence panel; `?replay=1` replays the recorded trace | Live history and stream; replay trace |
 | `/practice` | Signed in | Practice lab and self-test, with a "My solution" tab | Preview fixture; the run action shows the documented 503 state |
 | `/knowledge` | Signed in | Browse knowledge cards, with a detail sheet | Preview fixture |
 | `/instructor/builds` | Instructor | Start and watch a Qwen knowledge-base build | Preview fixture |
@@ -61,14 +61,16 @@ The authentication pages use two columns on a wide viewport: product framing on 
 | Work chain | Trace, Task, Badge | Steps: understand, retrieve, verify, decide, generate, cite. The decide step shows the policy state |
 | Thinking | Reasoning | Collapsed by default |
 | Answer | Markdown with the math and code plugins | Formulas through KaTeX, code through Shiki |
-| Citations | Inline Citation, Sources | A chip opens the evidence panel and expands it if it was collapsed. Citations sit in a row after the answer in milestone 1; inline placement in prose arrives with the `source-document` frames |
+| Citations | Inline Citation, Sources | A chip opens the evidence panel and expands it if it was collapsed. Citations sit in a row after the answer; fresh answers have none until the evidence layer emits `source-document` frames, and inline placement in prose arrives with them |
 | Tool calls | Tool, Terminal, Code Block | Exact command line, exit code, truncated output |
 | Actions | Button, Tooltip | Copy, retry, speak. The speak action uses a button and an audio element |
 | Composer | Input Group, Model Selector, Attachment | Provider and tier, thinking level, audio attachment (MiMo only), microphone control, send and stop. Enter sends, Shift+Enter inserts a newline, and Enter during an IME composition confirms the candidate instead of sending |
 
-The model selector offers DeepSeek Flash, MiMo Flash, and MiMo Pro, plus the four thinking levels. An audio attachment with DeepSeek selected renders the capability error instead of sending.
+The model selector offers DeepSeek Flash, MiMo Flash, and MiMo Pro, plus the four thinking levels, and all three values are sent with the live turn. In live mode the audio attachment and microphone controls stay disabled until the voice wiring lands; the preview demo keeps the attachment state and the DeepSeek capability error.
 
-Changing the route from `/chat` to `/chat/:sessionId`, or to another session, remounts the conversation state. The preview fixtures carry one seeded conversation per session (MPI collectives, attention softmax stability, and CUDA kernel layout), so switching sessions changes the visible thread; `/chat` always starts empty. When the conversation is non-empty, a visually hidden `h1` names the conversation.
+Changing the route from `/chat` to `/chat/:sessionId`, or to another session, remounts the conversation state and loads that conversation's history from `GET /api/sessions/{id}/messages`; `/chat` always starts empty. When the conversation is non-empty, a visually hidden `h1` names the conversation. The preview demo carries one seeded conversation per fixture session instead.
+
+In live mode the chat state comes from `@ai-sdk/react` `useChat` with the project transport (`src/verifiable_tutor/ui/web/src/lib/chat/tutor-transport.ts`). The transport sends only the newest user text plus `session_id`, `provider`, `tier`, and `thinking` to `POST /api/chat`, because the backend owns the conversation history. The conversation id arrives in the `x-conversation-id` response header; a new conversation navigates to `/chat/<id>` after the stream finishes and the answer is persisted. When a turn fails before the stream starts, the client keeps the conversation id from the same header, so a retry sends the question into that conversation instead of creating a second one. The streamed answer carries the request-time provider and tier as message metadata, so its badge does not follow a later composer change. The work chain is derived from the `data-step` custom data parts and reasoning text from `reasoning-*` frames. A stream failure stops the answer, drops the partial text, shows the failure copy, and offers to put the question back in the composer; it is never replayed as if complete (FR-B12). Replay re-emits the recorded trace through the same components at a selectable speed, and the composer is hidden while replays run.
 
 ### Evidence panel
 
@@ -86,7 +88,7 @@ The page has a search field, a document filter, a card grid, and pagination. A c
 
 ### Knowledge-base builds
 
-Instructors get a build list and a new-build dialog with the document id and the chunk limit. A build row shows the state, job id, record count, and timestamps. The detail view shows the state timeline, the request JSON, and the failure message with a retry action. Milestone 1 uses the four states the backend defines: `queued`, `running`, `ready`, and `failed`. The PRD also asks for a `downloading` state; the backend does not emit it yet and the UI does not invent it.
+Instructors get a build list and a new-build dialog with the document id and the chunk limit. A build row shows the state, job id, record count, and timestamps. The detail view shows the state timeline, the request JSON, and the failure message with a retry action. The preview page uses the four states the backend defines: `queued`, `running`, `ready`, and `failed`. The PRD also asks for a `downloading` state; the backend does not emit it yet and the UI does not invent it.
 
 ### Deadline registry
 
@@ -119,26 +121,28 @@ npx shadcn@latest add sidebar button dropdown-menu avatar badge separator toolti
 | Test results | `components/practice/test-results.tsx` | composition on trace and code block |
 | Markdown with math and code | `components/ai/markdown.tsx` | streamdown with the code, math, and CJK plugins, KaTeX CSS |
 
-The chat page wires Message Scroller, the message composition, and the composer together. It does not copy the documentation demos, which depend on a fake transport, `motion`, and Next.js helpers. Not every pattern needs its own file: model selection and confirmation are small compositions inside the page that uses them.
+The live and preview chat pages render the shared session shell in `src/verifiable_tutor/ui/web/src/components/chat/chat-session-shell.tsx` (thread, evidence pane, narrow-screen evidence sheet, and replay banner) and each page keeps its own data access; together they wire Message Scroller, the message composition, and the composer. They do not copy the documentation demos, which depend on a fake transport, `motion`, and Next.js helpers. Not every pattern needs its own file: model selection and confirmation are small compositions inside the page that uses them.
 
-Not used in milestone 1: Plan, Context, Chain of Thought, Questionnaire, the audio player and speech input patterns (built from a button and a native element), and animation. The streaming state comes from a `useTutorChat` seam. Milestone 2 replaces its preview implementation with `@ai-sdk/react` `useChat` without changing the pages.
+Not used yet: Plan, Context, Chain of Thought, Questionnaire, the audio player and speech input patterns (built from a button and a native element), and animation. In live mode the streaming state comes from `@ai-sdk/react` `useChat` with the project transport; the preview demo keeps its fixture-based chat. Voice input and playback stay structured but unwired.
 
 ## States and preview mode
 
-Every page renders loading, empty, error, and forbidden states. The shell redirects an unauthenticated visitor to `/login?next=`. In the preview build, `?preview=loading`, `?preview=empty`, and `?preview=error` select a state, and the developer controls switch between signed out, student, and instructor. `?previewRole=instructor` selects a role on first load, and the choice persists in local storage so a reviewer can move between pages. The authentication layout and the not-found page keep the language switch and the preview controls in their top right corner, so a signed-out reviewer can return to a role without clearing storage. Choosing a signed-in role while on an authentication page navigates back into the app: the preserved `next` path is used when it is a safe same-origin path, an instructor-only destination falls back to `/chat` for a student, and a missing, off-site, or authentication-path destination falls back to `/chat`.
+Live data is the default. The shell boots from `GET /api/auth/me`: a loading state while the session is read, the login redirect (`/login?next=`) for an anonymous visitor, and a retry state when the backend cannot be reached. An authenticated visitor who opens an authentication page is redirected into the app, using the preserved `next` path when it is a safe same-origin path. Signing out calls `POST /api/auth/logout`; a 401 from a later request (the conversation list, history, the chat stream, or replay) clears the client session and returns to the login page. Every page still renders loading, empty, error, and forbidden states.
 
-The preview build makes no API request. `VITE_PREVIEW=0` disables the preview data at build time; the live wiring is milestone 2.
+The offline preview demo is an explicit opt-in: `VITE_PREVIEW=1` at build time, or `?preview=1` on a live build. On a live build the documented preview values also opt in: `?preview=loading`, `?preview=empty`, and `?preview=error` enter the demo and select that page state, while `?preview=1` enters it in the normal state; the `VITE_PREVIEW=1` build accepts the same state parameters. In preview mode the developer controls switch between signed out, student, and instructor, `?previewRole=instructor` selects a role on first load, and the choice persists in local storage. The authentication layout and the not-found page keep the language switch and the preview controls in their top right corner, so a signed-out reviewer can return to a role without clearing storage. The preview build makes no API request; the registration page validates against a demo domain fixture instead of the configured-domain endpoint.
 
 ## Data contracts and coverage
 
 The TypeScript types in `src/verifiable_tutor/ui/web/src/lib/types.ts` mirror the JSON the backend returns. They do not add fields the backend does not have.
 
-| Surface | Endpoint | Backend state | Milestone 1 |
+| Surface | Endpoint | Backend state | UI wiring |
 |---|---|---|---|
-| Registration, verification, login, logout, reset | `/api/auth/*` | Implemented | Preview form |
-| Current account | `/api/auth/me` | Implemented | Preview account |
-| Conversations and history | `/api/sessions`, `/api/sessions/{id}/messages` | Implemented | Fixture |
-| Chat stream | `POST /api/chat` | Implemented, one `data-step` for generate | Fixture with six work-chain steps |
+| Registration, verification, login, logout, reset | `/api/auth/*` | Implemented | Wired in milestone 2 |
+| Allowed registration domains | `GET /api/auth/domains` | Implemented, public, from `config/app.yaml` | Wired: the registration page checks the configured list (FR-A3), and a failed load defers to the backend |
+| Current account and session bootstrap | `/api/auth/me` | Implemented | Wired in milestone 2 |
+| Conversations and history | `/api/sessions`, `/api/sessions/{id}/messages` | Implemented | Wired in milestone 2 |
+| Chat stream | `POST /api/chat` | Implemented: one `data-step` for generate, `x-conversation-id`, thinking level, and the resolved model selection in the trace meta | Wired in milestone 2 |
+| Replay | `GET /api/sessions/{id}/replay` | Implemented, recorded trace frames | Wired in milestone 2 |
 | Citations and highlights | `source-document` frames, page block coordinates | Missing | Structure only |
 | Practice run | `POST /api/practice/runs` | Documented 503 | Unavailable state |
 | Knowledge cards | `GET /api/knowledge/cards` | Implemented | Fixture |
@@ -153,7 +157,13 @@ The UI follows the red, green, refactor loop at these seams. The tests live in `
 
 | Seam | Test | Catches | Misses |
 |---|---|---|---|
-| Routes and guards | `router.test.tsx` | Default route, unauthenticated redirect, role leak, unknown path | Server-side authorization, which the API tests own |
+| Routes and guards | `router.test.tsx`, `live-session.test.tsx` | Default route, unauthenticated redirect, unavailable retry, role leak, unknown path | Server-side authorization, which the API tests own |
+| HTTP client | `api-client.test.ts` | Request shape, credentials, JSON parsing, backend detail mapping, network failure, 204 | Live CORS and cookie behavior |
+| Data mode | `data-mode.test.tsx`, `preview-isolation.test.tsx` | Live pages call the API; preview pages make no request | Runtime env parity |
+| Preview URL entry | `preview-mode.test.ts` | Every documented `?preview` value enters the demo and selects the right page state; unknown values stay live | The Providers wiring from URL to state, which is compile-checked |
+| Auth pages live | `auth-live.test.tsx` | Each form's request, success path, mapped errors, pending state, safe redirect, configured-domain check, and backend-validated fallback | Real mailbox delivery |
+| Conversations | `conversations.test.tsx` | Sidebar list, empty state, error retry, expired-session redirect | Pagination (not implemented) |
+| Chat live | `chat-live.test.tsx`, `replay.test.tsx` | History load, request body, progressive stream, stop, error cleanup, new-conversation navigation, failed-turn retry keeping the conversation id, request-time model badge, replay without a chat POST, replay of a turn with no persisted assistant message, unauthorized replay clearing the session | Real model latency |
 | Page composition | `chat-page.test.tsx`, `auth-pages.test.tsx`, `knowledge-page.test.tsx`, `practice-page.test.tsx`, `builds-page.test.tsx`, `deadlines-page.test.tsx` | Missing regions, unlabeled controls, missing components | Visual layout and CSS overflow |
 | App shell | `app-shell.test.tsx` | Nav that should not exist, collapsed logo, footer account menu and sign out, sidebar state restore, mobile sheet close, page title, focus move | Server rendering, visual transitions |
 | Evidence pane | `evidence-pane.test.tsx` | Collapse, resize bounds and keyboard steps, persistence, citation auto-expand, honest preview notice | Pointer feel and CSS cursor |
@@ -161,8 +171,9 @@ The UI follows the red, green, refactor loop at these seams. The tests live in `
 | Interaction | The page tests, driven by user events | Citation to panel, work-chain expansion, retry, code confirmation, model choice | Network behavior |
 | Translation completeness | `i18n.test.tsx` | Missing keys in one language, stale `lang` attribute | Translation quality |
 | Markdown | `markdown.test.tsx` | Math and code plugins not applied | Visual fidelity |
-| Preview isolation | `preview-isolation.test.tsx` | A preview page calling the network | Live API contract |
+| Preview isolation | `preview-isolation.test.tsx` | A preview page calling the network (preview mode only) | Live API contract |
 | Static serving | `tests/api/test_openapi_contract.py` | Browser deep link no longer returning the shell | Frontend routing |
+| Chat HTTP contract | `tests/api/test_chat_stream.py`, `test_replay.py` | Frame order, thinking level and resolved selection in the trace meta, conversation id on failure, error frames in the trace | Browser rendering |
 
 The static-serving test is a characterization guard for behavior that already exists. It does not count as a red, green slice.
 
@@ -178,7 +189,9 @@ npm run build
 
 The build writes `src/verifiable_tutor/ui/static/`. The backend checks for `index.html` when it starts, so build before starting the backend. `npm run dev` serves the SPA on the Vite port and proxies `/api` to `127.0.0.1:8000`.
 
-From the repository root, `./start.sh` runs the documented path in one command: it installs UI dependencies when the lockfile is newer, builds, and starts the backend. `./start.sh --dev` runs Vite beside the backend, `--no-build` reuses the last build, and `--port` changes the backend port.
+`npm run build` builds the live app. `VITE_PREVIEW=1 npm run build` builds the offline preview demo instead; the same demo is available from a live build with `?preview=1`.
+
+From the repository root, `./start.sh` runs the documented path in one command: it installs UI dependencies when the lockfile is newer, builds, and starts the backend. `./start.sh --dev` runs Vite beside the backend, `--no-build` reuses the last build, `--preview` builds the offline preview demo, and `--port` changes the backend port.
 
 A fresh checkout has no `static/` directory. The build creates it, Git ignores it, and the API works without it. The directory does not hold a `.gitkeep`: it is generated output, not a scaffold directory.
 
@@ -190,6 +203,6 @@ Each page sets `document.title` from its page name, and a client-side navigation
 
 ## Milestone boundary
 
-Milestone 1 fixes the structure and proves the documented components render in their intended places. Milestone 2, the live wiring, covers the authentication flows, conversation history, `useChat` streaming, citation and highlight frames from the evidence layer, the practice execution job, the deadline editor, voice input and playback, and real API error and loading states.
+Milestone 2 wires the authentication flows, the server-side session, conversation history, `useChat` streaming with the project transport, replay, and the real error and loading states for those surfaces. The preview demo remains available for offline review.
 
-Follow-ups that the backend does not support yet: `source-document` frames, block coordinates in an HTTP response, the `downloading` build state, and the deadline registry endpoint. The PRD requirements that depend on them are [FR-B3](prd.md), [FR-B5](prd.md), [FR-K1](prd.md), and [FR-A5](prd.md).
+Still on preview structures: citation and highlight frames from the evidence layer, the practice execution job, the knowledge cards and builds API, the deadline registry, and voice input and playback. The work chain and reasoning are stream-only, because the backend persists answer text but not turn metadata; a reloaded conversation shows the answers without them. Follow-ups that the backend does not support yet: `source-document` frames, block coordinates in an HTTP response, the `downloading` build state, and the deadline registry endpoint. The PRD requirements that depend on them are [FR-B3](prd.md), [FR-B5](prd.md), [FR-K1](prd.md), and [FR-A5](prd.md).

@@ -2,7 +2,7 @@ import { Navigate, type RouteObject } from "react-router";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthLayout } from "@/components/layout/auth-layout";
-import { RequireAuth, RequireInstructor } from "@/app/guards";
+import { PublicOnly, RequireAuth, RequireInstructor } from "@/app/guards";
 import { LoginPage } from "@/routes/auth/login-page";
 import { RegisterPage } from "@/routes/auth/register-page";
 import { ResetConfirmPage } from "@/routes/auth/reset-confirm-page";
@@ -17,13 +17,18 @@ import { PracticePage } from "@/routes/practice/practice-page";
 
 export const routes: RouteObject[] = [
   {
-    element: <AuthLayout />,
+    element: <PublicOnly />,
     children: [
-      { path: "/login", element: <LoginPage /> },
-      { path: "/register", element: <RegisterPage /> },
-      { path: "/verify", element: <VerifyPage /> },
-      { path: "/reset", element: <ResetPage /> },
-      { path: "/reset/confirm", element: <ResetConfirmPage /> },
+      {
+        element: <AuthLayout />,
+        children: [
+          { path: "/login", element: <LoginPage /> },
+          { path: "/register", element: <RegisterPage /> },
+          { path: "/verify", element: <VerifyPage /> },
+          { path: "/reset", element: <ResetPage /> },
+          { path: "/reset/confirm", element: <ResetConfirmPage /> },
+        ],
+      },
     ],
   },
   {

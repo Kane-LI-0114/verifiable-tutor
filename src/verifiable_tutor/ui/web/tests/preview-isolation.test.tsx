@@ -4,6 +4,7 @@ import { renderRoute } from "./render-route";
 
 const ROUTES: Array<[string, "student" | "instructor"]> = [
   ["/login", "student"],
+  ["/register", "student"],
   ["/chat", "student"],
   ["/chat/6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8", "student"],
   ["/practice", "student"],

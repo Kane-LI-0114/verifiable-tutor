@@ -13,6 +13,8 @@ import { useEffect, useRef, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation, useParams } from "react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -41,9 +43,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth/session";
+import { useConversations } from "@/lib/session/conversations";
 import { useT } from "@/lib/i18n";
 import { useDocumentTitle } from "@/lib/use-document-title";
-import { PREVIEW_SESSIONS } from "@/lib/preview/fixtures";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { PreviewControls } from "@/components/layout/preview-controls";
 
@@ -140,7 +142,11 @@ function SidebarAccountMenu({ showDetails }: { showDetails: boolean }) {
               <Badge variant="secondary">{roleLabel}</Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => signOut()}>
+            <DropdownMenuItem
+              onSelect={() => {
+                void signOut();
+              }}
+            >
               <LogOutIcon />
               {t.common.signOut}
             </DropdownMenuItem>
@@ -157,6 +163,11 @@ function AppSidebar() {
   const { sessionId } = useParams();
   const { pathname } = useLocation();
   const { state, setOpenMobile } = useSidebar();
+  const {
+    sessions,
+    status: conversationsStatus,
+    refresh: refreshConversations,
+  } = useConversations();
   const expanded = state === "expanded";
 
   // On a phone the navigation lives in a sheet; a destination tap has to close
@@ -247,13 +258,35 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>{t.nav.conversations}</SidebarGroupLabel>
           <SidebarGroupContent>
-            {PREVIEW_SESSIONS.length === 0 ? (
+            {conversationsStatus === "loading" ? (
+              <div className="space-y-1 px-2 py-1" aria-busy="true">
+                <Skeleton className="h-7 w-full" />
+                <Skeleton className="h-7 w-4/5" />
+                <Skeleton className="h-7 w-3/5" />
+              </div>
+            ) : conversationsStatus === "error" ? (
+              <div className="space-y-2 px-2 py-1">
+                <p className="text-xs text-muted-foreground">
+                  {t.chat.sessionsLoadError}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void refreshConversations();
+                  }}
+                >
+                  {t.common.retry}
+                </Button>
+              </div>
+            ) : sessions.length === 0 ? (
               <p className="px-2 text-xs text-muted-foreground">
                 {t.nav.noConversations}
               </p>
             ) : (
               <SidebarMenu aria-label={t.a11y.conversations}>
-                {PREVIEW_SESSIONS.map((session) => (
+                {sessions.map((session) => (
                   <SidebarMenuItem key={session.id}>
                     <SidebarMenuButton
                       asChild

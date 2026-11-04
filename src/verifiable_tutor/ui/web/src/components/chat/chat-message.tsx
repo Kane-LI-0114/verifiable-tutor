@@ -95,11 +95,13 @@ export function ChatMessageView({
   turn,
   onOpenCitation,
   failed = false,
+  streaming = false,
   onRetry,
 }: {
   turn: ConversationTurn;
   onOpenCitation: (citation: Citation) => void;
   failed?: boolean;
+  streaming?: boolean;
   onRetry?: () => void;
 }) {
   const t = useT();
@@ -128,6 +130,10 @@ export function ChatMessageView({
             description={t.chat.errorBody}
             onRetry={onRetry}
           />
+        ) : message.content === "" && streaming ? (
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {t.chat.generating}
+          </p>
         ) : (
           <>
             <Markdown>{message.content}</Markdown>

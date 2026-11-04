@@ -5,12 +5,20 @@ export type PreviewRole = "student" | "instructor" | "signed-out";
 
 export function previewSession(role: PreviewRole): SessionValue {
   if (role === "signed-out") {
-    return { status: "anonymous", user: null, signOut: () => {} };
+    return {
+      status: "anonymous",
+      user: null,
+      signOut: async () => {},
+      refresh: async () => {},
+      expire: () => {},
+    };
   }
 
   return {
     status: "authenticated",
     user: role === "instructor" ? PREVIEW_INSTRUCTOR : PREVIEW_STUDENT,
-    signOut: () => {},
+    signOut: async () => {},
+    refresh: async () => {},
+    expire: () => {},
   };
 }

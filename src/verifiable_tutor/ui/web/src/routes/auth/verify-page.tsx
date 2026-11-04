@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,22 +17,47 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { authApi } from "@/lib/api/auth";
+import { apiErrorMessage } from "@/lib/api/errors";
 import { useT } from "@/lib/i18n";
+import { usePreview } from "@/lib/preview/context";
 
 export function VerifyPage() {
   const t = useT();
+  const navigate = useNavigate();
+  const { isPreview } = usePreview();
   const [params] = useSearchParams();
   const email = params.get("email") ?? "";
   const [code, setCode] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) {
+      return;
+    }
     if (code.length !== 6) {
       setNotice(t.auth.sixDigits);
       return;
     }
-    setNotice(t.common.previewNotice);
+    if (isPreview) {
+      setNotice(t.common.previewNotice);
+      return;
+    }
+    if (email === "") {
+      setNotice(t.auth.invalidEmail);
+      return;
+    }
+    setPending(true);
+    setNotice(null);
+    try {
+      await authApi.verify(email, code);
+      navigate(`/login?email=${encodeURIComponent(email)}&verified=1`);
+    } catch (error) {
+      setNotice(apiErrorMessage(error, t));
+      setPending(false);
+    }
   }
 
   return (
@@ -74,7 +99,9 @@ export function VerifyPage() {
                 <AlertDescription>{notice}</AlertDescription>
               </Alert>
             ) : null}
-            <Button type="submit">{t.auth.verify}</Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? t.auth.verifying : t.auth.verify}
+            </Button>
             <Button
               type="button"
               variant="ghost"

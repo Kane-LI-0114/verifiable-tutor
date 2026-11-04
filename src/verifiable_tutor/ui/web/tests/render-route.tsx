@@ -22,6 +22,7 @@ export function renderRoute(
 
   render(
     <Providers
+      preview
       previewRole={role}
       previewState={pageState}
       initialLang={lang}

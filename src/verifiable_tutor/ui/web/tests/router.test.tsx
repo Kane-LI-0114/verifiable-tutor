@@ -1,20 +1,12 @@
-import { render, screen } from "@testing-library/react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { routes } from "@/app/routes";
-import { Providers } from "@/app/providers";
 import type { PreviewRole } from "@/lib/preview/session";
-import { previewSession } from "@/lib/preview/session";
+
+import { renderRoute } from "./render-route";
 
 function renderAt(path: string, role: PreviewRole) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-
-  render(
-    <Providers session={previewSession(role)}>
-      <RouterProvider router={router} />
-    </Providers>,
-  );
+  return renderRoute(path, { role });
 }
 
 describe("routes and guards", () => {

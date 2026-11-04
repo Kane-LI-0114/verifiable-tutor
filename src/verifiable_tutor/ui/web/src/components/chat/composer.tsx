@@ -200,7 +200,8 @@ export function Composer({
             size="icon-sm"
             className="ml-1"
             aria-label={t.chat.attachAudio}
-            title={t.chat.audioHint}
+            title={preview ? t.chat.audioHint : t.common.unavailable}
+            disabled={!preview}
             onClick={onAttachAudio}
           >
             <PaperclipIcon />

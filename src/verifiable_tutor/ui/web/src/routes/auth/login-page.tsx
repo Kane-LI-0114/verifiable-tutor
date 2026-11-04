@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,21 +13,61 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { authApi } from "@/lib/api/auth";
+import { apiErrorMessage } from "@/lib/api/errors";
+import { useSession } from "@/lib/auth/session";
 import { useT } from "@/lib/i18n";
+import { usePreview } from "@/lib/preview/context";
 
 export function LoginPage() {
   const t = useT();
-  const [email, setEmail] = useState("");
+  const { isPreview } = usePreview();
+  const { refresh } = useSession();
+  const [params] = useSearchParams();
+  const [email, setEmail] = useState(() =>
+    isPreview ? "" : (params.get("email") ?? ""),
+  );
   const [password, setPassword] = useState("");
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(() => {
+    if (isPreview) {
+      return null;
+    }
+    if (params.get("verified") === "1") {
+      return t.auth.emailVerifiedNotice;
+    }
+    if (params.get("reset") === "1") {
+      return t.auth.passwordUpdatedNotice;
+    }
+    return null;
+  });
+  const [pending, setPending] = useState(false);
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) {
+      return;
+    }
     if (password.length < 8) {
       setNotice(t.auth.shortPassword);
       return;
     }
-    setNotice(t.common.previewNotice);
+    if (isPreview) {
+      setNotice(t.common.previewNotice);
+      return;
+    }
+    if (!email.includes("@")) {
+      setNotice(t.auth.invalidEmail);
+      return;
+    }
+    setPending(true);
+    setNotice(null);
+    try {
+      await authApi.login(email.trim(), password);
+      await refresh();
+    } catch (error) {
+      setNotice(apiErrorMessage(error, t));
+      setPending(false);
+    }
   }
 
   return (
@@ -71,7 +111,9 @@ export function LoginPage() {
                 <AlertDescription>{notice}</AlertDescription>
               </Alert>
             ) : null}
-            <Button type="submit">{t.auth.signIn}</Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? t.auth.signingIn : t.auth.signIn}
+            </Button>
           </FieldGroup>
         </form>
       </CardContent>

@@ -1,25 +1,25 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider, type Language } from "@/lib/i18n";
 import type { SessionValue } from "@/lib/auth/session";
 import { SessionProvider } from "@/lib/auth/session";
 import { PreviewProvider } from "@/lib/preview/context";
+import { previewStateFromUrl } from "@/lib/preview/mode";
 import type { PreviewRole } from "@/lib/preview/session";
 import { previewSession } from "@/lib/preview/session";
+import { LiveSessionProvider } from "@/lib/session/live-session";
+import { ConversationsProvider } from "@/lib/session/conversations";
 import type { PreviewState } from "@/lib/types";
 
 const ROLE_KEY = "vt.preview.role";
-
-function previewStateFromUrl(): PreviewState {
-  if (typeof window === "undefined") {
-    return "normal";
-  }
-  const value = new URLSearchParams(window.location.search).get("preview");
-  return value === "loading" || value === "empty" || value === "error"
-    ? value
-    : "normal";
-}
 
 function readRole(): PreviewRole | null {
   if (typeof window === "undefined") {
@@ -48,22 +48,53 @@ function storeRole(role: PreviewRole): void {
   }
 }
 
-export function Providers({
-  session,
-  initialLang,
-  previewRole,
-  previewState,
-  children,
-}: {
+interface ProvidersProps {
+  /** Offline fixture demo; the live app is the default. */
+  preview?: boolean;
   session?: SessionValue;
   initialLang?: Language;
   previewRole?: PreviewRole;
   previewState?: PreviewState;
   children: ReactNode;
-}) {
-  const [role, setRoleState] = useState<PreviewRole>(
-    () => previewRole ?? readRole() ?? "student",
+}
+
+export function Providers({
+  preview = false,
+  session,
+  initialLang,
+  previewRole,
+  previewState,
+  children,
+}: ProvidersProps) {
+  if (preview) {
+    return (
+      <PreviewProviders
+        session={session}
+        initialLang={initialLang}
+        previewRole={previewRole}
+        previewState={previewState}
+      >
+        {children}
+      </PreviewProviders>
+    );
+  }
+  return (
+    <LiveProviders session={session} initialLang={initialLang}>
+      {children}
+    </LiveProviders>
   );
+}
+
+function PreviewProviders({
+  session,
+  initialLang,
+  previewRole,
+  previewState,
+  children,
+}: Omit<ProvidersProps, "preview">) {
+  const [role, setRoleState] = useState<PreviewRole>(() => {
+    return previewRole ?? readRole() ?? "student";
+  });
   const [pageState, setPageState] = useState<PreviewState>(
     () => previewState ?? previewStateFromUrl(),
   );
@@ -77,25 +108,70 @@ export function Providers({
     storeRole(role);
   }, [role]);
 
-  const previewEnabled = import.meta.env.VITE_PREVIEW !== "0";
-  const resolvedSession: SessionValue =
-    session ??
-    (previewEnabled
-      ? { ...previewSession(role), signOut: () => setRole("signed-out") }
-      : { status: "anonymous", user: null, signOut: () => {} });
+  const resolvedSession = useMemo<SessionValue>(() => {
+    if (session) {
+      return session;
+    }
+    const preview = previewSession(role);
+    return {
+      ...preview,
+      signOut: async () => {
+        setRole("signed-out");
+      },
+      refresh: async () => {},
+      expire: () => {
+        setRole("signed-out");
+      },
+    };
+  }, [role, session, setRole]);
 
   return (
     <I18nProvider initialLang={initialLang}>
       <PreviewProvider
-        isPreview={previewEnabled}
+        isPreview
         role={role}
         pageState={pageState}
         setRole={setRole}
         setPageState={setPageState}
       >
         <SessionProvider value={resolvedSession}>
-          <TooltipProvider>{children}</TooltipProvider>
+          <ConversationsProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ConversationsProvider>
         </SessionProvider>
+      </PreviewProvider>
+    </I18nProvider>
+  );
+}
+
+/** Live mode has no preview controls, so its preview context values are fixed. */
+const LIVE_PREVIEW: Omit<ComponentProps<typeof PreviewProvider>, "children"> = {
+  isPreview: false,
+  role: "student",
+  pageState: "normal",
+  setRole: () => {},
+  setPageState: () => {},
+};
+
+function LiveProviders({
+  session,
+  initialLang,
+  children,
+}: Omit<ProvidersProps, "preview" | "previewRole" | "previewState">) {
+  const conversations = (
+    <ConversationsProvider>
+      <TooltipProvider>{children}</TooltipProvider>
+    </ConversationsProvider>
+  );
+
+  return (
+    <I18nProvider initialLang={initialLang}>
+      <PreviewProvider {...LIVE_PREVIEW}>
+        {session ? (
+          <SessionProvider value={session}>{conversations}</SessionProvider>
+        ) : (
+          <LiveSessionProvider>{conversations}</LiveSessionProvider>
+        )}
       </PreviewProvider>
     </I18nProvider>
   );
