@@ -155,6 +155,22 @@ def test_search_returns_only_chunks_that_contain_the_term(tmp_path) -> None:
     assert hits[0]["page_no"] == 1
 
 
+def test_search_falls_back_to_any_term_when_the_full_query_does_not_match(tmp_path) -> None:
+    store = make_store(tmp_path)
+    store.upsert_document(
+        document("ACS_Lecture_1_2026F"),
+        [chunk("ACS_Lecture_1_2026F", 1, 0, "The allreduce operation combines gradients.")],
+    )
+
+    # A rewritten query usually carries terms the slide does not contain; an
+    # all-terms match would drop a hit that shares the important one.
+    hits = store.search_chunks(
+        "allreduce collective communication operation", limit=5
+    )
+
+    assert [hit["chunk_id"] for hit in hits] == ["ACS_Lecture_1_2026F:p001:c00"]
+
+
 def test_a_folder_cannot_move_under_its_own_child(tmp_path) -> None:
     store = make_store(tmp_path)
     parent = store.create_folder(name="Lectures", parent_id=None, created_at=STAMP)

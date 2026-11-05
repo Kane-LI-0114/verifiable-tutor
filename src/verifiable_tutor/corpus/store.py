@@ -29,11 +29,20 @@ DOCUMENT_STATUSES = (
 _FTS_WHITESPACE = re.compile(r"\s+")
 
 
-def _fts_query(query: str) -> str:
-    """Quote each term so FTS5 operators in user text are inert."""
+def _fts_terms(query: str) -> list[str]:
+    return [term for term in _FTS_WHITESPACE.split(query or "") if term.strip()]
 
-    terms = [term for term in _FTS_WHITESPACE.split(query or "") if term.strip()]
-    return " ".join('"' + term.replace('"', '""') + '"' for term in terms)
+
+def _fts_query(query: str, *, join: str = " ") -> str:
+    """Quote each term so FTS5 operators in user text are inert.
+
+    The default join is the implicit AND; ``join="OR"`` widens a rewrite that
+    carries terms the corpus does not contain.
+    """
+
+    return f" {join} ".join(
+        '"' + term.replace('"', '""') + '"' for term in _fts_terms(query)
+    )
 
 
 def _row(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -381,23 +390,26 @@ class KnowledgeStore:
     def search_chunks(
         self, query: str, *, limit: int = 20, doc_id: str | None = None
     ) -> list[dict[str, Any]]:
-        match = _fts_query(query)
-        if not match:
+        terms = _fts_terms(query)
+        if not terms:
             return []
         filters = " AND c.doc_id = ?" if doc_id is not None else ""
-        parameters: list[Any] = [match]
-        if doc_id is not None:
-            parameters.append(doc_id)
-        parameters.append(limit)
         with self._storage.connect() as connection:
-            rows = connection.execute(
-                "SELECT c.*, bm25(kb_chunks_fts) AS score"
-                " FROM kb_chunks_fts"
-                " JOIN kb_chunks c ON c.rowid = kb_chunks_fts.rowid"
-                f" WHERE kb_chunks_fts MATCH ?{filters}"
-                " ORDER BY score, c.id LIMIT ?",
-                parameters,
-            ).fetchall()
+            for join in (" ", " OR "):
+                parameters: list[Any] = [_fts_query(query, join=join.strip() or " ")]
+                if doc_id is not None:
+                    parameters.append(doc_id)
+                parameters.append(limit)
+                rows = connection.execute(
+                    "SELECT c.*, bm25(kb_chunks_fts) AS score"
+                    " FROM kb_chunks_fts"
+                    " JOIN kb_chunks c ON c.rowid = kb_chunks_fts.rowid"
+                    f" WHERE kb_chunks_fts MATCH ?{filters}"
+                    " ORDER BY score, c.id LIMIT ?",
+                    parameters,
+                ).fetchall()
+                if rows:
+                    break
         return [_chunk_dict(row) | {"score": row["score"]} for row in rows]
 
     def set_embeddings(
