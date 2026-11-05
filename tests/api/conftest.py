@@ -174,6 +174,7 @@ def make_settings(tmp_path: Path, **overrides: Any) -> AppSettings:
         "trace_dir": data / "app" / "traces",
         "knowledge_records_dir": data / "kb" / "records",
         "corpus_images_dir": data / "corpus" / "images",
+        "corpus_pdf_dir": data / "corpus" / "pdf",
         "ui_static_dir": tmp_path / "static",
         "allowed_email_domains": ("ust.hk",),
         "session_cookie_name": "vt_session",
@@ -187,6 +188,8 @@ def make_settings(tmp_path: Path, **overrides: Any) -> AppSettings:
         "knowledge_max_chunks": 8,
         "knowledge_driver": tmp_path / "scripts" / "tacc" / "run_kb_job.py",
         "knowledge_build_timeout_s": 60.0,
+        "knowledge_top_k": 8,
+        "knowledge_embedding_provider": "local",
         "session_secret": "test-session-secret-0123456789abcdef",
         "smtp": SmtpSettings(),
     }

@@ -36,6 +36,7 @@ class DataSection(_StrictModel):
     trace_dir: str = "data/app/traces"
     knowledge_records_dir: str = "data/kb/records"
     corpus_images_dir: str = "data/corpus/images"
+    corpus_pdf_dir: str = "data/corpus/pdf"
     ui_static_dir: str = "src/verifiable_tutor/ui/static"
 
 
@@ -60,6 +61,8 @@ class KnowledgeSection(_StrictModel):
     max_chunks_per_job: int = 8
     driver: str = "scripts/tacc/run_kb_job.py"
     build_timeout_s: float = 4000.0
+    top_k: int = 8
+    embedding_provider: Literal["local", "tacc"] = "local"
 
 
 class AppConfig(_StrictModel):
@@ -93,6 +96,7 @@ class AppSettings(BaseModel):
     trace_dir: Path
     knowledge_records_dir: Path
     corpus_images_dir: Path
+    corpus_pdf_dir: Path
     ui_static_dir: Path
     allowed_email_domains: tuple[str, ...]
     session_cookie_name: str
@@ -106,6 +110,8 @@ class AppSettings(BaseModel):
     knowledge_max_chunks: int
     knowledge_driver: Path
     knowledge_build_timeout_s: float
+    knowledge_top_k: int
+    knowledge_embedding_provider: Literal["local", "tacc"]
     session_secret: str
     smtp: SmtpSettings = Field(default_factory=SmtpSettings)
 
@@ -186,6 +192,7 @@ def load_settings(
             trace_dir=_resolve(root, config.data.trace_dir),
             knowledge_records_dir=_resolve(root, config.data.knowledge_records_dir),
             corpus_images_dir=_resolve(root, config.data.corpus_images_dir),
+            corpus_pdf_dir=_resolve(root, config.data.corpus_pdf_dir),
             ui_static_dir=_resolve(root, config.data.ui_static_dir),
             allowed_email_domains=domains,
             session_cookie_name=config.auth.session_cookie_name,
@@ -203,6 +210,8 @@ def load_settings(
             knowledge_max_chunks=config.knowledge.max_chunks_per_job,
             knowledge_driver=_resolve(root, config.knowledge.driver),
             knowledge_build_timeout_s=config.knowledge.build_timeout_s,
+            knowledge_top_k=config.knowledge.top_k,
+            knowledge_embedding_provider=config.knowledge.embedding_provider,
             session_secret=session_secret,
             smtp=smtp,
         )

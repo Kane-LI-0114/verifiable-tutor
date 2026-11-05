@@ -2,7 +2,7 @@
 
 Owner: this file is the field-level contract for everything the OCR pipeline emits and for the chunk records that retrieval consumes. [tech-selection.md](tech-selection.md#corpus-and-ocr-pipeline) owns the pipeline decisions and [ADR-0002](adr/0002-ocr-on-tacc-with-paddleocr-vl.md) argues them; this file owns the record shapes. Bump the schema version when a field changes meaning.
 
-Status on 2026-10-29: the page, block and document formats are implemented and verified in spike jobs 27884, 27887 and 27889. The chunk record is proposed for `src/verifiable_tutor/corpus/` and is not implemented yet.
+Status on 2026-11-05: the page, block and document formats are implemented and verified in spike jobs 27884, 27887 and 27889. The chunk record is implemented in `src/verifiable_tutor/corpus/chunker.py` and stored in the local knowledge tables ([ADR-0015](adr/0015-local-knowledge-store-and-chunking.md)).
 
 ## Artifacts per parse request
 
@@ -89,31 +89,31 @@ One element of `layout_boxes[]`, the detector output before recognition: `label`
 
 The `<!-- page: N -->` markers are the anchor the UI uses to jump from a citation to the page. Page markdown can contain `imgs/...` image references exported by PaddleX that this pipeline does not write; the citation overlay should use `images/<doc>.p<NNN>.webp` plus `bbox_norm` instead, and the assembler may strip those references later.
 
-## Chunk record (proposed, `vt-chunk-record/1`)
+## Chunk record (`vt-chunk-record/1`)
 
-Chunking is owned by `src/verifiable_tutor/corpus/` and is not implemented yet. The planned record keeps every chunk traceable to a page and a box:
+Chunking is owned by `src/verifiable_tutor/corpus/chunker.py` and follows [ADR-0015](adr/0015-local-knowledge-store-and-chunking.md). Every chunk stays traceable to one page and to the boxes it came from:
 
 | Field | Type | Meaning |
 |---|---|---|
 | `schema` | string | `vt-chunk-record/1` |
-| `chunk_id` | string | Stable id, for example `sha256(doc_id):p<NNN>:c<NN>` |
+| `chunk_id` | string | Stable id, `f"{doc_id}:p{page_no:03d}:c{index:02d}"` |
 | `doc_id`, `page_no` | string, integer | Source page |
-| `chunk_index` | integer | Order inside the page |
-| `section_title` | string or null | Nearest preceding `paragraph_title` block |
-| `text` | string | Chunk text with table and formula content kept inline |
-| `markdown` | string or null | Optional markdown version for display |
+| `chunk_index` | integer | Order inside the page, starting at 0 |
+| `section_title` | string or null | Nearest preceding `paragraph_title` block on that page |
+| `text` | string | Chunk text rebuilt from blocks, with table and formula content kept inline |
+| `embed_text` | string | The text sent to the embedding model and to BM25, prefixed with `Section: <title>` when a section title exists |
 | `block_ids` | array of integer | Source blocks, so a quote maps back to boxes |
 | `label_types` | array of string | Labels included, for example `text`, `table` |
-| `bbox_union_px` | array of 4 floats | Union of the member boxes in page pixels |
-| `bbox_union_norm` | array of 4 floats | Union normalised for the citation overlay |
-| `page_image`, `page_webp` | string | Page image references for the citation panel |
-| `pdf_sha256` | string | Corpus hash |
-| `pipeline_version`, `layout_model`, `recognition_model` | string | Provenance |
-| `token_estimate` | integer | Approximate tokens, for budget accounting |
-| `tags` | array of string | Inherited request or page tags |
+| `bbox_norm` | array of 4 floats | Union of the member boxes, normalised for the citation overlay |
+| `token_estimate` | integer | `characters / 4` for English, one character per token for Chinese |
+| `oversize` | boolean | True when a single block above 500 tokens became its own chunk |
+| `chunker_version` | string | Rules version; part of the index key |
+| `pdf_sha256` | string | Corpus hash of the source PDF |
 | `created_at` | string | ISO-8601 timestamp |
 
-Chunking rules for the first implementation: split at `paragraph_title` boundaries, keep each `table`, `display_formula` and `image` block whole, target 256 to 512 tokens, and never merge across pages. Retrieval adds derived data outside this record: the FTS5 row id and BM25 index, and the dense vector row position in the NumPy array plus its row map. Those index files live under `USERDIR/index/`, not in the chunk record.
+Chunking rules: a chunk never spans pages; text is rebuilt from `blocks` rather than taken from `page.text`, so `header`, `footer` and `page_number` blocks are dropped; `table`, `display_formula` and `image` blocks are never split; a page at or under 450 estimated tokens is one chunk; a longer page splits at `paragraph_title` boundaries, then at the largest inter-block gap, and a single block above 500 tokens becomes its own chunk marked `oversize`. There is no overlap inside a page.
+
+Retrieval adds derived data outside this record: the FTS5 row and the dense vector, both stored in the local knowledge tables.
 
 ## Relationship to ADR-0002
 

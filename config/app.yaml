@@ -17,6 +17,7 @@ data:
   trace_dir: data/app/traces
   knowledge_records_dir: data/kb/records
   corpus_images_dir: data/corpus/images
+  corpus_pdf_dir: data/corpus/pdf
   ui_static_dir: src/verifiable_tutor/ui/static
 
 auth:
@@ -38,3 +39,7 @@ knowledge:
   max_chunks_per_job: 8
   driver: scripts/tacc/run_kb_job.py
   build_timeout_s: 4000
+  # Retrieval settings: chunks returned per query, and where the query vector
+  # comes from. The store itself is the local SQLite knowledge tables.
+  top_k: 8
+  embedding_provider: local

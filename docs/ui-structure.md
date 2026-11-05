@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Status** | Milestone 2, authentication and chat wired to the local API |
-| **Date** | 2026-11-03 |
+| **Status** | Milestone 3, authentication and chat wired to the local API; the knowledge-base browser and PDF preview are in progress |
+| **Date** | 2026-11-05 |
 | **Scope** | Routes, layout regions, the components each page uses, states, and the boundary between live data and the offline preview demo |
 | **Owner** | This file owns the page structure. [ADR-0003](adr/0003-react-spa-with-ai-elements.md) owns the frontend stack, [prd.md](prd.md) owns the behavior, and [tech-selection.md](tech-selection.md#ui-and-streaming-protocol) owns the build and serving decisions |
 
@@ -21,7 +21,8 @@ The UI source lives under `src/verifiable_tutor/ui/web/`. The build writes to `s
 | `/chat` | Signed in | Start a new conversation | Live empty thread |
 | `/chat/:sessionId` | Signed in | Conversation, work chain, citations, collapsible evidence panel; `?replay=1` replays the recorded trace | Live history and stream; replay trace |
 | `/practice` | Signed in | Practice lab and self-test, with a "My solution" tab | Preview fixture; the run action shows the documented 503 state |
-| `/knowledge` | Signed in | Browse knowledge cards, with a detail sheet | Preview fixture |
+| `/knowledge` | Signed in | Browse the course archive as a folder and file grid, with a right-hand file pane | Live API |
+| `/knowledge/docs/:docId?page=` | Signed in | Read one PDF page by page, with a chat pane on the right | Live API and a PDF fetch |
 | `/instructor/builds` | Instructor | Start and watch a Qwen knowledge-base build | Preview fixture |
 | `/instructor/deadlines` | Instructor | Read the deadline registry state | Preview fixture; the backend has no registry endpoint yet |
 | `*` | Public | Not found | None |
@@ -84,7 +85,23 @@ The page has two tabs. "Questions" holds the topic and type controls, the genera
 
 ### Knowledge base
 
-The page has a search field, a document filter, a card grid, and pagination. A card shows the summary, key terms, page number, study question count, and citation count. Selecting a card opens a sheet with the full summary, key terms, study questions, and citations. The "use in a review outline" action opens the chat page with a prefilled prompt.
+The page is a file browser over the local corpus ([ADR-0015](adr/0015-local-knowledge-store-and-chunking.md)). It has three regions inside the shell's main column, the same flex row the chat page uses: a header band, a tile grid, and a right-hand file pane.
+
+The header band holds the breadcrumb, the search field, and a round `+` button. The breadcrumb starts at the root and lists every ancestor folder; each segment is a button that navigates to that folder. The `+` menu has two items: "Upload file", which is disabled with a title explaining that the TACC upload chain is not verified yet, and "New folder", which opens a naming dialog. The whole grid is a drop target that shows an overlay when files are dragged over it and refuses the drop with the same explanation; no request is made.
+
+The grid shows folders first and files after them. A folder tile is a folder glyph with the folder name; a file tile is the rendered first page of the PDF as its icon, the file name (two lines maximum), its status, and a metadata line. Selecting a tile fills the right pane without leaving the page; double-clicking a file opens the document route. Both tile kinds carry an ellipsis button at the bottom right of the icon area with a 24px hit area: a folder offers "Move folder" and "Delete folder" (deleting the documents inside it), and a file offers "Move file" and "Delete file". The ellipsis is a separate button, so it never selects or opens the tile, and it is reachable by Tab. Delete actions use a confirmation dialog; the folder dialog names how many files it contains. Move actions use a folder-tree dialog that refuses to move a folder into itself or a descendant.
+
+The file status is shown on the tile and in the right pane. `uploading` dims the icon with a progress indicator, `uploaded` and `processing` show a skeleton with a spinner, `upload_failed` and `failed` show a failure badge whose title carries the reason, and `ready` shows nothing.
+
+Searching replaces the grid with a flat result list grouped by document. Each result names why it matched (file name, folder, page text, or summary), shows the page number for a text hit, and marks the matched words in the snippet. The highlight ranges come from the API, not from a second client-side match, so the marking and the match cannot disagree.
+
+The right pane is the same width, position, and drag behavior as the chat page's evidence pane. It shows the file name, the date it was added, the source PDF date, the Qwen summary, page and chunk counts, the document status, and a collapsed knowledge-card section fed by `GET /api/knowledge/cards?doc_id=`. With no selection it explains what selecting a file does; on a narrow viewport it becomes a sheet.
+
+### Document preview
+
+The document route replaces the whole knowledge-base region, not a dialog. The left side is the PDF page rendered on a canvas; the header carries a back arrow that returns to the folder the reader came from, the file name, the page indicator, previous and next buttons, and a page input. PageUp and PageDown move one page. Only one page is rendered at a time; there is no continuous scroll.
+
+The right pane on this route is a conversation, not the file record: it has the message list, the same composer as the chat page (provider, tier, and thinking level persist through `vt.composer.selection`), and it sends `document_context` with `doc_id` and the current page so the answer knows what is open. Until the citation and context-injection stage lands, the answers do not contain the document text and the pane says so at the top. The conversation is created on the first send and its id is remembered per document in browser local storage.
 
 ### Knowledge-base builds
 
@@ -145,7 +162,11 @@ The TypeScript types in `src/verifiable_tutor/ui/web/src/lib/types.ts` mirror th
 | Replay | `GET /api/sessions/{id}/replay` | Implemented, recorded trace frames | Wired in milestone 2 |
 | Citations and highlights | `source-document` frames and page block coordinates; chat citations are persisted in `citations` and returned by the history API once produced | Producer missing | Structure only |
 | Practice run | `POST /api/practice/runs` | Documented 503 | Unavailable state |
-| Knowledge cards | `GET /api/knowledge/cards` | Implemented | Fixture |
+| Knowledge cards | `GET /api/knowledge/cards` | Implemented | Wired: the file pane's collapsed card section |
+| Knowledge folders and files | `GET/POST/PATCH/DELETE /api/knowledge/folders`, `GET/PATCH/DELETE /api/knowledge/documents` | Implemented | Wired in milestone 3 |
+| Document PDF | `GET /api/knowledge/documents/{doc_id}/file` | Implemented | Wired: the preview fetches it once |
+| Knowledge search | `GET /api/knowledge/search` | Implemented | Wired: search field and result list |
+| Retrieval preview | `GET /api/knowledge/retrieve` | Implemented; not injected into any prompt | Not used by a page; it is the future agent tool entry point |
 | Knowledge builds | `GET` and `POST /api/knowledge/builds` | Implemented, no downloading state | Fixture with four states |
 | Deadline registry | None | Missing | Read-only fixture |
 | Voice | `/api/voice/*` | Implemented | Control structure |
@@ -164,7 +185,8 @@ The UI follows the red, green, refactor loop at these seams. The tests live in `
 | Auth pages live | `auth-live.test.tsx` | Each form's request, success path, mapped errors, pending state, safe redirect, configured-domain check, and backend-validated fallback | Real mailbox delivery |
 | Conversations | `conversations.test.tsx` | Sidebar list, empty state, error retry, expired-session redirect | Pagination (not implemented) |
 | Chat live | `chat-live.test.tsx`, `replay.test.tsx` | History load, history-rendered work chain/thinking/citations/tool calls, request body, progressive stream, stop, error cleanup, new-conversation navigation, failed-turn retry keeping the conversation id, request-time model badge, replay without a chat POST, replay of a turn with no persisted assistant message, unauthorized replay clearing the session | Real model latency |
-| Page composition | `chat-page.test.tsx`, `auth-pages.test.tsx`, `knowledge-page.test.tsx`, `practice-page.test.tsx`, `builds-page.test.tsx`, `deadlines-page.test.tsx` | Missing regions, unlabeled controls, missing components | Visual layout and CSS overflow |
+| Page composition | `chat-page.test.tsx`, `auth-pages.test.tsx`, `knowledge-page.test.tsx`, `knowledge-organize.test.tsx`, `knowledge-search.test.tsx`, `knowledge-status.test.tsx`, `knowledge-preview.test.tsx`, `practice-page.test.tsx`, `builds-page.test.tsx`, `deadlines-page.test.tsx` | Missing regions, unlabeled controls, missing components, a menu item that should be disabled, a missing status style | Visual layout and CSS overflow |
+| Document preview | `knowledge-preview.test.tsx` | Back arrow target, page controls and their bounds, the chat options, the honest "content not injected" notice; the PDF renderer is mocked because jsdom has no canvas | Real PDF rendering, which the agent-browser pass covers |
 | App shell | `app-shell.test.tsx` | Nav that should not exist, collapsed logo, footer account menu and sign out, sidebar state restore, mobile sheet close, page title, focus move | Server rendering, visual transitions |
 | Evidence pane | `evidence-pane.test.tsx` | Collapse, resize bounds and keyboard steps, persistence, citation auto-expand, honest preview notice | Pointer feel and CSS cursor |
 | Preview role escape | `preview-controls.test.tsx` | Signed-out dead end, safe `next` handling, instructor/student destination choice | Real authentication |
@@ -201,8 +223,34 @@ The UI ships English and Chinese resources with a header switch. The switch upda
 
 Each page sets `document.title` from its page name, and a client-side navigation moves focus to the `main` region. Labelled groups that are plain `div`s carry an explicit `role="group"`, and disabled controls that have no other explanation carry a title. The chat composer ignores Enter while an IME composition is active.
 
+## Browser acceptance
+
+jsdom cannot check real layout, real `fetch`, real PDF rendering, or menu and focus behavior, so the knowledge-base work ends with a browser pass driven by `agent-browser` against the built SPA on `http://127.0.0.1:8000`.
+
+Preparation: a local QA instructor account is seeded with a password generated for that run and kept only in the shell that runs the check; screenshots go under the ignored `data/caches/qa/screenshots/`. The CLI's own workflow is read first with `agent-browser skills get core`, and the exploratory pass follows `agent-browser skills get dogfood`.
+
+The pass walks these steps and asserts the visible result of each, taking a screenshot:
+
+1. An anonymous visit to `/knowledge` redirects to `/login?next=/knowledge`; signing in returns to the page.
+2. The root shows the twelve file tiles with real first-page thumbnails; the accessibility snapshot names each tile.
+3. A search for a course term groups the results by document, names the match reason, shows the page number, and marks the words; an absent term shows the empty result state.
+4. A Chinese search term matches, so the mixed-script path works.
+5. Selecting a file fills the right pane with the name, dates, Qwen summary, page count, and chunk count.
+6. The `+` menu opens with the upload item disabled and the folder item working; a new folder appears in the grid.
+7. Moving a file into the new folder changes the breadcrumb; the move dialog refuses a folder's own descendant.
+8. Dragging a file over the grid shows the overlay and issues no request.
+9. The ellipsis menu opens, does not select the tile, and is reachable by Tab; deleting a file asks for confirmation and the tile disappears.
+10. Double-clicking a file changes the URL to the document route, renders the first page on the canvas, and shows `1 / N`.
+11. Previous, next, PageDown, and the page input all change the page; the back arrow returns to the originating folder.
+12. The chat pane sends with `document_context`, the answer arrives, and the "document content not injected yet" notice is visible.
+13. A reload restores language, sidebar state, pane width and collapse, composer selection, and the document page.
+14. A narrow viewport turns the right pane into a sheet and the grid into one column.
+15. A keyboard walk confirms focus order, visible focus rings, and Esc closing menus and the preview.
+
+A failure found here is first reproduced by a failing unit or API test, then fixed, then the checklist is rerun. The final results and screenshots are recorded in this section with the agent-browser version, the port, and the date.
+
 ## Milestone boundary
 
-Milestone 2 wires the authentication flows, the server-side session, conversation history, `useChat` streaming with the project transport, replay, and the real error and loading states for those surfaces. The preview demo remains available for offline review.
+Milestone 3 adds the live knowledge-base browser and the document preview on top of milestone 2's authentication, history, streaming, and replay. Milestone 2 content stays as described above. The knowledge-base browser and the preview call the local API; the offline preview demo still hosts the fixture pages.
 
-Still on preview structures: citation and highlight frames from the evidence layer, the practice execution job, the knowledge cards and builds API, the deadline registry, and voice input and playback. The work chain, thinking, model profile, citations, and tool calls persist with each answer and render from the history response; the citation and tool-call rows stay empty until the evidence layer and the typed tool runner emit them, so live answers currently show only the generate step. Follow-ups that the backend does not support yet: `source-document` frames, block coordinates in an HTTP response for the evidence panel, the `downloading` build state, and the deadline registry endpoint. The PRD requirements that depend on them are [FR-B3](prd.md), [FR-B5](prd.md), [FR-K1](prd.md), and [FR-A5](prd.md).
+Still on preview structures: citation and highlight frames from the evidence layer, the practice execution job, the knowledge-base builds page, the deadline registry, and voice input and playback. The work chain, thinking, model profile, citations, and tool calls persist with each answer and render from the history response; the citation and tool-call rows stay empty until the evidence layer and the typed tool runner emit them, so live answers currently show only the generate step. Follow-ups that the backend does not support yet: `source-document` frames, chunk injection into the chat prompt, citation persistence and span verification, the upload chain, the `downloading` build state, and the deadline registry endpoint. The PRD requirements that depend on them are [FR-B3](prd.md), [FR-B5](prd.md), [FR-K1](prd.md), and [FR-A5](prd.md).
