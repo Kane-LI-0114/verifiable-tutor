@@ -504,6 +504,17 @@
       "ChatBody": {
         "additionalProperties": false,
         "properties": {
+          "document_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentContextBody"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The document and page open in the knowledge-base preview. The prompt names them; the chunks are not injected yet."
+          },
           "message": {
             "description": "User message; the answer streams back in the AI SDK protocol. Example: What is MPI_Allreduce?",
             "maxLength": 8000,
@@ -651,6 +662,36 @@
           "deleted_documents"
         ],
         "title": "DeleteFolderResponse",
+        "type": "object"
+      },
+      "DocumentContextBody": {
+        "additionalProperties": false,
+        "properties": {
+          "doc_id": {
+            "description": "Document open in the preview. Example: ACS_Lecture_1_2026F.",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "page_no": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page the preview is showing. Example: 12.",
+            "title": "Page No"
+          }
+        },
+        "required": [
+          "doc_id"
+        ],
+        "title": "DocumentContextBody",
         "type": "object"
       },
       "DocumentListResponse": {

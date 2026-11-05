@@ -15,6 +15,21 @@ from ..deps import ChatDep, CurrentUser, ModelDep
 router = APIRouter(tags=["chat"])
 
 
+class DocumentContextBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    doc_id: str = Field(
+        min_length=1,
+        max_length=64,
+        description="Document open in the preview. Example: ACS_Lecture_1_2026F.",
+    )
+    page_no: int | None = Field(
+        default=None,
+        ge=1,
+        description="Page the preview is showing. Example: 12.",
+    )
+
+
 class ChatBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -52,6 +67,13 @@ class ChatBody(BaseModel):
         description=(
             "Unified thinking level; one of off, low, high, max. "
             "Empty uses the configured role default."
+        ),
+    )
+    document_context: DocumentContextBody | None = Field(
+        default=None,
+        description=(
+            "The document and page open in the knowledge-base preview. The "
+            "prompt names them; the chunks are not injected yet."
         ),
     )
 
@@ -93,6 +115,11 @@ def create_turn(
             tier=body.tier,
             thinking=body.thinking,
             adapter=model,
+            document_context=(
+                body.document_context.model_dump()
+                if body.document_context is not None
+                else None
+            ),
         )
     except ChatError as exc:
         headers = (

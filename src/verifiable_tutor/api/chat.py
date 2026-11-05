@@ -138,6 +138,7 @@ class ChatService:
         tier: str | None,
         thinking: str | None,
         adapter: Any,
+        document_context: Mapping[str, Any] | None = None,
     ) -> ChatTurn:
         message = message.strip()
         if not message:
@@ -158,6 +159,14 @@ class ChatService:
             {"role": "system", "content": SYSTEM_PROMPT},
             *self._history(conversation["id"]),
         ]
+        if document_context:
+            note = load_prompt("chat_document_context")
+            note = note.replace(
+                "%%DOC_ID%%", str(document_context.get("doc_id") or "")
+            ).replace(
+                "%%PAGE%%", str(document_context.get("page_no") or 1)
+            )
+            messages.insert(1, {"role": "system", "content": note})
         kwargs: dict[str, str] = {}
         if provider is not None:
             kwargs["provider"] = provider
