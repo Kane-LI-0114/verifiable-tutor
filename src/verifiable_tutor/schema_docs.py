@@ -31,7 +31,16 @@ SCHEMA_TABLE_ORDER = (
     "citations",
     "tool_calls",
     "knowledge_builds",
+    "kb_folders",
+    "kb_documents",
+    "kb_chunks",
+    "kb_chunks_fts",
+    "kb_index_state",
 )
+
+# FTS5 keeps its index in shadow tables beside the virtual table. They are an
+# implementation detail of ``kb_chunks_fts`` and are not documented separately.
+FTS_SHADOW_PREFIX = "kb_chunks_fts_"
 
 # Logical entities drawn in docs/figures/prd-er.dot (PRD Figure 6). WORK_STEP
 # and TOOL_CALL are the persisted work chain; the evidence and tool layers will
@@ -60,9 +69,7 @@ LOGICAL_ENTITIES = (
 )
 
 LOGICAL_ONLY_ENTITIES = (
-    "DOCUMENT",
     "PAGE",
-    "CHUNK",
     "ASSIGNMENT",
     "POLICY_DECISION",
     "PRACTICE_PACK",
@@ -106,9 +113,30 @@ TABLE_NOTES = {
         "and truncated output (FR-H3). Empty until the tool runner lands."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
+    "kb_folders": (
+        "Folder tree the knowledge-base browser shows. A document belongs to one "
+        "folder or to the root when `folder_id` is null."
+    ),
+    "kb_documents": (
+        "One row per course document: the source PDF, its metadata, the Qwen AI "
+        "summary, and the ingestion status the browser renders."
+    ),
+    "kb_chunks": (
+        "Page-anchored text chunks of one document with their source boxes and "
+        "dense vector (ADR-0015). A chunk never spans pages."
+    ),
+    "kb_chunks_fts": (
+        "FTS5 full-text index over the chunk text and section, kept in sync by "
+        "triggers on `kb_chunks`."
+    ),
+    "kb_index_state": (
+        "Single row that keys the in-process vector matrix cache: how many chunks "
+        "carry a vector, and which model and chunker version produced them."
+    ),
 }
 
 COLUMN_NOTES: dict[str, dict[str, str]] = {
+    'kb_folders': {'id': 'Folder id (12 hex characters).', 'name': 'Display name; unique among the siblings of one parent.', 'parent_id': 'Parent folder; null for a root folder.', 'position': 'Sort order among the siblings of one parent.', 'created_at': 'ISO-8601 UTC creation time.'}, 'kb_documents': {'id': 'Document id, the PDF stem. Matches `doc_id` in chunk ids and citations.', 'folder_id': 'Folder the file sits in; null means the root.', 'title': 'Display title the browser shows.', 'filename': 'Original PDF file name.', 'pdf_sha256': 'SHA-256 of the source PDF; the ingestion idempotency key.', 'byte_size': 'Source PDF size in bytes.', 'page_count': 'Pages the OCR pipeline parsed.', 'chunk_count': 'Chunks stored for this document.', 'pdf_path': 'Local mirror path of the source PDF served by the preview.', 'thumbnail_path': 'First-page WebP used as the file tile icon.', 'summary': 'Qwen document summary; null until the summary job lands.', 'summary_model': 'Model that wrote the summary.', 'summary_created_at': 'ISO-8601 UTC time the summary was written.', 'status': 'uploading, uploaded, upload_failed, processing, ready, or failed.', 'status_detail': 'Failure reason or progress note shown in the tile title.', 'indexed_at': 'ISO-8601 UTC time the chunks and vectors were stored.', 'created_at': 'ISO-8601 UTC ingestion time.', 'updated_at': 'ISO-8601 UTC time of the last metadata change.'}, 'kb_chunks': {'id': 'Chunk id, `doc_id:pNNN:cNN`.', 'doc_id': 'Document the chunk belongs to.', 'page_no': '1-based page number; a chunk never spans pages.', 'chunk_index': '0-based order inside the page.', 'section': 'Nearest preceding slide title, when the page has one.', 'text': 'Chunk text rebuilt from OCR blocks, tables and formulas inline.', 'embed_text': 'Text sent to the embedding model and to BM25, with a section prefix.', 'block_ids': 'JSON array of the OCR block ids the chunk covers.', 'bbox_norm': 'JSON [x1, y1, x2, y2] union box for the page overlay.', 'token_estimate': 'Estimated tokens; CJK counts one per character, other text one per four.', 'oversize': '1 when a single block above the budget forced its own chunk.', 'embedding': 'float32 little-endian BGE-M3 vector, 1024 dimensions.', 'embedding_model': 'Model that produced the vector.', 'chunker_version': 'Chunking rules version; part of the rebuild key.', 'created_at': 'ISO-8601 UTC time the chunk was stored.'}, 'kb_chunks_fts': {'text': 'Indexed chunk text.', 'section': 'Indexed section title.'}, 'kb_index_state': {'id': 'Always `current`; a single row.', 'chunks': 'Chunks that carry a vector.', 'dimension': 'Vector dimension, 1024 for BGE-M3.', 'model': 'Embedding model id of the stored vectors.', 'chunker_version': 'Chunker version of the stored chunks.', 'built_at': 'ISO-8601 UTC time the last vectors were written.'},
     "users": {
         "id": "Internal user id (uuid hex).",
         "email": "Normalized student or instructor email address.",
@@ -356,6 +384,8 @@ def build_snapshot() -> SchemaSnapshot:
                 for row in connection.execute(
                     "SELECT name FROM sqlite_master WHERE type = 'table'"
                     " AND name NOT LIKE 'sqlite_%'"
+                    " AND name NOT LIKE ?",
+                    (FTS_SHADOW_PREFIX + "%",),
                 ).fetchall()
             }
             unexpected = sorted(names - set(SCHEMA_TABLE_ORDER))
@@ -502,8 +532,12 @@ def render_markdown(snapshot: SchemaSnapshot | None = None) -> str:
         "  derived from the stream.",
         "- The logical `CITATION` is `citations`, with the column name `doc_id`",
         "  rather than `document_id`, and an added `bbox_norm` highlight box.",
+        "- The logical `DOCUMENT` is `kb_documents`, the logical `CHUNK` is",
+        "  `kb_chunks`, and `kb_chunks_fts` is the full-text index over the chunk",
+        "  text; `kb_folders` holds the browser's folder tree and `kb_index_state`",
+        "  is the single row the vector cache is keyed by.",
         "- The logical `KB_BUILD` is a single state row, `knowledge_builds`;",
-        "  `KNOWLEDGE_CARD` and the corpus tables are not stored in SQLite yet.",
+        "  `KNOWLEDGE_CARD` and `PAGE` are not stored in SQLite yet.",
         "- The disclosure gate and practice tables are not implemented, so their",
         "  logical entities have no physical counterpart.",
         "",

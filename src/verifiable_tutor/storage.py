@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -150,6 +150,96 @@ CREATE TABLE IF NOT EXISTS knowledge_builds (
 );
 CREATE INDEX IF NOT EXISTS idx_knowledge_builds_state
     ON knowledge_builds(state, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS kb_folders (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    parent_id TEXT REFERENCES kb_folders(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    UNIQUE (parent_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_kb_folders_parent ON kb_folders(parent_id);
+
+CREATE TABLE IF NOT EXISTS kb_documents (
+    id TEXT PRIMARY KEY,
+    folder_id TEXT REFERENCES kb_folders(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    pdf_sha256 TEXT NOT NULL UNIQUE,
+    byte_size INTEGER,
+    page_count INTEGER NOT NULL DEFAULT 0,
+    chunk_count INTEGER NOT NULL DEFAULT 0,
+    pdf_path TEXT NOT NULL,
+    thumbnail_path TEXT,
+    summary TEXT,
+    summary_model TEXT,
+    summary_created_at TEXT,
+    status TEXT NOT NULL CHECK (
+        status IN ('uploading', 'uploaded', 'upload_failed', 'processing',
+                   'ready', 'failed')
+    ),
+    status_detail TEXT,
+    indexed_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_kb_documents_folder
+    ON kb_documents(folder_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS kb_chunks (
+    id TEXT PRIMARY KEY,
+    doc_id TEXT NOT NULL REFERENCES kb_documents(id) ON DELETE CASCADE,
+    page_no INTEGER NOT NULL,
+    chunk_index INTEGER NOT NULL,
+    section TEXT,
+    text TEXT NOT NULL,
+    embed_text TEXT NOT NULL,
+    block_ids TEXT,
+    bbox_norm TEXT,
+    token_estimate INTEGER,
+    oversize INTEGER NOT NULL DEFAULT 0,
+    embedding BLOB,
+    embedding_model TEXT,
+    chunker_version TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (doc_id, page_no, chunk_index)
+);
+CREATE INDEX IF NOT EXISTS idx_kb_chunks_doc ON kb_chunks(doc_id, page_no, chunk_index);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS kb_chunks_fts USING fts5(
+    text, section,
+    content='kb_chunks',
+    content_rowid='rowid',
+    tokenize='unicode61 remove_diacritics 2'
+);
+
+CREATE TRIGGER IF NOT EXISTS kb_chunks_ai AFTER INSERT ON kb_chunks BEGIN
+    INSERT INTO kb_chunks_fts(rowid, text, section)
+    VALUES (new.rowid, new.text, new.section);
+END;
+
+CREATE TRIGGER IF NOT EXISTS kb_chunks_ad AFTER DELETE ON kb_chunks BEGIN
+    INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, text, section)
+    VALUES ('delete', old.rowid, old.text, old.section);
+END;
+
+CREATE TRIGGER IF NOT EXISTS kb_chunks_au AFTER UPDATE ON kb_chunks BEGIN
+    INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, text, section)
+    VALUES ('delete', old.rowid, old.text, old.section);
+    INSERT INTO kb_chunks_fts(rowid, text, section)
+    VALUES (new.rowid, new.text, new.section);
+END;
+
+CREATE TABLE IF NOT EXISTS kb_index_state (
+    id TEXT PRIMARY KEY CHECK (id = 'current'),
+    chunks INTEGER NOT NULL DEFAULT 0,
+    dimension INTEGER,
+    model TEXT,
+    chunker_version TEXT,
+    built_at TEXT
+);
+INSERT OR IGNORE INTO kb_index_state (id) VALUES ('current');
 """
 
 
@@ -212,6 +302,13 @@ class Storage:
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
+
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
+        """Open one short-lived connection with the repository pragmas."""
+
+        with self._connect() as connection:
+            yield connection
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:

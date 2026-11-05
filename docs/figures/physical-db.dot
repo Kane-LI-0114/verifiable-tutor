@@ -103,6 +103,67 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
+  kb_folders [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_folders</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">parent_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  kb_documents [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_documents</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">folder_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">filename</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">pdf_sha256</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">byte_size</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">page_count</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">chunk_count</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">pdf_path</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">thumbnail_path</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">summary</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">summary_model</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">summary_created_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">status_detail</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">indexed_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  kb_chunks [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_chunks</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">doc_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">chunk_index</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">section</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">text</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">embed_text</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">block_ids</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">bbox_norm</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">token_estimate</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">oversize</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">embedding</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">embedding_model</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">chunker_version</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  kb_chunks_fts [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_chunks_fts</B></TD></TR>
+      <TR><TD ALIGN="LEFT">text</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">section</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  kb_index_state [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_index_state</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">chunks</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">dimension</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">model</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">chunker_version</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">built_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
   users -> verification_codes [label="user_id"];
   users -> login_sessions [label="user_id"];
   users -> conversations [label="user_id"];
@@ -111,4 +172,7 @@ digraph physical_data_model {
   messages -> citations [label="message_id"];
   messages -> tool_calls [label="message_id"];
   users -> knowledge_builds [label="user_id"];
+  kb_folders -> kb_folders [label="parent_id"];
+  kb_folders -> kb_documents [label="folder_id"];
+  kb_documents -> kb_chunks [label="doc_id"];
 }

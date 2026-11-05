@@ -12,9 +12,10 @@ from pathlib import Path
 
 from verifiable_tutor.storage import Storage
 
-# Independent expected value: the plan and ADR-0014 define user_version 1 for
-# the first schema that stores turn metadata.
-SCHEMA_VERSION = 1
+# Independent expected value: ADR-0014 defined user_version 1 for the schema
+# that stores turn metadata, and ADR-0015 bumps it to 2 for the knowledge
+# tables (folders, documents, chunks, the full-text index, and index state).
+SCHEMA_VERSION = 2
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -157,6 +158,11 @@ def test_initialize_creates_the_current_schema_on_a_fresh_database(tmp_path):
             "citations",
             "tool_calls",
             "knowledge_builds",
+            "kb_folders",
+            "kb_documents",
+            "kb_chunks",
+            "kb_chunks_fts",
+            "kb_index_state",
         } <= tables
         assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     finally:

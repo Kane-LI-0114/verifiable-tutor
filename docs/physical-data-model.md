@@ -19,7 +19,7 @@ tables that do not exist yet, while this page is the implemented schema.
 
 The logical model draws these entities: `USER`, `SESSION`, `CONVERSATION`, `MESSAGE`, `CITATION`, `WORK_STEP`, `TOOL_CALL`, `DOCUMENT`, `PAGE`, `CHUNK`, `ASSIGNMENT`, `POLICY_DECISION`, `PRACTICE_PACK`, `QUESTION`, `REFERENCE_CITATION`, `ANSWER`, `GRADE_RESULT`, `EXEC_JOB`, `KB_BUILD`, `KNOWLEDGE_CARD`.
 
-Not implemented as tables yet: `DOCUMENT`, `PAGE`, `CHUNK`, `ASSIGNMENT`, `POLICY_DECISION`, `PRACTICE_PACK`, `QUESTION`, `REFERENCE_CITATION`, `ANSWER`, `GRADE_RESULT`, `EXEC_JOB`, `KB_BUILD`, `KNOWLEDGE_CARD`.
+Not implemented as tables yet: `PAGE`, `ASSIGNMENT`, `POLICY_DECISION`, `PRACTICE_PACK`, `QUESTION`, `REFERENCE_CITATION`, `ANSWER`, `GRADE_RESULT`, `EXEC_JOB`, `KB_BUILD`, `KNOWLEDGE_CARD`.
 
 Differences worth knowing when comparing the two:
 
@@ -32,8 +32,12 @@ Differences worth knowing when comparing the two:
   derived from the stream.
 - The logical `CITATION` is `citations`, with the column name `doc_id`
   rather than `document_id`, and an added `bbox_norm` highlight box.
+- The logical `DOCUMENT` is `kb_documents`, the logical `CHUNK` is
+  `kb_chunks`, and `kb_chunks_fts` is the full-text index over the chunk
+  text; `kb_folders` holds the browser's folder tree and `kb_index_state`
+  is the single row the vector cache is keyed by.
 - The logical `KB_BUILD` is a single state row, `knowledge_builds`;
-  `KNOWLEDGE_CARD` and the corpus tables are not stored in SQLite yet.
+  `KNOWLEDGE_CARD` and `PAGE` are not stored in SQLite yet.
 - The disclosure gate and practice tables are not implemented, so their
   logical entities have no physical counterpart.
 
@@ -269,9 +273,125 @@ Indexes:
 
 - `idx_knowledge_builds_state`: index on (`state`, `created_at`)
 
+### kb_folders
+
+Folder tree the knowledge-base browser shows. A document belongs to one folder or to the root when `folder_id` is null.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Folder id (12 hex characters). |
+| `name` | TEXT | no | - | Display name; unique among the siblings of one parent. |
+| `parent_id` | TEXT | yes | FK | Parent folder; null for a root folder. |
+| `position` | INTEGER | no | - | Sort order among the siblings of one parent. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC creation time. |
+
+Foreign keys:
+
+- `parent_id` -> `kb_folders.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_kb_folders_parent`: index on (`parent_id`)
+- UNIQUE (`parent_id`, `name`)
+
+### kb_documents
+
+One row per course document: the source PDF, its metadata, the Qwen AI summary, and the ingestion status the browser renders.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Document id, the PDF stem. Matches `doc_id` in chunk ids and citations. |
+| `folder_id` | TEXT | yes | FK | Folder the file sits in; null means the root. |
+| `title` | TEXT | no | - | Display title the browser shows. |
+| `filename` | TEXT | no | - | Original PDF file name. |
+| `pdf_sha256` | TEXT | no | - | SHA-256 of the source PDF; the ingestion idempotency key. |
+| `byte_size` | INTEGER | yes | - | Source PDF size in bytes. |
+| `page_count` | INTEGER | no | - | Pages the OCR pipeline parsed. |
+| `chunk_count` | INTEGER | no | - | Chunks stored for this document. |
+| `pdf_path` | TEXT | no | - | Local mirror path of the source PDF served by the preview. |
+| `thumbnail_path` | TEXT | yes | - | First-page WebP used as the file tile icon. |
+| `summary` | TEXT | yes | - | Qwen document summary; null until the summary job lands. |
+| `summary_model` | TEXT | yes | - | Model that wrote the summary. |
+| `summary_created_at` | TEXT | yes | - | ISO-8601 UTC time the summary was written. |
+| `status` | TEXT | no | - | uploading, uploaded, upload_failed, processing, ready, or failed. |
+| `status_detail` | TEXT | yes | - | Failure reason or progress note shown in the tile title. |
+| `indexed_at` | TEXT | yes | - | ISO-8601 UTC time the chunks and vectors were stored. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC ingestion time. |
+| `updated_at` | TEXT | no | - | ISO-8601 UTC time of the last metadata change. |
+
+Checks:
+
+- `CHECK (status IN ('uploading', 'uploaded', 'upload_failed', 'processing', 'ready', 'failed'))`
+
+Foreign keys:
+
+- `folder_id` -> `kb_folders.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_kb_documents_folder`: index on (`folder_id`, `created_at`)
+- UNIQUE (`pdf_sha256`)
+
+### kb_chunks
+
+Page-anchored text chunks of one document with their source boxes and dense vector (ADR-0015). A chunk never spans pages.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Chunk id, `doc_id:pNNN:cNN`. |
+| `doc_id` | TEXT | no | FK | Document the chunk belongs to. |
+| `page_no` | INTEGER | no | - | 1-based page number; a chunk never spans pages. |
+| `chunk_index` | INTEGER | no | - | 0-based order inside the page. |
+| `section` | TEXT | yes | - | Nearest preceding slide title, when the page has one. |
+| `text` | TEXT | no | - | Chunk text rebuilt from OCR blocks, tables and formulas inline. |
+| `embed_text` | TEXT | no | - | Text sent to the embedding model and to BM25, with a section prefix. |
+| `block_ids` | TEXT | yes | - | JSON array of the OCR block ids the chunk covers. |
+| `bbox_norm` | TEXT | yes | - | JSON [x1, y1, x2, y2] union box for the page overlay. |
+| `token_estimate` | INTEGER | yes | - | Estimated tokens; CJK counts one per character, other text one per four. |
+| `oversize` | INTEGER | no | - | 1 when a single block above the budget forced its own chunk. |
+| `embedding` | BLOB | yes | - | float32 little-endian BGE-M3 vector, 1024 dimensions. |
+| `embedding_model` | TEXT | yes | - | Model that produced the vector. |
+| `chunker_version` | TEXT | no | - | Chunking rules version; part of the rebuild key. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the chunk was stored. |
+
+Foreign keys:
+
+- `doc_id` -> `kb_documents.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_kb_chunks_doc`: index on (`doc_id`, `page_no`, `chunk_index`)
+- UNIQUE (`doc_id`, `page_no`, `chunk_index`)
+
+### kb_chunks_fts
+
+FTS5 full-text index over the chunk text and section, kept in sync by triggers on `kb_chunks`.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `text` | - | yes | - | Indexed chunk text. |
+| `section` | - | yes | - | Indexed section title. |
+
+### kb_index_state
+
+Single row that keys the in-process vector matrix cache: how many chunks carry a vector, and which model and chunker version produced them.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Always `current`; a single row. |
+| `chunks` | INTEGER | no | - | Chunks that carry a vector. |
+| `dimension` | INTEGER | yes | - | Vector dimension, 1024 for BGE-M3. |
+| `model` | TEXT | yes | - | Embedding model id of the stored vectors. |
+| `chunker_version` | TEXT | yes | - | Chunker version of the stored chunks. |
+| `built_at` | TEXT | yes | - | ISO-8601 UTC time the last vectors were written. |
+
+Checks:
+
+- `CHECK (id = 'current')`
+
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 1`.
+- Schema version: `PRAGMA user_version = 2`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.
