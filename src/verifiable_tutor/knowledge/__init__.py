@@ -12,8 +12,14 @@ boundaries.
 """
 
 from verifiable_tutor.knowledge.chunks import chunks_from_pages, normalize_doc_id
-from verifiable_tutor.knowledge.request import build_request, corpus_hash
+from verifiable_tutor.knowledge.request import (
+    build_request,
+    build_summary_request,
+    corpus_hash,
+    summary_input_from_pages,
+)
 from verifiable_tutor.knowledge.schema import (
+    validate_document_summary,
     normalize_text,
     quote_on_page,
     validate_progress,
@@ -22,11 +28,14 @@ from verifiable_tutor.knowledge.schema import (
 
 __all__ = [
     "build_request",
+    "build_summary_request",
     "chunks_from_pages",
     "corpus_hash",
     "normalize_doc_id",
     "normalize_text",
     "quote_on_page",
+    "summary_input_from_pages",
+    "validate_document_summary",
     "validate_progress",
     "validate_record",
 ]

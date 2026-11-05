@@ -33,6 +33,12 @@ REPAIR_MARKER = "%%REPAIR%%"
 RECORD_SCHEMA = "vt-kb-record/1"
 PROGRESS_SCHEMA = "vt-kb-progress/1"
 SUMMARY_SCHEMA = "vt-kb-summary/1"
+#: The second request schema served by the same job: one file-level summary per
+#: document, used by the knowledge-base browser (docs/knowledge-schema.md 6).
+SUMMARY_REQUEST_SCHEMA = "vt-summary-request/1"
+DOC_SUMMARY_SCHEMA = "vt-doc-summary/1"
+SUMMARY_JOB_SCHEMA = "vt-summary-job/1"
+SUMMARY_PROMPT_PATH = Path(__file__).with_name("kb_doc_summary_v1.md")
 
 
 def now_iso() -> str:
@@ -292,6 +298,256 @@ def write_progress(
     )
 
 
+def _request_schema(request_path: Path) -> str:
+    """Read the request schema without moving any input file."""
+
+    try:
+        request = json.loads(Path(request_path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read request {request_path}: {exc}") from exc
+    return str(request.get("schema") or "")
+
+
+def render_summary_prompt(template: str, document: dict) -> str:
+    return (
+        template.replace("{{DOC_ID}}", str(document.get("doc_id", "")))
+        .replace("{{PAGE_COUNT}}", str(document.get("page_count", "")))
+        .replace("{{OUTLINE}}", str(document.get("outline", "")))
+        .replace("{{EXCERPT}}", str(document.get("excerpt", "")))
+    )
+
+
+def check_summary_answer_shape(answer: dict) -> None:
+    """Check the keys the summary record writer needs."""
+
+    problems: list[str] = []
+    if not isinstance(answer.get("summary"), str) or not answer["summary"].strip():
+        problems.append("summary must be a non-empty string")
+    topics = answer.get("topics")
+    if not isinstance(topics, list) or not all(isinstance(item, str) for item in topics):
+        problems.append("topics must be a list of strings")
+    elif not 3 <= len(topics) <= 8:
+        problems.append("topics needs three to eight items")
+    if problems:
+        raise ValueError("; ".join(problems))
+
+
+def build_summary_record(
+    document: dict,
+    answer: dict,
+    *,
+    build_id: str,
+    job_id: str,
+    model: str,
+    prompt_version: str,
+    corpus_hash: str,
+) -> dict:
+    return {
+        "schema": DOC_SUMMARY_SCHEMA,
+        "build_id": build_id,
+        "job_id": job_id,
+        "doc_id": str(document.get("doc_id", "")),
+        "summary": answer["summary"].strip(),
+        "topics": [str(topic).strip() for topic in answer["topics"] if str(topic).strip()][:8],
+        "page_count": int(document.get("page_count") or 0),
+        "model": model,
+        "prompt_version": prompt_version,
+        "corpus_hash": corpus_hash,
+        "created_at": now_iso(),
+    }
+
+
+def load_summary_documents(input_path: Path) -> list[dict]:
+    documents = []
+    with input_path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            document = json.loads(line)
+            for field in ("doc_id", "page_count", "outline", "excerpt"):
+                if field not in document:
+                    raise SystemExit(
+                        f"summary input line {line_number} is missing {field!r}"
+                    )
+            documents.append(document)
+    return documents
+
+
+def run_summary_request(args: argparse.Namespace) -> int:
+    """Write one ``vt-doc-summary/1`` record per document of the request."""
+
+    worker_started = time.time()
+    job_started = args.job_started_epoch or worker_started
+    ready = args.vllm_ready_epoch or worker_started
+    deadline = args.deadline_epoch or float("inf")
+    result: dict = {
+        "schema": SUMMARY_JOB_SCHEMA,
+        "build_id": "",
+        "job_id": args.job_id,
+        "host": socket.gethostname(),
+        "model": args.model,
+        "prompt_version": "",
+        "launcher": args.launcher,
+        "job_started_epoch": round(job_started, 3),
+        "vllm_ready_epoch": round(ready, 3),
+        "vllm_startup_seconds": max(0.0, round(ready - job_started, 3)),
+        "documents_total": 0,
+        "documents_written": 0,
+        "document_errors": 0,
+        "repair_attempts": 0,
+        "deadline_hit": False,
+        "exit_code": 1,
+    }
+    records_handle = None
+    progress_path: Path | None = None
+    summary_path: Path | None = None
+    try:
+        # Derive the summary path before moving any input, so an early failure
+        # still writes its job summary next to the records.
+        early = json.loads(Path(args.request).read_text(encoding="utf-8"))
+        summary_path = Path(early["record_path"]).with_name("summary.json")
+        request, input_path = load_request(
+            args.request, Path(args.userdir) if args.userdir else Path(".")
+        )
+        build_id = str(request["build_id"])
+        model = args.model or str(request["model"])
+        prompt_version = str(request["prompt_version"])
+        corpus_hash = str(request["corpus_hash"])
+        params = request.get("params") or {}
+        documents = load_summary_documents(input_path)
+        total = len(documents)
+        records_path = Path(request["record_path"])
+        progress_path = Path(request["progress_path"])
+        summary_path = records_path.with_name("summary.json")
+        result.update(
+            {
+                "build_id": build_id,
+                "model": model,
+                "prompt_version": prompt_version,
+                "documents_total": total,
+            }
+        )
+        system_prompt, user_template, repair_prompt = load_prompt(
+            args.prompt or SUMMARY_PROMPT_PATH
+        )
+        write_progress(
+            progress_path,
+            build_id=build_id,
+            job_id=args.job_id,
+            status="running",
+            done=0,
+            total=total,
+            error=None,
+        )
+        records_path.parent.mkdir(parents=True, exist_ok=True)
+        records_handle = records_path.open("w", encoding="utf-8")
+        max_repair = int(params.get("max_repair_attempts", 1))
+        last_error = ""
+        for index, document in enumerate(documents, start=1):
+            if time.time() > deadline:
+                result["deadline_hit"] = True
+                last_error = "deadline exceeded before all documents were summarised"
+                break
+            body_base = {
+                "model": model,
+                "temperature": float(params.get("temperature", 0.0)),
+                "max_tokens": int(params.get("max_output_tokens", 1024)),
+                "chat_template_kwargs": {"enable_thinking": False},
+            }
+            user_prompt = render_summary_prompt(user_template, document)
+            try:
+                answer_text = chat_with_retry(
+                    args.server_url,
+                    {**body_base, "messages": build_messages(system_prompt, user_prompt)},
+                    timeout_s=args.http_timeout,
+                )
+                try:
+                    answer = extract_json_object(answer_text)
+                    check_summary_answer_shape(answer)
+                except ValueError:
+                    if max_repair < 1:
+                        raise
+                    result["repair_attempts"] += 1
+                    log(f"document {index}/{total}: repairing malformed answer")
+                    answer_text = chat_with_retry(
+                        args.server_url,
+                        {
+                            **body_base,
+                            "messages": build_messages(
+                                system_prompt, user_prompt, repair=repair_prompt
+                            ),
+                        },
+                        timeout_s=args.http_timeout,
+                    )
+                    answer = extract_json_object(answer_text)
+                    check_summary_answer_shape(answer)
+                record = build_summary_record(
+                    document,
+                    answer,
+                    build_id=build_id,
+                    job_id=args.job_id,
+                    model=model,
+                    prompt_version=prompt_version,
+                    corpus_hash=corpus_hash,
+                )
+                records_handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+                records_handle.flush()
+                os.fsync(records_handle.fileno())
+                result["documents_written"] += 1
+                log(f"document {index}/{total}: wrote {document.get('doc_id')}")
+            except Exception as exc:  # noqa: BLE001 - one bad document must not hide the rest
+                result["document_errors"] += 1
+                last_error = str(exc)
+                log(f"document {index}/{total}: failed: {exc}")
+            write_progress(
+                progress_path,
+                build_id=build_id,
+                job_id=args.job_id,
+                status="running",
+                done=result["documents_written"],
+                total=total,
+                error=None,
+            )
+
+        finished = time.time()
+        error = last_error if (result["document_errors"] or result["deadline_hit"]) else None
+        status = "done"
+        if (
+            result["deadline_hit"]
+            or result["documents_written"] < total
+            or result["document_errors"] > 0
+        ):
+            status = "failed"
+        write_progress(
+            progress_path,
+            build_id=build_id,
+            job_id=args.job_id,
+            status=status,
+            done=result["documents_written"],
+            total=total,
+            error=error,
+        )
+        result.update(
+            {
+                "worker_started_epoch": round(worker_started, 3),
+                "worker_finished_epoch": round(finished, 3),
+                "build_seconds": round(finished - worker_started, 3),
+                "total_seconds": round(finished - job_started, 3),
+                "exit_code": 0 if result["documents_written"] > 0 else 1,
+            }
+        )
+        return int(result["exit_code"])
+    finally:
+        if records_handle is not None:
+            records_handle.close()
+        if summary_path is not None:
+            write_json(summary_path, result)
+        elif progress_path is not None:
+            write_json(progress_path.with_name("summary.json"), result)
+
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--request", required=True, type=Path)
@@ -307,9 +563,13 @@ def main() -> int:
         help="USERDIR root where the driver uploaded the build-scoped files",
     )
     parser.add_argument("--deadline-epoch", type=float, default=None)
-    parser.add_argument("--prompt", type=Path, default=PROMPT_PATH)
+    parser.add_argument("--prompt", type=Path, default=None)
     parser.add_argument("--http-timeout", type=float, default=180.0)
     args = parser.parse_args()
+
+    request_schema = _request_schema(args.request)
+    if request_schema == SUMMARY_REQUEST_SCHEMA:
+        return run_summary_request(args)
 
     worker_started = time.time()
     job_started = args.job_started_epoch or worker_started
@@ -358,7 +618,9 @@ def main() -> int:
                 "chunks_total": total,
             }
         )
-        system_prompt, user_template, repair_prompt = load_prompt(args.prompt)
+        system_prompt, user_template, repair_prompt = load_prompt(
+            args.prompt or PROMPT_PATH
+        )
         write_progress(
             progress_path,
             build_id=build_id,

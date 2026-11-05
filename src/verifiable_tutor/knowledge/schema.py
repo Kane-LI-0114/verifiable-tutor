@@ -9,7 +9,7 @@ on the cited page after whitespace and case normalization.
 from __future__ import annotations
 
 import re
-from typing import Mapping
+from typing import Mapping, Sequence
 
 RECORD_SCHEMA = "vt-kb-record/1"
 PROGRESS_SCHEMA = "vt-kb-progress/1"
@@ -155,4 +155,74 @@ def validate_progress(progress: Mapping) -> list[str]:
     error = progress.get("error")
     if error is not None and not isinstance(error, str):
         issues.append("error must be a string or null")
+    return issues
+
+
+DOC_SUMMARY_SCHEMA = "vt-doc-summary/1"
+_REQUIRED_SUMMARY_STRINGS = (
+    "build_id",
+    "job_id",
+    "doc_id",
+    "summary",
+    "model",
+    "prompt_version",
+    "corpus_hash",
+    "created_at",
+)
+_SUMMARY_TOPICS_MIN = 3
+_SUMMARY_TOPICS_MAX = 8
+
+
+def _names_other_document(summary: str, own_doc_id: str, doc_ids: Sequence[str]) -> str | None:
+    """Return the first corpus document id the summary names wrongly."""
+
+    text = summary or ""
+    for doc_id in doc_ids:
+        if not doc_id or doc_id == own_doc_id:
+            continue
+        if doc_id in text:
+            return doc_id
+    return None
+
+
+def validate_document_summary(
+    record: Mapping, *, doc_ids: Sequence[str] | None = None
+) -> list[str]:
+    """Return the contract violations of one document summary (empty is valid).
+
+    A summary that names a document other than its own is rejected: the browser
+    would otherwise show a right-looking summary under the wrong file
+    (docs/knowledge-schema.md section 6).
+    """
+
+    issues: list[str] = []
+    if not isinstance(record, Mapping):
+        return ["summary record must be a JSON object"]
+    if record.get("schema") != DOC_SUMMARY_SCHEMA:
+        issues.append(f"schema must be {DOC_SUMMARY_SCHEMA}")
+    for field in _REQUIRED_SUMMARY_STRINGS:
+        _check_string(record, field, issues)
+
+    topics = record.get("topics")
+    if not isinstance(topics, list) or not all(isinstance(item, str) for item in topics):
+        issues.append("topics must be a list of strings")
+    elif not _SUMMARY_TOPICS_MIN <= len(topics) <= _SUMMARY_TOPICS_MAX:
+        issues.append(
+            f"topics needs {_SUMMARY_TOPICS_MIN} to {_SUMMARY_TOPICS_MAX} items"
+        )
+    else:
+        if any(not topic.strip() for topic in topics):
+            issues.append("topics must not hold empty strings")
+
+    page_count = record.get("page_count")
+    if not isinstance(page_count, int) or isinstance(page_count, bool) or page_count < 1:
+        issues.append("page_count must be a positive integer")
+
+    own_doc_id = str(record.get("doc_id") or "")
+    if own_doc_id and doc_ids:
+        other = _names_other_document(str(record.get("summary") or ""), own_doc_id, list(doc_ids))
+        if other is not None:
+            issues.append(
+                f"summary names document {other!r} but this record is for {own_doc_id!r}"
+            )
     return issues

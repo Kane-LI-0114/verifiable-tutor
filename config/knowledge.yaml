@@ -1,10 +1,13 @@
 # Knowledge-base enrichment configuration.
 #
-# The local driver (scripts/tacc/run_kb_job.py) reads the model id, prompt
-# version, job name, chunk cap and polling values from this file. The TACC job
-# runs on the course Qwen environment and is reached only through job
-# submission; this file holds no secrets. Record fields are in
-# docs/knowledge-schema.md.
+# The local drivers (scripts/tacc/run_kb_job.py, scripts/tacc/run_ocr_job.py,
+# scripts/tacc/run_index_job.py, scripts/tacc/run_summary_job.py) read the model
+# ids, prompt versions, job settings, chunk cap and polling values from this
+# file. The OCR, index and Qwen summary jobs run on the course TACC platform and
+# are reached only through job submission; this file holds no secrets. Vector
+# settings are shared with the local query encoder in config/models.yaml
+# (ADR-0015). Record fields are in docs/knowledge-schema.md and
+# docs/corpus-schema.md.
 
 job:
   directory: tacc/serve
@@ -30,6 +33,64 @@ build:
   queue_timeout_s: 3600
   request_dir: kb/requests
   result_dir: kb/results
+
+# The three offline jobs of the corpus pipeline (ADR-0011, ADR-0015). Every
+# job requests 00:59:00 because the tacc partition enforces a one-hour limit.
+jobs:
+  ocr:
+    directory: tacc/ocr
+    name: vt-ocr
+    partition: tacc
+    nodes: 1
+    cpus_per_task: 8
+    gres: "gpu:1"
+    time: "00:59:00"
+    # The whole job body stops at 3300 s; recognition stops at 1800 s.
+    body_deadline_seconds: 3300
+    ocr_stage_seconds: 1800
+    dpi: 200
+    poll_interval_s: 30
+    queue_timeout_s: 3600
+  index:
+    directory: tacc/index
+    name: vt-index
+    partition: tacc
+    nodes: 1
+    cpus_per_task: 8
+    gres: "gpu:1"
+    time: "00:59:00"
+    poll_interval_s: 30
+    queue_timeout_s: 3600
+  summary:
+    directory: tacc/serve
+    name: vt-kb
+    partition: tacc
+    nodes: 1
+    cpus_per_task: 8
+    gres: "gpu:2"
+    time: "00:59:00"
+    poll_interval_s: 30
+    queue_timeout_s: 3600
+
+# Bulk doc-vector embedding. The weights live under $HOME/models on TACC and are
+# downloaded through the Hugging Face mirror inside the index job; the local
+# laptop never downloads model weights (Hugging Face is unreachable here).
+embedding:
+  model: BAAI/bge-m3
+  model_path: ~/models/bge-m3
+  dimension: 1024
+  batch_size: 16
+  max_length: 512
+  device: cuda
+  # Query vectors use the local CPU encoder; bulk vectors come from TACC.
+  query_device: cpu
+
+summary:
+  prompt_version: doc-summary-v1
+  model: qwen3.8-27b
+  temperature: 0.0
+  max_output_tokens: 1024
+  max_repair_attempts: 1
 
 cache:
   directory: data/kb

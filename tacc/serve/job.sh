@@ -24,6 +24,16 @@ LOG="$HERE/job-${JOB}.log"
 : > "$LOG"
 exec > >(tee -a "$LOG") 2>&1
 
+# A later submit from the same account re-syncs TACC_WORKDIR; keep this job's
+# own copy of its scripts and prompts so a running job never loses them.
+JOBHOME="${TMPDIR:-/tmp}/vt-kb-job-${JOB}"
+mkdir -p "$JOBHOME"
+cp -a "$HERE/." "$JOBHOME/" 2>/dev/null || true
+HERE="$JOBHOME"
+REQUEST_FILE="$HERE/request.json"
+LOG="$JOBHOME/job-${JOB}.log"
+touch "$LOG"
+
 VLLM_PID=""
 LAUNCHER=""
 READY_EPOCH=""

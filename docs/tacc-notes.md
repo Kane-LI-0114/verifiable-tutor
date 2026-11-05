@@ -181,6 +181,28 @@ The two week-one spikes ran on 2026-10-29: the CPU mechanics job (27872) and the
 - Artifact hashes: request `1d0bbbb1bb377577...`, input `93dd801eeb9ba1c4...`, records `d04a23012990ab68...`. The records stay in the gitignored `data/kb/` and are not course material being redistributed.
 - The first driver attempt failed locally after the download with a missing `data/kb/records/` directory. The fix creates the storage directories, and the same downloaded artifacts were revalidated with the driver's offline mode, so no second GPU job was submitted. The job result above is from job 28067 and is unaffected.
 
+## Corpus ingestion pipeline (2026-11-05)
+
+The Stage 2 corpus build runs through `scripts/ingest_corpus.py`: three batched OCR jobs (`tacc/ocr/`), then the BGE-M3 embedding job (`tacc/index/`), then the Qwen document-summary job (`tacc/serve/` with the `vt-summary-request/1` schema). Every job requests `time=00:59:00`. The per-document record of what each stage produced is in the gitignored `data/index/ingest.json`.
+
+| Job | Work | Id | Body | Fixed startup | Recognition | Result |
+|---|---|---|---|---|---|---|
+| OCR Lectures | ACS_Lecture_0_2026F (11 pages), ACS_Lecture_1_2026F (67), ACS_lecture_2_2026F (69) | 28201 | 1586.5 s | 411 s vLLM | 1031.2 s | 147 of 147 pages |
+| OCR Tutorials | Tutorial_1 (16), Tutorial_2 (25), Tutorial_3 (28), Tutorial_4 (40), Tutorial_5 (33), TACC_Toturial (34) | 28215 | 1602.2 s | 350 s vLLM | 1105.8 s | 176 of 176 pages |
+| OCR Misc | Assignment_1_final (6), Assignment_2 (5) | 28227 | 562.9 s | 327 s vLLM | 217.5 s | 11 of 11 pages |
+| BGE-M3 index, first run | course_project and the three lectures, 164 chunks | 28214 | 401.6 s | 307.6 s weights, 36.4 s load | 4.6 s | 164 vectors, dimension 1024 |
+| BGE-M3 index, second run | the six tutorials and two assignments, 195 chunks | 28237 | 82.6 s | 9.1 s load, weights cached | 4.7 s | 195 vectors, dimension 1024 |
+| Qwen document summaries | 12 documents through `vt-summary-request/1` | 28242 | 573.1 s | 525 s vLLM | 47.1 s generation | 12 of 12 summaries |
+
+- Per-document OCR cost: a fresh `ocr_pages.py` process spends 160 to 330 s of its recognition time outside the per-page latency (PaddleOCR-VL pipeline start and cold imports on the shared home filesystem), while recognition itself runs at 3.7 to 4.5 s per page. One 59-minute job covers a 176-page batch with margin: body 1602 s and summed recognition 1106 s against the 3300 s body budget and the 1800 s OCR-stage cap.
+- The first Lectures attempt (job 28197) is discarded. A second `tcloud submit` from the same account re-syncs the shared `TACC_WORKDIR` with `rsync --delete`; the running job lost its worker script after vLLM startup and exited 2 after about 6.5 minutes of GPU time. Each `job.sh` now copies its task tree into a private `jobhome` directory at start and runs from there, and the local driver preflights the staged tree before submitting.
+- `tcloud upload` keeps the source basename and cannot create nested remote directories. The drivers stage a build-scoped name locally (`<batch-id>-index-input.jsonl`, `<build-id>-summary-input.jsonl`) before upload, keep task-directory copies as a fallback, and the workers move the file to its canonical path.
+- The gateway transferred the batch artifacts at 20 to 50 KB/s. One `images.tar.gz` per batch plus one `artifacts.tar.gz` holding pages, document markdown and logs keep a batch download to four calls instead of one per document; the per-document downloads remain as a fallback for jobs written before the archives existed.
+- BGE-M3 weights (2.27 GB) were downloaded from `hf-mirror.com` inside the first index job in 307.6 s into `$HOME/models/bge-m3`, and the second index run reads them from there; the laptop never downloads model weights.
+- Page records, document markdown and page images are mirrored under `data/corpus/`; the canonical vectors and row map live in `kb_chunks` and `kb_index_state` (ADR-0015), with copies under `data/index/`.
+- The queue is shared and the partition was busy with two `acstest` jobs and two two-node `lilac` jobs in the afternoon. The second index job waited 632 s pending for a node and then ran for 82.6 s; the summary job started 7 s after submit because the index job had just freed a two-GPU node. Nothing of ours was left running or queued after the summary job.
+- `course_project.pdf` was not parsed again: its eight `vt-page-record/1` records from job 27884 were copied to `data/corpus/pages/course_project.jsonl` and its eight page WebP files were downloaded from `USERDIR/pdf-parse/images/`.
+
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.

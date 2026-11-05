@@ -122,7 +122,7 @@ def main():
         "local_pdf": str(pdf_path),
     }
     (task_dir / "request.json").write_text(json.dumps(request, indent=2), encoding="utf-8")
-    for name in ("job.sh", "enumerate_pages.py"):
+    for name in ("job.sh",):
         shutil.copyfile(JOB_TEMPLATE / name, task_dir / name)
     job_name = f"vt-parse-{request_id}"
     (task_dir / "tuxiv.conf").write_text(

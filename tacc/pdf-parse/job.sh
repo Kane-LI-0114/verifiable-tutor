@@ -150,7 +150,7 @@ ENUM_RC=1
 if [ -n "${VT_PYTHON:-}" ] && [ -f "$INPUT_PDF" ]; then
     ENUM_ARGS=(--pdf "$INPUT_PDF" --out "$OUT/doc-pages.json")
     if [ -n "$REQ_PAGES" ]; then ENUM_ARGS+=(--pages "$REQ_PAGES"); fi
-    run_proot_timed 300 "$VT_PYTHON" "$HERE/enumerate_pages.py" "${ENUM_ARGS[@]}"
+    run_proot_timed 300 "$VT_PYTHON" "$HERE/_staged/enumerate_pages.py" "${ENUM_ARGS[@]}"
     ENUM_RC=$?
 fi
 if [ "$ENUM_RC" -eq 0 ] && [ -s "$OUT/doc-pages.json" ]; then
