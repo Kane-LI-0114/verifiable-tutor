@@ -135,7 +135,7 @@ export function FileTile({
             <span className="absolute inset-0 animate-pulse bg-background/50" />
           ) : null}
         </span>
-        <span className="mt-2 line-clamp-2 block text-[13px] font-medium leading-snug">
+        <span className="mt-2 line-clamp-2 block break-words text-[13px] font-medium leading-snug">
           {document.title}
         </span>
       </button>
@@ -180,7 +180,7 @@ export function FolderTile({
         <span className="flex h-28 w-full items-center justify-center rounded-sm bg-muted">
           <FolderIcon className="size-10 text-muted-foreground" />
         </span>
-        <span className="mt-2 line-clamp-2 block text-[13px] font-medium leading-snug">
+        <span className="mt-2 line-clamp-2 block break-words text-[13px] font-medium leading-snug">
           {folder.name}
         </span>
       </button>
