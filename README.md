@@ -80,8 +80,8 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |
 | `tacc/ocr-smoke/` | Committed GPU spike: PaddleOCR-VL smoke on representative pages | present: spike job |
 | `tacc/pdf-parse/` | Committed GPU job: parses one complete PDF file end to end (enumerate, render, layout, recognition, document markdown) | present: demo path spike |
-| `tacc/ocr/` | TACC GPU job for page rendering, layout, and OCR | planned (not created yet) |
-| `tacc/index/` | TACC GPU job for embeddings and the BM25 index | planned (not created yet) |
+| `tacc/ocr/` | TACC GPU job for page rendering, layout, and OCR; batch manifest, private jobhome, one images archive | present: batch job |
+| `tacc/index/` | TACC GPU job for BGE-M3 chunk embeddings (vectors, row map, summary) | present: index job |
 | `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
