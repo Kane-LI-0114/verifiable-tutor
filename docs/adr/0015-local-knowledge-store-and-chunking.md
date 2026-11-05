@@ -32,6 +32,19 @@ Two product constraints shape the record shapes. First, every future citation mu
 
 **Citation construction and model injection are out of scope for this stage.** Chunks, hits, and their metadata are produced and served; turning a hit into a stored citation, verifying its span, and injecting top-k chunks into the chat prompt are recorded as TODO in the code and in [prd.md](../prd.md). The retrieval entry point exists so the next stage can call it without changing the store.
 
+## Deferred: chunking strategy evaluation
+
+The page-first rules above are the first implementation, not a settled answer. An offline optimization pass still has to choose the chunking strategy against the retrieval benchmark, because the four known strategies trade recall, coherence, and cost differently:
+
+| Strategy | Shape | Why it is still on the table |
+|---|---|---|
+| Fixed token window | split every page by a token budget, optionally with overlap | cheapest and most uniform, but cuts tables and formulas and ignores slide structure |
+| Recursive | split on the largest separator that fits, then recurse into the pieces | structure-aware without needing layout labels, and cheap to add |
+| Structure-aware | use the `paragraph_title`, `table`, `display_formula`, and `image` labels as the boundaries | what the current rules approximate; a real section builder that merges the slides under one title is still missing |
+| Semantic | group adjacent blocks while their embeddings stay close | the best topic purity, but it needs an embedding pass at ingestion and its own evaluation |
+
+The evaluation seam is the retrieval question set with known answer pages: report page-hit@k and nDCG for each strategy on the same corpus, then keep the winner. `chunker_version` stays in the chunk record and in the index key so a rule change forces a rebuild instead of mixing two chunk shapes in one store. TODO, not scheduled.
+
 ## Consequences
 
 **Positive:**
