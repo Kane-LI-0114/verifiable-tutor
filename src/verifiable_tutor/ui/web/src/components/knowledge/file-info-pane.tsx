@@ -92,8 +92,8 @@ export function FileInfoPane({
   }
 
   return (
-    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-      <section className="space-y-1">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <section data-testid="file-info-header" className="shrink-0 space-y-1 p-4">
         <h2 className="text-sm font-semibold break-words">{document.title}</h2>
         <div className="flex items-center gap-2">
           <StatusBadge status={document.status} />
@@ -105,55 +105,65 @@ export function FileInfoPane({
 
       <Separator />
 
-      <section className="space-y-1">
-        <h3 className="text-xs font-medium tracking-wide text-muted-foreground">
-          {t.knowledge.summary}
-        </h3>
-        {document.summary ? (
-          <>
-            <p className="max-w-[60ch] text-sm leading-relaxed">{document.summary}</p>
-            {document.summary_model ? (
-              <p className="text-xs text-muted-foreground">
-                {format(t.knowledge.summaryModel, { model: document.summary_model })}
+      <div
+        data-testid="file-info-scroll"
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4"
+      >
+        <section className="space-y-1">
+          <h3 className="text-xs font-medium tracking-wide text-muted-foreground">
+            {t.knowledge.summary}
+          </h3>
+          {document.summary ? (
+            <>
+              <p className="max-w-[60ch] text-sm leading-relaxed">
+                {document.summary}
               </p>
-            ) : null}
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">{t.knowledge.summaryMissing}</p>
-        )}
-      </section>
+              {document.summary_model ? (
+                <p className="text-xs text-muted-foreground">
+                  {format(t.knowledge.summaryModel, { model: document.summary_model })}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t.knowledge.summaryMissing}</p>
+          )}
+        </section>
 
-      <Separator />
+        {preview ? null : <CardsSection docId={document.id} />}
+      </div>
 
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-        <div>
-          <dt className="text-muted-foreground">{t.knowledge.added}</dt>
-          <dd>{formatDate(document.created_at)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{t.knowledge.pages}</dt>
-          <dd>{document.page_count}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{t.knowledge.chunks}</dt>
-          <dd>{document.chunk_count}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{t.knowledge.statusLabel}</dt>
-          <dd>{statusLabel(document.status, t)}</dd>
-        </div>
-      </dl>
+      <div
+        data-testid="file-info-footer"
+        className="shrink-0 space-y-3 border-t p-4"
+      >
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+          <div>
+            <dt className="text-muted-foreground">{t.knowledge.added}</dt>
+            <dd>{formatDate(document.created_at)}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{t.knowledge.pages}</dt>
+            <dd>{document.page_count}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{t.knowledge.chunks}</dt>
+            <dd>{document.chunk_count}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{t.knowledge.statusLabel}</dt>
+            <dd>{statusLabel(document.status, t)}</dd>
+          </div>
+        </dl>
 
-      {document.status_detail ? (
-        <p className="text-xs text-muted-foreground">{document.status_detail}</p>
-      ) : null}
+        {document.status_detail ? (
+          <p className="text-xs text-muted-foreground">{document.status_detail}</p>
+        ) : null}
 
-      <Button type="button" className="w-full" onClick={() => onAsk(document.id)}>
-        <BookOpenIcon />
-        {t.knowledge.askAboutFile}
-      </Button>
-
-      {preview ? null : <CardsSection docId={document.id} />}
+        <Button type="button" className="w-full" onClick={() => onAsk(document.id)}>
+          <BookOpenIcon />
+          {t.knowledge.askAboutFile}
+        </Button>
+      </div>
     </div>
   );
 }

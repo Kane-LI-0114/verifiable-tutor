@@ -139,6 +139,29 @@ describe("knowledge browser", () => {
     expect(within(pane).getByText("67")).toBeInTheDocument();
   });
 
+  it("keeps the name and the metadata band while only the summary scrolls", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    const tile = await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+    await user.click(within(tile).getByText("ACS_Lecture_1_2026F"));
+
+    const header = screen.getByTestId("file-info-header");
+    const scroll = screen.getByTestId("file-info-scroll");
+    const footer = screen.getByTestId("file-info-footer");
+
+    expect(within(header).getByRole("heading", { name: "ACS_Lecture_1_2026F" })).toBeInTheDocument();
+    expect(
+      within(scroll).getByText("A lecture on GPU architecture and CUDA execution."),
+    ).toBeInTheDocument();
+    expect(within(scroll).queryByRole("button", { name: "Ask about this file" })).toBeNull();
+    expect(
+      within(footer).getByRole("button", { name: "Ask about this file" }),
+    ).toBeInTheDocument();
+    expect(within(footer).getByText("Added")).toBeInTheDocument();
+  });
+
   it("keeps upload disabled and creates a folder from the new menu", async () => {
     const created: StubRoute = {
       method: "POST",
