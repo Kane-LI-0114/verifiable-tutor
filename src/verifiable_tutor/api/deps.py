@@ -16,6 +16,7 @@ from fastapi import Depends, HTTPException, Request
 from ..auth.service import AuthError, AuthService
 from .chat import ChatService
 from ..auth.email import EmailSender
+from ..evidence.retrieval import HybridRetriever
 from ..knowledge.browse import KnowledgeBrowser
 from ..knowledge.service import CardStore, KnowledgeBuildService
 from .replay import ReplayService
@@ -72,6 +73,10 @@ def get_knowledge(request: Request) -> KnowledgeBrowser:
     return request.app.state.knowledge
 
 
+def get_retriever(request: Request) -> HybridRetriever:
+    return request.app.state.retriever
+
+
 def get_current_user(
     request: Request, auth: AuthService = Depends(get_auth)
 ) -> dict[str, Any]:
@@ -120,6 +125,7 @@ ReplayDep = Annotated[ReplayService, Depends(get_replay)]
 CardsDep = Annotated[CardStore, Depends(get_cards)]
 BuildsDep = Annotated[KnowledgeBuildService, Depends(get_builds)]
 KnowledgeDep = Annotated[KnowledgeBrowser, Depends(get_knowledge)]
+RetrieverDep = Annotated[HybridRetriever, Depends(get_retriever)]
 CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
 Instructor = Annotated[dict[str, Any], Depends(require_instructor)]
 ModelDep = Annotated[Any, Depends(get_model)]

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 
-from ..deps import CurrentUser, Instructor, KnowledgeDep
+from ..deps import CurrentUser, Instructor, KnowledgeDep, RetrieverDep
 from ...knowledge.browse import _Invalid, _Missing
+from ...evidence.query import plan_query
 from ..schemas import (
     DeleteDocumentResponse,
     DeleteFolderResponse,
@@ -20,6 +21,7 @@ from ..schemas import (
     KnowledgeFolderPatchBody,
     KnowledgeFolderRecord,
     KnowledgeSearchResponse,
+    RetrievalResponse,
 )
 
 router = APIRouter(tags=["knowledge"])
@@ -235,3 +237,48 @@ def document_file(doc_id: str, user: CurrentUser, knowledge: KnowledgeDep):
     except _Missing as exc:
         raise _handle(exc) from exc
     return FileResponse(path, media_type="application/pdf", filename=f"{doc_id}.pdf")
+
+
+def _optional_model(request: Request) -> object | None:
+    """Return the model adapter, or None when the model layer is not set up."""
+
+    from ..deps import get_model
+
+    try:
+        return get_model(request)
+    except HTTPException:
+        return None
+
+
+@router.get(
+    "/api/knowledge/retrieve",
+    response_model=RetrievalResponse,
+    summary="Hybrid retrieval over the course chunks",
+    responses={
+        401: {"description": "Not signed in."},
+        422: {"description": "Invalid k or an over-long question."},
+    },
+)
+def retrieve(
+    request: Request,
+    user: CurrentUser,
+    retriever: RetrieverDep,
+    q: Annotated[str, Query(min_length=0, max_length=500)] = "",
+    k: Annotated[int, Query(ge=1, le=50)] = 8,
+):
+    """Run the rewrite, both arms, and reciprocal rank fusion.
+
+    This stage returns chunks and never writes a prompt or a citation; the chat
+    tool and the citation module are recorded as TODO in ADR-0015.
+    """
+
+    plan = plan_query(_optional_model(request), q)
+    result = retriever.search(plan, k=k)
+    return {
+        "query": q,
+        "keyword_query": plan.keyword_query,
+        "need_retrieval": plan.need_retrieval,
+        "lexical": result.lexical,
+        "dense": result.dense,
+        "chunks": result.chunks,
+    }

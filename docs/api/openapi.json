@@ -1798,6 +1798,181 @@
         "title": "ResetResponse",
         "type": "object"
       },
+      "RetrievalChunkRecord": {
+        "additionalProperties": false,
+        "example": {
+          "bbox_norm": [
+            0.1,
+            0.2,
+            0.9,
+            0.6
+          ],
+          "chunk_id": "ACS_Lecture_1_2026F:p012:c00",
+          "doc_id": "ACS_Lecture_1_2026F",
+          "page_no": 12,
+          "score": 0.032522,
+          "section": "Collective operations",
+          "sources": [
+            "lexical",
+            "dense"
+          ],
+          "text": "The allreduce operation combines gradients."
+        },
+        "properties": {
+          "bbox_norm": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Union box for the page overlay.",
+            "example": [
+              0.1,
+              0.2,
+              0.9,
+              0.6
+            ],
+            "title": "Bbox Norm"
+          },
+          "chunk_id": {
+            "description": "Chunk id.",
+            "example": "ACS_Lecture_1_2026F:p012:c00",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "doc_id": {
+            "description": "Document id.",
+            "example": "ACS_Lecture_1_2026F",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "page_no": {
+            "description": "1-based page number.",
+            "example": 12,
+            "title": "Page No",
+            "type": "integer"
+          },
+          "score": {
+            "description": "Fused reciprocal-rank score.",
+            "example": 0.032522,
+            "title": "Score",
+            "type": "number"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Slide title when known.",
+            "example": "Collective operations",
+            "title": "Section"
+          },
+          "sources": {
+            "description": "Retrieval arms that returned the chunk.",
+            "example": [
+              "lexical",
+              "dense"
+            ],
+            "items": {
+              "enum": [
+                "lexical",
+                "dense"
+              ],
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text": {
+            "description": "Chunk text.",
+            "example": "The allreduce operation combines gradients.",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "doc_id",
+          "page_no",
+          "text",
+          "score",
+          "sources"
+        ],
+        "title": "RetrievalChunkRecord",
+        "type": "object"
+      },
+      "RetrievalResponse": {
+        "additionalProperties": false,
+        "example": {
+          "chunks": [],
+          "dense": true,
+          "keyword_query": "allreduce gradients",
+          "lexical": true,
+          "need_retrieval": true,
+          "query": "how are gradients combined"
+        },
+        "properties": {
+          "chunks": {
+            "description": "Fused top-k chunks, best first.",
+            "example": [],
+            "items": {
+              "$ref": "#/components/schemas/RetrievalChunkRecord"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "dense": {
+            "description": "Whether the dense arm ran and returned anything.",
+            "example": true,
+            "title": "Dense",
+            "type": "boolean"
+          },
+          "keyword_query": {
+            "description": "Query the lexical arm ran.",
+            "example": "allreduce gradients",
+            "title": "Keyword Query",
+            "type": "string"
+          },
+          "lexical": {
+            "description": "Whether the lexical arm returned anything.",
+            "example": true,
+            "title": "Lexical",
+            "type": "boolean"
+          },
+          "need_retrieval": {
+            "description": "False when the question needs no course material.",
+            "example": true,
+            "title": "Need Retrieval",
+            "type": "boolean"
+          },
+          "query": {
+            "description": "The question as submitted.",
+            "example": "how are gradients combined",
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "keyword_query",
+          "need_retrieval",
+          "lexical",
+          "dense",
+          "chunks"
+        ],
+        "title": "RetrievalResponse",
+        "type": "object"
+      },
       "SearchDocumentRecord": {
         "additionalProperties": false,
         "example": {
@@ -3674,6 +3849,60 @@
           }
         },
         "summary": "Rename or move a folder",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/retrieve": {
+      "get": {
+        "description": "Run the rewrite, both arms, and reciprocal rank fusion.\n\nThis stage returns chunks and never writes a prompt or a citation; the chat\ntool and the citation module are recorded as TODO in ADR-0015.",
+        "operationId": "retrieve_api_knowledge_retrieve_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "minLength": 0,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "k",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "K",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Invalid k or an over-long question."
+          }
+        },
+        "summary": "Hybrid retrieval over the course chunks",
         "tags": [
           "knowledge"
         ]

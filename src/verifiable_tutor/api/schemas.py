@@ -682,3 +682,53 @@ class DeleteFolderResponse(BaseModel):
     model_config = _example({"deleted_documents": 3})
 
     deleted_documents: int = _ex(3, "Documents removed with the folder.")
+
+
+class RetrievalChunkRecord(BaseModel):
+    model_config = _example(
+        {
+            "chunk_id": "ACS_Lecture_1_2026F:p012:c00",
+            "doc_id": "ACS_Lecture_1_2026F",
+            "page_no": 12,
+            "section": "Collective operations",
+            "text": "The allreduce operation combines gradients.",
+            "bbox_norm": [0.1, 0.2, 0.9, 0.6],
+            "score": 0.032522,
+            "sources": ["lexical", "dense"],
+        }
+    )
+
+    chunk_id: str = _ex("ACS_Lecture_1_2026F:p012:c00", "Chunk id.")
+    doc_id: str = _ex("ACS_Lecture_1_2026F", "Document id.")
+    page_no: int = _ex(12, "1-based page number.")
+    section: str | None = _opt("Collective operations", "Slide title when known.")
+    text: str = _ex(
+        "The allreduce operation combines gradients.", "Chunk text."
+    )
+    bbox_norm: list[float] | None = _opt(
+        [0.1, 0.2, 0.9, 0.6], "Union box for the page overlay."
+    )
+    score: float = _ex(0.032522, "Fused reciprocal-rank score.")
+    sources: list[Literal["lexical", "dense"]] = _ex(
+        ["lexical", "dense"], "Retrieval arms that returned the chunk."
+    )
+
+
+class RetrievalResponse(BaseModel):
+    model_config = _example(
+        {
+            "query": "how are gradients combined",
+            "keyword_query": "allreduce gradients",
+            "need_retrieval": True,
+            "lexical": True,
+            "dense": True,
+            "chunks": [],
+        }
+    )
+
+    query: str = _ex("how are gradients combined", "The question as submitted.")
+    keyword_query: str = _ex("allreduce gradients", "Query the lexical arm ran.")
+    need_retrieval: bool = _ex(True, "False when the question needs no course material.")
+    lexical: bool = _ex(True, "Whether the lexical arm returned anything.")
+    dense: bool = _ex(True, "Whether the dense arm ran and returned anything.")
+    chunks: list[RetrievalChunkRecord] = _ex([], "Fused top-k chunks, best first.")

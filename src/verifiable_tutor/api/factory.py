@@ -23,7 +23,11 @@ from . import API_VERSION
 from ..auth.service import AuthService
 from .chat import ChatService
 from ..auth.email import EmailSender, build_email_sender
+from pathlib import Path
+
 from ..corpus.store import KnowledgeStore
+from ..evidence.embedding import LocalEmbedder
+from ..evidence.retrieval import HybridRetriever
 from ..knowledge.browse import KnowledgeBrowser
 from ..knowledge.service import CardStore, DriverBuildRunner, KnowledgeBuildService
 from .replay import ReplayService
@@ -44,6 +48,35 @@ from ..storage import Storage
 from ..trace import SessionTrace, utc_now
 
 AdapterFactory = Callable[[], Any]
+
+
+def _build_embedder(settings: AppSettings) -> LocalEmbedder | None:
+    """Build the local query embedder from ``config/models.yaml``, or None.
+
+    The model is not loaded here; the embedder resolves it on the first query.
+    A missing configuration or a missing model stack degrades retrieval to the
+    lexical arm instead of failing startup.
+    """
+
+    try:
+        from ..llm.config import load_model_config
+
+        config = load_model_config(
+            settings.repo_root / "config" / "models.yaml",
+            env_file=settings.repo_root / ".env",
+            base_dir=settings.repo_root,
+        )
+        embedding = config.config.embedding
+    except Exception:  # no config, no keys, or a missing optional dependency
+        return None
+    model_path = Path(embedding.model_path).expanduser()
+    return LocalEmbedder(
+        model_path=str(model_path),
+        device=embedding.device,
+        max_length=embedding.max_length,
+        batch_size=embedding.batch_size,
+        dimension=embedding.dimension,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +174,9 @@ def create_app(
         app.state.knowledge_store = knowledge_store
         app.state.knowledge = KnowledgeBrowser(
             store=knowledge_store, settings=resolved, clock=resolved_clock
+        )
+        app.state.retriever = HybridRetriever(
+            store=knowledge_store, embedder=_build_embedder(resolved)
         )
         app.state.builds = KnowledgeBuildService(
             settings=resolved,
