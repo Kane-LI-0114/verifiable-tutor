@@ -349,6 +349,9 @@ export const zh: Messages = {
     statusUploading: "上传中",
     statusUploaded: "排队中",
     statusFailed: "失败",
+    paneCollapse: "折叠侧栏",
+    paneExpand: "展开侧栏",
+    paneResize: "调整侧栏宽度",
   },
   builds: {
     title: "知识库构建",

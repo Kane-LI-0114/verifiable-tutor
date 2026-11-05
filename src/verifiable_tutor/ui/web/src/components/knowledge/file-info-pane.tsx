@@ -10,6 +10,17 @@ import type { KnowledgeCard } from "@/lib/types";
 import { format, useT } from "@/lib/i18n";
 import { StatusBadge } from "@/components/knowledge/tiles";
 
+function statusLabel(status: KnowledgeDocument["status"], t: ReturnType<typeof useT>): string {
+  return {
+    uploading: t.knowledge.statusUploading,
+    uploaded: t.knowledge.statusUploaded,
+    upload_failed: t.knowledge.statusFailed,
+    processing: t.knowledge.statusProcessing,
+    ready: t.knowledge.statusReady,
+    failed: t.knowledge.statusFailed,
+  }[status];
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) {
     return "";
@@ -129,7 +140,7 @@ export function FileInfoPane({
         </div>
         <div>
           <dt className="text-muted-foreground">{t.knowledge.statusLabel}</dt>
-          <dd>{document.status}</dd>
+          <dd>{statusLabel(document.status, t)}</dd>
         </div>
       </dl>
 

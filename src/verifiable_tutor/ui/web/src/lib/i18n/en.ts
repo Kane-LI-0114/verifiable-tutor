@@ -362,6 +362,9 @@ export const en = {
     statusUploading: "Uploading",
     statusUploaded: "Queued",
     statusFailed: "Failed",
+    paneCollapse: "Collapse the panel",
+    paneExpand: "Expand the panel",
+    paneResize: "Resize the panel",
   },
   builds: {
     title: "Knowledge-base builds",

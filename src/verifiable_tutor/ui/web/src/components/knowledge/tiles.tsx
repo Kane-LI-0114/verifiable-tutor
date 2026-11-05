@@ -114,7 +114,7 @@ export function FileTile({
         selected ? "border-foreground/40 bg-muted" : "hover:bg-muted/60",
       )}
     >
-      <button type="button" className="block w-full" onClick={onSelect} onDoubleClick={onOpen}>
+      <button type="button" className="block w-full text-left" onClick={onSelect} onDoubleClick={onOpen}>
         <span className="sr-only">{t.knowledge.openFile}</span>
         <span className="relative flex h-28 w-full items-center justify-center overflow-hidden rounded-sm bg-muted">
           {showThumbnail ? (
@@ -135,19 +135,25 @@ export function FileTile({
             <span className="absolute inset-0 animate-pulse bg-background/50" />
           ) : null}
         </span>
-        <span className="mt-2 block truncate text-[13px] font-medium">{document.title}</span>
+        <span className="mt-2 line-clamp-2 block text-[13px] font-medium leading-snug">
+          {document.title}
+        </span>
       </button>
       <span className="flex h-5 items-center gap-1">
         <StatusBadge status={document.status} />
       </span>
-      <TileActions
-        label={t.knowledge.moreActions}
-        moveLabel={t.knowledge.moveFile}
-        deleteLabel={t.knowledge.deleteFile}
-        canDelete={canDelete}
-        onMove={onMove}
-        onDelete={onDelete}
-      />
+      <div className="pointer-events-none absolute top-[5.5rem] right-1">
+        <div className="pointer-events-auto">
+          <TileActions
+            label={t.knowledge.moreActions}
+            moveLabel={t.knowledge.moveFile}
+            deleteLabel={t.knowledge.deleteFile}
+            canDelete={canDelete}
+            onMove={onMove}
+            onDelete={onDelete}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -169,24 +175,30 @@ export function FolderTile({
   const t = useT();
   return (
     <div className="group relative flex flex-col gap-2 rounded-md border p-2">
-      <button type="button" className="block w-full" onClick={onOpen} onDoubleClick={onOpen}>
+      <button type="button" className="block w-full text-left" onClick={onOpen} onDoubleClick={onOpen}>
         <span className="sr-only">{t.knowledge.openFolder}</span>
         <span className="flex h-28 w-full items-center justify-center rounded-sm bg-muted">
           <FolderIcon className="size-10 text-muted-foreground" />
         </span>
-        <span className="mt-2 block truncate text-[13px] font-medium">{folder.name}</span>
+        <span className="mt-2 line-clamp-2 block text-[13px] font-medium leading-snug">
+          {folder.name}
+        </span>
       </button>
       <span className="flex h-5 items-center text-xs text-muted-foreground">
         {t.knowledge.total.replace("{{count}}", String(folder.file_count))}
       </span>
-      <TileActions
-        label={t.knowledge.folderActions}
-        moveLabel={t.knowledge.moveFolder}
-        deleteLabel={t.knowledge.deleteFolder}
-        canDelete={canDelete}
-        onMove={onMove}
-        onDelete={onDelete}
-      />
+      <div className="pointer-events-none absolute top-[5.5rem] right-1">
+        <div className="pointer-events-auto">
+          <TileActions
+            label={t.knowledge.folderActions}
+            moveLabel={t.knowledge.moveFolder}
+            deleteLabel={t.knowledge.deleteFolder}
+            canDelete={canDelete}
+            onMove={onMove}
+            onDelete={onDelete}
+          />
+        </div>
+      </div>
     </div>
   );
 }

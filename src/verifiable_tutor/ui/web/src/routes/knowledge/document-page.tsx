@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
@@ -8,6 +8,13 @@ import { SidePane } from "@/components/layout/side-pane";
 import { PageError, PageLoading } from "@/components/layout/page-states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { apiFetchBinary } from "@/lib/api/client";
 import { knowledgeApi, type KnowledgeDocument } from "@/lib/api/knowledge";
 import { format, useT } from "@/lib/i18n";
@@ -53,6 +60,8 @@ export function DocumentPage() {
   const [failed, setFailed] = useState(false);
   const [pageInput, setPageInput] = useState(String(requestedPage));
   const [paneCollapsed, setPaneCollapsed] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const isNarrow = useMediaQuery("(max-width: 1023px)");
 
   const pageCount = document?.page_count ?? 1;
   const page = useMemo(
@@ -100,7 +109,10 @@ export function DocumentPage() {
   }, [docId, isPreview]);
 
   function goToPage(next: number) {
-    const clamped = Math.min(Math.max(next, 1), pageCount);
+    // A page box that holds letters parses to NaN; keep the current page
+    // instead of writing NaN into the URL.
+    const target = Number.isFinite(next) ? next : page;
+    const clamped = Math.min(Math.max(target, 1), pageCount);
     const params = new URLSearchParams(search);
     params.set("page", String(clamped));
     setSearch(params, { replace: true });
@@ -144,6 +156,18 @@ export function DocumentPage() {
             <ArrowLeftIcon />
           </Button>
           <h1 className="min-w-0 truncate text-sm font-medium">{document.filename}</h1>
+          {isNarrow ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label={t.knowledge.chatTitle}
+              title={t.knowledge.chatTitle}
+              onClick={() => setChatOpen(true)}
+            >
+              <MessageSquareIcon />
+            </Button>
+          ) : null}
           <div className="ml-auto flex items-center gap-1">
             <Button
               type="button"
@@ -211,13 +235,23 @@ export function DocumentPage() {
         </div>
       </section>
 
+      {isNarrow ? (
+        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+          <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
+            <SheetHeader className="border-b">
+              <SheetTitle>{t.knowledge.chatTitle}</SheetTitle>
+            </SheetHeader>
+            <DocChatPane docId={docId} pageNo={page} />
+          </SheetContent>
+        </Sheet>
+      ) : (
       <SidePane
         testId="document-chat-pane"
         label={t.knowledge.chatTitle}
         collapsedLabel={t.knowledge.chatTitle}
-        collapseLabel={t.chat.evidenceCollapse}
-        expandLabel={t.chat.evidenceExpand}
-        resizeLabel={t.chat.evidenceResize}
+        collapseLabel={t.knowledge.paneCollapse}
+        expandLabel={t.knowledge.paneExpand}
+        resizeLabel={t.knowledge.paneResize}
         widthKey={PANE_WIDTH_KEY}
         collapsedKey={PANE_COLLAPSED_KEY}
         collapsed={paneCollapsed}
@@ -227,6 +261,7 @@ export function DocumentPage() {
       >
         <DocChatPane docId={docId} pageNo={page} />
       </SidePane>
+      )}
     </div>
   );
 }

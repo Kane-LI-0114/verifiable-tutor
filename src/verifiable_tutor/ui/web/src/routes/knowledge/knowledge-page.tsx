@@ -12,6 +12,13 @@ import { SearchResults } from "@/components/knowledge/search-results";
 import { FileTile, FolderTile } from "@/components/knowledge/tiles";
 import { SidePane } from "@/components/layout/side-pane";
 import { PageEmpty, PageError, PageLoading } from "@/components/layout/page-states";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,6 +120,7 @@ export function KnowledgePage() {
   const [dropNotice, setDropNotice] = useState(false);
   const [pending, setPending] = useState<Pending>(null);
   const [paneCollapsed, setPaneCollapsed] = useState(false);
+  const isNarrow = useMediaQuery("(max-width: 1023px)");
 
   const reload = useCallback(() => setReloadToken((value) => value + 1), []);
 
@@ -273,8 +281,15 @@ export function KnowledgePage() {
 
   const searching = query.trim().length > 0;
   const visibleDocuments = searching ? [] : documents;
+  const childFolders = folders.filter((folder) => folder.parent_id === folderId);
   const showEmpty =
-    !loading && !failed && !searching && folders.length === 0 && documents.length === 0;
+    !loading &&
+    !failed &&
+    !searching &&
+    folders.length === 0 &&
+    documents.length === 0;
+  const showEmptyFolder =
+    !loading && !failed && !searching && !showEmpty && childFolders.length === 0 && documents.length === 0;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
@@ -340,9 +355,12 @@ export function KnowledgePage() {
           </DropdownMenu>
 
           <Badge variant="secondary" className="h-8 px-3">
-            {format(documents.length === 1 ? t.knowledge.totalOne : t.knowledge.total, {
-              count: documents.length,
-            })}
+            {format(
+              (searching ? (hits?.length ?? 0) : documents.length) === 1
+                ? t.knowledge.totalOne
+                : t.knowledge.total,
+              { count: searching ? (hits?.length ?? 0) : documents.length },
+            )}
           </Badge>
         </div>
 
@@ -380,7 +398,7 @@ export function KnowledgePage() {
             <PageLoading label={t.knowledge.loading} />
           ) : failed || pageState === "error" ? (
             <PageError title={t.common.errorTitle} description={t.common.errorBody} />
-          ) : pageState === "empty" || showEmpty ? (
+          ) : pageState === "empty" || showEmpty || showEmptyFolder ? (
             <PageEmpty title={t.knowledge.emptyTitle} description={t.knowledge.emptyBody} />
           ) : searching ? (
             <SearchResults
@@ -393,9 +411,7 @@ export function KnowledgePage() {
             />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {folders
-                .filter((folder) => folder.parent_id === folderId)
-                .map((folder) => (
+              {childFolders.map((folder) => (
                   <FolderTile
                     key={folder.id}
                     folder={folder}
@@ -418,7 +434,7 @@ export function KnowledgePage() {
                       })
                     }
                   />
-                ))}
+              ))}
               {visibleDocuments.map((document) => (
                 <FileTile
                   key={document.id}
@@ -451,13 +467,30 @@ export function KnowledgePage() {
         </div>
       </section>
 
+      {isNarrow ? (
+        <Sheet
+          open={selected !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedId(null);
+            }
+          }}
+        >
+          <SheetContent side="right" className="w-full p-0 sm:max-w-md">
+            <SheetHeader className="border-b">
+              <SheetTitle>{t.knowledge.selectedTitle}</SheetTitle>
+            </SheetHeader>
+            <FileInfoPane document={selected} preview={preview} onAsk={openDocument} />
+          </SheetContent>
+        </Sheet>
+      ) : (
       <SidePane
         testId="knowledge-pane"
         label={t.knowledge.selectedTitle}
         collapsedLabel={t.knowledge.selectedTitle}
-        collapseLabel={t.chat.evidenceCollapse}
-        expandLabel={t.chat.evidenceExpand}
-        resizeLabel={t.chat.evidenceResize}
+        collapseLabel={t.knowledge.paneCollapse}
+        expandLabel={t.knowledge.paneExpand}
+        resizeLabel={t.knowledge.paneResize}
         widthKey={PANE_WIDTH_KEY}
         collapsedKey={PANE_COLLAPSED_KEY}
         collapsed={paneCollapsed}
@@ -466,6 +499,7 @@ export function KnowledgePage() {
       >
         <FileInfoPane document={selected} preview={preview} onAsk={openDocument} />
       </SidePane>
+      )}
 
       <NewFolderDialog
         open={pending?.kind === "new-folder"}

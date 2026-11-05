@@ -53,8 +53,10 @@ export function DocChatPane({
     t,
     documentContext: { doc_id: docId, page_no: pageNo },
     navigateOnFinish: false,
+    // Remember the conversation for the next visit, but do not feed the new id
+    // back into the hook: a changed useChat id would reset the thread and wipe
+    // the answer that just arrived.
     onConversationReady: (conversationId) => {
-      setSessionId(conversationId);
       storeSession(docId, conversationId);
     },
   });

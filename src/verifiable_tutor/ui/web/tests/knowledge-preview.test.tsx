@@ -159,5 +159,11 @@ describe("document preview", () => {
         document_context: { doc_id: "ACS_Lecture_1_2026F", page_no: 7 },
       });
     });
+
+    // The conversation id the backend assigns must not re-key the thread: the
+    // answer stays visible after it arrives.
+    expect(
+      await within(pane).findByText(/GPU memory hierarchy/),
+    ).toBeInTheDocument();
   });
 });
