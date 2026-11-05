@@ -59,7 +59,7 @@ function TileActions({
         <button
           type="button"
           aria-label={label}
-          className="absolute right-1 bottom-1 flex size-6 items-center justify-center rounded-md bg-background/90 text-muted-foreground ring-1 ring-border hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           onClick={(event) => event.stopPropagation()}
         >
           <EllipsisIcon className="size-4" />
@@ -139,11 +139,9 @@ export function FileTile({
           {document.title}
         </span>
       </button>
-      <span className="flex h-5 items-center gap-1">
+      <span className="flex h-6 items-center gap-1">
         <StatusBadge status={document.status} />
-      </span>
-      <div className="pointer-events-none absolute top-[5.5rem] right-1">
-        <div className="pointer-events-auto">
+        <span className="ml-auto">
           <TileActions
             label={t.knowledge.moreActions}
             moveLabel={t.knowledge.moveFile}
@@ -152,8 +150,8 @@ export function FileTile({
             onMove={onMove}
             onDelete={onDelete}
           />
-        </div>
-      </div>
+        </span>
+      </span>
     </div>
   );
 }
@@ -184,11 +182,9 @@ export function FolderTile({
           {folder.name}
         </span>
       </button>
-      <span className="flex h-5 items-center text-xs text-muted-foreground">
+      <span className="flex h-6 items-center text-xs text-muted-foreground">
         {t.knowledge.total.replace("{{count}}", String(folder.file_count))}
-      </span>
-      <div className="pointer-events-none absolute top-[5.5rem] right-1">
-        <div className="pointer-events-auto">
+        <span className="ml-auto">
           <TileActions
             label={t.knowledge.folderActions}
             moveLabel={t.knowledge.moveFolder}
@@ -197,8 +193,8 @@ export function FolderTile({
             onMove={onMove}
             onDelete={onDelete}
           />
-        </div>
-      </div>
+        </span>
+      </span>
     </div>
   );
 }
