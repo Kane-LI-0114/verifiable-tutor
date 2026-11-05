@@ -11,6 +11,7 @@ import { VerifyPage } from "@/routes/auth/verify-page";
 import { ChatPage } from "@/routes/chat/chat-page";
 import { BuildsPage } from "@/routes/instructor/builds-page";
 import { DeadlinesPage } from "@/routes/instructor/deadlines-page";
+import { DocumentPage } from "@/routes/knowledge/document-page";
 import { KnowledgePage } from "@/routes/knowledge/knowledge-page";
 import { NotFoundPage } from "@/routes/not-found-page";
 import { PracticePage } from "@/routes/practice/practice-page";
@@ -42,6 +43,7 @@ export const routes: RouteObject[] = [
           { path: "chat/:sessionId", element: <ChatPage /> },
           { path: "practice", element: <PracticePage /> },
           { path: "knowledge", element: <KnowledgePage /> },
+          { path: "knowledge/docs/:docId", element: <DocumentPage /> },
           {
             element: <RequireInstructor />,
             children: [

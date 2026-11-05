@@ -69,12 +69,24 @@ export function useTutorChat({
   initialMessages,
   storedMessages = [],
   t,
+  documentContext = null,
+  navigateOnFinish = true,
+  onConversationReady,
 }: {
   sessionId: string | null;
   initialMessages: TutorUIMessage[];
   /** The persisted rows the initial messages came from, for their metadata. */
   storedMessages?: ChatMessage[];
   t: Messages;
+  /**
+   * Set on the knowledge-base preview so the turn says which file and page is
+   * open. Null for a normal chat turn.
+   */
+  documentContext?: { doc_id: string; page_no: number | null } | null;
+  /** The preview pane keeps the reader on the document instead of opening it. */
+  navigateOnFinish?: boolean;
+  /** Called with the conversation id once an answer finishes. */
+  onConversationReady?: (conversationId: string) => void;
 }): TutorChat {
   const navigate = useNavigate();
   const conversations = useConversations();
@@ -96,6 +108,12 @@ export function useTutorChat({
   }, [model, thinking]);
 
   const conversationId = useRef<string | null>(sessionId);
+  const documentContextRef = useRef(documentContext);
+  documentContextRef.current = documentContext;
+  const navigateOnFinishRef = useRef(navigateOnFinish);
+  navigateOnFinishRef.current = navigateOnFinish;
+  const readyRef = useRef(onConversationReady);
+  readyRef.current = onConversationReady;
   const failed = useRef(false);
   const questioned = useRef("");
   const chatRef = useRef<ReturnType<typeof useChat<TutorUIMessage>> | null>(null);
@@ -115,6 +133,13 @@ export function useTutorChat({
         onConversationId: (id) => {
           conversationId.current = id;
         },
+        getDocumentContext: () =>
+          documentContextRef.current
+            ? {
+                doc_id: documentContextRef.current.doc_id,
+                page_no: documentContextRef.current.page_no,
+              }
+            : null,
       }),
     [],
   );
@@ -153,7 +178,10 @@ export function useTutorChat({
       }
       void conversations.refresh();
       const id = conversationId.current;
-      if (sessionId === null && id !== null) {
+      if (id !== null) {
+        readyRef.current?.(id);
+      }
+      if (navigateOnFinishRef.current && sessionId === null && id !== null) {
         navigate(`/chat/${id}`, { replace: true });
       }
     },

@@ -73,3 +73,37 @@ export async function apiFetch<T>(
 export function isUnauthorized(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401;
 }
+
+/**
+ * Fetch a binary body (the source PDF) as an ArrayBuffer.
+ *
+ * The preview loads the whole file once instead of relying on range requests,
+ * which keeps the local server simple; the corpus files are under 15 MB.
+ */
+export async function apiFetchBinary(
+  path: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<ArrayBuffer> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      credentials: "same-origin",
+      signal: options.signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+    throw new ApiError(NETWORK_ERROR_STATUS, "network error");
+  }
+  if (!response.ok) {
+    let detail = response.statusText || `HTTP ${response.status}`;
+    try {
+      detail = detailFromPayload(await response.json(), detail);
+    } catch {
+      // A non-JSON error body keeps the status text.
+    }
+    throw new ApiError(response.status, detail);
+  }
+  return response.arrayBuffer();
+}

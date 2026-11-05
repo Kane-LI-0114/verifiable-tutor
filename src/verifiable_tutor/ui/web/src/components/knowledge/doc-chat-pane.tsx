@@ -1,0 +1,111 @@
+import { useEffect, useRef, useState } from "react";
+
+import { ChatMessageView } from "@/components/chat/chat-message";
+import { Composer } from "@/components/chat/composer";
+import { useT } from "@/lib/i18n";
+import { useTutorChat } from "@/lib/chat/use-tutor-chat";
+
+const SESSION_KEY_PREFIX = "vt.knowledge.chat.";
+
+function readStoredSession(docId: string): string | null {
+  try {
+    return window.localStorage?.getItem(`${SESSION_KEY_PREFIX}${docId}`) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(docId: string, conversationId: string): void {
+  try {
+    window.localStorage?.setItem(`${SESSION_KEY_PREFIX}${docId}`, conversationId);
+  } catch {
+    // The pane still works for this visit when storage is blocked.
+  }
+}
+
+/**
+ * The conversation beside an open document.
+ *
+ * It is a normal conversation with one addition: every turn carries the file
+ * and page being read. The document text itself is not injected yet, and the
+ * pane says so rather than implying the answer read the page.
+ */
+export function DocChatPane({
+  docId,
+  pageNo,
+}: {
+  docId: string;
+  pageNo: number;
+}) {
+  const t = useT();
+  const [sessionId, setSessionId] = useState<string | null>(() =>
+    readStoredSession(docId),
+  );
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    setSessionId(readStoredSession(docId));
+  }, [docId]);
+
+  const chat = useTutorChat({
+    sessionId,
+    initialMessages: [],
+    t,
+    documentContext: { doc_id: docId, page_no: pageNo },
+    navigateOnFinish: false,
+    onConversationReady: (conversationId) => {
+      setSessionId(conversationId);
+      storeSession(docId, conversationId);
+    },
+  });
+
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const element = scrollerRef.current;
+    if (element !== null) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, [chat.turns.length, chat.streaming]);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <p className="border-b bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        {t.knowledge.chatNotice}
+      </p>
+      <div ref={scrollerRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        {chat.turns.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t.knowledge.chatEmpty}</p>
+        ) : (
+          chat.turns.map((turn, index) => (
+            <ChatMessageView
+              key={turn.message.id}
+              turn={turn}
+              onOpenCitation={() => {}}
+              streaming={chat.streaming && index === chat.turns.length - 1}
+            />
+          ))
+        )}
+      </div>
+      {chat.failure ? (
+        <p className="border-t px-3 py-2 text-xs text-destructive" role="alert">
+          {chat.failure.description}
+        </p>
+      ) : null}
+      <Composer
+        value={draft}
+        onChange={setDraft}
+        onSubmit={() => {
+          const text = draft;
+          setDraft("");
+          void chat.send(text);
+        }}
+        onStop={chat.stop}
+        streaming={chat.streaming}
+        model={chat.model}
+        onModelChange={chat.setModel}
+        thinking={chat.thinking}
+        onThinkingChange={chat.setThinking}
+      />
+    </div>
+  );
+}

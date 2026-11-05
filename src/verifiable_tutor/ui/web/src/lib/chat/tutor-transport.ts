@@ -35,6 +35,11 @@ export interface TutorTransportOptions {
   getSelection: () => TutorSelection;
   /** Called with the conversation id the backend assigned or reused. */
   onConversationId: (conversationId: string) => void;
+  /**
+   * The document and page open in the knowledge-base preview, read at request
+   * time. Null for a normal chat turn.
+   */
+  getDocumentContext?: () => { doc_id: string; page_no: number | null } | null;
 }
 
 /**
@@ -98,6 +103,7 @@ export class TutorChatTransport implements ChatTransport<TutorUIMessage> {
           provider: model.provider,
           tier: model.tier,
           thinking: selection.thinking,
+          document_context: this.options.getDocumentContext?.() ?? undefined,
         }),
       });
     } catch (error) {
