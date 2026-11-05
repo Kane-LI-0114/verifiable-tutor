@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createFetchStub, jsonResponse, type StubRoute } from "./api-stub";
@@ -204,6 +204,21 @@ describe("knowledge browser", () => {
 
     expect(await screen.findByText("page 12")).toBeInTheDocument();
     expect(screen.getByText("allreduce", { selector: "mark" })).toBeInTheDocument();
+  });
+
+  it("remembers the collapsed file pane across a reload", async () => {
+    stub = createFetchStub(routes());
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+    await userEvent.setup().click(screen.getByRole("button", { name: "Collapse the panel" }));
+    expect(screen.getByTestId("knowledge-pane")).toHaveAttribute("data-collapsed", "true");
+
+    cleanup();
+
+    renderLiveRoute("/knowledge");
+    expect(
+      await screen.findByRole("complementary", { name: "Selected file" }),
+    ).toHaveAttribute("data-collapsed", "true");
   });
 
   it("offers the delete action only to an instructor", async () => {

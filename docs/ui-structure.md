@@ -95,13 +95,13 @@ The file status is shown on the tile and in the right pane. `uploading` dims the
 
 Searching replaces the grid with a flat result list grouped by document. Each result names why it matched (file name, folder, page text, or summary), shows the page number for a text hit, and marks the matched words in the snippet. The highlight ranges come from the API, not from a second client-side match, so the marking and the match cannot disagree.
 
-The right pane is the same width, position, and drag behavior as the chat page's evidence pane. It shows the file name, the date it was added, the source PDF date, the Qwen summary, page and chunk counts, the document status, and a collapsed knowledge-card section fed by `GET /api/knowledge/cards?doc_id=`. With no selection it explains what selecting a file does; on a narrow viewport it becomes a sheet.
+The right pane is the same width, position, and drag behavior as the chat page's evidence pane. It shows the file name, the date it was added, the Qwen summary and the model that wrote it, the page and chunk counts, the localized document status, and a collapsed knowledge-card section fed by `GET /api/knowledge/cards?doc_id=`. With no selection it explains what selecting a file does. Below 1024px the pane is a sheet that opens on selection.
 
 ### Document preview
 
 The document route replaces the whole knowledge-base region, not a dialog. The left side is the PDF page rendered on a canvas; the header carries a back arrow that returns to the folder the reader came from, the file name, the page indicator, previous and next buttons, and a page input. PageUp and PageDown move one page. Only one page is rendered at a time; there is no continuous scroll.
 
-The right pane on this route is a conversation, not the file record: it has the message list, the same composer as the chat page (provider, tier, and thinking level persist through `vt.composer.selection`), and it sends `document_context` with `doc_id` and the current page so the answer knows what is open. Until the citation and context-injection stage lands, the answers do not contain the document text and the pane says so at the top. The conversation is created on the first send and its id is remembered per document in browser local storage.
+The right pane on this route is a conversation, not the file record: it has the message list, the same composer as the chat page (provider, tier, and thinking level persist through `vt.composer.selection`), and it sends `document_context` with `doc_id` and the current page so the answer knows what is open. Below 1024px a button in the header opens the same conversation as a sheet. Until the citation and context-injection stage lands, the answers do not contain the document text and the pane says so at the top. The conversation is created on the first send and its id is remembered per document in browser local storage.
 
 ### Knowledge-base builds
 
@@ -245,7 +245,9 @@ The pass walks these steps and asserts the visible result of each, taking a scre
 12. The chat pane sends with `document_context`, the answer arrives, and the "document content not injected yet" notice is visible.
 13. A reload restores language, sidebar state, pane width and collapse, composer selection, and the document page.
 14. A narrow viewport turns the right pane into a sheet and the grid into one column.
-15. A keyboard walk confirms focus order, visible focus rings, and Esc closing menus and the preview.
+15. A keyboard walk confirms focus order (each tile's open button, then its actions button), visible focus rings, and Esc closing menus and sheets.
+
+Results of the 2026-11-05 pass, run with agent-browser 0.23.0 against the built SPA on `http://127.0.0.1:8000` with a locally seeded QA instructor account: steps 1 to 5, 6 (create), 7 (move), 8, 9, 10, 11, 12, 13, 14, and 15 passed against the seeded `course_project` and the nine single-page smoke documents. The real thumbnails, the full 342-page corpus, the vectors, and the twelve Qwen summaries arrive with the TACC ingestion, so step 2's thumbnail and step 5's summary are verified again after that run. Defects the pass found were fixed and covered by tests: the preview chat wiped the answer when the backend assigned a conversation id, the tile menu overlapped the name, an empty folder showed a blank pane, a page box holding letters wrote `NaN` into the URL, and the file pane did not restore its collapsed state.
 
 A failure found here is first reproduced by a failing unit or API test, then fixed, then the checklist is rerun. The final results and screenshots are recorded in this section with the agent-browser version, the port, and the date.
 

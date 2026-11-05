@@ -10,7 +10,7 @@ import {
 } from "@/components/knowledge/dialogs";
 import { SearchResults } from "@/components/knowledge/search-results";
 import { FileTile, FolderTile } from "@/components/knowledge/tiles";
-import { SidePane } from "@/components/layout/side-pane";
+import { readCollapsed, SidePane, writeCollapsed } from "@/components/layout/side-pane";
 import { PageEmpty, PageError, PageLoading } from "@/components/layout/page-states";
 import {
   Sheet,
@@ -119,7 +119,9 @@ export function KnowledgePage() {
   const [dragging, setDragging] = useState(false);
   const [dropNotice, setDropNotice] = useState(false);
   const [pending, setPending] = useState<Pending>(null);
-  const [paneCollapsed, setPaneCollapsed] = useState(false);
+  const [paneCollapsed, setPaneCollapsed] = useState(() =>
+    readCollapsed(PANE_COLLAPSED_KEY),
+  );
   const isNarrow = useMediaQuery("(max-width: 1023px)");
 
   const reload = useCallback(() => setReloadToken((value) => value + 1), []);
@@ -494,7 +496,10 @@ export function KnowledgePage() {
         widthKey={PANE_WIDTH_KEY}
         collapsedKey={PANE_COLLAPSED_KEY}
         collapsed={paneCollapsed}
-        onCollapsedChange={setPaneCollapsed}
+        onCollapsedChange={(next) => {
+          setPaneCollapsed(next);
+          writeCollapsed(PANE_COLLAPSED_KEY, next);
+        }}
         header={t.knowledge.selectedTitle}
       >
         <FileInfoPane document={selected} preview={preview} onAsk={openDocument} />

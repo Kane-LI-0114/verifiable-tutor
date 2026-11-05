@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { DocChatPane } from "@/components/knowledge/doc-chat-pane";
 import { PdfCanvas } from "@/components/knowledge/pdf-canvas";
-import { SidePane } from "@/components/layout/side-pane";
+import { readCollapsed, SidePane, writeCollapsed } from "@/components/layout/side-pane";
 import { PageError, PageLoading } from "@/components/layout/page-states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +59,9 @@ export function DocumentPage() {
   const [pdf, setPdf] = useState<ArrayBuffer | null>(null);
   const [failed, setFailed] = useState(false);
   const [pageInput, setPageInput] = useState(String(requestedPage));
-  const [paneCollapsed, setPaneCollapsed] = useState(false);
+  const [paneCollapsed, setPaneCollapsed] = useState(() =>
+    readCollapsed(PANE_COLLAPSED_KEY),
+  );
   const [chatOpen, setChatOpen] = useState(false);
   const isNarrow = useMediaQuery("(max-width: 1023px)");
 
@@ -255,7 +257,10 @@ export function DocumentPage() {
         widthKey={PANE_WIDTH_KEY}
         collapsedKey={PANE_COLLAPSED_KEY}
         collapsed={paneCollapsed}
-        onCollapsedChange={setPaneCollapsed}
+        onCollapsedChange={(next) => {
+          setPaneCollapsed(next);
+          writeCollapsed(PANE_COLLAPSED_KEY, next);
+        }}
         header={t.knowledge.chatTitle}
         defaultWidth={400}
       >
