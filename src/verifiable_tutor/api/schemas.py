@@ -502,3 +502,183 @@ class BuildListResponse(BaseModel):
     builds: list[BuildRecord] = _ex(
         [BUILD_EXAMPLE], "Knowledge builds, newest first."
     )
+
+
+FOLDER_ID = "6f1a2b3c4d5e"
+DOC_EXAMPLE = {
+    "id": "ACS_Lecture_1_2026F",
+    "title": "ACS_Lecture_1_2026F",
+    "filename": "ACS_Lecture_1_2026F.pdf",
+    "folder_id": None,
+    "page_count": 67,
+    "chunk_count": 71,
+    "byte_size": 10470744,
+    "status": "ready",
+    "status_detail": None,
+    "summary": "A lecture on GPU architecture and CUDA execution.",
+    "summary_model": "qwen3.8-27b",
+    "created_at": "2026-11-05T04:00:00+00:00",
+    "indexed_at": "2026-11-05T04:20:00+00:00",
+    "pdf_url": "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+    "thumbnail_url": "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+}
+
+
+class FolderPathSegment(BaseModel):
+    id: str = _ex(FOLDER_ID, "Folder id.")
+    name: str = _ex("Lectures", "Folder name.")
+
+
+class KnowledgeFolderRecord(BaseModel):
+    model_config = _example(
+        {
+            "id": FOLDER_ID,
+            "name": "Lectures",
+            "parent_id": None,
+            "position": 0,
+            "created_at": "2026-11-05T04:00:00+00:00",
+            "file_count": 3,
+            "path": [{"id": FOLDER_ID, "name": "Lectures"}],
+        }
+    )
+
+    id: str = _ex(FOLDER_ID, "Folder id.")
+    name: str = _ex("Lectures", "Folder name.")
+    parent_id: str | None = _opt(None, "Parent folder; null for the root.")
+    position: int = _ex(0, "Sort order among the siblings of one parent.")
+    created_at: str = _ex("2026-11-05T04:00:00+00:00", "ISO-8601 UTC creation time.")
+    file_count: int = _ex(3, "Documents directly in this folder.")
+    path: list[FolderPathSegment] = _ex(
+        [{"id": FOLDER_ID, "name": "Lectures"}],
+        "Ancestors from the root, used for the breadcrumb.",
+    )
+
+
+class FolderTreeResponse(BaseModel):
+    model_config = _example(
+        {
+            "folders": [
+                {
+                    "id": FOLDER_ID,
+                    "name": "Lectures",
+                    "parent_id": None,
+                    "position": 0,
+                    "created_at": "2026-11-05T04:00:00+00:00",
+                    "file_count": 3,
+                    "path": [{"id": FOLDER_ID, "name": "Lectures"}],
+                }
+            ],
+            "total_files": 12,
+        }
+    )
+
+    folders: list[KnowledgeFolderRecord] = _ex([], "Folders, root first then children.")
+    total_files: int = _ex(12, "Documents in the whole archive.")
+
+
+class KnowledgeDocumentRecord(BaseModel):
+    model_config = _example(DOC_EXAMPLE)
+
+    id: str = _ex("ACS_Lecture_1_2026F", "Document id (the PDF stem).")
+    title: str = _ex("ACS_Lecture_1_2026F", "Title the browser shows.")
+    filename: str = _ex("ACS_Lecture_1_2026F.pdf", "Original PDF file name.")
+    folder_id: str | None = _opt(None, "Folder that holds the file; null is the root.")
+    page_count: int = _ex(67, "Pages the OCR pipeline parsed.")
+    chunk_count: int = _ex(71, "Chunks stored for the document.")
+    byte_size: int | None = _opt(10470744, "Source PDF size in bytes.")
+    status: Literal[
+        "uploading", "uploaded", "upload_failed", "processing", "ready", "failed"
+    ] = _ex("ready", "Ingestion status the tile renders.")
+    status_detail: str | None = _opt(None, "Failure reason or progress note.")
+    summary: str | None = _opt(
+        "A lecture on GPU architecture and CUDA execution.",
+        "Qwen document summary; null until the summary job lands.",
+    )
+    summary_model: str | None = _opt("qwen3.8-27b", "Model that wrote the summary.")
+    created_at: str = _ex("2026-11-05T04:00:00+00:00", "ISO-8601 UTC ingestion time.")
+    indexed_at: str | None = _opt(
+        "2026-11-05T04:20:00+00:00", "ISO-8601 UTC time chunks and vectors were stored."
+    )
+    pdf_url: str = _ex(
+        "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+        "Route that serves the source PDF.",
+    )
+    thumbnail_url: str = _ex(
+        "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+        "First-page image used as the tile icon.",
+    )
+
+
+class DocumentListResponse(BaseModel):
+    model_config = _example({"documents": [DOC_EXAMPLE], "total": 1})
+
+    documents: list[KnowledgeDocumentRecord] = _ex([], "Page of documents.")
+    total: int = _ex(1, "Documents in the requested folder.")
+
+
+class SearchMatchRecord(BaseModel):
+    model_config = _example(
+        {
+            "kind": "content",
+            "page_no": 12,
+            "snippet": "The allreduce operation combines gradients.",
+            "highlights": [[4, 13]],
+        }
+    )
+
+    kind: Literal["filename", "folder", "summary", "content"] = _ex(
+        "content", "Why the document matched."
+    )
+    page_no: int | None = _opt(12, "Page number for a content match.")
+    snippet: str = _ex(
+        "The allreduce operation combines gradients.", "Text around the match."
+    )
+    highlights: list[list[int]] = _ex(
+        [[4, 13]], "Half-open [start, end) ranges to mark inside the snippet."
+    )
+
+
+class SearchDocumentRecord(KnowledgeDocumentRecord):
+    model_config = _example({**DOC_EXAMPLE, "matches": []})
+
+    matches: list[SearchMatchRecord] = _ex([], "Matches for this document, best first.")
+
+
+class KnowledgeSearchResponse(BaseModel):
+    model_config = _example({"query": "allreduce", "documents": []})
+
+    query: str = _ex("allreduce", "The query as submitted.")
+    documents: list[SearchDocumentRecord] = _ex([], "Documents that matched.")
+
+
+class KnowledgeFolderBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=64, examples=["Lectures"])
+    parent_id: str | None = Field(default=None, examples=[None])
+
+
+class KnowledgeFolderPatchBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=64)
+    parent_id: str | None = Field(default=None)
+
+
+class KnowledgeDocumentPatchBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    folder_id: str | None = Field(default=None, examples=[None])
+
+
+class DeleteDocumentResponse(BaseModel):
+    model_config = _example({"id": "ACS_Lecture_1_2026F", "deleted": True})
+
+    id: str = _ex("ACS_Lecture_1_2026F", "Document that was deleted.")
+    deleted: bool = _ex(True, "Always true on success.")
+
+
+class DeleteFolderResponse(BaseModel):
+    model_config = _example({"deleted_documents": 3})
+
+    deleted_documents: int = _ex(3, "Documents removed with the folder.")

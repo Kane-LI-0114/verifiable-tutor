@@ -199,6 +199,28 @@ class KnowledgeStore:
             ).fetchall()
         return [_document_dict(row) for row in rows], int(total)
 
+    def list_all_documents(self, *, limit: int = 1000) -> list[dict[str, Any]]:
+        with self._storage.connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM kb_documents ORDER BY created_at DESC, id LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [_document_dict(row) for row in rows]
+
+    def list_documents_in_folders(
+        self, folder_ids: Iterable[str]
+    ) -> list[dict[str, Any]]:
+        ids = list(folder_ids)
+        if not ids:
+            return []
+        placeholders = ",".join("?" for _ in ids)
+        with self._storage.connect() as connection:
+            rows = connection.execute(
+                f"SELECT * FROM kb_documents WHERE folder_id IN ({placeholders})",
+                ids,
+            ).fetchall()
+        return [_document_dict(row) for row in rows]
+
     def upsert_document(
         self,
         document: Mapping[str, Any],

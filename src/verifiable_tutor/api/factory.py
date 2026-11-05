@@ -23,9 +23,21 @@ from . import API_VERSION
 from ..auth.service import AuthService
 from .chat import ChatService
 from ..auth.email import EmailSender, build_email_sender
+from ..corpus.store import KnowledgeStore
+from ..knowledge.browse import KnowledgeBrowser
 from ..knowledge.service import CardStore, DriverBuildRunner, KnowledgeBuildService
 from .replay import ReplayService
-from .routers import auth, chat, corpus, health, knowledge, practice, sessions, voice
+from .routers import (
+    auth,
+    chat,
+    corpus,
+    health,
+    knowledge,
+    knowledge_browse,
+    practice,
+    sessions,
+    voice,
+)
 from .schemas import OPENAPI_TAGS
 from ..settings import AppSettings, ensure_runtime_directories, load_settings
 from ..storage import Storage
@@ -125,6 +137,11 @@ def create_app(
             default_speed=resolved.replay_default_speed,
         )
         app.state.cards = CardStore(resolved.knowledge_records_dir)
+        knowledge_store = KnowledgeStore(database)
+        app.state.knowledge_store = knowledge_store
+        app.state.knowledge = KnowledgeBrowser(
+            store=knowledge_store, settings=resolved, clock=resolved_clock
+        )
         app.state.builds = KnowledgeBuildService(
             settings=resolved,
             storage=database,
@@ -154,6 +171,7 @@ def create_app(
         sessions,
         voice,
         knowledge,
+        knowledge_browse,
         corpus,
         practice,
     ]

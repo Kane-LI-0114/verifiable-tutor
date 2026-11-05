@@ -607,6 +607,98 @@
         "title": "CitationRecord",
         "type": "object"
       },
+      "DeleteDocumentResponse": {
+        "additionalProperties": false,
+        "example": {
+          "deleted": true,
+          "id": "ACS_Lecture_1_2026F"
+        },
+        "properties": {
+          "deleted": {
+            "description": "Always true on success.",
+            "example": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Document that was deleted.",
+            "example": "ACS_Lecture_1_2026F",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ],
+        "title": "DeleteDocumentResponse",
+        "type": "object"
+      },
+      "DeleteFolderResponse": {
+        "additionalProperties": false,
+        "example": {
+          "deleted_documents": 3
+        },
+        "properties": {
+          "deleted_documents": {
+            "description": "Documents removed with the folder.",
+            "example": 3,
+            "title": "Deleted Documents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deleted_documents"
+        ],
+        "title": "DeleteFolderResponse",
+        "type": "object"
+      },
+      "DocumentListResponse": {
+        "additionalProperties": false,
+        "example": {
+          "documents": [
+            {
+              "byte_size": 10470744,
+              "chunk_count": 71,
+              "created_at": "2026-11-05T04:00:00+00:00",
+              "filename": "ACS_Lecture_1_2026F.pdf",
+              "id": "ACS_Lecture_1_2026F",
+              "indexed_at": "2026-11-05T04:20:00+00:00",
+              "page_count": 67,
+              "pdf_url": "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+              "status": "ready",
+              "summary": "A lecture on GPU architecture and CUDA execution.",
+              "summary_model": "qwen3.8-27b",
+              "thumbnail_url": "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+              "title": "ACS_Lecture_1_2026F"
+            }
+          ],
+          "total": 1
+        },
+        "properties": {
+          "documents": {
+            "description": "Page of documents.",
+            "example": [],
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeDocumentRecord"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "total": {
+            "description": "Documents in the requested folder.",
+            "example": 1,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "documents",
+          "total"
+        ],
+        "title": "DocumentListResponse",
+        "type": "object"
+      },
       "DomainsResponse": {
         "additionalProperties": false,
         "example": {
@@ -633,6 +725,72 @@
           "domains"
         ],
         "title": "DomainsResponse",
+        "type": "object"
+      },
+      "FolderPathSegment": {
+        "properties": {
+          "id": {
+            "description": "Folder id.",
+            "example": "6f1a2b3c4d5e",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "Folder name.",
+            "example": "Lectures",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "FolderPathSegment",
+        "type": "object"
+      },
+      "FolderTreeResponse": {
+        "additionalProperties": false,
+        "example": {
+          "folders": [
+            {
+              "created_at": "2026-11-05T04:00:00+00:00",
+              "file_count": 3,
+              "id": "6f1a2b3c4d5e",
+              "name": "Lectures",
+              "path": [
+                {
+                  "id": "6f1a2b3c4d5e",
+                  "name": "Lectures"
+                }
+              ],
+              "position": 0
+            }
+          ],
+          "total_files": 12
+        },
+        "properties": {
+          "folders": {
+            "description": "Folders, root first then children.",
+            "example": [],
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeFolderRecord"
+            },
+            "title": "Folders",
+            "type": "array"
+          },
+          "total_files": {
+            "description": "Documents in the whole archive.",
+            "example": 12,
+            "title": "Total Files",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "folders",
+          "total_files"
+        ],
+        "title": "FolderTreeResponse",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -681,6 +839,376 @@
           "database"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "KnowledgeDocumentPatchBody": {
+        "additionalProperties": false,
+        "properties": {
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              null
+            ],
+            "title": "Folder Id"
+          }
+        },
+        "title": "KnowledgeDocumentPatchBody",
+        "type": "object"
+      },
+      "KnowledgeDocumentRecord": {
+        "additionalProperties": false,
+        "example": {
+          "byte_size": 10470744,
+          "chunk_count": 71,
+          "created_at": "2026-11-05T04:00:00+00:00",
+          "filename": "ACS_Lecture_1_2026F.pdf",
+          "id": "ACS_Lecture_1_2026F",
+          "indexed_at": "2026-11-05T04:20:00+00:00",
+          "page_count": 67,
+          "pdf_url": "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+          "status": "ready",
+          "summary": "A lecture on GPU architecture and CUDA execution.",
+          "summary_model": "qwen3.8-27b",
+          "thumbnail_url": "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+          "title": "ACS_Lecture_1_2026F"
+        },
+        "properties": {
+          "byte_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source PDF size in bytes.",
+            "example": 10470744,
+            "title": "Byte Size"
+          },
+          "chunk_count": {
+            "description": "Chunks stored for the document.",
+            "example": 71,
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "description": "ISO-8601 UTC ingestion time.",
+            "example": "2026-11-05T04:00:00+00:00",
+            "title": "Created At",
+            "type": "string"
+          },
+          "filename": {
+            "description": "Original PDF file name.",
+            "example": "ACS_Lecture_1_2026F.pdf",
+            "title": "Filename",
+            "type": "string"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Folder that holds the file; null is the root.",
+            "title": "Folder Id"
+          },
+          "id": {
+            "description": "Document id (the PDF stem).",
+            "example": "ACS_Lecture_1_2026F",
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO-8601 UTC time chunks and vectors were stored.",
+            "example": "2026-11-05T04:20:00+00:00",
+            "title": "Indexed At"
+          },
+          "page_count": {
+            "description": "Pages the OCR pipeline parsed.",
+            "example": 67,
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "pdf_url": {
+            "description": "Route that serves the source PDF.",
+            "example": "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+            "title": "Pdf Url",
+            "type": "string"
+          },
+          "status": {
+            "description": "Ingestion status the tile renders.",
+            "enum": [
+              "uploading",
+              "uploaded",
+              "upload_failed",
+              "processing",
+              "ready",
+              "failed"
+            ],
+            "example": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "status_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Failure reason or progress note.",
+            "title": "Status Detail"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qwen document summary; null until the summary job lands.",
+            "example": "A lecture on GPU architecture and CUDA execution.",
+            "title": "Summary"
+          },
+          "summary_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model that wrote the summary.",
+            "example": "qwen3.8-27b",
+            "title": "Summary Model"
+          },
+          "thumbnail_url": {
+            "description": "First-page image used as the tile icon.",
+            "example": "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+            "title": "Thumbnail Url",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title the browser shows.",
+            "example": "ACS_Lecture_1_2026F",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "filename",
+          "page_count",
+          "chunk_count",
+          "status",
+          "created_at",
+          "pdf_url",
+          "thumbnail_url"
+        ],
+        "title": "KnowledgeDocumentRecord",
+        "type": "object"
+      },
+      "KnowledgeFolderBody": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "examples": [
+              "Lectures"
+            ],
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              null
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "KnowledgeFolderBody",
+        "type": "object"
+      },
+      "KnowledgeFolderPatchBody": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "title": "KnowledgeFolderPatchBody",
+        "type": "object"
+      },
+      "KnowledgeFolderRecord": {
+        "additionalProperties": false,
+        "example": {
+          "created_at": "2026-11-05T04:00:00+00:00",
+          "file_count": 3,
+          "id": "6f1a2b3c4d5e",
+          "name": "Lectures",
+          "path": [
+            {
+              "id": "6f1a2b3c4d5e",
+              "name": "Lectures"
+            }
+          ],
+          "position": 0
+        },
+        "properties": {
+          "created_at": {
+            "description": "ISO-8601 UTC creation time.",
+            "example": "2026-11-05T04:00:00+00:00",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_count": {
+            "description": "Documents directly in this folder.",
+            "example": 3,
+            "title": "File Count",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Folder id.",
+            "example": "6f1a2b3c4d5e",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "description": "Folder name.",
+            "example": "Lectures",
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Parent folder; null for the root.",
+            "title": "Parent Id"
+          },
+          "path": {
+            "description": "Ancestors from the root, used for the breadcrumb.",
+            "example": [
+              {
+                "id": "6f1a2b3c4d5e",
+                "name": "Lectures"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FolderPathSegment"
+            },
+            "title": "Path",
+            "type": "array"
+          },
+          "position": {
+            "description": "Sort order among the siblings of one parent.",
+            "example": 0,
+            "title": "Position",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position",
+          "created_at",
+          "file_count",
+          "path"
+        ],
+        "title": "KnowledgeFolderRecord",
+        "type": "object"
+      },
+      "KnowledgeSearchResponse": {
+        "additionalProperties": false,
+        "example": {
+          "documents": [],
+          "query": "allreduce"
+        },
+        "properties": {
+          "documents": {
+            "description": "Documents that matched.",
+            "example": [],
+            "items": {
+              "$ref": "#/components/schemas/SearchDocumentRecord"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "query": {
+            "description": "The query as submitted.",
+            "example": "allreduce",
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query",
+          "documents"
+        ],
+        "title": "KnowledgeSearchResponse",
         "type": "object"
       },
       "LoginBody": {
@@ -1268,6 +1796,259 @@
           "sessions_invalidated"
         ],
         "title": "ResetResponse",
+        "type": "object"
+      },
+      "SearchDocumentRecord": {
+        "additionalProperties": false,
+        "example": {
+          "byte_size": 10470744,
+          "chunk_count": 71,
+          "created_at": "2026-11-05T04:00:00+00:00",
+          "filename": "ACS_Lecture_1_2026F.pdf",
+          "id": "ACS_Lecture_1_2026F",
+          "indexed_at": "2026-11-05T04:20:00+00:00",
+          "matches": [],
+          "page_count": 67,
+          "pdf_url": "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+          "status": "ready",
+          "summary": "A lecture on GPU architecture and CUDA execution.",
+          "summary_model": "qwen3.8-27b",
+          "thumbnail_url": "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+          "title": "ACS_Lecture_1_2026F"
+        },
+        "properties": {
+          "byte_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source PDF size in bytes.",
+            "example": 10470744,
+            "title": "Byte Size"
+          },
+          "chunk_count": {
+            "description": "Chunks stored for the document.",
+            "example": 71,
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "description": "ISO-8601 UTC ingestion time.",
+            "example": "2026-11-05T04:00:00+00:00",
+            "title": "Created At",
+            "type": "string"
+          },
+          "filename": {
+            "description": "Original PDF file name.",
+            "example": "ACS_Lecture_1_2026F.pdf",
+            "title": "Filename",
+            "type": "string"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Folder that holds the file; null is the root.",
+            "title": "Folder Id"
+          },
+          "id": {
+            "description": "Document id (the PDF stem).",
+            "example": "ACS_Lecture_1_2026F",
+            "title": "Id",
+            "type": "string"
+          },
+          "indexed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO-8601 UTC time chunks and vectors were stored.",
+            "example": "2026-11-05T04:20:00+00:00",
+            "title": "Indexed At"
+          },
+          "matches": {
+            "description": "Matches for this document, best first.",
+            "example": [],
+            "items": {
+              "$ref": "#/components/schemas/SearchMatchRecord"
+            },
+            "title": "Matches",
+            "type": "array"
+          },
+          "page_count": {
+            "description": "Pages the OCR pipeline parsed.",
+            "example": 67,
+            "title": "Page Count",
+            "type": "integer"
+          },
+          "pdf_url": {
+            "description": "Route that serves the source PDF.",
+            "example": "/api/knowledge/documents/ACS_Lecture_1_2026F/file",
+            "title": "Pdf Url",
+            "type": "string"
+          },
+          "status": {
+            "description": "Ingestion status the tile renders.",
+            "enum": [
+              "uploading",
+              "uploaded",
+              "upload_failed",
+              "processing",
+              "ready",
+              "failed"
+            ],
+            "example": "ready",
+            "title": "Status",
+            "type": "string"
+          },
+          "status_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Failure reason or progress note.",
+            "title": "Status Detail"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qwen document summary; null until the summary job lands.",
+            "example": "A lecture on GPU architecture and CUDA execution.",
+            "title": "Summary"
+          },
+          "summary_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model that wrote the summary.",
+            "example": "qwen3.8-27b",
+            "title": "Summary Model"
+          },
+          "thumbnail_url": {
+            "description": "First-page image used as the tile icon.",
+            "example": "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
+            "title": "Thumbnail Url",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title the browser shows.",
+            "example": "ACS_Lecture_1_2026F",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "filename",
+          "page_count",
+          "chunk_count",
+          "status",
+          "created_at",
+          "pdf_url",
+          "thumbnail_url",
+          "matches"
+        ],
+        "title": "SearchDocumentRecord",
+        "type": "object"
+      },
+      "SearchMatchRecord": {
+        "additionalProperties": false,
+        "example": {
+          "highlights": [
+            [
+              4,
+              13
+            ]
+          ],
+          "kind": "content",
+          "page_no": 12,
+          "snippet": "The allreduce operation combines gradients."
+        },
+        "properties": {
+          "highlights": {
+            "description": "Half-open [start, end) ranges to mark inside the snippet.",
+            "example": [
+              [
+                4,
+                13
+              ]
+            ],
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Highlights",
+            "type": "array"
+          },
+          "kind": {
+            "description": "Why the document matched.",
+            "enum": [
+              "filename",
+              "folder",
+              "summary",
+              "content"
+            ],
+            "example": "content",
+            "title": "Kind",
+            "type": "string"
+          },
+          "page_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number for a content match.",
+            "example": 12,
+            "title": "Page No"
+          },
+          "snippet": {
+            "description": "Text around the match.",
+            "example": "The allreduce operation combines gradients.",
+            "title": "Snippet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "snippet",
+          "highlights"
+        ],
+        "title": "SearchMatchRecord",
         "type": "object"
       },
       "SessionListResponse": {
@@ -2429,6 +3210,531 @@
           }
         },
         "summary": "Browse validated knowledge cards",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/documents": {
+      "get": {
+        "description": "List one folder's documents; omit ``folder_id`` for the root.",
+        "operationId": "list_documents_api_knowledge_documents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "folder_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Folder Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List the files in one folder",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/documents/{doc_id}": {
+      "delete": {
+        "description": "Delete a document, its chunks, and the local mirror files.",
+        "operationId": "delete_document_api_knowledge_documents__doc_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "403": {
+            "description": "Instructor role is required."
+          },
+          "404": {
+            "description": "Document not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete a file",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "get": {
+        "description": "Return one document record.",
+        "operationId": "get_document_api_knowledge_documents__doc_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDocumentRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Document not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "One file's metadata, summary, and counts",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "patch": {
+        "description": "Move one document; ``folder_id`` null moves it to the root.",
+        "operationId": "move_document_api_knowledge_documents__doc_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeDocumentPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDocumentRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Unknown folder."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Document not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Move a file to another folder",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/documents/{doc_id}/file": {
+      "get": {
+        "description": "Serve the source PDF from the local mirror.",
+        "operationId": "document_file_api_knowledge_documents__doc_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The source PDF as served to the preview."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Document or file not found."
+          },
+          "422": {
+            "description": "Invalid document id."
+          }
+        },
+        "summary": "The source PDF",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/folders": {
+      "get": {
+        "description": "Return every folder with its ancestor path and the archive file count.",
+        "operationId": "list_folders_api_knowledge_folders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderTreeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "summary": "The knowledge-base folder tree",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "post": {
+        "description": "Create a folder at the root or under another folder.",
+        "operationId": "create_folder_api_knowledge_folders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeFolderBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeFolderRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Empty name or unknown parent folder."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create a folder",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/folders/{folder_id}": {
+      "delete": {
+        "description": "Delete a folder subtree, its documents, their chunks, and mirror files.",
+        "operationId": "delete_folder_api_knowledge_folders__folder_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteFolderResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "403": {
+            "description": "Instructor role is required."
+          },
+          "404": {
+            "description": "Folder not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete a folder and the files inside it",
+        "tags": [
+          "knowledge"
+        ]
+      },
+      "patch": {
+        "description": "Rename a folder, move it, or both.",
+        "operationId": "update_folder_api_knowledge_folders__folder_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "folder_id",
+            "required": true,
+            "schema": {
+              "title": "Folder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeFolderPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeFolderRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Unknown parent or a move under the folder's own descendant."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Folder not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rename or move a folder",
+        "tags": [
+          "knowledge"
+        ]
+      }
+    },
+    "/api/knowledge/search": {
+      "get": {
+        "description": "Return matching documents with the reason and the highlight ranges.",
+        "operationId": "search_api_knowledge_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "minLength": 0,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search file names, folders, page text, and summaries",
         "tags": [
           "knowledge"
         ]
