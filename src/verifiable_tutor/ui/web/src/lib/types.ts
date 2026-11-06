@@ -36,6 +36,8 @@ export interface ChatMessage {
   work_steps: WorkStep[];
   citations: Citation[];
   tool_calls: ToolCall[];
+  /** Ordered work-chain events; absent on legacy rows. */
+  events?: WorkChainEvent[];
 }
 
 /** Normalized page box, [x1, y1, x2, y2], from the OCR page record. */
@@ -119,12 +121,21 @@ export interface ToolCall {
   status: "running" | "done" | "failed";
 }
 
+/** One ordered work-chain event: a reasoning segment or a tool call. */
+export interface WorkChainEvent {
+  kind: "reasoning" | "tool_call";
+  reasoning?: string | null;
+  tool_call?: ToolCall | null;
+}
+
 /** Presentation state the assistant turn carries beside its stored content. */
 export interface AssistantMeta {
   work_steps: WorkStep[];
   reasoning: string;
   citations: Citation[];
   tool_calls: ToolCall[];
+  /** Ordered work-chain events; absent on preview and legacy turns. */
+  events?: WorkChainEvent[];
   policy_state: PolicyState;
 }
 

@@ -8,7 +8,6 @@ import {
   QuoteIcon,
   ScaleIcon,
   SearchIcon,
-  TerminalIcon,
   XCircleIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -26,7 +25,12 @@ import {
   TraceTitle,
 } from "@/components/ui/trace";
 import { format, useT } from "@/lib/i18n";
-import type { PolicyState, ToolCall, WorkStep, WorkStepName } from "@/lib/types";
+import type {
+  PolicyState,
+  WorkChainEvent,
+  WorkStep,
+  WorkStepName,
+} from "@/lib/types";
 
 const STEP_ICONS: Record<
   WorkStepName,
@@ -69,18 +73,19 @@ function lineStatus(status: WorkStep["status"]) {
 export function WorkChain({
   steps,
   policy,
-  toolCalls,
+  events,
 }: {
   steps: WorkStep[];
   policy: PolicyState;
-  toolCalls: ToolCall[];
+  events: WorkChainEvent[];
 }) {
   const t = useT();
   const done = steps.filter((step) => step.status === "done").length;
+  const toolCallCount = events.filter((event) => event.kind === "tool_call").length;
   const summary =
     steps.length > 0
       ? format(t.chat.workChainSummary, { done, total: steps.length })
-      : format(t.chat.toolCallsSummary, { count: toolCalls.length });
+      : format(t.chat.toolCallsSummary, { count: toolCallCount });
 
   return (
     <Trace role="group" aria-label={t.a11y.workChain}>
@@ -135,18 +140,37 @@ export function WorkChain({
               );
             })}
           </ul>
-          {toolCalls.length > 0 ? (
-            <div className="mt-3 space-y-2 border-t border-border pt-3">
-              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                <TerminalIcon className="size-3" />
-                {t.chat.toolCalls}
-              </p>
-              {toolCalls.map((call, index) => (
-                <ToolCallTrace
-                  key={call.tool_call_id ?? `${call.name}:${index}`}
-                  call={call}
-                />
-              ))}
+          {events.length > 0 ? (
+            <div className="mt-3 space-y-3 border-t border-border pt-3">
+              {events.map((event, index) => {
+                if (event.kind === "reasoning") {
+                  if (!event.reasoning) {
+                    return null;
+                  }
+                  return (
+                    <div key={`reasoning:${index}`} className="space-y-1">
+                      <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                        <BrainIcon className="size-3" />
+                        {t.chat.reasoning}
+                      </p>
+                      <p className="max-h-64 overflow-auto whitespace-pre-wrap text-sm text-muted-foreground">
+                        {event.reasoning}
+                      </p>
+                    </div>
+                  );
+                }
+                if (!event.tool_call) {
+                  return null;
+                }
+                return (
+                  <ToolCallTrace
+                    key={
+                      event.tool_call.tool_call_id ?? `tool:${index}`
+                    }
+                    call={event.tool_call}
+                  />
+                );
+              })}
             </div>
           ) : null}
         </TraceCollapsibleContent>

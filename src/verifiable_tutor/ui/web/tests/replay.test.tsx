@@ -139,7 +139,7 @@ describe("replay", () => {
     // The recorded turn carries its own trace: work chain and reasoning.
     expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Reasoning" }));
+    await user.click(screen.getByRole("button", { name: /Work chain/ }));
     expect(await screen.findByText("Check the row maximum.")).toBeInTheDocument();
     // The stored answer text is not shown; only the replays frames fill the turn.
     expect(screen.queryByText(STORED_ANSWER)).not.toBeInTheDocument();

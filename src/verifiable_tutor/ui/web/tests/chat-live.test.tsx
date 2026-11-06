@@ -194,6 +194,9 @@ const TOOL_STREAM_FRAMES = [
   { type: "start", messageId: "streamed-tool-message" },
   { type: "data-step", data: { step: "generate", status: "started" } },
   { type: "start-step" },
+  { type: "reasoning-start", id: "r1" },
+  { type: "reasoning-delta", id: "r1", delta: "First, search the course." },
+  { type: "reasoning-end", id: "r1" },
   {
     type: "data-tool",
     data: {
@@ -633,15 +636,11 @@ describe("live chat", () => {
       screen.getByRole("button", { name: "Open page 12" }),
     ).toBeInTheDocument();
 
-    // The thinking region opens the persisted reasoning text.
-    await user.click(screen.getByRole("button", { name: "Reasoning" }));
-    expect(await screen.findByText(STORED_REASONING)).toBeInTheDocument();
-
-    // The work chain expands to the persisted steps and their detail.
+    // The work chain expands to the persisted steps, reasoning, and tool calls.
     await user.click(screen.getByRole("button", { name: /Work chain/ }));
     expect(await screen.findByText(STORED_STEP_DETAIL)).toBeInTheDocument();
     expect(screen.getByText(/post-deadline\.hint-only/)).toBeInTheDocument();
-    // Tool calls live inside the work chain, not at the end of the bubble.
+    expect(await screen.findByText(STORED_REASONING)).toBeInTheDocument();
     expect(screen.getByText("Tool call: course_search")).toBeInTheDocument();
   });
 
@@ -1082,8 +1081,14 @@ describe("live chat", () => {
     // The live tool call is inside the live work chain; the stored turn has its own.
     const workChains = screen.getAllByRole("button", { name: /Work chain/ });
     await user.click(workChains[workChains.length - 1]);
-    expect(await screen.findByText("Tool call: search_course")).toBeInTheDocument();
-    await user.click(screen.getByText("Tool call: search_course"));
+    const reasoning = await screen.findByText("First, search the course.");
+    const toolCall = await screen.findByText("Tool call: search_course");
+    // The reasoning segment is rendered before the tool call it precedes.
+    expect(
+      reasoning.compareDocumentPosition(toolCall) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await user.click(toolCall);
     expect(await screen.findByText("Arguments")).toBeInTheDocument();
     expect(await screen.findByText("1 course chunks")).toBeInTheDocument();
     expect(await screen.findByText("Duration 42 ms")).toBeInTheDocument();

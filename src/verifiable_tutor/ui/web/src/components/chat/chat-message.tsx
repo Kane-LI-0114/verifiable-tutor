@@ -8,7 +8,6 @@ import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
 import { Markdown } from "@/components/ai/markdown";
 import { CitationRow } from "@/components/chat/citation-row";
 import { PageError } from "@/components/layout/page-states";
-import { ReasoningTrace } from "@/components/chat/reasoning-trace";
 import { SourcesList } from "@/components/chat/sources";
 import { WorkChain } from "@/components/chat/work-chain";
 import { useT } from "@/lib/i18n";
@@ -121,14 +120,14 @@ export function ChatMessageView({
   return (
     <Message>
       <MessageContent>
-        {meta && (meta.work_steps.length > 0 || meta.tool_calls.length > 0) ? (
+        {meta &&
+        (meta.work_steps.length > 0 || (meta.events ?? []).length > 0) ? (
           <WorkChain
             steps={meta.work_steps}
             policy={meta.policy_state}
-            toolCalls={meta.tool_calls}
+            events={meta.events ?? []}
           />
         ) : null}
-        {meta?.reasoning ? <ReasoningTrace reasoning={meta.reasoning} /> : null}
         {failed ? (
           <PageError
             title={t.chat.errorTitle}

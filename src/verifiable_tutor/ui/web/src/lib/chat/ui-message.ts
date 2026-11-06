@@ -6,6 +6,7 @@ import type {
   ConversationTurn,
   PolicyState,
   ToolCall,
+  WorkChainEvent,
   WorkStep,
   WorkStepName,
   WorkStepStatus,
@@ -98,6 +99,20 @@ function workSteps(parts: TutorPart[]): WorkStep[] {
   return steps;
 }
 
+export function toToolCall(data: ToolCallData): ToolCall {
+  return {
+    tool_call_id: data.tool_call_id,
+    name: data.name,
+    arguments: data.arguments,
+    result: data.result,
+    duration_ms: data.duration_ms ?? undefined,
+    command: [],
+    exit_code: null,
+    output: typeof data.output === "string" ? data.output : "",
+    status: data.status,
+  };
+}
+
 function toolCalls(parts: TutorPart[]): ToolCall[] {
   const calls = new Map<string, ToolCall>();
   for (const part of parts) {
@@ -110,19 +125,56 @@ function toolCalls(parts: TutorPart[]): ToolCall[] {
     if (existing && existing.status !== "running" && data.status === "running") {
       continue;
     }
-    calls.set(key, {
-      tool_call_id: data.tool_call_id,
-      name: data.name,
-      arguments: data.arguments,
-      result: data.result,
-      duration_ms: data.duration_ms ?? undefined,
-      command: [],
-      exit_code: null,
-      output: typeof data.output === "string" ? data.output : "",
-      status: data.status,
-    });
+    calls.set(key, toToolCall(data));
   }
   return [...calls.values()];
+}
+
+/** Build the ordered work chain from live frames: reasoning, then tool calls. */
+function workChainEvents(parts: TutorPart[]): WorkChainEvent[] {
+  const events: WorkChainEvent[] = [];
+  const toolIndex = new Map<string, number>();
+  let reasoning = "";
+  const flushReasoning = () => {
+    if (reasoning.trim().length === 0) {
+      return;
+    }
+    events.push({ kind: "reasoning", reasoning });
+    reasoning = "";
+  };
+  for (const part of parts) {
+    if (part.type === "reasoning") {
+      reasoning += part.text;
+      continue;
+    }
+    if (part.type !== "data-tool") {
+      continue;
+    }
+    const data = part.data as ToolCallData;
+    flushReasoning();
+    const key = data.tool_call_id ?? `${data.name}:${events.length}`;
+    const call = toToolCall(data);
+    const existing = toolIndex.get(key);
+    if (existing === undefined) {
+      toolIndex.set(key, events.length);
+      events.push({ kind: "tool_call", tool_call: call });
+    } else {
+      events[existing] = { kind: "tool_call", tool_call: call };
+    }
+  }
+  flushReasoning();
+  return events;
+}
+
+function legacyEvents(reasoning: string, calls: ToolCall[]): WorkChainEvent[] {
+  const events: WorkChainEvent[] = [];
+  if (reasoning.length > 0) {
+    events.push({ kind: "reasoning", reasoning });
+  }
+  for (const call of calls) {
+    events.push({ kind: "tool_call", tool_call: call });
+  }
+  return events;
 }
 
 function reasoningText(parts: TutorPart[]): string {
@@ -139,11 +191,17 @@ function reasoningText(parts: TutorPart[]): string {
  */
 function storedMeta(stored: ChatMessage): AssistantMeta | undefined {
   const reasoning = stored.reasoning ?? "";
+  const storedEvents = stored.events ?? [];
+  const events =
+    storedEvents.length > 0
+      ? storedEvents
+      : legacyEvents(reasoning, stored.tool_calls);
   if (
     stored.work_steps.length === 0 &&
     reasoning.length === 0 &&
     stored.citations.length === 0 &&
-    stored.tool_calls.length === 0
+    stored.tool_calls.length === 0 &&
+    events.length === 0
   ) {
     return undefined;
   }
@@ -152,6 +210,7 @@ function storedMeta(stored: ChatMessage): AssistantMeta | undefined {
     reasoning,
     citations: stored.citations,
     tool_calls: stored.tool_calls,
+    events,
     policy_state:
       stored.work_steps.find((step) => step.policy)?.policy ?? "active",
   };
@@ -188,6 +247,7 @@ export function toConversationTurn(
       work_steps: stored?.work_steps ?? [],
       citations: stored?.citations ?? [],
       tool_calls: stored?.tool_calls ?? [],
+      events: stored?.events ?? [],
     },
   };
   if (role === "assistant") {
@@ -200,12 +260,14 @@ export function toConversationTurn(
       const steps = workSteps(message.parts);
       const reasoning = reasoningText(message.parts);
       const calls = toolCalls(message.parts);
-      if (steps.length > 0 || reasoning.length > 0 || calls.length > 0) {
+      const events = workChainEvents(message.parts);
+      if (steps.length > 0 || events.length > 0) {
         turn.meta = {
           work_steps: steps,
           reasoning,
           citations: [],
           tool_calls: calls,
+          events,
           policy_state: steps.find((step) => step.policy)?.policy ?? "active",
         };
       }

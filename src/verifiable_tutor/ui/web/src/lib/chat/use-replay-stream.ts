@@ -3,10 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 import { sessionsApi } from "@/lib/api/sessions";
 import { useSession } from "@/lib/auth/session";
 import type { Messages } from "@/lib/i18n/en";
-import type { AssistantMeta, ConversationTurn } from "@/lib/types";
+import type { AssistantMeta, ConversationTurn, ToolCall } from "@/lib/types";
 
 import { toChunkStream } from "./stream";
-import type { WorkStepData } from "./ui-message";
+import { toToolCall, type ToolCallData, type WorkStepData } from "./ui-message";
 
 export type ReplayStatus = "loading" | "streaming" | "done" | "error";
 
@@ -22,7 +22,7 @@ interface ReplayFrame {
   type: string;
   messageId?: string;
   delta?: string;
-  data?: WorkStepData;
+  data?: WorkStepData | ToolCallData;
   errorText?: string;
 }
 
@@ -32,6 +32,7 @@ function emptyMeta(): AssistantMeta {
     reasoning: "",
     citations: [],
     tool_calls: [],
+    events: [],
     policy_state: "active",
   };
 }
@@ -110,14 +111,22 @@ function applyFrame(
   );
   const turn = turns[index];
   const meta = turn.meta ?? emptyMeta();
+  meta.events = meta.events ?? [];
   turn.meta = meta;
 
   if (frame.type === "text-delta") {
     turn.message = { ...turn.message, content: turn.message.content + (frame.delta ?? "") };
   } else if (frame.type === "reasoning-delta") {
-    meta.reasoning = (meta.reasoning ?? "") + (frame.delta ?? "");
+    const delta = frame.delta ?? "";
+    meta.reasoning = (meta.reasoning ?? "") + delta;
+    const last = meta.events[meta.events.length - 1];
+    if (last?.kind === "reasoning") {
+      last.reasoning = `${last.reasoning ?? ""}${delta}`;
+    } else {
+      meta.events.push({ kind: "reasoning", reasoning: delta });
+    }
   } else if (frame.type === "data-step" && frame.data) {
-    const data = frame.data;
+    const data = frame.data as WorkStepData;
     const steps = meta.work_steps.filter((step) => step.step !== data.step);
     steps.push({
       step: data.step,
@@ -128,6 +137,20 @@ function applyFrame(
       rule_id: data.rule_id,
     });
     meta.work_steps = steps;
+  } else if (frame.type === "data-tool" && frame.data) {
+    const data = frame.data as ToolCallData;
+    const call: ToolCall = toToolCall(data);
+    const key = call.tool_call_id ?? `${call.name}:${meta.events.length}`;
+    const existing = meta.events.findIndex(
+      (event) =>
+        event.kind === "tool_call" &&
+        (event.tool_call?.tool_call_id ?? `${event.tool_call?.name}:${key}`) === key,
+    );
+    if (existing === -1) {
+      meta.events.push({ kind: "tool_call", tool_call: call });
+    } else {
+      meta.events[existing] = { kind: "tool_call", tool_call: call };
+    }
   } else if (frame.type === "error") {
     turn.message = { ...turn.message, content: "" };
     return { ...state, turns, status: "error" };
