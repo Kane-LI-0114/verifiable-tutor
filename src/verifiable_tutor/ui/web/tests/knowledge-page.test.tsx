@@ -139,8 +139,8 @@ describe("knowledge browser", () => {
     ]);
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    expect(screen.getAllByRole("menuitemradio")).toHaveLength(2);
-    await user.click(screen.getByRole("menuitemradio", { name: "Sort by name" }));
+    expect(screen.getAllByRole("menuitem")).toHaveLength(2);
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
 
     await waitFor(() => {
       expect(tileIds()).toEqual([
@@ -150,7 +150,7 @@ describe("knowledge browser", () => {
     });
   });
 
-  it("restores the server order with the default sort item", async () => {
+  it("toggles the name direction when the same sort item is clicked twice", async () => {
     const unsorted: StubRoute = {
       method: "GET",
       path: "/api/knowledge/documents",
@@ -163,7 +163,7 @@ describe("knowledge browser", () => {
     await screen.findByTestId("file-tile-Tutorial_2");
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    await user.click(screen.getByRole("menuitemradio", { name: "Sort by name" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
     await waitFor(() => {
       expect(tileIds()).toEqual([
         "file-tile-ACS_Lecture_1_2026F",
@@ -172,7 +172,7 @@ describe("knowledge browser", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    await user.click(screen.getByRole("menuitemradio", { name: "Default order" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
     await waitFor(() => {
       expect(tileIds()).toEqual([
         "file-tile-Tutorial_2",
@@ -181,7 +181,45 @@ describe("knowledge browser", () => {
     });
   });
 
-  it("keeps a delete action in the folder menu, disabled for a student", async () => {
+  it("sorts by created time and toggles newest and oldest on a second click", async () => {
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const serverOrder: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [older, newer], total: 2 }),
+    };
+    stub = createFetchStub(routes([serverOrder]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    expect(tileIds()).toEqual([
+      "file-tile-ACS_Lecture_1_2026F",
+      "file-tile-Tutorial_2",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by created time" }));
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-Tutorial_2",
+        "file-tile-ACS_Lecture_1_2026F",
+      ]);
+    });
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by created time" }));
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-ACS_Lecture_1_2026F",
+        "file-tile-Tutorial_2",
+      ]);
+    });
+  });
+
+  it("offers the folder delete action to a student", async () => {
     stub = createFetchStub(routes());
     const user = userEvent.setup();
 
@@ -193,13 +231,12 @@ describe("knowledge browser", () => {
     expect(
       screen.getByRole("menuitem", { name: "Move folder" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Delete folder" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
     expect(
-      screen.getByText("Only instructors can delete folders"),
-    ).toBeInTheDocument();
+      screen.getByRole("menuitem", { name: "Delete folder" }),
+    ).not.toHaveAttribute("aria-disabled", "true");
+    expect(
+      screen.queryByText("Only instructors can delete folders"),
+    ).not.toBeInTheDocument();
   });
 
   it("lets an instructor use the folder delete action", async () => {
@@ -266,7 +303,7 @@ describe("knowledge browser", () => {
     expect(
       within(footer).getByRole("button", { name: "Ask about this file" }),
     ).toBeInTheDocument();
-    expect(within(footer).getByText("Added")).toBeInTheDocument();
+    expect(within(footer).getByText("Created")).toBeInTheDocument();
   });
 
   it("keeps upload disabled and creates a folder from the new menu", async () => {
@@ -351,7 +388,7 @@ describe("knowledge browser", () => {
     ).toHaveAttribute("data-collapsed", "true");
   });
 
-  it("offers the delete action only to an instructor", async () => {
+  it("offers the file delete action to a student", async () => {
     stub = createFetchStub(routes());
     const user = userEvent.setup();
 
@@ -362,8 +399,8 @@ describe("knowledge browser", () => {
     await user.click(within(tile).getByRole("button", { name: "File actions" }));
 
     expect(
-      screen.queryByRole("menuitem", { name: "Delete file" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("menuitem", { name: "Delete file" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("menuitem", { name: "Move file" }),
     ).toBeInTheDocument();

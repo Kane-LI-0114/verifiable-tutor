@@ -1,4 +1,11 @@
-import { ArrowDownUpIcon, PlusIcon, SearchIcon } from "lucide-react";
+import {
+  ArrowDownIcon,
+  ArrowDownUpIcon,
+  ArrowUpIcon,
+  CheckIcon,
+  PlusIcon,
+  SearchIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -24,8 +31,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -42,7 +47,14 @@ const SEARCH_DEBOUNCE_MS = 200;
 const PANE_WIDTH_KEY = "vt.knowledge.pane.width";
 const PANE_COLLAPSED_KEY = "vt.knowledge.pane.collapsed";
 
-type SortOrder = "default" | "name";
+type SortKey = "name" | "created";
+type SortDirection = "asc" | "desc";
+interface SortState {
+  key: SortKey;
+  direction: SortDirection;
+}
+
+const SORT_KEYS: SortKey[] = ["created", "name"];
 
 /** One collator instead of one per comparison: construction dominates the cost. */
 const NAME_COLLATOR = new Intl.Collator(undefined, {
@@ -52,10 +64,30 @@ const NAME_COLLATOR = new Intl.Collator(undefined, {
 const NO_DOCUMENTS: KnowledgeDocument[] = [];
 const NO_HITS: SearchDocument[] = [];
 
+function compareNames(left: string, right: string): number {
+  return NAME_COLLATOR.compare(left, right);
+}
+
+/** ISO-8601 UTC stamps compare lexicographically in time order. */
+function compareTimes(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 /** Sort a copy so the order returned by the API is never mutated. */
-function sortByName<T>(items: T[], nameOf: (item: T) => string): T[] {
-  return [...items].sort((left, right) =>
-    NAME_COLLATOR.compare(nameOf(left), nameOf(right)),
+function sortKnowledgeItems<T>(
+  items: T[],
+  sort: SortState | null,
+  nameOf: (item: T) => string,
+  createdAtOf: (item: T) => string,
+): T[] {
+  if (sort === null) {
+    return items;
+  }
+  const compare = sort.key === "name" ? compareNames : compareTimes;
+  const valueOf = sort.key === "name" ? nameOf : createdAtOf;
+  const factor = sort.direction === "asc" ? 1 : -1;
+  return [...items].sort(
+    (left, right) => factor * compare(valueOf(left), valueOf(right)),
   );
 }
 
@@ -120,7 +152,7 @@ export function KnowledgePage() {
   const { user } = useSession();
   const [params, setParams] = useSearchParams();
   const folderId = params.get("folder");
-  const canDelete = user?.role === "instructor";
+  const canDelete = user !== null;
 
   const [folders, setFolders] = useState<KnowledgeFolder[]>(() =>
     preview ? previewFolders() : [],
@@ -133,7 +165,7 @@ export function KnowledgePage() {
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOrder>("default");
+  const [sort, setSort] = useState<SortState | null>(null);
   const [hits, setHits] = useState<SearchDocument[] | null>(null);
   const [dragging, setDragging] = useState(false);
   const [dropNotice, setDropNotice] = useState(false);
@@ -144,6 +176,13 @@ export function KnowledgePage() {
   const isNarrow = useMediaQuery("(max-width: 1023px)");
 
   const reload = useCallback(() => setReloadToken((value) => value + 1), []);
+  const chooseSort = useCallback((key: SortKey) => {
+    setSort((current) =>
+      current === null || current.key !== key
+        ? { key, direction: key === "created" ? "desc" : "asc" }
+        : { key, direction: current.direction === "asc" ? "desc" : "asc" },
+    );
+  }, []);
 
   useEffect(() => {
     if (preview) {
@@ -311,24 +350,33 @@ export function KnowledgePage() {
   );
   const sortedFolders = useMemo(
     () =>
-      sortBy === "name"
-        ? sortByName(childFolders, (folder) => folder.name)
-        : childFolders,
-    [childFolders, sortBy],
+      sortKnowledgeItems(
+        childFolders,
+        sort,
+        (folder) => folder.name,
+        (folder) => folder.created_at,
+      ),
+    [childFolders, sort],
   );
   const sortedDocuments = useMemo(
     () =>
-      sortBy === "name"
-        ? sortByName(visibleDocuments, (document) => document.title)
-        : visibleDocuments,
-    [sortBy, visibleDocuments],
+      sortKnowledgeItems(
+        visibleDocuments,
+        sort,
+        (document) => document.title,
+        (document) => document.created_at,
+      ),
+    [sort, visibleDocuments],
   );
   const sortedHits = useMemo(
     () =>
-      sortBy === "name"
-        ? sortByName(hits ?? NO_HITS, (document) => document.title)
-        : (hits ?? NO_HITS),
-    [hits, sortBy],
+      sortKnowledgeItems(
+        hits ?? NO_HITS,
+        sort,
+        (document) => document.title,
+        (document) => document.created_at,
+      ),
+    [hits, sort],
   );
   const showEmpty =
     !loading &&
@@ -416,19 +464,40 @@ export function KnowledgePage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuRadioGroup
-                value={sortBy}
-                onValueChange={(value) =>
-                  setSortBy(value === "name" ? "name" : "default")
-                }
-              >
-                <DropdownMenuRadioItem value="default">
-                  {t.knowledge.sortByDefault}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name">
-                  {t.knowledge.sortByName}
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+              {SORT_KEYS.map((key) => {
+                const activeSort =
+                  sort !== null && sort.key === key ? sort : null;
+                const label =
+                  key === "created"
+                    ? t.knowledge.sortByCreated
+                    : t.knowledge.sortByName;
+                const directionLabel = activeSort
+                  ? activeSort.direction === "asc"
+                    ? t.knowledge.sortAscending
+                    : t.knowledge.sortDescending
+                  : undefined;
+                return (
+                  <DropdownMenuItem
+                    key={key}
+                    onSelect={() => chooseSort(key)}
+                    title={directionLabel}
+                  >
+                    {activeSort ? (
+                      <CheckIcon />
+                    ) : (
+                      <span aria-hidden="true" className="size-4" />
+                    )}
+                    <span>{label}</span>
+                    {activeSort ? (
+                      activeSort.direction === "asc" ? (
+                        <ArrowUpIcon className="ml-auto" />
+                      ) : (
+                        <ArrowDownIcon className="ml-auto" />
+                      )
+                    ) : null}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

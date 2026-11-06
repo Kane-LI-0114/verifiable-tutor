@@ -45,13 +45,20 @@ def _fts_query(query: str, *, join: str = " ") -> str:
     )
 
 
+def _without_delete_stamp(row: sqlite3.Row) -> dict[str, Any]:
+    """Keep the soft-delete stamp internal to the store."""
+
+    values = dict(row)
+    values.pop("deleted_at", None)
+    return values
+
+
 def _row(row: sqlite3.Row | None) -> dict[str, Any] | None:
-    return dict(row) if row is not None else None
+    return _without_delete_stamp(row) if row is not None else None
 
 
 def _document_dict(row: sqlite3.Row) -> dict[str, Any]:
-    values = dict(row)
-    return values
+    return _without_delete_stamp(row)
 
 
 def _chunk_dict(row: sqlite3.Row) -> dict[str, Any]:
@@ -83,14 +90,29 @@ class KnowledgeStore:
         with self._storage.connect() as connection:
             position = connection.execute(
                 "SELECT COALESCE(MAX(position), -1) + 1 FROM kb_folders"
-                " WHERE parent_id IS ?",
+                " WHERE parent_id IS ? AND deleted_at IS NULL",
                 (parent_id,),
             ).fetchone()[0]
-            connection.execute(
-                "INSERT INTO kb_folders (id, name, parent_id, position, created_at)"
-                " VALUES (?, ?, ?, ?, ?)",
-                (folder_id, folder_name, parent_id, position, created_at),
-            )
+            # A retired row still owns the unique (parent_id, name) slot, so
+            # reuse it instead of failing on a name the user cannot see.
+            retired = connection.execute(
+                "SELECT id FROM kb_folders WHERE parent_id IS ? AND name = ?"
+                " AND deleted_at IS NOT NULL",
+                (parent_id, folder_name),
+            ).fetchone()
+            if retired is not None:
+                folder_id = retired["id"]
+                connection.execute(
+                    "UPDATE kb_folders SET deleted_at = NULL, created_at = ?,"
+                    " position = ? WHERE id = ?",
+                    (created_at, position, folder_id),
+                )
+            else:
+                connection.execute(
+                    "INSERT INTO kb_folders (id, name, parent_id, position, created_at)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (folder_id, folder_name, parent_id, position, created_at),
+                )
         created = self.get_folder(folder_id)
         assert created is not None
         return created
@@ -98,26 +120,28 @@ class KnowledgeStore:
     def get_folder(self, folder_id: str) -> dict[str, Any] | None:
         with self._storage.connect() as connection:
             row = connection.execute(
-                "SELECT * FROM kb_folders WHERE id = ?", (folder_id,)
+                "SELECT * FROM kb_folders WHERE id = ? AND deleted_at IS NULL",
+                (folder_id,),
             ).fetchone()
         return _row(row)
 
     def list_folders(self) -> list[dict[str, Any]]:
         with self._storage.connect() as connection:
             rows = connection.execute(
-                "SELECT * FROM kb_folders ORDER BY parent_id IS NOT NULL,"
-                " position, name"
+                "SELECT * FROM kb_folders WHERE deleted_at IS NULL"
+                " ORDER BY parent_id IS NOT NULL, position, name"
             ).fetchall()
             counts = {
                 row[0]: row[1]
                 for row in connection.execute(
                     "SELECT folder_id, COUNT(*) FROM kb_documents"
-                    " WHERE folder_id IS NOT NULL GROUP BY folder_id"
+                    " WHERE folder_id IS NOT NULL AND deleted_at IS NULL"
+                    " GROUP BY folder_id"
                 )
             }
         folders = []
         for row in rows:
-            values = dict(row)
+            values = _without_delete_stamp(row)
             values["file_count"] = counts.get(values["id"], 0)
             folders.append(values)
         return folders
@@ -126,9 +150,10 @@ class KnowledgeStore:
         with self._storage.connect() as connection:
             rows = connection.execute(
                 "WITH RECURSIVE tree(id) AS ("
-                "  SELECT id FROM kb_folders WHERE id = ?"
+                "  SELECT id FROM kb_folders WHERE id = ? AND deleted_at IS NULL"
                 "  UNION ALL"
                 "  SELECT f.id FROM kb_folders f JOIN tree t ON f.parent_id = t.id"
+                "  WHERE f.deleted_at IS NULL"
                 ") SELECT id FROM tree",
                 (folder_id,),
             ).fetchall()
@@ -160,24 +185,37 @@ class KnowledgeStore:
         assert updated is not None
         return updated
 
-    def delete_folder(self, folder_id: str) -> int:
+    def delete_folder(self, folder_id: str, *, deleted_at: str) -> int:
+        """Mark a folder subtree and its documents as deleted, keeping every row."""
+
         ids = self.folder_descendants(folder_id)
         if not ids:
             return 0
         placeholders = ",".join("?" for _ in ids)
         with self._storage.connect() as connection:
-            removed = connection.execute(
-                f"SELECT COUNT(*) FROM kb_documents WHERE folder_id IN ({placeholders})",
+            hidden = connection.execute(
+                "SELECT COUNT(*) FROM kb_documents WHERE deleted_at IS NULL"
+                f" AND folder_id IN ({placeholders})",
                 ids,
             ).fetchone()[0]
-            connection.execute("DELETE FROM kb_folders WHERE id = ?", (folder_id,))
-        return int(removed)
+            connection.execute(
+                "UPDATE kb_documents SET deleted_at = ?, updated_at = ?"
+                f" WHERE deleted_at IS NULL AND folder_id IN ({placeholders})",
+                (deleted_at, deleted_at, *ids),
+            )
+            connection.execute(
+                "UPDATE kb_folders SET deleted_at = ?"
+                f" WHERE deleted_at IS NULL AND id IN ({placeholders})",
+                (deleted_at, *ids),
+            )
+        return int(hidden)
 
     # -- documents ---------------------------------------------------------
     def get_document(self, doc_id: str) -> dict[str, Any] | None:
         with self._storage.connect() as connection:
             row = connection.execute(
-                "SELECT * FROM kb_documents WHERE id = ?", (doc_id,)
+                "SELECT * FROM kb_documents WHERE id = ? AND deleted_at IS NULL",
+                (doc_id,),
             ).fetchone()
         return _document_dict(row) if row is not None else None
 
@@ -195,7 +233,11 @@ class KnowledgeStore:
         limit: int = 100,
         offset: int = 0,
     ) -> tuple[list[dict[str, Any]], int]:
-        where = "folder_id IS NULL" if folder_id is None else "folder_id = ?"
+        where = (
+            "folder_id IS NULL AND deleted_at IS NULL"
+            if folder_id is None
+            else "folder_id = ? AND deleted_at IS NULL"
+        )
         parameters: tuple[Any, ...] = () if folder_id is None else (folder_id,)
         with self._storage.connect() as connection:
             total = connection.execute(
@@ -211,7 +253,8 @@ class KnowledgeStore:
     def list_all_documents(self, *, limit: int = 1000) -> list[dict[str, Any]]:
         with self._storage.connect() as connection:
             rows = connection.execute(
-                "SELECT * FROM kb_documents ORDER BY created_at DESC, id LIMIT ?",
+                "SELECT * FROM kb_documents WHERE deleted_at IS NULL"
+                " ORDER BY created_at DESC, id LIMIT ?",
                 (limit,),
             ).fetchall()
         return [_document_dict(row) for row in rows]
@@ -225,7 +268,8 @@ class KnowledgeStore:
         placeholders = ",".join("?" for _ in ids)
         with self._storage.connect() as connection:
             rows = connection.execute(
-                f"SELECT * FROM kb_documents WHERE folder_id IN ({placeholders})",
+                "SELECT * FROM kb_documents WHERE deleted_at IS NULL"
+                f" AND folder_id IN ({placeholders})",
                 ids,
             ).fetchall()
         return [_document_dict(row) for row in rows]
@@ -271,6 +315,7 @@ class KnowledgeStore:
                 " :thumbnail_path, :summary, :summary_model, :summary_created_at,"
                 " :status, :status_detail, :indexed_at, :created_at, :updated_at)"
                 " ON CONFLICT(id) DO UPDATE SET"
+                " deleted_at = NULL,"
                 " folder_id = excluded.folder_id, title = excluded.title,"
                 " filename = excluded.filename, pdf_sha256 = excluded.pdf_sha256,"
                 " byte_size = excluded.byte_size, page_count = excluded.page_count,"
@@ -320,7 +365,8 @@ class KnowledgeStore:
             raise ValueError("folder not found")
         with self._storage.connect() as connection:
             connection.execute(
-                "UPDATE kb_documents SET folder_id = ? WHERE id = ?",
+                "UPDATE kb_documents SET folder_id = ?"
+                " WHERE id = ? AND deleted_at IS NULL",
                 (folder_id, doc_id),
             )
 
@@ -336,7 +382,8 @@ class KnowledgeStore:
         with self._storage.connect() as connection:
             connection.execute(
                 "UPDATE kb_documents SET summary = ?, summary_model = ?,"
-                " summary_created_at = ?, updated_at = ? WHERE id = ?",
+                " summary_created_at = ?, updated_at = ?"
+                " WHERE id = ? AND deleted_at IS NULL",
                 (summary, model, created_at, updated_at, doc_id),
             )
 
@@ -353,16 +400,23 @@ class KnowledgeStore:
         with self._storage.connect() as connection:
             connection.execute(
                 "UPDATE kb_documents SET status = ?, status_detail = ?,"
-                " updated_at = COALESCE(?, updated_at) WHERE id = ?",
+                " updated_at = COALESCE(?, updated_at)"
+                " WHERE id = ? AND deleted_at IS NULL",
                 (status, detail, updated_at, doc_id),
             )
 
-    def delete_document(self, doc_id: str) -> dict[str, Any] | None:
+    def delete_document(self, doc_id: str, *, deleted_at: str) -> dict[str, Any] | None:
+        """Mark one document as deleted, keeping its row, chunks, and vectors."""
+
         document = self.get_document(doc_id)
         if document is None:
             return None
         with self._storage.connect() as connection:
-            connection.execute("DELETE FROM kb_documents WHERE id = ?", (doc_id,))
+            connection.execute(
+                "UPDATE kb_documents SET deleted_at = ?, updated_at = ?"
+                " WHERE id = ? AND deleted_at IS NULL",
+                (deleted_at, deleted_at, doc_id),
+            )
         return document
 
     # -- chunks ------------------------------------------------------------
@@ -415,6 +469,8 @@ class KnowledgeStore:
                     "SELECT c.*, bm25(kb_chunks_fts) AS score"
                     " FROM kb_chunks_fts"
                     " JOIN kb_chunks c ON c.rowid = kb_chunks_fts.rowid"
+                    " JOIN kb_documents d ON d.id = c.doc_id"
+                    " AND d.deleted_at IS NULL"
                     f" WHERE kb_chunks_fts MATCH ?{filters}"
                     " ORDER BY score, c.id LIMIT ?",
                     parameters,
@@ -473,7 +529,9 @@ class KnowledgeStore:
 
         with self._storage.connect() as connection:
             rows = connection.execute(
-                "SELECT id, embedding FROM kb_chunks"
-                " WHERE embedding IS NOT NULL ORDER BY rowid"
+                "SELECT c.id, c.embedding FROM kb_chunks c"
+                " JOIN kb_documents d ON d.id = c.doc_id"
+                " AND d.deleted_at IS NULL"
+                " WHERE c.embedding IS NOT NULL ORDER BY c.rowid"
             ).fetchall()
         return [row[0] for row in rows], [bytes(row[1]) for row in rows]

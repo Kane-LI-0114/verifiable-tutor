@@ -84,7 +84,7 @@ def test_initialize_creates_the_knowledge_tables_and_bumps_the_version(tmp_path)
         "kb_chunks_fts",
         "kb_index_state",
     } <= names
-    assert version == SCHEMA_VERSION == 5
+    assert version == SCHEMA_VERSION == 6
 
 
 def test_a_stored_document_can_be_read_back_with_its_chunks(tmp_path) -> None:
@@ -140,7 +140,7 @@ def test_storing_the_same_document_twice_replaces_its_chunks_and_search_rows(
     assert len(store.search_chunks("gamma", limit=5)) == 1
 
 
-def test_deleting_a_folder_removes_its_documents_and_chunks(tmp_path) -> None:
+def test_soft_deleting_a_folder_hides_rows_but_keeps_the_chunks(tmp_path) -> None:
     store = make_store(tmp_path)
     folder = store.create_folder(name="Lectures", parent_id=None, created_at=STAMP)
     store.upsert_document(
@@ -148,12 +148,25 @@ def test_deleting_a_folder_removes_its_documents_and_chunks(tmp_path) -> None:
     )
     store.set_document_folder("ACS_Lecture_1_2026F", folder["id"])
 
-    removed = store.delete_folder(folder["id"])
+    hidden = store.delete_folder(folder["id"], deleted_at=STAMP)
 
-    assert removed == 1
+    assert hidden == 1
     assert store.get_document("ACS_Lecture_1_2026F") is None
-    assert store.search_chunks("dense", limit=5) == []
     assert store.get_folder(folder["id"]) is None
+    assert store.search_chunks("dense", limit=5) == []
+    assert len(store.list_chunks("ACS_Lecture_1_2026F")) == 1
+
+
+def test_soft_deleting_a_document_keeps_its_row_and_chunks(tmp_path) -> None:
+    store = make_store(tmp_path)
+    store.upsert_document(document(), [chunk("ACS_Lecture_1_2026F", 1, 0, "kept text")])
+
+    deleted = store.delete_document("ACS_Lecture_1_2026F", deleted_at=STAMP)
+
+    assert deleted["id"] == "ACS_Lecture_1_2026F"
+    assert store.get_document("ACS_Lecture_1_2026F") is None
+    assert store.list_documents()[0] == []
+    assert len(store.list_chunks("ACS_Lecture_1_2026F")) == 1
 
 
 def test_search_returns_only_chunks_that_contain_the_term(tmp_path) -> None:

@@ -138,16 +138,8 @@ class KnowledgeBrowser:
     def delete_folder(self, folder_id: str) -> dict[str, int]:
         if self._store.get_folder(folder_id) is None:
             raise _Missing("folder not found")
-        documents = self._documents_under(folder_id)
-        removed = self._store.delete_folder(folder_id)
-        for document in documents:
-            self._unlink_document(document)
-        return {"deleted_documents": removed}
-
-    def _documents_under(self, folder_id: str) -> list[dict[str, Any]]:
-        return self._store.list_documents_in_folders(
-            self._store.folder_descendants(folder_id)
-        )
+        hidden = self._store.delete_folder(folder_id, deleted_at=self._stamp())
+        return {"deleted_documents": hidden}
 
     # -- documents ---------------------------------------------------------
     def list_documents(
@@ -174,10 +166,9 @@ class KnowledgeBrowser:
         return self.document(doc_id)
 
     def delete_document(self, doc_id: str) -> dict[str, Any]:
-        document = self._store.delete_document(doc_id)
+        document = self._store.delete_document(doc_id, deleted_at=self._stamp())
         if document is None:
             raise _Missing("document not found")
-        self._unlink_document(document)
         return self._public(document)
 
     def pdf_path(self, doc_id: str) -> Path:
@@ -284,25 +275,6 @@ class KnowledgeBrowser:
             "pdf_url": f"/api/knowledge/documents/{document['id']}/file",
             "thumbnail_url": f"/api/corpus/{document['id']}/pages/1.webp",
         }
-
-    def _unlink_document(self, document: Mapping[str, Any]) -> None:
-        candidates: list[Path] = []
-        for key in ("pdf_path", "thumbnail_path"):
-            value = document.get(key)
-            if value:
-                candidates.append(Path(value))
-        images = self._settings.corpus_images_dir / f"{document['id']}.p*.webp"
-        try:
-            candidates.extend(images.parent.glob(images.name))
-        except OSError:
-            pass
-        for path in candidates:
-            try:
-                path.unlink()
-            except FileNotFoundError:
-                continue
-            except OSError:
-                continue
 
     def _stamp(self) -> str:
         moment = self._clock()

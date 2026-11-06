@@ -316,6 +316,7 @@ Folder tree the knowledge-base browser shows. A document belongs to one folder o
 | `parent_id` | TEXT | yes | FK | Parent folder; null for a root folder. |
 | `position` | INTEGER | no | - | Sort order among the siblings of one parent. |
 | `created_at` | TEXT | no | - | ISO-8601 UTC creation time. |
+| `deleted_at` | TEXT | yes | - | ISO-8601 UTC soft-delete stamp; null while the folder is visible. |
 
 Foreign keys:
 
@@ -348,8 +349,9 @@ One row per course document: the source PDF, its metadata, the Qwen AI summary, 
 | `status` | TEXT | no | - | uploading, uploaded, upload_failed, processing, ready, or failed. |
 | `status_detail` | TEXT | yes | - | Failure reason or progress note shown in the tile title. |
 | `indexed_at` | TEXT | yes | - | ISO-8601 UTC time the chunks and vectors were stored. |
-| `created_at` | TEXT | no | - | ISO-8601 UTC ingestion time. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC creation time. |
 | `updated_at` | TEXT | no | - | ISO-8601 UTC time of the last metadata change. |
+| `deleted_at` | TEXT | yes | - | ISO-8601 UTC soft-delete stamp; null while the document is visible. |
 
 Checks:
 
@@ -423,7 +425,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 5`.
+- Schema version: `PRAGMA user_version = 6`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

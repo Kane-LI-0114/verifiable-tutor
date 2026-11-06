@@ -237,6 +237,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-K2 | Knowledge record content: each record carries `doc_id`, `page_no`, section, source block ids, summary, key terms, study questions, page citations, model id, prompt version, corpus hash, and job id | P0 | Every record validates against [knowledge-schema.md](knowledge-schema.md); a citation without a page reference is rejected |
 | FR-K3 | Knowledge-base use: students browse and search the cards; review outlines and self-tests use the records as context; every displayed citation still passes the span verifier | P0 | The demo builds a knowledge base, browses it, and produces one review outline from it; every outline citation verifies |
 | FR-K4 | Freshness and caching: a build is keyed by corpus hash, prompt version, and model id; unchanged inputs reuse the cached records | P1 | A second build with unchanged inputs makes no new TACC job; a changed prompt version triggers a rebuild |
+| FR-K5 | Knowledge-base organisation: a signed-in student creates, renames, moves, and deletes folders and files. Deletion is a soft delete that stamps `deleted_at`; the source PDF, chunks, and vectors stay on the server | P0 | A deleted file or folder disappears from browsing and search while its rows and mirror files remain in SQLite and `data/corpus/`; deleting a folder also hides the documents inside it; a retired folder name can be reused |
 
 ## 6. Non-functional requirements
 
@@ -251,7 +252,7 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | NFR-7 | Evidence integrity | 100 percent of displayed citations pass the deterministic verifier; abstain otherwise |
 | NFR-8 | Scale | Single-node, course-demo scale; no load or concurrency guarantees; multi-user correctness is tested, performance is not |
 | NFR-9 | Accessibility | Keyboard reachable controls and readable contrast in the main flows; full WCAG conformance is not claimed |
-| NFR-10 | Data lifecycle | Local SQLite and JSONL files; the instructor can delete a user's data; no retention guarantee |
+| NFR-10 | Data lifecycle | Local SQLite and JSONL files; the instructor can delete a user's data; knowledge-base deletions are soft deletions that keep the source files, chunks, and vectors; no retention guarantee |
 | NFR-11 | Self-test execution | Code answers and reference tests run in the TACC job container under the team account; the demo has two to three trusted users, so no hostile-user isolation is claimed; queue and run latency are shown to the user and recorded in the report |
 | NFR-12 | TACC knowledge-base job | Every build records job id, queue time, cold-start time, build time, chunk coverage, schema validity, and success or failure; a full corpus build uses sequential shards that fit the one-hour cap; the demo pre-builds or starts the job early |
 

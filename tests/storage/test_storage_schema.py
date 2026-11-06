@@ -16,8 +16,9 @@ from verifiable_tutor.storage import Storage
 # that stores turn metadata, ADR-0015 bumps it to 2 for the knowledge tables,
 # ADR-0016 bumps it to 3 for the provider-call columns on tool_calls,
 # ADR-0017 bumps it to 4 for the ordered work-chain events, and ADR-0019
-# bumps it to 5 for the step tag on each event.
-SCHEMA_VERSION = 5
+# bumps it to 5 for the step tag on each event. Version 6 adds the soft-delete
+# stamps to the knowledge tables.
+SCHEMA_VERSION = 6
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (

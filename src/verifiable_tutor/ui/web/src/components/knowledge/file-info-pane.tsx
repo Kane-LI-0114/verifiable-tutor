@@ -138,7 +138,7 @@ export function FileInfoPane({
       >
         <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
           <div>
-            <dt className="text-muted-foreground">{t.knowledge.added}</dt>
+            <dt className="text-muted-foreground">{t.knowledge.created}</dt>
             <dd>{formatDate(document.created_at)}</dd>
           </div>
           <div>

@@ -298,8 +298,10 @@ export const en = {
     root: "All files",
     newMenu: "New",
     sort: "Sort",
-    sortByDefault: "Default order",
+    sortByCreated: "Sort by created time",
     sortByName: "Sort by name",
+    sortAscending: "Ascending",
+    sortDescending: "Descending",
     uploadFile: "Upload file",
     uploadDisabled:
       "Uploads stay off until the TACC parse and embedding chain is verified end to end.",
@@ -315,7 +317,6 @@ export const en = {
     moveFolder: "Move folder",
     deleteFile: "Delete file",
     deleteFolder: "Delete folder",
-    deleteFolderInstructorOnly: "Only instructors can delete folders",
     deleteFileBody: "This removes the file, its chunks, and the local copy.",
     deleteFolderBody:
       "This removes the folder and the {{count}} files inside it.",
@@ -336,7 +337,7 @@ export const en = {
     summary: "AI summary",
     summaryMissing: "The summary has not been generated yet.",
     summaryModel: "Written by {{model}}",
-    added: "Added",
+    created: "Created",
     sourceDate: "Source PDF",
     pages: "Pages",
     chunks: "Chunks",

@@ -124,6 +124,7 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">parent_id</TD><TD ALIGN="LEFT">FK</TD></TR>
       <TR><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">deleted_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
   kb_documents [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_documents</B></TD></TR>
@@ -145,6 +146,7 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">indexed_at</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">deleted_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
   kb_chunks [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>kb_chunks</B></TD></TR>

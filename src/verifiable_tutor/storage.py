@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -43,6 +43,14 @@ _TOOL_CALL_COLUMNS = (
 
 # The work-chain step id added to ``message_events`` by schema version 5.
 _MESSAGE_EVENT_COLUMNS = (("step_id", "TEXT"),)
+
+# Soft-delete stamps added to the knowledge tables by schema version 6. A row
+# with a stamp stays on disk, with its PDF, chunks, and vectors, but every
+# active read excludes it.
+_KNOWLEDGE_SOFT_DELETE_COLUMNS = (
+    ("kb_folders", "deleted_at"),
+    ("kb_documents", "deleted_at"),
+)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -190,6 +198,7 @@ CREATE TABLE IF NOT EXISTS kb_folders (
     parent_id TEXT REFERENCES kb_folders(id) ON DELETE CASCADE,
     position INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
+    deleted_at TEXT,
     UNIQUE (parent_id, name)
 );
 CREATE INDEX IF NOT EXISTS idx_kb_folders_parent ON kb_folders(parent_id);
@@ -215,7 +224,8 @@ CREATE TABLE IF NOT EXISTS kb_documents (
     status_detail TEXT,
     indexed_at TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_kb_documents_folder
     ON kb_documents(folder_id, created_at DESC);
@@ -367,6 +377,7 @@ class Storage:
             self._add_missing_message_columns(connection)
             self._add_missing_tool_call_columns(connection)
             self._add_missing_message_event_columns(connection)
+            self._add_missing_soft_delete_columns(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -406,6 +417,19 @@ class Storage:
             if name not in existing:
                 connection.execute(
                     f"ALTER TABLE message_events ADD COLUMN {name} {sql_type}"
+                )
+
+    @staticmethod
+    def _add_missing_soft_delete_columns(connection: sqlite3.Connection) -> None:
+        """Add the soft-delete stamp a database created before version 6 lacks."""
+
+        for table, column in _KNOWLEDGE_SOFT_DELETE_COLUMNS:
+            existing = {
+                row[1] for row in connection.execute(f"PRAGMA table_info({table})")
+            }
+            if column not in existing:
+                connection.execute(
+                    f"ALTER TABLE {table} ADD COLUMN {column} TEXT"
                 )
 
     def ping(self) -> bool:

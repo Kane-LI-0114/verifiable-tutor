@@ -644,7 +644,7 @@ class KnowledgeDocumentRecord(BaseModel):
         "Qwen document summary; null until the summary job lands.",
     )
     summary_model: str | None = _opt("qwen3.8-27b", "Model that wrote the summary.")
-    created_at: str = _ex("2026-11-05T04:00:00+00:00", "ISO-8601 UTC ingestion time.")
+    created_at: str = _ex("2026-11-05T04:00:00+00:00", "ISO-8601 UTC creation time.")
     indexed_at: str | None = _opt(
         "2026-11-05T04:20:00+00:00", "ISO-8601 UTC time chunks and vectors were stored."
     )
@@ -723,14 +723,16 @@ class KnowledgeDocumentPatchBody(BaseModel):
 class DeleteDocumentResponse(BaseModel):
     model_config = _example({"id": "ACS_Lecture_1_2026F", "deleted": True})
 
-    id: str = _ex("ACS_Lecture_1_2026F", "Document that was deleted.")
-    deleted: bool = _ex(True, "Always true on success.")
+    id: str = _ex("ACS_Lecture_1_2026F", "Document marked as deleted.")
+    deleted: bool = _ex(True, "Always true; the row is marked, not removed.")
 
 
 class DeleteFolderResponse(BaseModel):
     model_config = _example({"deleted_documents": 3})
 
-    deleted_documents: int = _ex(3, "Documents removed with the folder.")
+    deleted_documents: int = _ex(
+        3, "Documents hidden with the folder; their rows and files remain."
+    )
 
 
 class RetrievalChunkRecord(BaseModel):

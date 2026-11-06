@@ -136,33 +136,45 @@ def test_a_document_can_be_moved_and_listed_in_its_new_folder(api):
     assert [item["id"] for item in root["documents"]] == ["Tutorial_2"]
 
 
-def test_deleting_a_document_removes_its_chunks_and_mirror_file(api):
+def test_a_student_can_soft_delete_a_document_and_the_server_keeps_its_data(api):
     api.create_active_account("bob@ust.hk")
-    instructor = api.create_instructor("teacher@ust.hk")
-    api.client.cookies.update(instructor)
     _two_documents(api)
+    store = api.app.state.knowledge_store
     pdf = api.settings.corpus_pdf_dir / "ACS_Lecture_1_2026F.pdf"
+    chunk_id = "ACS_Lecture_1_2026F:p001:c00"
+    store.set_embeddings(
+        "ACS_Lecture_1_2026F",
+        {chunk_id: b"\x00" * 16},
+        model="test-vector",
+        built_at=STAMP,
+    )
 
     deleted = api.client.delete("/api/knowledge/documents/ACS_Lecture_1_2026F")
 
     assert deleted.status_code == 200
     assert api.client.get("/api/knowledge/documents/ACS_Lecture_1_2026F").status_code == 404
-    assert not pdf.exists()
-    assert api.app.state.knowledge_store.search_chunks("allreduce") == []
+    assert [
+        item["id"] for item in api.client.get("/api/knowledge/documents").json()["documents"]
+    ] == ["Tutorial_2"]
+    assert api.client.get("/api/knowledge/search", params={"q": "allreduce"}).json()[
+        "documents"
+    ] == []
+    assert pdf.exists()
+    kept_chunks = store.list_chunks("ACS_Lecture_1_2026F")
+    assert kept_chunks
+    assert any(item["embedding"] is not None for item in kept_chunks)
+    assert chunk_id not in store.stored_vectors()[0]
 
 
-def test_a_student_cannot_delete_a_document(api):
+def test_a_student_can_delete_a_document(api):
     api.create_active_account("alice@ust.hk")
     _two_documents(api)
 
-    assert (
-        api.client.delete("/api/knowledge/documents/Tutorial_2").status_code == 403
-    )
+    assert api.client.delete("/api/knowledge/documents/Tutorial_2").status_code == 200
 
 
-def test_deleting_a_folder_removes_the_documents_inside_it(api):
-    instructor = api.create_instructor("teacher@ust.hk")
-    api.client.cookies.update(instructor)
+def test_soft_deleting_a_folder_hides_its_documents_but_keeps_the_files(api):
+    api.create_active_account("alice@ust.hk")
     _two_documents(api)
     folder = api.client.post(
         "/api/knowledge/folders", json={"name": "Lectures", "parent_id": None}
@@ -171,12 +183,32 @@ def test_deleting_a_folder_removes_the_documents_inside_it(api):
         f"/api/knowledge/documents/ACS_Lecture_1_2026F",
         json={"folder_id": folder["id"]},
     )
+    pdf = api.settings.corpus_pdf_dir / "ACS_Lecture_1_2026F.pdf"
 
     deleted = api.client.delete(f"/api/knowledge/folders/{folder['id']}")
 
     assert deleted.status_code == 200
     assert deleted.json()["deleted_documents"] == 1
     assert api.client.get("/api/knowledge/documents/ACS_Lecture_1_2026F").status_code == 404
+    assert api.client.get("/api/knowledge/folders").json()["folders"] == []
+    assert pdf.exists()
+    assert api.app.state.knowledge_store.list_chunks("ACS_Lecture_1_2026F")
+
+
+def test_a_soft_deleted_folder_name_can_be_reused(api):
+    api.create_active_account("alice@ust.hk")
+    parent = api.client.post(
+        "/api/knowledge/folders", json={"name": "Lectures", "parent_id": None}
+    ).json()
+    body = {"name": "Week 1", "parent_id": parent["id"]}
+    child = api.client.post("/api/knowledge/folders", json=body).json()
+
+    assert api.client.delete(f"/api/knowledge/folders/{child['id']}").status_code == 200
+
+    recreated = api.client.post("/api/knowledge/folders", json=body)
+    assert recreated.status_code == 201
+    assert recreated.json()["name"] == "Week 1"
+    assert len(api.client.get("/api/knowledge/folders").json()["folders"]) == 2
 
 
 def test_search_reports_the_reason_and_the_highlight_ranges(api):

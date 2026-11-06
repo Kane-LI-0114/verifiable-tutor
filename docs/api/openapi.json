@@ -627,13 +627,13 @@
         },
         "properties": {
           "deleted": {
-            "description": "Always true on success.",
+            "description": "Always true; the row is marked, not removed.",
             "example": true,
             "title": "Deleted",
             "type": "boolean"
           },
           "id": {
-            "description": "Document that was deleted.",
+            "description": "Document marked as deleted.",
             "example": "ACS_Lecture_1_2026F",
             "title": "Id",
             "type": "string"
@@ -653,7 +653,7 @@
         },
         "properties": {
           "deleted_documents": {
-            "description": "Documents removed with the folder.",
+            "description": "Documents hidden with the folder; their rows and files remain.",
             "example": 3,
             "title": "Deleted Documents",
             "type": "integer"
@@ -942,7 +942,7 @@
             "type": "integer"
           },
           "created_at": {
-            "description": "ISO-8601 UTC ingestion time.",
+            "description": "ISO-8601 UTC creation time.",
             "example": "2026-11-05T04:00:00+00:00",
             "title": "Created At",
             "type": "string"
@@ -2152,7 +2152,7 @@
             "type": "integer"
           },
           "created_at": {
-            "description": "ISO-8601 UTC ingestion time.",
+            "description": "ISO-8601 UTC creation time.",
             "example": "2026-11-05T04:00:00+00:00",
             "title": "Created At",
             "type": "string"
@@ -3703,7 +3703,7 @@
     },
     "/api/knowledge/documents/{doc_id}": {
       "delete": {
-        "description": "Delete a document, its chunks, and the local mirror files.",
+        "description": "Hide a document; its row, chunks, vectors, and mirror files stay on disk.",
         "operationId": "delete_document_api_knowledge_documents__doc_id__delete",
         "parameters": [
           {
@@ -3730,9 +3730,6 @@
           "401": {
             "description": "Not signed in."
           },
-          "403": {
-            "description": "Instructor role is required."
-          },
           "404": {
             "description": "Document not found."
           },
@@ -3747,7 +3744,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Delete a file",
+        "summary": "Soft-delete a file",
         "tags": [
           "knowledge"
         ]
@@ -3979,7 +3976,7 @@
     },
     "/api/knowledge/folders/{folder_id}": {
       "delete": {
-        "description": "Delete a folder subtree, its documents, their chunks, and mirror files.",
+        "description": "Hide a folder subtree; rows, PDFs, chunks, and vectors stay on disk.",
         "operationId": "delete_folder_api_knowledge_folders__folder_id__delete",
         "parameters": [
           {
@@ -4006,9 +4003,6 @@
           "401": {
             "description": "Not signed in."
           },
-          "403": {
-            "description": "Instructor role is required."
-          },
           "404": {
             "description": "Folder not found."
           },
@@ -4023,7 +4017,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Delete a folder and the files inside it",
+        "summary": "Soft-delete a folder and the files inside it",
         "tags": [
           "knowledge"
         ]

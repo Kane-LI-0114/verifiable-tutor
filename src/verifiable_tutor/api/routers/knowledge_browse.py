@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 
-from ..deps import CurrentUser, Instructor, KnowledgeDep, RetrieverDep
+from ..deps import CurrentUser, KnowledgeDep, RetrieverDep
 from ...knowledge.browse import _Invalid, _Missing
 from ...evidence.query import plan_query
 from ..schemas import (
@@ -96,15 +96,14 @@ def update_folder(
 @router.delete(
     "/api/knowledge/folders/{folder_id}",
     response_model=DeleteFolderResponse,
-    summary="Delete a folder and the files inside it",
+    summary="Soft-delete a folder and the files inside it",
     responses={
         401: {"description": "Not signed in."},
-        403: {"description": "Instructor role is required."},
         404: {"description": "Folder not found."},
     },
 )
-def delete_folder(folder_id: str, instructor: Instructor, knowledge: KnowledgeDep):
-    """Delete a folder subtree, its documents, their chunks, and mirror files."""
+def delete_folder(folder_id: str, user: CurrentUser, knowledge: KnowledgeDep):
+    """Hide a folder subtree; rows, PDFs, chunks, and vectors stay on disk."""
 
     try:
         return knowledge.delete_folder(folder_id)
@@ -180,15 +179,14 @@ def move_document(
 @router.delete(
     "/api/knowledge/documents/{doc_id}",
     response_model=DeleteDocumentResponse,
-    summary="Delete a file",
+    summary="Soft-delete a file",
     responses={
         401: {"description": "Not signed in."},
-        403: {"description": "Instructor role is required."},
         404: {"description": "Document not found."},
     },
 )
-def delete_document(doc_id: str, instructor: Instructor, knowledge: KnowledgeDep):
-    """Delete a document, its chunks, and the local mirror files."""
+def delete_document(doc_id: str, user: CurrentUser, knowledge: KnowledgeDep):
+    """Hide a document; its row, chunks, vectors, and mirror files stay on disk."""
 
     try:
         document = knowledge.delete_document(doc_id)
