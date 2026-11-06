@@ -89,6 +89,10 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">exit_code</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">output</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">tool_call_id</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">arguments_json</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">result_json</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">duration_ms</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
   knowledge_builds [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>knowledge_builds</B></TD></TR>

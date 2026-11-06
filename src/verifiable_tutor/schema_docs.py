@@ -109,8 +109,9 @@ TABLE_NOTES = {
         "empty until the evidence layer emits citations."
     ),
     "tool_calls": (
-        "Typed tool calls of one assistant answer with command line, exit code, "
-        "and truncated output (FR-H3). Empty until the tool runner lands."
+        "Typed tool calls of one assistant answer with the provider call id, "
+        "parsed arguments, a structured result, command line, exit code, "
+        "duration, and truncated output (FR-H3, ADR-0016)."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -213,6 +214,10 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "exit_code": "Process exit code; null while running.",
         "output": "Truncated tool output.",
         "status": "running, done, or failed.",
+        "tool_call_id": "Provider tool call id the result is correlated with; null on legacy rows.",
+        "arguments_json": "JSON object of the parsed tool arguments.",
+        "result_json": "JSON structured result the tool returned to the model.",
+        "duration_ms": "Tool execution time in milliseconds when known.",
     },
     "knowledge_builds": {
         "id": "Build id.",
@@ -591,8 +596,8 @@ def render_markdown(snapshot: SchemaSnapshot | None = None) -> str:
             "- Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.",
             "- Timestamps: ISO-8601 UTC strings with second precision.",
             "- Legacy databases are upgraded in place by adding missing `messages`",
-            "  columns and creating the new tables; row counts are runtime data and",
-            "  are not part of this page.",
+            "  and `tool_calls` columns and creating the new tables; row counts are",
+            "  runtime data and are not part of this page.",
             "",
             "## Regenerating this page",
             "",

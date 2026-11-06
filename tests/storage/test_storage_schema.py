@@ -13,9 +13,9 @@ from pathlib import Path
 from verifiable_tutor.storage import Storage
 
 # Independent expected value: ADR-0014 defined user_version 1 for the schema
-# that stores turn metadata, and ADR-0015 bumps it to 2 for the knowledge
-# tables (folders, documents, chunks, the full-text index, and index state).
-SCHEMA_VERSION = 2
+# that stores turn metadata, ADR-0015 bumps it to 2 for the knowledge tables,
+# and ADR-0016 bumps it to 3 for the provider-call columns on tool_calls.
+SCHEMA_VERSION = 3
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -49,6 +49,18 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 CREATE INDEX IF NOT EXISTS idx_messages_conversation
     ON messages(conversation_id, sequence);
+
+CREATE TABLE IF NOT EXISTS tool_calls (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    command_json TEXT,
+    exit_code INTEGER,
+    output TEXT,
+    status TEXT NOT NULL CHECK (status IN ('running', 'done', 'failed')),
+    UNIQUE (message_id, position)
+);
 """
 
 LEGACY_ROWS = (
@@ -66,6 +78,10 @@ LEGACY_ROWS = (
     " (id, conversation_id, sequence, role, content, provider, tier, created_at)"
     " VALUES ('msg-2', 'conv-1', 2, 'assistant', 'legacy answer', 'deepseek',"
     " 'flash', '2026-11-02T12:01:00+00:00')",
+    "INSERT INTO tool_calls"
+    " (id, message_id, position, name, command_json, exit_code, output, status)"
+    " VALUES ('tool-1', 'msg-2', 0, 'course_search',"
+    " '[\"rg\", \"MPI_Allreduce\"]', 0, 'found 2 pages', 'done')",
 )
 
 
@@ -104,6 +120,19 @@ def test_initialize_upgrades_a_legacy_database_without_losing_rows(tmp_path):
             )
         }
         assert {"message_steps", "citations", "tool_calls"} <= tables
+        tool_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(tool_calls)")
+        }
+        assert {
+            "tool_call_id",
+            "arguments_json",
+            "result_json",
+            "duration_ms",
+        } <= tool_columns
+        legacy_tool = connection.execute(
+            "SELECT name, output, status FROM tool_calls WHERE id = 'tool-1'"
+        ).fetchone()
+        assert legacy_tool == ("course_search", "found 2 pages", "done")
         assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
 
         legacy = connection.execute(
@@ -164,6 +193,15 @@ def test_initialize_creates_the_current_schema_on_a_fresh_database(tmp_path):
             "kb_chunks_fts",
             "kb_index_state",
         } <= tables
+        tool_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(tool_calls)")
+        }
+        assert {
+            "tool_call_id",
+            "arguments_json",
+            "result_json",
+            "duration_ms",
+        } <= tool_columns
         assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     finally:
         connection.close()

@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -30,6 +30,15 @@ _MESSAGE_METADATA_COLUMNS = (
     ("reasoning", "TEXT"),
     ("model", "TEXT"),
     ("thinking", "TEXT"),
+)
+
+# The provider-call columns added to ``tool_calls`` by schema version 3. They
+# are appended after ``status`` so an upgraded database matches a fresh one.
+_TOOL_CALL_COLUMNS = (
+    ("tool_call_id", "TEXT"),
+    ("arguments_json", "TEXT"),
+    ("result_json", "TEXT"),
+    ("duration_ms", "INTEGER"),
 )
 
 _SCHEMA = """
@@ -133,6 +142,10 @@ CREATE TABLE IF NOT EXISTS tool_calls (
     exit_code INTEGER,
     output TEXT,
     status TEXT NOT NULL CHECK (status IN ('running', 'done', 'failed')),
+    tool_call_id TEXT,
+    arguments_json TEXT,
+    result_json TEXT,
+    duration_ms INTEGER,
     UNIQUE (message_id, position)
 );
 
@@ -332,6 +345,7 @@ class Storage:
         with self._connect() as connection:
             connection.executescript(_SCHEMA)
             self._add_missing_message_columns(connection)
+            self._add_missing_tool_call_columns(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -345,6 +359,19 @@ class Storage:
             if name not in existing:
                 connection.execute(
                     f"ALTER TABLE messages ADD COLUMN {name} {sql_type}"
+                )
+
+    @staticmethod
+    def _add_missing_tool_call_columns(connection: sqlite3.Connection) -> None:
+        """Add provider-call columns a database created before version 3 lacks."""
+
+        existing = {
+            row[1] for row in connection.execute("PRAGMA table_info(tool_calls)")
+        }
+        for name, sql_type in _TOOL_CALL_COLUMNS:
+            if name not in existing:
+                connection.execute(
+                    f"ALTER TABLE tool_calls ADD COLUMN {name} {sql_type}"
                 )
 
     def ping(self) -> bool:
@@ -677,6 +704,10 @@ class Storage:
                         "exit_code": row["exit_code"],
                         "output": row["output"],
                         "status": row["status"],
+                        "tool_call_id": row["tool_call_id"],
+                        "arguments": _decode_json(row["arguments_json"]),
+                        "result": _decode_json(row["result_json"]),
+                        "duration_ms": row["duration_ms"],
                     }
                 )
         return messages
@@ -746,8 +777,9 @@ class Storage:
                 connection.execute(
                     "INSERT INTO tool_calls"
                     " (id, message_id, position, name, command_json, exit_code,"
-                    "  output, status)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "  output, status, tool_call_id, arguments_json, result_json,"
+                    "  duration_ms)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         uuid.uuid4().hex,
                         message_id,
@@ -757,6 +789,10 @@ class Storage:
                         call.get("exit_code"),
                         call.get("output"),
                         call["status"],
+                        call.get("tool_call_id"),
+                        _encode_json(call.get("arguments")),
+                        _encode_json(call.get("result")),
+                        call.get("duration_ms"),
                     ),
                 )
         return {
