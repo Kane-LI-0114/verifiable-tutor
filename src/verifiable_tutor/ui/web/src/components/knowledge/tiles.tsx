@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
@@ -45,6 +46,8 @@ function TileActions({
   canDelete,
   moveLabel,
   deleteLabel,
+  alwaysShowDelete = false,
+  deleteDisabledHint,
 }: {
   label: string;
   onMove: () => void;
@@ -52,7 +55,10 @@ function TileActions({
   canDelete: boolean;
   moveLabel: string;
   deleteLabel: string;
+  alwaysShowDelete?: boolean;
+  deleteDisabledHint?: string;
 }) {
+  const showDelete = canDelete || alwaysShowDelete;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,11 +76,20 @@ function TileActions({
           <MoveIcon />
           {moveLabel}
         </DropdownMenuItem>
-        {canDelete ? (
-          <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+        {showDelete ? (
+          <DropdownMenuItem
+            variant="destructive"
+            disabled={!canDelete}
+            onSelect={onDelete}
+          >
             <TrashIcon />
             {deleteLabel}
           </DropdownMenuItem>
+        ) : null}
+        {showDelete && !canDelete && deleteDisabledHint ? (
+          <DropdownMenuLabel className="font-normal text-muted-foreground">
+            {deleteDisabledHint}
+          </DropdownMenuLabel>
         ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -190,6 +205,8 @@ export function FolderTile({
             moveLabel={t.knowledge.moveFolder}
             deleteLabel={t.knowledge.deleteFolder}
             canDelete={canDelete}
+            alwaysShowDelete
+            deleteDisabledHint={t.knowledge.deleteFolderInstructorOnly}
             onMove={onMove}
             onDelete={onDelete}
           />

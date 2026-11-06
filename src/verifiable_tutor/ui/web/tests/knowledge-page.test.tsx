@@ -55,6 +55,12 @@ const FOLDER = {
 
 let stub: ReturnType<typeof createFetchStub> | null = null;
 
+function tileIds(): (string | null)[] {
+  return screen
+    .getAllByTestId(/^file-tile-/)
+    .map((tile) => tile.getAttribute("data-testid"));
+}
+
 function routes(overrides: StubRoute[] = []): StubRoute[] {
   return [
     // Overrides come first so a test can replace a default route.
@@ -115,7 +121,7 @@ describe("knowledge browser", () => {
     );
   });
 
-  it("sorts the file tiles by name after choosing the only sort menu item", async () => {
+  it("sorts the file tiles by name after choosing the name sort item", async () => {
     const unsorted: StubRoute = {
       method: "GET",
       path: "/api/knowledge/documents",
@@ -127,18 +133,13 @@ describe("knowledge browser", () => {
     renderLiveRoute("/knowledge");
     await screen.findByTestId("file-tile-Tutorial_2");
 
-    const tileIds = () =>
-      screen
-        .getAllByTestId(/^file-tile-/)
-        .map((tile) => tile.getAttribute("data-testid"));
-
     expect(tileIds()).toEqual([
       "file-tile-Tutorial_2",
       "file-tile-ACS_Lecture_1_2026F",
     ]);
 
     await user.click(screen.getByRole("button", { name: "Sort" }));
-    expect(screen.getAllByRole("menuitemradio")).toHaveLength(1);
+    expect(screen.getAllByRole("menuitemradio")).toHaveLength(2);
     await user.click(screen.getByRole("menuitemradio", { name: "Sort by name" }));
 
     await waitFor(() => {
@@ -147,6 +148,76 @@ describe("knowledge browser", () => {
         "file-tile-Tutorial_2",
       ]);
     });
+  });
+
+  it("restores the server order with the default sort item", async () => {
+    const unsorted: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [DOC_B, DOC_A], total: 2 }),
+    };
+    stub = createFetchStub(routes([unsorted]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Sort by name" }));
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-ACS_Lecture_1_2026F",
+        "file-tile-Tutorial_2",
+      ]);
+    });
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Default order" }));
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-Tutorial_2",
+        "file-tile-ACS_Lecture_1_2026F",
+      ]);
+    });
+  });
+
+  it("keeps a delete action in the folder menu, disabled for a student", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    await user.click(screen.getByRole("button", { name: "Folder actions" }));
+
+    expect(
+      screen.getByRole("menuitem", { name: "Move folder" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Delete folder" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(
+      screen.getByText("Only instructors can delete folders"),
+    ).toBeInTheDocument();
+  });
+
+  it("lets an instructor use the folder delete action", async () => {
+    const instructor: StubRoute = {
+      method: "GET",
+      path: "/api/auth/me",
+      handler: () => jsonResponse({ ...STUDENT, role: "instructor" }),
+    };
+    stub = createFetchStub(routes([instructor]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    await user.click(screen.getByRole("button", { name: "Folder actions" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Delete folder" }),
+    ).not.toHaveAttribute("aria-disabled", "true");
   });
 
   it("marks the indexing state of a file that is still being processed", async () => {

@@ -422,6 +422,9 @@ export function KnowledgePage() {
                   setSortBy(value === "name" ? "name" : "default")
                 }
               >
+                <DropdownMenuRadioItem value="default">
+                  {t.knowledge.sortByDefault}
+                </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="name">
                   {t.knowledge.sortByName}
                 </DropdownMenuRadioItem>

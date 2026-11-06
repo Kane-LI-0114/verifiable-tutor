@@ -298,6 +298,7 @@ export const en = {
     root: "All files",
     newMenu: "New",
     sort: "Sort",
+    sortByDefault: "Default order",
     sortByName: "Sort by name",
     uploadFile: "Upload file",
     uploadDisabled:
@@ -314,6 +315,7 @@ export const en = {
     moveFolder: "Move folder",
     deleteFile: "Delete file",
     deleteFolder: "Delete folder",
+    deleteFolderInstructorOnly: "Only instructors can delete folders",
     deleteFileBody: "This removes the file, its chunks, and the local copy.",
     deleteFolderBody:
       "This removes the folder and the {{count}} files inside it.",
