@@ -93,11 +93,11 @@ The line-anchored teaching output over a student's own submitted solution.
 _Avoid_: Grader, feedback, review
 
 **Work chain**:
-The ordered, persisted record of what the agent did for one answer: each model reasoning segment, immediately followed by the tool calls that segment preceded, then the next model call. The expanded chain shows the coarse steps first and these events in order.
+The ordered, persisted record of what the agent did for one answer: each model reasoning segment and each tool call, grouped under the work-chain step it belongs to. The expanded chain shows one section per step that actually exists, in the canonical phase order, with that step's events in order under it. A step with no events still shows its section. It survives history reload and replay.
 _Avoid_: Trace, log, debug view
 
 **Work-chain event**:
-One entry in the work chain, either a reasoning segment from one model call or one tool call. Events are stored in order and survive history reload and replay (ADR-0017).
+One entry in the work chain, either a reasoning segment from one model call or one tool call. Each event carries the step it belongs to and is stored in order (ADR-0017, ADR-0019).
 _Avoid_: Step, timeline item
 
 **Thinking**:
