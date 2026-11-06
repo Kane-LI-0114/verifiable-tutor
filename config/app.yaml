@@ -33,6 +33,18 @@ chat:
   history_messages: 12
   replay_default_speed: 1.0
 
+# Agent loop budgets and tool limits (ADR-0016). The model call cap includes the
+# forced final answer; the last call receives no tools.
+agent:
+  max_model_calls: 5
+  max_tool_calls: 8
+  recursion_limit: 16
+  max_tool_output_chars: 4000
+  retrieval_k: 5
+  web_search_count: 5
+  web_fetch_max_chars: 6000
+  web_tools_enabled: true
+
 knowledge:
   # Set to the local page-record JSONL from the TACC OCR job to enable builds.
   pages_path: null

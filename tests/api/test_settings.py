@@ -26,6 +26,14 @@ def test_load_settings_resolves_paths_and_domains(tmp_path: Path):
     assert settings.session_ttl.days == 7
     assert settings.smtp.host is None
     assert settings.knowledge_pages_path is None
+    assert settings.agent_max_model_calls == 5
+    assert settings.agent_max_tool_calls == 8
+    assert settings.agent_recursion_limit == 16
+    assert settings.agent_max_tool_output_chars == 4000
+    assert settings.agent_retrieval_k == 5
+    assert settings.agent_web_search_count == 5
+    assert settings.agent_web_fetch_max_chars == 6000
+    assert settings.agent_web_tools_enabled is True
 
 
 def test_load_settings_fails_closed_when_the_session_secret_is_missing(tmp_path: Path):

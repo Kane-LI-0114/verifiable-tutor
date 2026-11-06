@@ -56,6 +56,17 @@ class ChatSection(_StrictModel):
     replay_default_speed: float = 1.0
 
 
+class AgentSection(_StrictModel):
+    max_model_calls: int = Field(default=5, ge=1, le=20)
+    max_tool_calls: int = Field(default=8, ge=0, le=50)
+    recursion_limit: int = Field(default=16, ge=4, le=100)
+    max_tool_output_chars: int = Field(default=4000, ge=200, le=20000)
+    retrieval_k: int = Field(default=5, ge=1, le=10)
+    web_search_count: int = Field(default=5, ge=1, le=10)
+    web_fetch_max_chars: int = Field(default=6000, ge=500, le=20000)
+    web_tools_enabled: bool = True
+
+
 class KnowledgeSection(_StrictModel):
     pages_path: str | None = None
     max_chunks_per_job: int = 8
@@ -70,6 +81,7 @@ class AppConfig(_StrictModel):
     data: DataSection = Field(default_factory=DataSection)
     auth: AuthSection = Field(default_factory=AuthSection)
     chat: ChatSection = Field(default_factory=ChatSection)
+    agent: AgentSection = Field(default_factory=AgentSection)
     knowledge: KnowledgeSection = Field(default_factory=KnowledgeSection)
 
 
@@ -106,6 +118,14 @@ class AppSettings(BaseModel):
     reset_token_ttl: timedelta
     chat_history_messages: int
     replay_default_speed: float
+    agent_max_model_calls: int = 5
+    agent_max_tool_calls: int = 8
+    agent_recursion_limit: int = 16
+    agent_max_tool_output_chars: int = 4000
+    agent_retrieval_k: int = 5
+    agent_web_search_count: int = 5
+    agent_web_fetch_max_chars: int = 6000
+    agent_web_tools_enabled: bool = True
     knowledge_pages_path: Path | None
     knowledge_max_chunks: int
     knowledge_driver: Path
@@ -204,6 +224,14 @@ def load_settings(
             reset_token_ttl=timedelta(minutes=config.auth.reset_token_ttl_minutes),
             chat_history_messages=config.chat.history_messages,
             replay_default_speed=config.chat.replay_default_speed,
+            agent_max_model_calls=config.agent.max_model_calls,
+            agent_max_tool_calls=config.agent.max_tool_calls,
+            agent_recursion_limit=config.agent.recursion_limit,
+            agent_max_tool_output_chars=config.agent.max_tool_output_chars,
+            agent_retrieval_k=config.agent.retrieval_k,
+            agent_web_search_count=config.agent.web_search_count,
+            agent_web_fetch_max_chars=config.agent.web_fetch_max_chars,
+            agent_web_tools_enabled=config.agent.web_tools_enabled,
             knowledge_pages_path=_resolve_optional(
                 root, config.knowledge.pages_path
             ),
