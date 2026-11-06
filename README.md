@@ -46,7 +46,8 @@ The planned system has four moving parts: a React browser UI served by the agent
 
 The Qwen knowledge-base job loads Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context inside one submitted job per document shard and exits; no endpoint is exposed. Interactive text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)); Qwen is the required offline text-processing backend ([ADR-0011](docs/adr/0011-tacc-as-required-model-serving-backend.md)). The figure source is [proposal/figs/fig2_components_v3.dot](proposal/figs/fig2_components_v3.dot).
 
-The planned subsystems inside the backend:
+The planned subsystems inside the backend (the agent loop and model layer are implemented; the rest are planned):
+- Agent loop (implemented 2026-11-06): a two-node LangGraph graph calls the model, executes a closed typed tool set (course search, page reading, DeepSeek search, DeepSeek fetch), returns the results to the model, and streams step, tool, text, and reasoning frames; tool calls persist in schema version 3 ([ADR-0016](docs/adr/0016-minimal-agent-loop-and-typed-tools.md)).
 - Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
 - Evidence: a TACC OCR job parses PDF files, one file per request, into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md), [docs/corpus-schema.md](docs/corpus-schema.md)); `scripts/tacc/parse_pdf.py` runs the whole local-to-TACC round trip and returns per-page JSONL plus one document markdown; hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
 - Practice lab and self-test: generated questions in the types the student asks for or the agent chooses, with cited reference answers; reference tests and student code answers execute as TACC jobs, and the agent grades the answers with citations. The first pack is MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness; a generated reference solution is accepted only after it compiles and passes the pack's tests.
@@ -66,14 +67,14 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/auth/` | Accounts, authentication, sessions, and roles | present: accounts, sessions, email seam, seeding |
 | `src/verifiable_tutor/api/` | FastAPI application, routers, dependencies, and the AI SDK UI message stream adapter; serves the API and the built UI on one origin | present: factory, routers, chat and replay services, stream encoder |
 | `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | placeholder (`.gitkeep`) |
-| `src/verifiable_tutor/orchestrator/` | Request routing and context budget | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/orchestrator/` | Request routing and context budget | present: two-node LangGraph loop, typed tool registry, course and web tools |
 | `src/verifiable_tutor/evidence/` | Hybrid retrieval (query plan, FTS5 and dense arms, reciprocal rank fusion) and the deterministic span verifier | present: retrieval; verifier pending |
 | `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/eval/` | Evaluation harness | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/corpus/` | Page records, the page-first chunker, and the local knowledge store | present: chunker, store, pages |
 | `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state; present: chunk, request and schema validation helpers, card reader, and build lifecycle | present: helpers, cards, builds |
-| `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache |
+| `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache, search and fetch used by the agent tools |
 | `src/verifiable_tutor/prompts/` | Model prompt texts in one editable home: the chat system prompt and the knowledge-base job template, loaded by the code that sends them | present: chat and kb prompts |
 | `src/verifiable_tutor/ui/web/` | React UI source: routes, layout, page components, preview fixtures, and Vitest tests; built assets are written to the ignored `src/verifiable_tutor/ui/static/` | present: live API wiring and preview build |
 | `tacc/serve/` | Required Qwen knowledge-base job: one submitted GPU job per document shard, records written to `USERDIR` | present: job, worker, prompt |
