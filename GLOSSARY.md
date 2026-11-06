@@ -97,7 +97,7 @@ The ordered, persisted record of what the agent did for one answer: each model r
 _Avoid_: Trace, log, debug view
 
 **Work-chain event**:
-One entry in the work chain, either a reasoning segment from one model call or one tool call. Each event carries the step it belongs to and is stored in order (ADR-0017, ADR-0019).
+One entry in the work chain, either a reasoning segment from one model call or one tool call. Each event carries the id of the work-chain step it belongs to and is stored in order (ADR-0017, ADR-0019).
 _Avoid_: Step, timeline item
 
 **Thinking**:

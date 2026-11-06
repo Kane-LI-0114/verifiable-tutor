@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted; extended by [ADR-0019](0019-step-event-association.md) with the step tag on each event |
+| **Status** | Accepted; extended by [ADR-0019](0019-step-event-association.md) with the step id on each event |
 | **Date** | 2026-11-06 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 

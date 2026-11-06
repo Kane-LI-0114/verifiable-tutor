@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted; refined to reference the step id rather than the step name |
 | **Date** | 2026-11-06 |
 | **Deciders** | LI Jinchuan (project lead); recorded by the engineering agent |
 
@@ -19,21 +19,21 @@ The agent loop is not a sequential phase pipeline. `generate` starts with the fi
 
 ## Decision
 
-**Every `message_events` row carries an optional `step` naming the work-chain step it belongs to.** Schema version 5 adds the column. New rows are tagged at write time:
+**Every `message_events` row carries an optional `step_id` referencing one `message_steps` row.** Schema version 5 adds the column. New rows are tagged at write time:
 
-- a reasoning event is tagged `generate`, because the reasoning belongs to the model generation call;
-- a tool-call event is tagged with the step declared by the tool. The built-in retrieval tools (`search_course`, `read_course_page`, `web_search`, `web_fetch`) declare `retrieve`; future verification and policy tools declare `verify` and `decide`;
-- an event with no known step stays NULL for legacy rows and unknown tools.
+- a reasoning event references the `generate` step row of the same answer;
+- a tool-call event references the step row selected by the tool declaration. The built-in retrieval tools (`search_course`, `read_course_page`, `web_search`, `web_fetch`) declare `retrieve`; future verification and policy tools declare `verify` and `decide`;
+- an event with no step row stays NULL for legacy rows and unknown tools.
 
-The step declaration lives on `ToolSpec` and the runner copies it into the `tool_start` and `tool_end` events. The chat service persists the tag on the event and includes it in the `data-tool` stream payload so the live UI and replay use the same value.
+The step declaration lives on `ToolSpec` as a stage name. The runner copies that name into `tool_start` and `tool_end`; the chat service resolves it to the current `message_steps.id`, persists the id on the event, and includes it in the `data-tool` stream payload. The `data-step` frame also carries the id. The live UI and replay therefore use the same value as history.
 
-**The UI renders one section per step that actually exists.** "Actually exists" means the union of the `message_steps` rows and the distinct `step` values on events. Sections are ordered by the canonical phase order `understand`, `retrieve`, `verify`, `decide`, `generate`, `cite`. All events for a step render under that step in event order. A step that has no events still renders its header, and its detail, duration, policy, and rule id remain visible. A step that appears in neither source is not synthesized, so a real turn that only emitted `generate` and `retrieve` shows only those two sections.
+**The UI renders one section per step row that actually exists.** The `message_steps` rows supply the id, status, duration, detail, policy, and rule id. Sections are ordered by the canonical phase order `understand`, `retrieve`, `verify`, `decide`, `generate`, `cite`; duplicate phase rows, if a future writer creates them, keep their persisted tie order. All events whose `step_id` matches the row render under it in event order. A step row with no events still renders its header and detail. A step that has no row is not synthesized, so a real turn that only emitted `generate` and `retrieve` shows only those two sections.
 
-**`message_steps` remains the aggregate stage record.** It supplies status, duration, detail, policy, and rule id to the section; it is not replaced by event tags. A step that has events but no `message_steps` row still gets a fallback section from the event tag, so the association is never lost.
+**`message_steps` remains the aggregate stage record.** It is not replaced by event ids. An event whose `step_id` does not match a returned step row is rendered flat rather than guessed into a section.
 
 **The header keeps the summary, not a second step display.** The phase rail added in an earlier iteration is removed. The header shows the work-chain title, the `N/N steps complete` summary, the policy badge, and the expand control. Steps exist only inside the expanded chain.
 
-**Legacy rows stay flat.** An event with `step = NULL` renders without a section header; a turn whose events all have NULL steps keeps the previous flat event list. The step headers still come from the surviving `message_steps` rows. Old replay traces infer the step from the existing `data-step` and `start-step` frames; if none are present, the events render flat.
+**Legacy rows stay flat.** An event with `step_id = NULL` renders without a section header; a turn whose events all have NULL ids keeps the previous flat event list. The step headers still come from the surviving `message_steps` rows. Old replay traces infer the step from the existing `data-step` and `start-step` frames; if none are present, the events render flat.
 
 **The final answer text is not an event and is not duplicated.** `generate` is an ordinary section; when thinking is off it has no reasoning events but still shows its header, and the answer remains the message body below the chain.
 
@@ -57,13 +57,13 @@ The step declaration lives on `ToolSpec` and the runner copies it into the `tool
 
 - The step vocabulary and `message_steps` table do not change.
 - The stream contract gains one optional field on `data-tool`; old clients ignore it.
-- Event step is nullable, so the migration does not rewrite existing rows.
+- Event step id is nullable, so the migration does not rewrite existing rows.
 
 ## Alternatives considered
 
 **Persist step start and finish as their own `message_events` rows.** For: one timeline that includes phase boundaries. Against: it duplicates `message_steps`, reintroduces overlapping sections for `generate`, and complicates the event CHECK. The association on each event is enough to group.
 
-**Add a `step_position` foreign key to `message_steps`.** For: referential integrity. Against: the step row is aggregate state, not a stable occurrence, and the UI only needs the stage name; a nullable name keeps the API simple and legacy-friendly.
+**Link by step name instead of id.** For: a smaller payload and no step id in the response. Against: two same-name step instances cannot be distinguished, which is the ambiguity this ADR removes; a nullable id keeps legacy rows and the API simple.
 
 **Always render all six phases, with absent ones as pending.** For: a complete pipeline view. Against: it would display phases that never ran as if they were planned or waiting, which is misleading and was rejected by the lead.
 
