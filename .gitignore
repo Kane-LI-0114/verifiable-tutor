@@ -40,6 +40,20 @@ examples/output/
 tmp/
 scratch/
 
+# --- Local model weights (runtime artifacts, never commit) ---
+# BGE-M3 for query embedding and the OCR weight caches are downloaded at setup
+# time. They live under $HOME/models or a checkout-local model directory, are
+# several GB, and are never part of the source tree.
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.gguf
+*.h5
+
 # --- Frontend dependencies and build output ---
 node_modules/
 src/verifiable_tutor/ui/static/
