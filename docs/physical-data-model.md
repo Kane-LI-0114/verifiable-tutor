@@ -250,7 +250,7 @@ Indexes:
 
 ### message_events
 
-Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segment from one model call, or a reference to one row in `tool_calls`. Each event also names the work-chain step it belongs to so the UI can group events into step sections (ADR-0019). The order is the order the model produced them.
+Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segment from one model call, or a reference to one row in `tool_calls`. Each event also references the work-chain step row it belongs to so the UI can group events into step sections (ADR-0019). The order is the order the model produced them.
 
 | Column | Type | Null | Key | Notes |
 |---|---|---|---|---|
@@ -260,7 +260,7 @@ Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segmen
 | `kind` | TEXT | no | - | reasoning or tool_call. |
 | `reasoning` | TEXT | yes | - | Reasoning text for a reasoning event; null for a tool call. |
 | `tool_call_position` | INTEGER | yes | - | Position of the referenced tool_calls row; null for reasoning. |
-| `step_id` | TEXT | yes | - | Id of the Work-chain step the event belongs to; null on legacy rows. |
+| `step_id` | TEXT | yes | - | Work-chain step row id the event belongs to; null on legacy rows. |
 
 Checks:
 
