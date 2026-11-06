@@ -204,6 +204,10 @@ def load_model_config(
     cache_dir = Path(config.cache.directory).expanduser()
     if not cache_dir.is_absolute():
         cache_dir = base / cache_dir
+    model_path = Path(config.embedding.model_path).expanduser()
+    if not model_path.is_absolute():
+        model_path = base / model_path
+    config.embedding.model_path = str(model_path)
     return ResolvedModelConfig(config, api_keys, cache_dir)
 
 

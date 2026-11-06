@@ -42,8 +42,9 @@ scratch/
 
 # --- Local model weights (runtime artifacts, never commit) ---
 # BGE-M3 for query embedding and the OCR weight caches are downloaded at setup
-# time. They live under $HOME/models or a checkout-local model directory, are
-# several GB, and are never part of the source tree.
+# time into the checkout-local models/ directory, are several GB, and are never
+# part of the source tree. The weight formats are ignored as well so a model
+# copied anywhere in the checkout stays out of Git.
 models/
 *.safetensors
 *.bin

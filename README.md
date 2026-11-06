@@ -88,6 +88,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
 | `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots, knowledge-base records and build state | placeholder (`data/kb/` holds verified local records; all data contents are gitignored) |
+| `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
 | `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, the live model smoke, the API documentation build and vendor scripts, and the physical data model build script | present: scripts |
 | `tests/` | Test suites under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch), `tests/knowledge/` (chunks, request, schema), `tests/tacc/` (Qwen job worker, driver validation), `tests/api/` (HTTP contracts, accounts, chat, replay, voice, knowledge, corpus, SPA deep links), `tests/storage/` (schema upgrade, turn metadata), and `tests/docs/` (generated data model drift); the UI tests live inside the Vite project at `src/verifiable_tutor/ui/web/tests/` | present: tests |
@@ -135,13 +136,13 @@ The backend and the browser UI run on the developer laptop. TACC is reached only
 
    `DEEPSEEK_API_KEY` serves chat and search, `MIMO_API_KEY` serves image, audio, and speech calls, and `SESSION_SECRET` signs the session cookie and must be non-empty before `./start.sh` runs. `SMTP_*` is only for registration and reset email ([docs/email-local.md](docs/email-local.md)), and `LANGFUSE_*` is optional local tracing ([docs/langfuse-local.md](docs/langfuse-local.md)). `.env` is gitignored; never commit it.
 
-3. Optionally install the embedding weights. Dense retrieval loads `BAAI/bge-m3` from `embedding.model_path` in [config/models.yaml](config/models.yaml), which defaults to `~/models/bge-m3`:
+3. The embedding weights. Dense retrieval loads `BAAI/bge-m3` from `embedding.model_path` in [config/models.yaml](config/models.yaml), which is the checkout-local `models/bge-m3` and resolves against the repository root:
 
    ```bash
-   .venv/bin/hf download BAAI/bge-m3 --local-dir ~/models/bge-m3
+   .venv/bin/hf download BAAI/bge-m3 --local-dir models/bge-m3
    ```
 
-   The weights are about 2.3 GB and are runtime artifacts, not source: they stay outside the repository, and `.gitignore` blocks a checkout-local `models/` directory and the common weight formats. Without the weights the backend still starts, says the dense arm is unavailable, and falls back to the lexical arm.
+   The weights are about 2.3 GB and are runtime artifacts, not source: they live inside the checkout but are gitignored, so a clone needs this download once. Without the weights the backend still starts, says the dense arm is unavailable, and falls back to the lexical arm.
 
 4. Build the UI and start the app:
 
@@ -157,7 +158,7 @@ The backend and the browser UI run on the developer laptop. TACC is reached only
    .venv/bin/python -m pytest
    ```
 
-TACC jobs use their own pinned layer, [scripts/tacc/requirements-tacc.txt](scripts/tacc/requirements-tacc.txt) (PaddleOCR, PaddlePaddle, `pypdfium2`), installed into `$HOME` by `scripts/tacc/bootstrap.sh`; the submit, poll, and download workflow is in [AGENTS.md](AGENTS.md#tacc-and-model-serving). Runtime state lives under `data/`, the local model weights under `~/models/`, and both are gitignored.
+TACC jobs use their own pinned layer, [scripts/tacc/requirements-tacc.txt](scripts/tacc/requirements-tacc.txt) (PaddleOCR, PaddlePaddle, `pypdfium2`), installed into `$HOME` by `scripts/tacc/bootstrap.sh`; the submit, poll, and download workflow is in [AGENTS.md](AGENTS.md#tacc-and-model-serving). Runtime state lives under `data/` and the local model weights under `models/`; both are gitignored.
 
 ## Evaluation plan
 

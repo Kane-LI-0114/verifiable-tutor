@@ -130,11 +130,13 @@ cache:
   directory: data/caches/model
 
 embedding:
-  # Local model on TACC, not an API. Weights are cached under $HOME/models and
-  # vectors are stored in USERDIR by the index job.
+  # Local model, not an API. The weights live in the checkout at models/bge-m3
+  # and are gitignored; a relative path resolves against the repository root.
+  # The TACC index job keeps its own copy under $HOME/models, configured in
+  # config/knowledge.yaml.
   provider: local
   model: BAAI/bge-m3
-  model_path: ~/models/bge-m3
+  model_path: models/bge-m3
   dimension: 1024
   device: cpu
   batch_size: 16

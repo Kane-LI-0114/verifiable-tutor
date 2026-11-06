@@ -114,6 +114,21 @@ def test_resolves_model_aliases_and_api_keys(config_path: Path) -> None:
     assert resolved.api_keys["search"] == "sk-deepseek-test"
 
 
+def test_relative_embedding_model_path_resolves_against_the_config_base_dir(
+    config_path: Path, tmp_path: Path
+) -> None:
+    config_path.write_text(
+        MINIMAL_CONFIG.replace(
+            "model_path: ~/models/bge-m3", "model_path: models/bge-m3"
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = load_model_config(config_path, env=ENV, base_dir=tmp_path)
+
+    assert resolved.config.embedding.model_path == str(tmp_path / "models" / "bge-m3")
+
+
 def test_missing_provider_key_fails_closed(config_path: Path) -> None:
     with pytest.raises(ConfigError, match="DEEPSEEK_API_KEY"):
         load_model_config(config_path, env={"MIMO_API_KEY": "sk-mimo-test"})
