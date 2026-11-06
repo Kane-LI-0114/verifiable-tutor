@@ -125,12 +125,15 @@ describe("work chain", () => {
     );
     await expand();
 
-    const section = screen.getByRole("region", {
+    const sections = screen.getAllByRole("region", {
       name: /Retrieve course pages/,
     });
-    expect(
-      within(section).getAllByText("Tool call: search_course"),
-    ).toHaveLength(2);
+    expect(sections).toHaveLength(2);
+    for (const section of sections) {
+      expect(
+        within(section).getByText("Tool call: search_course"),
+      ).toBeInTheDocument();
+    }
   });
 
   it("renders events without a step flat for legacy rows", async () => {

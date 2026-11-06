@@ -138,41 +138,10 @@ function EventList({ events }: { events: WorkChainEvent[] }) {
 }
 
 /**
- * Every step name that actually exists renders once, even without events.
- * Rows with the same name are merged so a repeated phase keeps one section,
- * and events from all of its step ids stay in their original order.
+ * One section per step row, identified by its step id. Events aggregate under
+ * the id they reference; same-name rows with different ids stay separate.
+ * Rows with no event still render their header and detail.
  */
-function mergeStepRows(rows: WorkStep[]): WorkStep {
-  const ordered = [...rows].sort(
-    (left, right) => (left.position ?? 0) - (right.position ?? 0),
-  );
-  const base = ordered[0];
-  const status = ordered.some((row) => row.status === "failed")
-    ? "failed"
-    : ordered.some((row) => row.status === "started")
-      ? "started"
-      : ordered.every((row) => row.status === "done")
-        ? "done"
-        : base.status;
-  const durations = ordered
-    .map((row) => row.duration_ms)
-    .filter((value): value is number => value !== undefined);
-  const detail = ordered.find((row) => row.detail)?.detail;
-  const policy = ordered.find((row) => row.policy)?.policy;
-  const rule_id = ordered.find((row) => row.rule_id)?.rule_id;
-  return {
-    ...base,
-    status,
-    detail,
-    policy,
-    rule_id,
-    duration_ms:
-      durations.length > 0
-        ? durations.reduce((total, value) => total + value, 0)
-        : undefined,
-  };
-}
-
 function WorkChainSections({
   steps,
   events,
@@ -182,42 +151,32 @@ function WorkChainSections({
 }) {
   const t = useT();
   const alignedEvents = alignReasoningSteps(events);
-  const stepNameById = new Map(steps.map((step) => [step.id, step.step]));
-  const rowsByName = new Map<WorkStepName, WorkStep[]>();
-  for (const step of steps) {
-    const rows = rowsByName.get(step.step) ?? [];
-    rows.push(step);
-    rowsByName.set(step.step, rows);
-  }
-  const merged = new Map(
-    [...rowsByName.entries()].map(([name, rows]) => [name, mergeStepRows(rows)]),
-  );
-  const eventsByName = new Map<WorkStepName, WorkChainEvent[]>();
+  const knownIds = new Set(steps.map((step) => step.id));
+  const eventsByStepId = new Map<string, WorkChainEvent[]>();
   const unstepped: WorkChainEvent[] = [];
   for (const event of alignedEvents) {
-    const name = event.step_id
-      ? stepNameById.get(event.step_id)
-      : undefined;
-    if (name) {
-      const list = eventsByName.get(name) ?? [];
+    if (event.step_id && knownIds.has(event.step_id)) {
+      const list = eventsByStepId.get(event.step_id) ?? [];
       list.push(event);
-      eventsByName.set(name, list);
+      eventsByStepId.set(event.step_id, list);
     } else {
       unstepped.push(event);
     }
   }
-  const ordered = [...merged.values()].sort(
-    (left, right) => STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step),
+  const ordered = [...steps].sort(
+    (left, right) =>
+      STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step) ||
+      (left.position ?? 0) - (right.position ?? 0),
   );
 
   return (
     <div className="space-y-4">
       {ordered.map((step) => {
         const title = stepTitle(step, t);
-        const stepEvents = eventsByName.get(step.step) ?? [];
+        const stepEvents = eventsByStepId.get(step.id) ?? [];
         const showBody = step.detail !== undefined || stepEvents.length > 0;
         return (
-          <section key={step.step} aria-label={title} className="min-w-0">
+          <section key={step.id} aria-label={title} className="min-w-0">
             <div
               className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground"
               title={title}
@@ -258,14 +217,11 @@ export function WorkChain({
   events: WorkChainEvent[];
 }) {
   const t = useT();
-  const uniqueSteps = [
-    ...new Map(steps.map((step) => [step.step, step])).values(),
-  ];
-  const done = uniqueSteps.filter((step) => step.status === "done").length;
+  const done = steps.filter((step) => step.status === "done").length;
   const toolCallCount = events.filter((event) => event.kind === "tool_call").length;
   const summary =
-    uniqueSteps.length > 0
-      ? format(t.chat.workChainSummary, { done, total: uniqueSteps.length })
+    steps.length > 0
+      ? format(t.chat.workChainSummary, { done, total: steps.length })
       : format(t.chat.toolCallsSummary, { count: toolCallCount });
   const hasContent = steps.length > 0 || events.length > 0;
 
