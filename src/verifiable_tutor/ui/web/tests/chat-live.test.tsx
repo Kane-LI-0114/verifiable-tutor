@@ -632,7 +632,6 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Open page 12" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Tool call: course_search")).toBeInTheDocument();
 
     // The thinking region opens the persisted reasoning text.
     await user.click(screen.getByRole("button", { name: "Reasoning" }));
@@ -642,6 +641,8 @@ describe("live chat", () => {
     await user.click(screen.getByRole("button", { name: /Work chain/ }));
     expect(await screen.findByText(STORED_STEP_DETAIL)).toBeInTheDocument();
     expect(screen.getByText(/post-deadline\.hint-only/)).toBeInTheDocument();
+    // Tool calls live inside the work chain, not at the end of the bubble.
+    expect(screen.getByText("Tool call: course_search")).toBeInTheDocument();
   });
 
   it("renders a legacy answer without a work chain or thinking region", async () => {
@@ -1076,9 +1077,12 @@ describe("live chat", () => {
     await user.type(await screen.findByLabelText("Your question"), QUESTION);
     await user.click(screen.getByRole("button", { name: "Send" }));
 
-    expect(await screen.findByText("Tool call: search_course")).toBeInTheDocument();
     expect(await screen.findByText("Allreduce sums a value.")).toBeInTheDocument();
 
+    // The live tool call is inside the live work chain; the stored turn has its own.
+    const workChains = screen.getAllByRole("button", { name: /Work chain/ });
+    await user.click(workChains[workChains.length - 1]);
+    expect(await screen.findByText("Tool call: search_course")).toBeInTheDocument();
     await user.click(screen.getByText("Tool call: search_course"));
     expect(await screen.findByText("Arguments")).toBeInTheDocument();
     expect(await screen.findByText("1 course chunks")).toBeInTheDocument();

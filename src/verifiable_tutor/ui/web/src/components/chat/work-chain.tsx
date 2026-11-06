@@ -8,11 +8,13 @@ import {
   QuoteIcon,
   ScaleIcon,
   SearchIcon,
+  TerminalIcon,
   XCircleIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { ToolCallTrace } from "@/components/chat/tool-call";
 import {
   Trace,
   TraceCollapsible,
@@ -24,7 +26,7 @@ import {
   TraceTitle,
 } from "@/components/ui/trace";
 import { format, useT } from "@/lib/i18n";
-import type { PolicyState, WorkStep, WorkStepName } from "@/lib/types";
+import type { PolicyState, ToolCall, WorkStep, WorkStepName } from "@/lib/types";
 
 const STEP_ICONS: Record<
   WorkStepName,
@@ -67,12 +69,18 @@ function lineStatus(status: WorkStep["status"]) {
 export function WorkChain({
   steps,
   policy,
+  toolCalls,
 }: {
   steps: WorkStep[];
   policy: PolicyState;
+  toolCalls: ToolCall[];
 }) {
   const t = useT();
   const done = steps.filter((step) => step.status === "done").length;
+  const summary =
+    steps.length > 0
+      ? format(t.chat.workChainSummary, { done, total: steps.length })
+      : format(t.chat.toolCallsSummary, { count: toolCalls.length });
 
   return (
     <Trace role="group" aria-label={t.a11y.workChain}>
@@ -83,9 +91,7 @@ export function WorkChain({
               <BrainIcon />
             </TraceIcon>
             <TraceTitle>{t.chat.workChain}</TraceTitle>
-            <TraceDescription>
-              {format(t.chat.workChainSummary, { done, total: steps.length })}
-            </TraceDescription>
+            <TraceDescription>{summary}</TraceDescription>
             <Badge variant="secondary">{t.chat.policyStates[policy]}</Badge>
           </TraceLine>
         </TraceCollapsibleTrigger>
@@ -129,6 +135,20 @@ export function WorkChain({
               );
             })}
           </ul>
+          {toolCalls.length > 0 ? (
+            <div className="mt-3 space-y-2 border-t border-border pt-3">
+              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <TerminalIcon className="size-3" />
+                {t.chat.toolCalls}
+              </p>
+              {toolCalls.map((call, index) => (
+                <ToolCallTrace
+                  key={call.tool_call_id ?? `${call.name}:${index}`}
+                  call={call}
+                />
+              ))}
+            </div>
+          ) : null}
         </TraceCollapsibleContent>
       </TraceCollapsible>
     </Trace>

@@ -182,6 +182,8 @@ export const zh: Messages = {
     sourcePage: "第 {{page}} 页",
     openEvidence: "打开第 {{page}} 页",
     toolCall: "工具调用",
+    toolCalls: "工具调用",
+    toolCallsSummary: "{{count}} 次工具调用",
     command: "命令",
     exitCode: "退出码",
     arguments: "参数",

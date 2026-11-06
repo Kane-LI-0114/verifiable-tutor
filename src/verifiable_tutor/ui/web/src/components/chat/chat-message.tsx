@@ -10,7 +10,6 @@ import { CitationRow } from "@/components/chat/citation-row";
 import { PageError } from "@/components/layout/page-states";
 import { ReasoningTrace } from "@/components/chat/reasoning-trace";
 import { SourcesList } from "@/components/chat/sources";
-import { ToolCallTrace } from "@/components/chat/tool-call";
 import { WorkChain } from "@/components/chat/work-chain";
 import { useT } from "@/lib/i18n";
 import type { Citation, ConversationTurn } from "@/lib/types";
@@ -122,7 +121,13 @@ export function ChatMessageView({
   return (
     <Message>
       <MessageContent>
-        {meta ? <WorkChain steps={meta.work_steps} policy={meta.policy_state} /> : null}
+        {meta && (meta.work_steps.length > 0 || meta.tool_calls.length > 0) ? (
+          <WorkChain
+            steps={meta.work_steps}
+            policy={meta.policy_state}
+            toolCalls={meta.tool_calls}
+          />
+        ) : null}
         {meta?.reasoning ? <ReasoningTrace reasoning={meta.reasoning} /> : null}
         {failed ? (
           <PageError
@@ -149,12 +154,6 @@ export function ChatMessageView({
                 onOpen={onOpenCitation}
               />
             ) : null}
-            {meta?.tool_calls.map((call, index) => (
-              <ToolCallTrace
-                key={call.tool_call_id ?? `${call.name}:${index}`}
-                call={call}
-              />
-            ))}
           </>
         )}
         <div className="flex items-center gap-2">

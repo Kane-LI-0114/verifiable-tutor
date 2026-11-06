@@ -182,6 +182,8 @@ export const en = {
     sourcePage: "Page {{page}}",
     openEvidence: "Open page {{page}}",
     toolCall: "Tool call",
+    toolCalls: "Tool calls",
+    toolCallsSummary: "{{count}} tool calls",
     command: "Command",
     exitCode: "Exit code",
     arguments: "Arguments",
