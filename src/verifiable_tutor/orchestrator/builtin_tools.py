@@ -192,6 +192,7 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
             ),
             args_model=SearchCourseArgs,
             executor=_search_course,
+            work_chain_step="retrieve",
         ),
         ToolSpec(
             name="read_course_page",
@@ -201,6 +202,7 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
             ),
             args_model=ReadCoursePageArgs,
             executor=_read_course_page,
+            work_chain_step="retrieve",
         ),
     ]
     if getattr(settings, "agent_web_tools_enabled", True):
@@ -216,6 +218,7 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
                     ),
                     args_model=WebSearchArgs,
                     executor=_web_search,
+                    work_chain_step="retrieve",
                 ),
                 ToolSpec(
                     name="web_fetch",
@@ -226,6 +229,7 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
                     ),
                     args_model=WebFetchArgs,
                     executor=_web_fetch,
+                    work_chain_step="retrieve",
                 ),
             ]
         )

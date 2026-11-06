@@ -1447,7 +1447,8 @@
         "additionalProperties": false,
         "example": {
           "kind": "reasoning",
-          "reasoning": "The question asks about a collective operation."
+          "reasoning": "The question asks about a collective operation.",
+          "step_id": "step-1"
         },
         "properties": {
           "kind": {
@@ -1471,6 +1472,19 @@
             ],
             "description": "Reasoning text for a reasoning event; null for a tool call.",
             "title": "Reasoning"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id of the work-chain step the event belongs to; null on legacy rows.",
+            "example": "step-1",
+            "title": "Step Id"
           },
           "tool_call": {
             "anyOf": [
@@ -1505,7 +1519,8 @@
           "events": [
             {
               "kind": "reasoning",
-              "reasoning": "The question asks about a collective operation."
+              "reasoning": "The question asks about a collective operation.",
+              "step_id": "step-1"
             }
           ],
           "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
@@ -1520,6 +1535,7 @@
           "work_steps": [
             {
               "duration_ms": 812,
+              "id": "step-1",
               "status": "done",
               "step": "generate"
             }
@@ -1558,7 +1574,8 @@
             "example": [
               {
                 "kind": "reasoning",
-                "reasoning": "The question asks about a collective operation."
+                "reasoning": "The question asks about a collective operation.",
+                "step_id": "step-1"
               }
             ],
             "items": {
@@ -1686,6 +1703,7 @@
             "example": [
               {
                 "duration_ms": 812,
+                "id": "step-1",
                 "status": "done",
                 "step": "generate"
               }
@@ -2401,7 +2419,8 @@
               "events": [
                 {
                   "kind": "reasoning",
-                  "reasoning": "The question asks about a collective operation."
+                  "reasoning": "The question asks about a collective operation.",
+                  "step_id": "step-1"
                 }
               ],
               "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
@@ -2416,6 +2435,7 @@
               "work_steps": [
                 {
                   "duration_ms": 812,
+                  "id": "step-1",
                   "status": "done",
                   "step": "generate"
                 }
@@ -2441,7 +2461,8 @@
                 "events": [
                   {
                     "kind": "reasoning",
-                    "reasoning": "The question asks about a collective operation."
+                    "reasoning": "The question asks about a collective operation.",
+                    "step_id": "step-1"
                   }
                 ],
                 "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
@@ -2456,6 +2477,7 @@
                 "work_steps": [
                   {
                     "duration_ms": 812,
+                    "id": "step-1",
                     "status": "done",
                     "step": "generate"
                   }
@@ -2864,6 +2886,7 @@
         "additionalProperties": false,
         "example": {
           "duration_ms": 812,
+          "id": "step-1",
           "status": "done",
           "step": "generate"
         },
@@ -2892,6 +2915,12 @@
             "description": "Step duration in milliseconds when known.",
             "example": 812,
             "title": "Duration Ms"
+          },
+          "id": {
+            "description": "Stable work-chain step id.",
+            "example": "step-1",
+            "title": "Id",
+            "type": "string"
           },
           "policy": {
             "anyOf": [
@@ -2952,6 +2981,7 @@
           }
         },
         "required": [
+          "id",
           "step",
           "status"
         ],

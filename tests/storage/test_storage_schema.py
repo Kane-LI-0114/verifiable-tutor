@@ -14,9 +14,10 @@ from verifiable_tutor.storage import Storage
 
 # Independent expected value: ADR-0014 defined user_version 1 for the schema
 # that stores turn metadata, ADR-0015 bumps it to 2 for the knowledge tables,
-# ADR-0016 bumps it to 3 for the provider-call columns on tool_calls, and
-# ADR-0017 bumps it to 4 for the ordered work-chain events.
-SCHEMA_VERSION = 4
+# ADR-0016 bumps it to 3 for the provider-call columns on tool_calls,
+# ADR-0017 bumps it to 4 for the ordered work-chain events, and ADR-0019
+# bumps it to 5 for the step tag on each event.
+SCHEMA_VERSION = 5
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -121,6 +122,10 @@ def test_initialize_upgrades_a_legacy_database_without_losing_rows(tmp_path):
             )
         }
         assert {"message_steps", "citations", "tool_calls", "message_events"} <= tables
+        event_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(message_events)")
+        }
+        assert "step_id" in event_columns
         tool_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(tool_calls)")
         }
@@ -204,6 +209,10 @@ def test_initialize_creates_the_current_schema_on_a_fresh_database(tmp_path):
             "result_json",
             "duration_ms",
         } <= tool_columns
+        event_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(message_events)")
+        }
+        assert "step_id" in event_columns
         assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     finally:
         connection.close()

@@ -240,6 +240,7 @@ class ChatService:
         text_started = False
         steps: list[dict[str, Any]] = []
         step_positions: dict[str, int] = {}
+        step_ids: dict[str, str] = {}
         chain_events: list[dict[str, Any]] = []
         tool_positions = 0
         turn_result: dict[str, Any] | None = None
@@ -265,7 +266,16 @@ class ChatService:
             """Merge a data-step frame into the ordered work-chain steps."""
 
             data = frame["data"]
+            position = step_positions.get(data["step"])
+            step_id = (
+                steps[position]["id"]
+                if position is not None
+                else uuid.uuid4().hex
+            )
+            data["id"] = step_id
+            step_ids[data["step"]] = step_id
             step = {
+                "id": step_id,
                 "step": data["step"],
                 "status": data["status"],
                 "detail": data.get("detail"),
@@ -273,7 +283,6 @@ class ChatService:
                 "policy": data.get("policy"),
                 "rule_id": data.get("rule_id"),
             }
-            position = step_positions.get(data["step"])
             if position is None:
                 step_positions[data["step"]] = len(steps)
                 steps.append(step)
@@ -346,12 +355,19 @@ class ChatService:
                     reasoning = str(event.data.get("reasoning") or "").strip()
                     if reasoning:
                         chain_events.append(
-                            {"kind": "reasoning", "reasoning": reasoning}
+                            {
+                                "kind": "reasoning",
+                                "reasoning": reasoning,
+                                "step_id": step_ids.get("generate"),
+                            }
                         )
                 elif event.kind == "tool_start":
                     yield from close_reasoning()
                     yield from close_text()
                     data = event.data
+                    step_name = data.get("step")
+                    if step_name == "retrieve":
+                        yield emit(streaming.data_step("retrieve", "started"))
                     yield emit(
                         streaming.data_tool(
                             {
@@ -362,11 +378,10 @@ class ChatService:
                                 "output": None,
                                 "result": None,
                                 "duration_ms": None,
+                                "step_id": step_ids.get(step_name),
                             }
                         )
                     )
-                    if data.get("name") == "search_course":
-                        yield emit(streaming.data_step("retrieve", "started"))
                 elif event.kind == "tool_end":
                     data = event.data
                     yield emit(
@@ -379,10 +394,11 @@ class ChatService:
                                 "output": data.get("output"),
                                 "result": data.get("result"),
                                 "duration_ms": data.get("duration_ms"),
+                                "step_id": step_ids.get(data.get("step")),
                             }
                         )
                     )
-                    if data.get("name") == "search_course":
+                    if data.get("step") == "retrieve":
                         yield emit(
                             streaming.data_step(
                                 "retrieve",
@@ -391,7 +407,11 @@ class ChatService:
                             )
                         )
                     chain_events.append(
-                        {"kind": "tool_call", "tool_call_position": tool_positions}
+                        {
+                            "kind": "tool_call",
+                            "tool_call_position": tool_positions,
+                            "step_id": step_ids.get(data.get("step")),
+                        }
                     )
                     tool_positions += 1
                 elif event.kind == "turn_end":

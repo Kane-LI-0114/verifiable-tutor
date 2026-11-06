@@ -76,6 +76,9 @@ def test_agent_streams_tool_frames_and_persists_the_call(agent_api):
         part for part in parts if isinstance(part, dict) and part["type"] == "data-tool"
     ]
     assert [frame["data"]["status"] for frame in tool_frames] == ["running", "done"]
+    step_ids = [frame["data"]["step_id"] for frame in tool_frames]
+    assert step_ids[0] is not None
+    assert step_ids == [step_ids[0], step_ids[0]]
     assert tool_frames[0]["data"]["name"] == "search_course"
     assert tool_frames[0]["data"]["arguments"] == {"query": "MPI_Allreduce", "k": 2}
     assert tool_frames[1]["data"]["output"] == "1 course chunks"
@@ -130,6 +133,12 @@ def test_agent_persists_reasoning_before_each_tool_call(agent_api):
         "reasoning",
         "tool_call",
         "reasoning",
+    ]
+    steps_by_name = {step["step"]: step["id"] for step in assistant["work_steps"]}
+    assert [event["step_id"] for event in events] == [
+        steps_by_name["generate"],
+        steps_by_name["retrieve"],
+        steps_by_name["generate"],
     ]
     assert events[0]["reasoning"] == "I should search the course pages."
     assert events[0]["tool_call"] is None

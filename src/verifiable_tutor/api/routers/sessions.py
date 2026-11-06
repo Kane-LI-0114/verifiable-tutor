@@ -79,6 +79,7 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
             "thinking": message["thinking"],
             "work_steps": [
                 {
+                    "id": step["id"],
                     "step": step["step"],
                     "status": step["status"],
                     "detail": step["detail"],
@@ -103,6 +104,7 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
             "events": [
                 {
                     "kind": event["kind"],
+                    "step_id": event.get("step_id"),
                     "reasoning": event.get("reasoning"),
                     "tool_call": (
                         _tool_call_payload(event["tool_call"])

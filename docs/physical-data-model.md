@@ -250,7 +250,7 @@ Indexes:
 
 ### message_events
 
-Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segment from one model call, or a reference to one row in `tool_calls`. The order is the order the model produced them, so the UI renders each reasoning segment immediately before the tool calls it precedes.
+Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segment from one model call, or a reference to one row in `tool_calls`. Each event also names the work-chain step it belongs to so the UI can group events into step sections (ADR-0019). The order is the order the model produced them.
 
 | Column | Type | Null | Key | Notes |
 |---|---|---|---|---|
@@ -260,6 +260,7 @@ Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segmen
 | `kind` | TEXT | no | - | reasoning or tool_call. |
 | `reasoning` | TEXT | yes | - | Reasoning text for a reasoning event; null for a tool call. |
 | `tool_call_position` | INTEGER | yes | - | Position of the referenced tool_calls row; null for reasoning. |
+| `step_id` | TEXT | yes | - | Id of the Work-chain step the event belongs to; null on legacy rows. |
 
 Checks:
 
@@ -422,7 +423,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 4`.
+- Schema version: `PRAGMA user_version = 5`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

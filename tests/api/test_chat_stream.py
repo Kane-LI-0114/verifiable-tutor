@@ -128,16 +128,17 @@ def test_chat_persists_the_turn_metadata_with_the_answer(api):
     # deepseek-flash and forwards the requested thinking level.
     assert answer["model"] == "deepseek-flash"
     assert answer["thinking"] == "high"
-    assert answer["work_steps"] == [
-        {
-            "step": "generate",
-            "status": "done",
-            "detail": None,
-            "duration_ms": None,
-            "policy": None,
-            "rule_id": None,
-        }
-    ]
+    assert len(answer["work_steps"]) == 1
+    stored_step = answer["work_steps"][0]
+    assert stored_step["id"]
+    assert {key: value for key, value in stored_step.items() if key != "id"} == {
+        "step": "generate",
+        "status": "done",
+        "detail": None,
+        "duration_ms": None,
+        "policy": None,
+        "rule_id": None,
+    }
     assert answer["citations"] == []
     assert answer["tool_calls"] == []
 

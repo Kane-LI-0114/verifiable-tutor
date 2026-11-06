@@ -77,6 +77,7 @@ CITATION_EXAMPLE: dict[str, Any] = {
     "quote": "Building an End-to-End Agent System",
 }
 WORK_STEP_EXAMPLE: dict[str, Any] = {
+    "id": "step-1",
     "step": "generate",
     "status": "done",
     "detail": None,
@@ -98,6 +99,7 @@ TOOL_CALL_EXAMPLE: dict[str, Any] = {
 MESSAGE_EVENT_EXAMPLE: dict[str, Any] = {
     "kind": "reasoning",
     "reasoning": "The question asks about a collective operation.",
+    "step_id": "step-1",
     "tool_call": None,
 }
 MESSAGE_EXAMPLE: dict[str, Any] = {
@@ -302,6 +304,7 @@ class SessionListResponse(BaseModel):
 class WorkStepRecord(BaseModel):
     model_config = _example(WORK_STEP_EXAMPLE)
 
+    id: str = _ex("step-1", "Stable work-chain step id.")
     step: Literal[
         "understand", "retrieve", "verify", "decide", "generate", "cite"
     ] = _ex(
@@ -366,6 +369,10 @@ class MessageEventRecord(BaseModel):
     )
     reasoning: str | None = _opt(
         None, "Reasoning text for a reasoning event; null for a tool call."
+    )
+    step_id: str | None = _opt(
+        "step-1",
+        "Id of the work-chain step the event belongs to; null on legacy rows.",
     )
     tool_call: ToolCallRecord | None = _opt(
         None, "The tool call for a tool_call event; null for reasoning."

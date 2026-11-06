@@ -67,6 +67,9 @@ class FakeToolRegistry:
     def names(self) -> list[str]:
         return ["search_course"]
 
+    def step_for(self, name: str) -> str | None:
+        return "retrieve" if name in {"search_course", "web_search"} else None
+
     def specs(self) -> list[dict[str, Any]]:
         return [
             {

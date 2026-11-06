@@ -102,6 +102,7 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">kind</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">reasoning</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">tool_call_position</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">step_id</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
   knowledge_builds [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>knowledge_builds</B></TD></TR>

@@ -49,6 +49,7 @@ class ToolSpec:
     description: str
     args_model: type[BaseModel]
     executor: Callable[[ToolContext, BaseModel], ToolResult]
+    work_chain_step: str | None = None
 
     def provider_json(self) -> dict[str, Any]:
         return {
@@ -117,6 +118,10 @@ class ToolRegistry:
 
     def names(self) -> list[str]:
         return list(self._specs)
+
+    def step_for(self, name: str) -> str | None:
+        spec = self._specs.get(name)
+        return spec.work_chain_step if spec is not None else None
 
     def specs(self) -> list[dict[str, Any]]:
         return [spec.provider_json() for spec in self._specs.values()]

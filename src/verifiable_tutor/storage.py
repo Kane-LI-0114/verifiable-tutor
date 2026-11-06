@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -40,6 +40,9 @@ _TOOL_CALL_COLUMNS = (
     ("result_json", "TEXT"),
     ("duration_ms", "INTEGER"),
 )
+
+# The work-chain step id added to ``message_events`` by schema version 5.
+_MESSAGE_EVENT_COLUMNS = (("step_id", "TEXT"),)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -156,6 +159,7 @@ CREATE TABLE IF NOT EXISTS message_events (
     kind TEXT NOT NULL CHECK (kind IN ('reasoning', 'tool_call')),
     reasoning TEXT,
     tool_call_position INTEGER,
+    step_id TEXT,
     UNIQUE (message_id, position),
     CHECK (
         (kind = 'reasoning' AND reasoning IS NOT NULL AND tool_call_position IS NULL)
@@ -313,7 +317,7 @@ def _insert_step(
         " (id, message_id, position, step, status, detail, duration_ms,"
         "  policy, rule_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
-            uuid.uuid4().hex,
+            step.get("id") or uuid.uuid4().hex,
             message_id,
             position,
             step["step"],
@@ -362,6 +366,7 @@ class Storage:
             connection.executescript(_SCHEMA)
             self._add_missing_message_columns(connection)
             self._add_missing_tool_call_columns(connection)
+            self._add_missing_message_event_columns(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -388,6 +393,19 @@ class Storage:
             if name not in existing:
                 connection.execute(
                     f"ALTER TABLE tool_calls ADD COLUMN {name} {sql_type}"
+                )
+
+    @staticmethod
+    def _add_missing_message_event_columns(connection: sqlite3.Connection) -> None:
+        """Add the step tag a database created before version 5 lacks."""
+
+        existing = {
+            row[1] for row in connection.execute("PRAGMA table_info(message_events)")
+        }
+        for name, sql_type in _MESSAGE_EVENT_COLUMNS:
+            if name not in existing:
+                connection.execute(
+                    f"ALTER TABLE message_events ADD COLUMN {name} {sql_type}"
                 )
 
     def ping(self) -> bool:
@@ -676,6 +694,7 @@ class Storage:
             for row in steps:
                 by_id[row["message_id"]]["work_steps"].append(
                     {
+                        "id": row["id"],
                         "position": row["position"],
                         "step": row["step"],
                         "status": row["status"],
@@ -753,6 +772,7 @@ class Storage:
                         "position": row["position"],
                         "kind": row["kind"],
                         "reasoning": row["reasoning"],
+                        "step_id": row["step_id"],
                         "tool_call": tool_call,
                     }
                 )
@@ -846,8 +866,8 @@ class Storage:
                 connection.execute(
                     "INSERT INTO message_events"
                     " (id, message_id, position, kind, reasoning,"
-                    "  tool_call_position)"
-                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    "  tool_call_position, step_id)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
                         uuid.uuid4().hex,
                         message_id,
@@ -855,6 +875,7 @@ class Storage:
                         event["kind"],
                         event.get("reasoning"),
                         event.get("tool_call_position"),
+                        event.get("step_id"),
                     ),
                 )
         return {

@@ -117,9 +117,9 @@ TABLE_NOTES = {
     "message_events": (
         "Ordered work-chain events of one assistant answer (ADR-0017): a "
         "reasoning segment from one model call, or a reference to one row in "
-        "`tool_calls`. The order is the order the model produced them, so the UI "
-        "renders each reasoning segment immediately before the tool calls it "
-        "precedes."
+        "`tool_calls`. Each event also names the work-chain step it belongs to "
+        "so the UI can group events into step sections (ADR-0019). The order is "
+        "the order the model produced them."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -234,6 +234,7 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "kind": "reasoning or tool_call.",
         "reasoning": "Reasoning text for a reasoning event; null for a tool call.",
         "tool_call_position": "Position of the referenced tool_calls row; null for reasoning.",
+        "step_id": "Id of the Work-chain step the event belongs to; null on legacy rows.",
     },
     "knowledge_builds": {
         "id": "Build id.",

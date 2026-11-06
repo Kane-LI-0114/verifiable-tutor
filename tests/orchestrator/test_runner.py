@@ -127,6 +127,17 @@ def test_agent_executes_a_tool_and_feeds_the_result_back():
     assert turn["model_calls"] == 2
 
 
+def test_tool_events_name_their_work_chain_step():
+    adapter = ScriptAdapter([_tool_script(), _text_script("Answer.")])
+
+    events = _run(adapter)
+
+    tool_start = next(event for event in events if event.kind == "tool_start")
+    tool_end = next(event for event in events if event.kind == "tool_end")
+    assert tool_start.data["step"] == "retrieve"
+    assert tool_end.data["step"] == "retrieve"
+
+
 def test_both_providers_replay_reasoning_content_before_the_tool_result():
     for provider in ("deepseek", "mimo"):
         first = [

@@ -121,9 +121,21 @@ def test_work_chain_events_keep_reasoning_and_tool_calls_in_order(tmp_path):
 
     _turn(
         storage,
+        steps=[
+            {"id": "step-generate", "step": "generate", "status": "done"},
+            {"id": "step-retrieve", "step": "retrieve", "status": "done"},
+        ],
         events=[
-            {"kind": "reasoning", "reasoning": "I should search the course."},
-            {"kind": "tool_call", "tool_call_position": 0},
+            {
+                "kind": "reasoning",
+                "reasoning": "I should search the course.",
+                "step_id": "step-generate",
+            },
+            {
+                "kind": "tool_call",
+                "tool_call_position": 0,
+                "step_id": "step-retrieve",
+            },
         ],
         tool_calls=[_tool_call()],
     )
@@ -133,10 +145,26 @@ def test_work_chain_events_keep_reasoning_and_tool_calls_in_order(tmp_path):
         "reasoning",
         "tool_call",
     ]
+    assert [event["step_id"] for event in assistant["events"]] == [
+        "step-generate",
+        "step-retrieve",
+    ]
     assert assistant["events"][0]["reasoning"] == "I should search the course."
     assert assistant["events"][0]["tool_call"] is None
     assert assistant["events"][1]["tool_call"]["name"] == "search_course"
     assert assistant["events"][1]["tool_call"]["tool_call_id"] == "call_1"
+
+
+def test_a_legacy_event_without_a_step_reads_as_null(tmp_path):
+    storage = _seeded_storage(tmp_path)
+
+    _turn(
+        storage,
+        events=[{"kind": "reasoning", "reasoning": "No step was recorded."}],
+        tool_calls=[],
+    )
+
+    assert storage.list_messages("conv-1")[1]["events"][0]["step_id"] is None
 
 
 def test_a_reasoning_event_without_text_rolls_back_the_whole_turn(tmp_path):

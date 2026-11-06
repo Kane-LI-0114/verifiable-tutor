@@ -339,6 +339,7 @@ class AgentRunner:
                         "name": name,
                         "arguments": _tool_arguments(raw_arguments),
                         "position": position,
+                        "step": self._registry.step_for(name),
                     },
                 }
             )
@@ -368,6 +369,7 @@ class AgentRunner:
                 "exit_code": None,
                 "status": result.status,
                 "duration_ms": duration_ms,
+                "step": self._registry.step_for(name),
             }
             accumulator.tool_calls.append(record)
             writer({"kind": "tool_end", "data": dict(record)})
