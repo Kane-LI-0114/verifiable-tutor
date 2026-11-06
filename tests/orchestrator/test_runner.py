@@ -86,12 +86,12 @@ def runner(settings=None, retriever=None):
     )
 
 
-def _run(adapter, *, settings=None, retriever=None, messages=None):
+def _run(adapter, *, settings=None, retriever=None, messages=None, provider="deepseek"):
     return list(
         runner(settings=settings, retriever=retriever).run(
             messages or [{"role": "user", "content": "What is MPI_Allreduce?"}],
             adapter=adapter,
-            provider="deepseek",
+            provider=provider,
             tier="flash",
         )
     )
@@ -125,6 +125,23 @@ def test_agent_executes_a_tool_and_feeds_the_result_back():
     assert turn["tool_calls"][0]["status"] == "done"
     assert turn["tool_calls"][0]["tool_call_id"] == "call_1"
     assert turn["model_calls"] == 2
+
+
+def test_both_providers_replay_reasoning_content_before_the_tool_result():
+    for provider in ("deepseek", "mimo"):
+        first = [
+            StreamEvent(kind="reasoning", text="I should search the course."),
+            *_tool_script(),
+        ]
+        adapter = ScriptAdapter([first, _text_script("Answer.")])
+
+        _run(adapter, provider=provider)
+
+        assistant = adapter.calls[1]["messages"][-2]
+        assert assistant["role"] == "assistant"
+        assert assistant["reasoning_content"] == "I should search the course."
+        tool = adapter.calls[1]["messages"][-1]
+        assert tool["role"] == "tool"
 
 
 def test_unknown_tool_is_reported_to_the_model_and_the_loop_continues():

@@ -50,7 +50,9 @@ thinking:
   mapping:
     deepseek: {"off": none, low: low, high: high, max: max}
     mimo: {"off": disabled, low: enabled, high: enabled, max: enabled}
-  disable_for_tools: true
+  disable_for_tools:
+    deepseek: false
+    mimo: true
 roles:
   chat:
     provider: deepseek
@@ -112,6 +114,25 @@ def test_resolves_model_aliases_and_api_keys(config_path: Path) -> None:
     assert resolved.api_keys["deepseek"] == "sk-deepseek-test"
     assert resolved.api_keys["mimo"] == "sk-mimo-test"
     assert resolved.api_keys["search"] == "sk-deepseek-test"
+    assert resolved.config.thinking.disable_for_tools == {
+        "deepseek": False,
+        "mimo": True,
+    }
+
+
+def test_disable_for_tools_must_name_every_provider(
+    config_path: Path,
+) -> None:
+    config_path.write_text(
+        MINIMAL_CONFIG.replace(
+            "    mimo: true\n",
+            "",
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="disable_for_tools must name every provider"):
+        load_model_config(config_path, env=ENV)
 
 
 def test_relative_embedding_model_path_resolves_against_the_config_base_dir(

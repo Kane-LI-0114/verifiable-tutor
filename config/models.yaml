@@ -60,8 +60,12 @@ thinking:
   mapping:
     deepseek: {"off": none, low: low, high: high, max: max}
     mimo: {"off": disabled, low: enabled, high: enabled, max: enabled}
-  # Tool-calling turns always disable thinking on both providers.
-  disable_for_tools: true
+  # Tool-calling turns disable thinking per provider. DeepSeek accepts tools
+  # with thinking as long as tool_choice stays auto; MiMo needs the previous
+  # reasoning_content echoed back, so it stays off there by default.
+  disable_for_tools:
+    deepseek: false
+    mimo: true
 
 # Each role picks a provider and a model alias, and may override request
 # parameters. Failures retry the same model up to defaults.max_retries; the

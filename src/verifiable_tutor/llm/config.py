@@ -51,7 +51,12 @@ class ProviderConfig(_StrictModel):
 
 class ThinkingConfig(_StrictModel):
     mapping: dict[str, dict[str, str]]
-    disable_for_tools: bool = True
+    # Per-provider policy for tool-calling turns. DeepSeek supports tools with
+    # thinking while tool_choice stays auto; MiMo needs reasoning_content
+    # replay, so it stays disabled unless the caller opts in.
+    disable_for_tools: dict[str, bool] = Field(
+        default_factory=lambda: {"deepseek": False, "mimo": True}
+    )
 
 
 class RoleParams(_StrictModel):
@@ -193,8 +198,19 @@ def load_model_config(
     for role_name, role in config.roles.items():
         _validate_role(role_name, role, config)
     _validate_tts(config)
-    if config.thinking.disable_for_tools is None:
-        raise ConfigError("thinking.disable_for_tools must be set")
+    tool_policy = config.thinking.disable_for_tools
+    missing = sorted(set(config.providers) - set(tool_policy))
+    if missing:
+        raise ConfigError(
+            "thinking.disable_for_tools must name every provider: "
+            + ", ".join(missing)
+        )
+    unknown = sorted(set(tool_policy) - set(config.providers))
+    if unknown:
+        raise ConfigError(
+            "thinking.disable_for_tools names unknown providers: "
+            + ", ".join(unknown)
+        )
 
     base = (
         Path(base_dir)

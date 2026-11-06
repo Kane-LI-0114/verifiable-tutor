@@ -33,6 +33,30 @@ def sse_types(response):
     return [part if part == "[DONE]" else part["type"] for part in parts], parts
 
 
+def test_history_replays_reasoning_content_for_tool_requests(api):
+    api.create_active_account("alice@ust.hk")
+    api.adapter.events = [
+        StreamEvent(kind="reasoning", text="Think before answering."),
+        StreamEvent(kind="text", text="First answer."),
+        StreamEvent(kind="finish", finish_reason="stop"),
+    ]
+
+    first = api.client.post("/api/chat", json={"message": "First question"})
+    session_id = first.headers["x-conversation-id"]
+    api.adapter.events = [
+        StreamEvent(kind="text", text="Second answer."),
+        StreamEvent(kind="finish", finish_reason="stop"),
+    ]
+
+    api.client.post(
+        "/api/chat", json={"message": "Second question", "session_id": session_id}
+    )
+
+    history = api.adapter.calls[1]["messages"]
+    assistant = [message for message in history if message["role"] == "assistant"][0]
+    assert assistant["reasoning_content"] == "Think before answering."
+
+
 def test_agent_streams_tool_frames_and_persists_the_call(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     agent_api.adapter.scripts = [tool_script(), text_script()]

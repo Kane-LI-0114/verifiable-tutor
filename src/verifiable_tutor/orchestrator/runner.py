@@ -286,6 +286,10 @@ class AgentRunner:
                     for call in calls
                 ],
             }
+            if reasoning_parts:
+                # Both providers require the previous reasoning_content when a
+                # tool result continues a thinking-mode turn.
+                assistant["reasoning_content"] = "".join(reasoning_parts)
             return {
                 "messages": [*messages, assistant],
                 "model_calls": next_calls,

@@ -230,10 +230,16 @@ class ModelAdapter:
             )
         return provider_name, models[alias]
 
-    def _effective_thinking(self, role: str, thinking: str | None, tools: Sequence | None) -> str:
+    def _effective_thinking(
+        self,
+        role: str,
+        thinking: str | None,
+        tools: Sequence | None,
+        provider_name: str,
+    ) -> str:
         role_config = self._config.roles[role]
         level = thinking or role_config.thinking or self._config.defaults.thinking
-        if tools and self._config.thinking.disable_for_tools:
+        if tools and self._config.thinking.disable_for_tools.get(provider_name, True):
             level = "off"
         return level
 
@@ -283,7 +289,7 @@ class ModelAdapter:
                 "select a MiMo model for audio files"
             )
 
-        level = self._effective_thinking(role, thinking, tools)
+        level = self._effective_thinking(role, thinking, tools, provider_name)
         mapped = self._config.thinking.mapping.get(provider_name, {}).get(level)
         if mapped is None:
             raise ModelSelectionError(
@@ -324,7 +330,15 @@ class ModelAdapter:
 
         if tools:
             request["tools"] = list(tools)
-            request["tool_choice"] = "auto" if provider_name == "mimo" else tool_choice
+            choice = "auto" if provider_name == "mimo" else tool_choice
+            if (
+                provider_name == "deepseek"
+                and level != "off"
+                and choice not in {"auto", "none"}
+            ):
+                # DeepSeek rejects required and named choices in thinking mode.
+                choice = "auto"
+            request["tool_choice"] = choice
         if response_format is not None:
             request["response_format"] = dict(response_format)
         return provider_name, model_id, request

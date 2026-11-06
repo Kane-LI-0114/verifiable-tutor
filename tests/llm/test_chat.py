@@ -189,6 +189,80 @@ def test_tool_call_is_normalized_and_thinking_forced_off() -> None:
     assert result.finish_reason == "tool_calls"
 
 
+def test_assistant_reasoning_content_is_sent_for_mimo_tool_replay() -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            json=completion_json(model="mimo-v2.6-flash", content="done"),
+        )
+
+    make_adapter(handler).chat(
+        [
+            {
+                "role": "assistant",
+                "content": None,
+                "reasoning_content": "I should search.",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "search_course", "arguments": "{}"},
+                    }
+                ],
+            },
+            {"role": "tool", "tool_call_id": "call_1", "content": "{}"},
+        ],
+        provider="mimo",
+        tier="flash",
+    )
+
+    body = json.loads(captured[0].content)
+    assert body["messages"][0]["reasoning_content"] == "I should search."
+
+
+def test_deepseek_keeps_thinking_with_tools_and_forces_auto_choice() -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            json=completion_json(
+                content="thinking answer",
+                reasoning="I reasoned before calling a tool.",
+                model="deepseek-flash",
+            ),
+        )
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "search_course",
+                "description": "Search the course corpus",
+                "parameters": {"type": "object", "properties": {"query": {"type": "string"}}},
+            },
+        }
+    ]
+    result = make_adapter(handler).chat(
+        [{"role": "user", "content": "find roofline"}],
+        provider="deepseek",
+        thinking="high",
+        tools=tools,
+        tool_choice="required",
+    )
+
+    body = json.loads(captured[0].content)
+    assert body["reasoning_effort"] == "high"
+    assert body["tool_choice"] == "auto"
+    assert body["tools"] == tools
+    assert "temperature" not in body
+    assert result.reasoning == "I reasoned before calling a tool."
+
+
 def test_retryable_error_retries_same_model_then_succeeds() -> None:
     seen: list[str] = []
 

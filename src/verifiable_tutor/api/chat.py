@@ -132,11 +132,17 @@ class ChatService:
         stored = self._storage.list_messages(conversation_id)
         limit = self._settings.chat_history_messages
         selected = stored[-limit:] if limit > 0 else stored
-        return [
-            {"role": message["role"], "content": message["content"]}
-            for message in selected
-            if message["role"] in {"user", "assistant"}
-        ]
+        history: list[dict[str, str]] = []
+        for message in selected:
+            if message["role"] not in {"user", "assistant"}:
+                continue
+            item = {"role": message["role"], "content": message["content"]}
+            if message["role"] == "assistant" and message.get("reasoning"):
+                # DeepSeek and MiMo require previous reasoning_content when a
+                # request carries tools, including turns that made no tool call.
+                item["reasoning_content"] = message["reasoning"]
+            history.append(item)
+        return history
 
     # -- public entry point ------------------------------------------------
     def begin_turn(
@@ -189,7 +195,7 @@ class ChatService:
             events = self._runner.run(
                 messages,
                 adapter=adapter,
-                provider=provider,
+                provider=selection.provider,
                 tier=tier,
                 thinking=thinking,
             )
