@@ -23,7 +23,7 @@ Scope and non-goals:
 | Video input | No | Yes, both v2.6 tiers |
 | Thinking control | `thinking.type` plus `reasoning_effort` levels `none, low, high, max` | `thinking.type` only, `enabled` or `disabled` |
 | JSON output | `response_format: json_object` only | `response_format: json_object` only |
-| Tool calling | OpenAI function tools; `tool_choice` blocked in thinking mode | OpenAI function tools; `tool_choice` must be `auto` |
+| Tool calling | OpenAI function tools; in thinking mode `tool_choice` must be `auto` or `none`, and `required` or a named function returns 400 | OpenAI function tools; `tool_choice` must be `auto` |
 | Web search | Standalone Search and Fetch REST APIs | Own `web_search` tool exists; not used by this project |
 | Native files upload | Files API for images | None; URL or base64 only |
 
@@ -34,10 +34,10 @@ Routing rules the agent layer must enforce:
 3. Audio file input: supported only when the selected model is a MiMo 2.6 tier. If the selected model is `mimo-v2.6-flash`, flash handles the audio; if it is `mimo-v2.6-pro`, pro handles it. If the selected provider is DeepSeek, the adapter rejects the attachment with a capability error instead of rerouting it silently.
 4. Voice-to-text: the microphone in the composer uses MiMo `mimo-v2.5-asr`. The transcript is inserted into the text box, and the normal chat path then runs with the selected text provider. This is a transcription call, not a chat call.
 5. Text to speech: assistant output can be synthesized by the MiMo TTS family on demand. This path also serves as the candidate for teaching-video voiceover. It is a separate call and does not change the chat provider.
-6. Thinking: expose one unified control (`off`, `low`, `high`, `max`) and map it per provider. Force `off` on every tool-calling turn. Force `off` for deterministic evaluation runs, because temperature is ignored while thinking is on.
+6. Thinking: expose one unified control (`off`, `low`, `high`, `max`) and map it per provider. Tool-calling turns follow the per-provider `thinking.disable_for_tools` policy: DeepSeek keeps thinking with `tool_choice: auto` and requires previous `reasoning_content` to be replayed; MiMo disables thinking by default because tool calls with thinking are unstable unless `reasoning_content` is echoed. Force `off` for deterministic evaluation runs, because temperature is ignored while thinking is on.
 7. Web search: always call the DeepSeek Search and Fetch REST APIs, even when the chat model is MiMo. These APIs are provider independent and authenticated with the DeepSeek key.
 8. JSON output: no provider offers `json_schema`. Put the schema in the prompt, set `json_object`, validate with pydantic, and retry a bounded number of times.
-9. Tool calls: disable thinking for the whole tool loop, echo the full assistant message (including `reasoning_content`) on every later turn for both providers, validate the tool arguments in code, and never rely on `tool_choice` other than `auto`.
+9. Tool calls: apply the per-provider thinking policy, echo the full assistant message (including `reasoning_content`) on every later turn when thinking is active, validate the tool arguments in code, and never rely on `tool_choice` other than `auto`.
 10. Failure handling: retry the selected model on transient errors (timeouts, connection errors, 408, 409, 429, 5xx) up to `defaults.max_retries`. Never fall back to a different model or provider. After the last attempt raise `ModelResponseError` with `reason` (`timeout` or `unavailable`) and a `user_message`; the service shows that copy and the user decides when to retry. Non-retryable errors keep the `ProviderAPIError` status.
 
 Adapter surface, current and pending:
@@ -340,8 +340,8 @@ Routing in this project:
 - Default: enabled for all v2.6 text models.
 - Output: `message.reasoning_content` or `delta.reasoning_content`; token count in `usage.completion_tokens_details.reasoning_tokens`.
 - While thinking is on, `temperature` and `top_p` are ignored and forced to 1.0 and 0.95. Disable thinking to control sampling.
-- With tools, the docs say the combination is unstable: tool calls can leak into `reasoning_content`. Disable thinking for tool-calling turns.
-- If an assistant turn contains tool calls, its `reasoning_content` must be echoed back on the next request or the API returns 400.
+- With tools, the docs say the combination is unstable: tool calls can leak into `reasoning_content`. The project keeps thinking off for MiMo tool turns by default (`thinking.disable_for_tools.mimo: true`).
+- If an assistant turn contains tool calls, its `reasoning_content` must be echoed back on the next request or the API returns 400. The runner adds it when MiMo thinking is enabled.
 
 ### 4.5 JSON output
 
@@ -478,10 +478,10 @@ JSON output:
 
 Tool calls:
 
-1. Disable thinking for the whole tool loop. DeepSeek rejects some `tool_choice` values in thinking mode, and MiMo documents unstable tool calls in thinking mode.
+1. Apply `thinking.disable_for_tools` per provider. DeepSeek keeps thinking with `tool_choice: auto`; MiMo defaults to off and needs `reasoning_content` replay when enabled.
 2. Send standard function tools. Keep tool names under 64 characters and within the allowed character set.
-3. Use `tool_choice="auto"` only. MiMo strips other values; DeepSeek rejects `required` and named choices in thinking mode.
-4. After a tool-call turn, append the full assistant message to history, including `reasoning_content` and `tool_calls`. Both providers return 400 when `reasoning_content` is missing on later tool turns.
+3. Use `tool_choice="auto"` only. MiMo strips other values; DeepSeek rejects `required` and named choices in thinking mode, and the adapter forces `auto` for DeepSeek thinking turns.
+4. After a tool-call turn, append the full assistant message to history, including `reasoning_content` and `tool_calls`. Both providers return 400 when `reasoning_content` is missing on later tool turns while tools are present.
 5. Validate `arguments` against the JSON Schema before executing the tool. Both providers may return invalid JSON or invented parameters.
 6. Handle parallel tool calls: execute each call, append one `role: tool` message per call.
 7. In streaming mode, accumulate tool-call fragments by `index` and emit the tool call only after `finish_reason == "tool_calls"`.
@@ -549,7 +549,7 @@ DeepSeek:
 Xiaomi MiMo:
 
 - Thinking on by default; temperature and top_p are forced while it is enabled.
-- Tool calls are unstable with thinking on; disable thinking for tool turns.
+- Tool calls are unstable with thinking on; keep thinking off for tool turns by default. Enabling it requires echoing `reasoning_content` on later requests.
 - `tool_choice` is `auto` only; forcing is impossible.
 - The usage-only final chunk has `choices: []`.
 - ASR accepts only mp3 and wav, base64 data URLs, at most 10 MB, and one clip per request.
