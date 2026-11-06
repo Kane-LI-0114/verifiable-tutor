@@ -44,11 +44,12 @@ def test_the_ocr_manifest_covers_every_pdf_once() -> None:
         "Tutorial_3",
         "Tutorial_4",
         "Tutorial_5",
+        "Tutorial_6",
         "TACC_Toturial",
         "Assignment_1_final",
         "Assignment_2",
     ]
-    assert len({doc_id for doc_id, _pdf in parsed}) == len(parsed) == 11
+    assert len({doc_id for doc_id, _pdf in parsed}) == len(parsed) == 12
     assert all(pdf.endswith(".pdf") for _doc_id, pdf in parsed)
 
 
@@ -59,10 +60,10 @@ def test_each_batch_fits_the_recorded_page_budget() -> None:
         batch: sum(document["expected_pages"] for document in driver.batch_documents(batch))
         for batch in ("lectures", "tutorials", "misc")
     }
-    # Lecture pages 11 + 67 + 69, tutorial pages 16 + 25 + 28 + 40 + 33 + 34,
+    # Lecture pages 11 + 67 + 69, tutorial pages 16 + 25 + 28 + 40 + 33 + 23 + 34,
     # assignment pages 6 + 5, all counted from the course PDFs.
-    assert pages == {"lectures": 147, "tutorials": 176, "misc": 11}
-    assert sum(pages.values()) + 8 == 342  # plus the already parsed course_project.pdf
+    assert pages == {"lectures": 147, "tutorials": 199, "misc": 11}
+    assert sum(pages.values()) + 8 == 365  # plus the already parsed course_project.pdf
 
 
 def test_the_ocr_request_carries_the_ocr_cap_and_the_body_deadline() -> None:

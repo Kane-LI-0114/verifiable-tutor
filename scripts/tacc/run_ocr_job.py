@@ -70,6 +70,7 @@ BATCHES: dict[str, list[dict]] = {
         {"doc_id": "Tutorial_3", "pdf": "Tutorial_3.pdf", "expected_pages": 28},
         {"doc_id": "Tutorial_4", "pdf": "Tutorial_4.pdf", "expected_pages": 40},
         {"doc_id": "Tutorial_5", "pdf": "Tutorial_5.pdf", "expected_pages": 33},
+        {"doc_id": "Tutorial_6", "pdf": "Tutorial_6.pdf", "expected_pages": 23},
         {"doc_id": "TACC_Toturial", "pdf": "TACC_Toturial.pdf", "expected_pages": 34},
     ],
     "misc": [
