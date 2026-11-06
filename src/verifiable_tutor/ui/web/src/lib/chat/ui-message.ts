@@ -5,6 +5,7 @@ import type {
   ChatMessage,
   ConversationTurn,
   PolicyState,
+  ToolCall,
   WorkStep,
   WorkStepName,
   WorkStepStatus,
@@ -29,7 +30,21 @@ export interface ModelProviderTier {
 /** Provider and tier travel with a persisted message; streamed turns fill them in. */
 export type MessageMetadata = ModelProviderTier;
 
-export type TutorDataParts = { step: WorkStepData } & Record<string, unknown>;
+/** Payload of the backend `data-tool` frame, rendered by the tool trace. */
+export interface ToolCallData {
+  tool_call_id?: string;
+  name: string;
+  status: ToolCall["status"];
+  arguments?: unknown;
+  output?: string | null;
+  result?: unknown;
+  duration_ms?: number | null;
+}
+
+export type TutorDataParts = {
+  step: WorkStepData;
+  tool: ToolCallData;
+} & Record<string, unknown>;
 
 export type TutorUIMessage = UIMessage<MessageMetadata, TutorDataParts>;
 
@@ -81,6 +96,33 @@ function workSteps(parts: TutorPart[]): WorkStep[] {
     }
   }
   return steps;
+}
+
+function toolCalls(parts: TutorPart[]): ToolCall[] {
+  const calls = new Map<string, ToolCall>();
+  for (const part of parts) {
+    if (part.type !== "data-tool") {
+      continue;
+    }
+    const data = part.data as ToolCallData;
+    const key = data.tool_call_id ?? `${data.name}:${calls.size}`;
+    const existing = calls.get(key);
+    if (existing && existing.status !== "running" && data.status === "running") {
+      continue;
+    }
+    calls.set(key, {
+      tool_call_id: data.tool_call_id,
+      name: data.name,
+      arguments: data.arguments,
+      result: data.result,
+      duration_ms: data.duration_ms ?? undefined,
+      command: [],
+      exit_code: null,
+      output: typeof data.output === "string" ? data.output : "",
+      status: data.status,
+    });
+  }
+  return [...calls.values()];
 }
 
 function reasoningText(parts: TutorPart[]): string {
@@ -157,12 +199,13 @@ export function toConversationTurn(
     } else {
       const steps = workSteps(message.parts);
       const reasoning = reasoningText(message.parts);
-      if (steps.length > 0 || reasoning.length > 0) {
+      const calls = toolCalls(message.parts);
+      if (steps.length > 0 || reasoning.length > 0 || calls.length > 0) {
         turn.meta = {
           work_steps: steps,
           reasoning,
           citations: [],
-          tool_calls: [],
+          tool_calls: calls,
           policy_state: steps.find((step) => step.policy)?.policy ?? "active",
         };
       }

@@ -184,6 +184,8 @@ export const en = {
     toolCall: "Tool call",
     command: "Command",
     exitCode: "Exit code",
+    arguments: "Arguments",
+    duration: "Duration",
     output: "Output",
     reasoning: "Reasoning",
     reasoningSummary: "How the answer was reached",

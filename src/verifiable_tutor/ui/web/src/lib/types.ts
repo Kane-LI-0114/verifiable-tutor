@@ -108,10 +108,14 @@ export interface WorkStep {
 }
 
 export interface ToolCall {
+  tool_call_id?: string;
   name: string;
+  arguments?: unknown;
+  result?: unknown;
+  duration_ms?: number;
   command: string[];
   exit_code: number | null;
-  output: string;
+  output: string | null;
   status: "running" | "done" | "failed";
 }
 

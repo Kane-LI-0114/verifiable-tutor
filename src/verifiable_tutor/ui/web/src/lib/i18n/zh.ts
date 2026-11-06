@@ -184,6 +184,8 @@ export const zh: Messages = {
     toolCall: "工具调用",
     command: "命令",
     exitCode: "退出码",
+    arguments: "参数",
+    duration: "耗时",
     output: "输出",
     reasoning: "思考过程",
     reasoningSummary: "答案是如何得到的",

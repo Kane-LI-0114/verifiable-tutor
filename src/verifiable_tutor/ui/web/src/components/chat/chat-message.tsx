@@ -149,8 +149,11 @@ export function ChatMessageView({
                 onOpen={onOpenCitation}
               />
             ) : null}
-            {meta?.tool_calls.map((call) => (
-              <ToolCallTrace key={`${call.name}:${call.command.join(" ")}`} call={call} />
+            {meta?.tool_calls.map((call, index) => (
+              <ToolCallTrace
+                key={call.tool_call_id ?? `${call.name}:${index}`}
+                call={call}
+              />
             ))}
           </>
         )}

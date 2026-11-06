@@ -190,6 +190,43 @@ const STREAM_FRAMES = [
   "[DONE]",
 ];
 
+const TOOL_STREAM_FRAMES = [
+  { type: "start", messageId: "streamed-tool-message" },
+  { type: "data-step", data: { step: "generate", status: "started" } },
+  { type: "start-step" },
+  {
+    type: "data-tool",
+    data: {
+      tool_call_id: "call_1",
+      name: "search_course",
+      status: "running",
+      arguments: { query: "MPI_Allreduce" },
+    },
+  },
+  { type: "data-step", data: { step: "retrieve", status: "started" } },
+  {
+    type: "data-tool",
+    data: {
+      tool_call_id: "call_1",
+      name: "search_course",
+      status: "done",
+      arguments: { query: "MPI_Allreduce" },
+      output: "1 course chunks",
+      duration_ms: 42,
+    },
+  },
+  { type: "data-step", data: { step: "retrieve", status: "done" } },
+  { type: "finish-step" },
+  { type: "start-step" },
+  { type: "text-start", id: "t1" },
+  { type: "text-delta", id: "t1", delta: "Allreduce sums a value." },
+  { type: "text-end", id: "t1" },
+  { type: "finish-step" },
+  { type: "data-step", data: { step: "generate", status: "done" } },
+  { type: "finish" },
+  "[DONE]",
+];
+
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;
   const promise = new Promise<void>((fulfil) => {
@@ -1021,5 +1058,30 @@ describe("live chat", () => {
     expect(router.state.location.pathname).toBe("/chat");
 
     gate.resolve();
+  });
+  it("renders a live tool call from the data-tool frames", async () => {
+    stub = createFetchStub(
+      routes([
+        chatRoute(() =>
+          sseResponse(TOOL_STREAM_FRAMES, {
+            headers: { "x-conversation-id": SESSION_ID },
+          }),
+        ),
+        history(),
+      ]),
+    );
+    const user = userEvent.setup();
+    renderLiveRoute(`/chat/${SESSION_ID}`);
+
+    await user.type(await screen.findByLabelText("Your question"), QUESTION);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(await screen.findByText("Tool call: search_course")).toBeInTheDocument();
+    expect(await screen.findByText("Allreduce sums a value.")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Tool call: search_course"));
+    expect(await screen.findByText("Arguments")).toBeInTheDocument();
+    expect(await screen.findByText("1 course chunks")).toBeInTheDocument();
+    expect(await screen.findByText("Duration 42 ms")).toBeInTheDocument();
   });
 });
