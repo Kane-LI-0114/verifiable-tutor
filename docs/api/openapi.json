@@ -1587,14 +1587,24 @@
             "description": "Tool calls executed for the answer, in display order.",
             "example": [
               {
-                "command": [
-                  "rg",
-                  "MPI_Allreduce"
-                ],
-                "exit_code": 0,
-                "name": "course_search",
-                "output": "found 2 pages",
-                "status": "done"
+                "arguments": {
+                  "k": 3,
+                  "query": "MPI_Allreduce"
+                },
+                "command": [],
+                "duration_ms": 42,
+                "name": "search_course",
+                "output": "3 course chunks",
+                "result": {
+                  "chunks": [
+                    {
+                      "doc_id": "Tutorial_2",
+                      "page_no": 8
+                    }
+                  ]
+                },
+                "status": "done",
+                "tool_call_id": "call_1"
               }
             ],
             "items": {
@@ -2496,27 +2506,64 @@
       "ToolCallRecord": {
         "additionalProperties": false,
         "example": {
-          "command": [
-            "rg",
-            "MPI_Allreduce"
-          ],
-          "exit_code": 0,
-          "name": "course_search",
-          "output": "found 2 pages",
-          "status": "done"
+          "arguments": {
+            "k": 3,
+            "query": "MPI_Allreduce"
+          },
+          "command": [],
+          "duration_ms": 42,
+          "name": "search_course",
+          "output": "3 course chunks",
+          "result": {
+            "chunks": [
+              {
+                "doc_id": "Tutorial_2",
+                "page_no": 8
+              }
+            ]
+          },
+          "status": "done",
+          "tool_call_id": "call_1"
         },
         "properties": {
+          "arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Parsed tool arguments.",
+            "example": {
+              "k": 3,
+              "query": "MPI_Allreduce"
+            },
+            "title": "Arguments"
+          },
           "command": {
             "description": "Exact command line as an argument vector; empty when the tool has none.",
-            "example": [
-              "rg",
-              "MPI_Allreduce"
-            ],
+            "example": [],
             "items": {
               "type": "string"
             },
             "title": "Command",
             "type": "array"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tool execution time in milliseconds.",
+            "example": 42,
+            "title": "Duration Ms"
           },
           "exit_code": {
             "anyOf": [
@@ -2528,12 +2575,11 @@
               }
             ],
             "description": "Process exit code; null while running.",
-            "example": 0,
             "title": "Exit Code"
           },
           "name": {
             "description": "Typed tool that ran during the answer.",
-            "example": "course_search",
+            "example": "search_course",
             "title": "Name",
             "type": "string"
           },
@@ -2547,8 +2593,20 @@
               }
             ],
             "description": "Truncated tool output.",
-            "example": "found 2 pages",
+            "example": "3 course chunks",
             "title": "Output"
+          },
+          "result": {
+            "description": "Structured tool result returned to the model.",
+            "example": {
+              "chunks": [
+                {
+                  "doc_id": "Tutorial_2",
+                  "page_no": 8
+                }
+              ]
+            },
+            "title": "Result"
           },
           "status": {
             "description": "Tool state; one of running, done, or failed.",
@@ -2560,6 +2618,19 @@
             "example": "done",
             "title": "Status",
             "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provider tool call id the result is correlated with.",
+            "example": "call_1",
+            "title": "Tool Call Id"
           }
         },
         "required": [

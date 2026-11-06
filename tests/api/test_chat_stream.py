@@ -58,10 +58,12 @@ def test_chat_streams_the_ai_sdk_message_stream(api):
     assert types == [
         "start",
         "data-step",
+        "start-step",
         "text-start",
         "text-delta",
         "text-delta",
         "text-end",
+        "finish-step",
         "data-step",
         "finish",
         "[DONE]",
@@ -73,8 +75,8 @@ def test_chat_streams_the_ai_sdk_message_stream(api):
     )
     assert deltas == "Hello"
     assert parts[0]["messageId"]
-    text_part = parts[2]["id"]
-    assert {part["id"] for part in parts[3:6]} == {text_part}
+    text_part = parts[3]["id"]
+    assert {part["id"] for part in parts[3:7]} == {text_part}
 
 
 def test_chat_persists_both_messages_and_hides_them_behind_the_session(api):
@@ -271,7 +273,15 @@ def test_chat_mid_stream_failure_emits_the_error_part_and_keeps_no_partial_answe
     assert response.status_code == 200
     parts = parse_sse(response.text)
     types = [part if part == "[DONE]" else part["type"] for part in parts]
-    assert types == ["start", "data-step", "text-start", "text-delta", "error", "[DONE]"]
+    assert types == [
+        "start",
+        "data-step",
+        "start-step",
+        "text-start",
+        "text-delta",
+        "error",
+        "[DONE]",
+    ]
     session_id = response.headers["x-conversation-id"]
     history = api.client.get(f"/api/sessions/{session_id}/messages").json()["messages"]
     assert [message["role"] for message in history] == ["user"]
@@ -293,7 +303,7 @@ def test_chat_records_the_session_trace_without_the_email(api):
     records = [json.loads(line) for line in text.splitlines()]
     kinds = [record["kind"] for record in records]
     assert kinds[0] == "meta"
-    assert kinds.count("frame") == 7
+    assert kinds.count("frame") == 9
     assert "event" in kinds
 
 

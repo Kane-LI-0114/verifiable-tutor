@@ -30,6 +30,7 @@ from ..evidence.embedding import LocalEmbedder
 from ..evidence.retrieval import HybridRetriever
 from ..knowledge.browse import KnowledgeBrowser
 from ..knowledge.service import CardStore, DriverBuildRunner, KnowledgeBuildService
+from ..orchestrator.builtin_tools import build_tool_registry
 from .replay import ReplayService
 from .routers import (
     auth,
@@ -105,6 +106,7 @@ def create_app(
     adapter_factory: AdapterFactory | None = None,
     email_sender: EmailSender | None = None,
     build_runner: Any | None = None,
+    tool_registry: Any | None = None,
     docs_api_dir: str | Path | None = None,
 ) -> FastAPI:
     """Build the application; collaborators are injected for tests."""
@@ -157,11 +159,26 @@ def create_app(
             email_sender=resolved_email,
             clock=resolved_clock,
         )
+        knowledge_store = KnowledgeStore(database)
+        app.state.knowledge_store = knowledge_store
+        retriever = HybridRetriever(
+            store=knowledge_store, embedder=_build_embedder(resolved)
+        )
+        app.state.retriever = retriever
+        registry = (
+            tool_registry
+            if tool_registry is not None
+            else build_tool_registry(settings=resolved)
+        )
+        app.state.tool_registry = registry
         app.state.chat = ChatService(
             settings=resolved,
             storage=database,
             trace=trace,
             clock=resolved_clock,
+            tool_registry=registry,
+            retriever=retriever,
+            knowledge_store=knowledge_store,
         )
         app.state.replay = ReplayService(
             storage=database,
@@ -170,13 +187,8 @@ def create_app(
             default_speed=resolved.replay_default_speed,
         )
         app.state.cards = CardStore(resolved.knowledge_records_dir)
-        knowledge_store = KnowledgeStore(database)
-        app.state.knowledge_store = knowledge_store
         app.state.knowledge = KnowledgeBrowser(
             store=knowledge_store, settings=resolved, clock=resolved_clock
-        )
-        app.state.retriever = HybridRetriever(
-            store=knowledge_store, embedder=_build_embedder(resolved)
         )
         app.state.builds = KnowledgeBuildService(
             settings=resolved,

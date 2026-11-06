@@ -85,10 +85,14 @@ WORK_STEP_EXAMPLE: dict[str, Any] = {
     "rule_id": None,
 }
 TOOL_CALL_EXAMPLE: dict[str, Any] = {
-    "name": "course_search",
-    "command": ["rg", "MPI_Allreduce"],
-    "exit_code": 0,
-    "output": "found 2 pages",
+    "tool_call_id": "call_1",
+    "name": "search_course",
+    "arguments": {"query": "MPI_Allreduce", "k": 3},
+    "result": {"chunks": [{"doc_id": "Tutorial_2", "page_no": 8}]},
+    "command": [],
+    "exit_code": None,
+    "output": "3 course chunks",
+    "duration_ms": 42,
     "status": "done",
 }
 MESSAGE_EXAMPLE: dict[str, Any] = {
@@ -324,13 +328,24 @@ class WorkStepRecord(BaseModel):
 class ToolCallRecord(BaseModel):
     model_config = _example(TOOL_CALL_EXAMPLE)
 
-    name: str = _ex("course_search", "Typed tool that ran during the answer.")
+    tool_call_id: str | None = _opt(
+        "call_1", "Provider tool call id the result is correlated with."
+    )
+    name: str = _ex("search_course", "Typed tool that ran during the answer.")
+    arguments: dict[str, Any] | None = _opt(
+        {"query": "MPI_Allreduce", "k": 3}, "Parsed tool arguments."
+    )
+    result: Any = _opt(
+        {"chunks": [{"doc_id": "Tutorial_2", "page_no": 8}]},
+        "Structured tool result returned to the model.",
+    )
     command: list[str] = _ex(
-        ["rg", "MPI_Allreduce"],
+        [],
         "Exact command line as an argument vector; empty when the tool has none.",
     )
-    exit_code: int | None = _opt(0, "Process exit code; null while running.")
-    output: str | None = _opt("found 2 pages", "Truncated tool output.")
+    exit_code: int | None = _opt(None, "Process exit code; null while running.")
+    output: str | None = _opt("3 course chunks", "Truncated tool output.")
+    duration_ms: int | None = _opt(42, "Tool execution time in milliseconds.")
     status: Literal["running", "done", "failed"] = _ex(
         "done",
         "Tool state; one of running, done, or failed.",

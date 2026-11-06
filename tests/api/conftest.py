@@ -22,13 +22,16 @@ from verifiable_tutor.auth.email import EmailMessage
 from verifiable_tutor.api.factory import create_app
 from verifiable_tutor.settings import AppSettings, SmtpSettings
 from verifiable_tutor.llm.adapter import (
+    FetchResult,
     ModelResponseError,
     ModelSelection,
     ModelSelectionError,
+    SearchResult,
     SpeechResult,
     StreamEvent,
     TranscriptResult,
 )
+from verifiable_tutor.orchestrator.tools import ToolResult
 
 DEFAULT_PASSWORD = "correct-horse-battery"
 
@@ -55,6 +58,79 @@ class FakeClock:
         self.current = self.current + timedelta(**delta)
 
 
+class FakeToolRegistry:
+    """A deterministic tool registry for HTTP tests; no local corpus needed."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def names(self) -> list[str]:
+        return ["search_course"]
+
+    def specs(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_course",
+                    "description": "Search the course corpus.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
+                },
+            }
+        ]
+
+    def execute(self, name: str, arguments: Any, *, context: Any) -> ToolResult:
+        self.calls.append({"name": name, "arguments": arguments})
+        if name not in {"search_course", "web_search"}:
+            payload = {"error": f"unknown tool {name!r}"}
+            return ToolResult(
+                content=json.dumps(payload),
+                output=payload["error"],
+                result=payload,
+                status="failed",
+            )
+        if name == "web_search":
+            payload = {
+                "source": "web",
+                "untrusted": True,
+                "results": [
+                    {
+                        "title": "DeepSeek V4 released",
+                        "url": "https://example.com/deepseek",
+                        "summary": "A summary.",
+                    }
+                ],
+            }
+            return ToolResult(
+                content=json.dumps(payload),
+                output="1 web results",
+                result=payload,
+                status="done",
+            )
+        payload = {
+            "source": "course",
+            "chunks": [
+                {
+                    "doc_id": "Tutorial_2",
+                    "page_no": 8,
+                    "chunk_id": "Tutorial_2:p008:c00",
+                    "section": "Collectives",
+                    "text": "MPI_Allreduce reduces a value across all ranks.",
+                }
+            ],
+        }
+        return ToolResult(
+            content=json.dumps(payload),
+            output="1 course chunks",
+            result=payload,
+            status="done",
+        )
+
+
 class RecordingEmailSender:
     """Email seam fake: records messages for assertions, sends nothing."""
 
@@ -79,6 +155,8 @@ class FakeAdapter:
             StreamEvent(kind="text", text="Hello"),
             StreamEvent(kind="finish", finish_reason="stop"),
         ]
+        # One script per model call; an empty list falls back to ``events``.
+        self.scripts: list[list[StreamEvent]] = []
         self.fail_before_first: Exception | None = None
         self.fail_after: int | None = None
         self.calls: list[dict[str, Any]] = []
@@ -123,10 +201,33 @@ class FakeAdapter:
         self.calls.append({"messages": list(messages), "kwargs": dict(kwargs)})
         if self.fail_before_first is not None:
             raise self.fail_before_first
-        for index, event in enumerate(self.events):
+        events = self.scripts.pop(0) if self.scripts else self.events
+        for index, event in enumerate(events):
             if self.fail_after is not None and index == self.fail_after:
                 raise ModelResponseError("unavailable", 3, "fake mid-stream failure")
             yield event
+
+    def search(self, query: str, *, count: int | None = None, need_content: bool | None = None):
+        self.calls.append(
+            {"search": query, "count": count, "need_content": need_content}
+        )
+        return [
+            SearchResult(
+                title="DeepSeek V4 released",
+                url="https://example.com/deepseek",
+                snippet="short",
+                summary="A summary of the release.",
+                content="",
+                site_name="Example",
+                date="2026-06-01T00:00:00+00:00",
+                rerank_score=2.0,
+                authority=3,
+            )
+        ]
+
+    def fetch(self, url: str):
+        self.calls.append({"fetch": url})
+        return FetchResult(url=url, title="Example", content="Page body.")
 
     def transcribe(self, audio: bytes, **kwargs: Any) -> TranscriptResult:
         self.calls.append({"audio": audio, "kwargs": dict(kwargs)})
@@ -307,6 +408,12 @@ def _harness(tmp_path: Path, settings_overrides: dict[str, Any] | None = None, *
 @pytest.fixture
 def api(tmp_path: Path):
     with _harness(tmp_path) as harness:
+        yield harness
+
+
+@pytest.fixture
+def agent_api(tmp_path: Path):
+    with _harness(tmp_path, tool_registry=FakeToolRegistry()) as harness:
         yield harness
 
 

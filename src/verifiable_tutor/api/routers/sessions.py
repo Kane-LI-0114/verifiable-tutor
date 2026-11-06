@@ -85,10 +85,14 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
             ],
             "tool_calls": [
                 {
+                    "tool_call_id": call.get("tool_call_id"),
                     "name": call["name"],
+                    "arguments": call.get("arguments"),
+                    "result": call.get("result"),
                     "command": call["command"] or [],
                     "exit_code": call["exit_code"],
                     "output": call["output"],
+                    "duration_ms": call.get("duration_ms"),
                     "status": call["status"],
                 }
                 for call in message["tool_calls"]

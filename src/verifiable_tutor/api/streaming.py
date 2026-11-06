@@ -41,6 +41,20 @@ def data_step(step: str, status: str, **extra: Any) -> dict[str, Any]:
     return {"type": "data-step", "data": {"step": step, "status": status, **extra}}
 
 
+def start_step() -> dict[str, Any]:
+    return {"type": "start-step"}
+
+
+def finish_step() -> dict[str, Any]:
+    return {"type": "finish-step"}
+
+
+def data_tool(data: dict[str, Any]) -> dict[str, Any]:
+    """One custom data part carrying a tool call's running or final state."""
+
+    return {"type": "data-tool", "data": data}
+
+
 def text_start(part_id: str) -> dict[str, Any]:
     return {"type": "text-start", "id": part_id}
 

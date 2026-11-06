@@ -1,9 +1,8 @@
-"""Chat turns: model streaming with persistence and the JSONL session trace.
+"""Chat turns: the agent loop, streaming frames, persistence, and trace.
 
-The evidence layer, disclosure gate, and LangGraph runtime are not implemented
-yet. This service therefore streams ungrounded model text through the
-production HTTP and trace path; the wiring points for retrieval and policy
-arrive with those packages without changing this HTTP contract.
+The turn runs through the LangGraph tool loop in ``orchestrator.runner``. This
+service keeps the HTTP contract: it owns the conversation, the prompt history,
+the AI SDK frame sequence, the persisted turn metadata, and the JSONL trace.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ import itertools
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator, Mapping
 
 from ..llm.adapter import (
     AdapterError,
@@ -24,6 +23,8 @@ from ..llm.adapter import (
     ProviderAPIError,
     StreamEvent,
 )
+from ..orchestrator.runner import AgentEvent, AgentRunner
+from ..orchestrator.tools import ToolRegistry
 from . import streaming
 from ..prompts import load_prompt
 from ..settings import AppSettings
@@ -36,6 +37,7 @@ SYSTEM_PROMPT = load_prompt("chat_system")
 GENERIC_STREAM_ERROR = "The model failed while answering. Please try again."
 GENERIC_UNAVAILABLE = "The model is temporarily unavailable. Please try again."
 SAVE_ERROR = "The answer could not be saved. Please try again."
+EMPTY_TURN = "The agent produced no answer. Please try again."
 
 
 class ChatError(Exception):
@@ -85,7 +87,7 @@ def _stream_error_text(exc: Exception) -> str:
 
 
 class ChatService:
-    """One chat turn: resolve the conversation, stream, persist, and trace."""
+    """One chat turn: resolve the conversation, run the agent, stream, persist."""
 
     def __init__(
         self,
@@ -94,11 +96,20 @@ class ChatService:
         storage: Storage,
         trace: SessionTrace,
         clock: Callable[[], datetime],
+        tool_registry: ToolRegistry,
+        retriever: Any,
+        knowledge_store: Any,
     ) -> None:
         self._settings = settings
         self._storage = storage
         self._trace = trace
         self._clock = clock
+        self._runner = AgentRunner(
+            settings=settings,
+            registry=tool_registry,
+            retriever=retriever,
+            store=knowledge_store,
+        )
 
     # -- conversation helpers ---------------------------------------------
     def _conversation(
@@ -155,7 +166,7 @@ class ChatService:
         )
         self._storage.touch_conversation(conversation["id"], updated_at=now)
 
-        messages: list[dict[str, str]] = [
+        messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT},
             *self._history(conversation["id"]),
         ]
@@ -167,13 +178,7 @@ class ChatService:
                 "%%PAGE%%", str(document_context.get("page_no") or 1)
             )
             messages.insert(1, {"role": "system", "content": note})
-        kwargs: dict[str, str] = {}
-        if provider is not None:
-            kwargs["provider"] = provider
-        if tier is not None:
-            kwargs["tier"] = tier
-        if thinking is not None:
-            kwargs["thinking"] = thinking
+
         try:
             selection = adapter.resolve_selection(
                 role="chat",
@@ -181,10 +186,16 @@ class ChatService:
                 tier=tier,
                 thinking=thinking,
             )
-            stream = adapter.chat_stream(messages, **kwargs)
-            first_event = next(stream)
+            events = self._runner.run(
+                messages,
+                adapter=adapter,
+                provider=provider,
+                tier=tier,
+                thinking=thinking,
+            )
+            first_event = next(events)
         except StopIteration:
-            stream = iter(())
+            events = iter(())
             first_event = None
         except Exception as exc:  # model boundary failures become HTTP errors
             raise _prestream_error(
@@ -200,7 +211,7 @@ class ChatService:
             tier=tier,
             selection=selection,
             first_event=first_event,
-            stream=stream,
+            events=events,
         )
         return ChatTurn(conversation_id=conversation["id"], frames=frames)
 
@@ -214,18 +225,18 @@ class ChatService:
         provider: str | None,
         tier: str | None,
         selection: ModelSelection,
-        first_event: StreamEvent | None,
-        stream: Iterator[StreamEvent],
+        first_event: AgentEvent | None,
+        events: Iterator[AgentEvent],
     ) -> Iterator[dict[str, Any]]:
         session_id = conversation["id"]
-        text_part = uuid.uuid4().hex
-        reasoning_part = uuid.uuid4().hex
-        text_open = False
-        reasoning_open = False
-        collected: list[str] = []
-        reasoning_parts: list[str] = []
+        text_part: str | None = None
+        reasoning_part: str | None = None
+        text_started = False
         steps: list[dict[str, Any]] = []
         step_positions: dict[str, int] = {}
+        turn_result: dict[str, Any] | None = None
+        model_started = False
+        collected: list[str] = []
 
         self._trace.append_meta(
             user["id"],
@@ -264,37 +275,110 @@ class ChatService:
         def emit(frame: dict[str, Any]) -> dict[str, Any]:
             if frame["type"] == "data-step":
                 record_step(frame)
-            elif frame["type"] == "reasoning-delta":
-                reasoning_parts.append(frame.get("delta") or "")
             self._trace.append_frame(
                 user["id"], session_id, frame, now=self._clock()
             )
             return frame
 
+        def close_reasoning() -> Iterator[dict[str, Any]]:
+            nonlocal reasoning_part
+            if reasoning_part is not None:
+                part = reasoning_part
+                reasoning_part = None
+                yield emit(streaming.reasoning_end(part))
+
+        def close_text() -> Iterator[dict[str, Any]]:
+            nonlocal text_part
+            if text_part is not None:
+                part = text_part
+                text_part = None
+                yield emit(streaming.text_end(part))
+
+        def open_text() -> Iterator[dict[str, Any]]:
+            nonlocal text_part, text_started
+            if text_part is None:
+                text_part = uuid.uuid4().hex
+                text_started = True
+                yield emit(streaming.text_start(text_part))
+
         yield emit(streaming.start(message_id))
-        yield emit(streaming.data_step("generate", "started"))
-        events = itertools.chain(
-            [first_event] if first_event is not None else [], stream
-        )
         try:
-            for event in events:
-                if event.kind == "reasoning":
-                    if not reasoning_open:
-                        reasoning_open = True
+            stream = itertools.chain(
+                [first_event] if first_event is not None else [], events
+            )
+            for event in stream:
+                if event.kind == "model_start":
+                    if not model_started:
+                        model_started = True
+                        yield emit(streaming.data_step("generate", "started"))
+                    yield emit(streaming.start_step())
+                elif event.kind == "reasoning_delta":
+                    if text_part is not None:
+                        yield from close_text()
+                    if reasoning_part is None:
+                        reasoning_part = uuid.uuid4().hex
                         yield emit(streaming.reasoning_start(reasoning_part))
                     yield emit(
-                        streaming.reasoning_delta(reasoning_part, event.text or "")
+                        streaming.reasoning_delta(
+                            reasoning_part, str(event.data.get("text") or "")
+                        )
                     )
-                elif event.kind == "text":
-                    if reasoning_open:
-                        reasoning_open = False
-                        yield emit(streaming.reasoning_end(reasoning_part))
-                    if not text_open:
-                        text_open = True
-                        yield emit(streaming.text_start(text_part))
-                    collected.append(event.text or "")
-                    yield emit(streaming.text_delta(text_part, event.text or ""))
-                elif event.kind == "finish":
+                elif event.kind == "text_delta":
+                    if reasoning_part is not None:
+                        yield from close_reasoning()
+                    if text_part is None:
+                        yield from open_text()
+                    delta = str(event.data.get("text") or "")
+                    collected.append(delta)
+                    yield emit(streaming.text_delta(text_part, delta))
+                elif event.kind == "model_end":
+                    yield from close_reasoning()
+                    yield from close_text()
+                    yield emit(streaming.finish_step())
+                elif event.kind == "tool_start":
+                    yield from close_reasoning()
+                    yield from close_text()
+                    data = event.data
+                    yield emit(
+                        streaming.data_tool(
+                            {
+                                "tool_call_id": data.get("tool_call_id"),
+                                "name": data.get("name"),
+                                "status": "running",
+                                "arguments": data.get("arguments") or {},
+                                "output": None,
+                                "result": None,
+                                "duration_ms": None,
+                            }
+                        )
+                    )
+                    if data.get("name") == "search_course":
+                        yield emit(streaming.data_step("retrieve", "started"))
+                elif event.kind == "tool_end":
+                    data = event.data
+                    yield emit(
+                        streaming.data_tool(
+                            {
+                                "tool_call_id": data.get("tool_call_id"),
+                                "name": data.get("name"),
+                                "status": data.get("status"),
+                                "arguments": data.get("arguments") or {},
+                                "output": data.get("output"),
+                                "result": data.get("result"),
+                                "duration_ms": data.get("duration_ms"),
+                            }
+                        )
+                    )
+                    if data.get("name") == "search_course":
+                        yield emit(
+                            streaming.data_step(
+                                "retrieve",
+                                "done",
+                                duration_ms=data.get("duration_ms"),
+                            )
+                        )
+                elif event.kind == "turn_end":
+                    turn_result = dict(event.data)
                     break
         except Exception as exc:  # the stream already started: report in band
             text = _stream_error_text(exc)
@@ -304,10 +388,18 @@ class ChatService:
             yield emit(streaming.error(text))
             return
 
-        if reasoning_open:
-            yield emit(streaming.reasoning_end(reasoning_part))
-        if text_open:
+        if turn_result is None:
+            turn_result = {"text": EMPTY_TURN, "reasoning": "", "tool_calls": []}
+
+        yield from close_reasoning()
+        yield from close_text()
+        if turn_result.get("text") and not collected:
+            text_part = uuid.uuid4().hex
+            yield emit(streaming.text_start(text_part))
+            collected.append(str(turn_result["text"]))
+            yield emit(streaming.text_delta(text_part, str(turn_result["text"])))
             yield emit(streaming.text_end(text_part))
+            text_part = None
         yield emit(streaming.data_step("generate", "done"))
 
         # Persist the whole turn before the finish frame: a client that sees the
@@ -318,14 +410,15 @@ class ChatService:
                 message_id=message_id,
                 conversation_id=session_id,
                 sequence=self._storage.next_message_sequence(session_id),
-                content="".join(collected),
+                content=str(turn_result.get("text") or ""),
                 created_at=now,
                 provider=provider,
                 tier=tier,
                 model=selection.model,
                 thinking=selection.thinking,
-                reasoning="".join(reasoning_parts) or None,
+                reasoning=str(turn_result.get("reasoning") or "") or None,
                 steps=steps,
+                tool_calls=turn_result.get("tool_calls") or (),
             )
         except Exception:  # a storage failure must not claim a finished turn
             self._trace.append_event(
@@ -334,8 +427,22 @@ class ChatService:
             yield emit(streaming.error(SAVE_ERROR))
             return
 
+        if turn_result.get("usage"):
+            self._trace.append_event(
+                user["id"], session_id, "usage", dict(turn_result["usage"]), now=now
+            )
+        self._trace.append_event(
+            user["id"],
+            session_id,
+            "agent",
+            {
+                "model_calls": turn_result.get("model_calls"),
+                "tool_calls": len(turn_result.get("tool_calls") or ()),
+            },
+            now=now,
+        )
         self._storage.touch_conversation(session_id, updated_at=now)
         self._trace.append_event(
-            user["id"], session_id, "finish", {"message_id": message_id}, now=now
+            user["id"], session_id, "finish", {"message_id": message_id}, now=self._clock()
         )
         yield emit(streaming.finish())
