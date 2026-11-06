@@ -27,7 +27,9 @@ The agent loop is not a sequential phase pipeline. `generate` starts with the fi
 
 The step declaration lives on `ToolSpec` as a stage name. The runner copies that name into `tool_start` and `tool_end`; the chat service resolves it to the current `message_steps.id`, persists the id on the event, and includes it in the `data-tool` stream payload. The `data-step` frame also carries the id. The live UI and replay therefore use the same value as history.
 
-**The UI renders one section per step row that actually exists.** The `message_steps` rows supply the id, status, duration, detail, policy, and rule id. Sections are ordered by the canonical phase order `understand`, `retrieve`, `verify`, `decide`, `generate`, `cite`; duplicate phase rows, if a future writer creates them, keep their persisted tie order. All events whose `step_id` matches the row render under it in event order. A step row with no events still renders its header and detail. A step that has no row is not synthesized, so a real turn that only emitted `generate` and `retrieve` shows only those two sections.
+**The UI renders one section per step row that actually exists.** The `message_steps` rows supply the id, position, status, duration, detail, policy, and rule id. Sections are ordered by the canonical phase order `understand`, `retrieve`, `verify`, `decide`, `generate`, `cite`, then by the row's `position` for repeated phases. All events whose `step_id` matches the row render under it in event order. A step row with no events still renders its header and detail. A step that has no row is not synthesized, so a real turn that only emitted `generate` and `retrieve` shows only those two sections.
+
+**A repeated step name starts a new step row.** The chat service keeps the active row for each phase name only while that row is started. A `started` frame updates the active row; a `done` or `failed` frame closes it. A later `started` for the same name allocates a new `message_steps` row with a new id and a new position. The current writer emits one retrieve instance per retrieval tool, so two searches appear as two retrieve rows and two sections rather than one merged section. The events for each instance reference that instance's id.
 
 **`message_steps` remains the aggregate stage record.** It is not replaced by event ids. An event whose `step_id` does not match a returned step row is rendered flat rather than guessed into a section.
 
@@ -50,7 +52,7 @@ The step declaration lives on `ToolSpec` as a stage name. The runner copies that
 
 - Schema version 5 adds a column and a migration; the physical data model page and image must be regenerated.
 - Sections are grouped by phase, so events under a phase are shown together rather than in one uninterrupted chronological stream. The event order within a section is preserved, and the phase order is canonical.
-- A repeated phase is one section, so the UI does not show a new header each time the agent re-enters that phase.
+- Repeated phases create repeated sections and increase the visible step count; the writer currently scopes a retrieve instance to one tool call, so several searches produce several retrieve sections.
 - The section order is a UI constant; a future custom phase order would need a persisted order or a new ADR.
 
 **Neutral:**
