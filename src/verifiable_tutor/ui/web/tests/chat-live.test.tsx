@@ -646,8 +646,8 @@ describe("live chat", () => {
       screen.getByRole("button", { name: "Open page 12" }),
     ).toBeInTheDocument();
 
-    // The steps stay as a compact summary; the chips carry their details.
-    expect(screen.getByText("Retrieve course pages")).toBeInTheDocument();
+    // The steps stay as a compact summary; the rail carries their details.
+    expect(screen.getByTitle(/Retrieve course pages/)).toBeInTheDocument();
     expect(
       screen.getByTitle(/Parsed the halo exchange question/),
     ).toBeInTheDocument();

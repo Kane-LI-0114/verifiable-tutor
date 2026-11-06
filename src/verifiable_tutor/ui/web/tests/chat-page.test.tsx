@@ -61,7 +61,7 @@ describe("chat page", () => {
       "Write the answer",
       "Attach citations",
     ]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByTitle(new RegExp(label))).toBeInTheDocument();
     }
     expect(
       screen.getByTitle(/active\.explain-current-topic/),

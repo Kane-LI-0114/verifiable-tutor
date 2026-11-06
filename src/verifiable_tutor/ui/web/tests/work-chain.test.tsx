@@ -10,7 +10,7 @@ function step(name: WorkStep["step"]): WorkStep {
 }
 
 describe("work chain", () => {
-  it("orders step chips by phase, not by insertion order", () => {
+  it("orders step rail nodes by phase, not by insertion order", () => {
     render(
       <I18nProvider initialLang="en">
         <WorkChain
@@ -21,8 +21,8 @@ describe("work chain", () => {
       </I18nProvider>,
     );
 
-    const retrieve = screen.getByText("Retrieve course pages");
-    const generate = screen.getByText("Write the answer");
+    const retrieve = screen.getByTitle(/Retrieve course pages/);
+    const generate = screen.getByTitle(/Write the answer/);
     expect(
       retrieve.compareDocumentPosition(generate) &
         Node.DOCUMENT_POSITION_FOLLOWING,

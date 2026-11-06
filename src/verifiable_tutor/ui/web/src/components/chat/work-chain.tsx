@@ -1,16 +1,10 @@
 import {
-  BadgeCheckIcon,
   BrainIcon,
   CheckCircle2Icon,
   CircleDashedIcon,
   Loader2Icon,
-  PenLineIcon,
-  QuoteIcon,
-  ScaleIcon,
-  SearchIcon,
   XCircleIcon,
 } from "lucide-react";
-import type { ComponentType } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { ToolCallTrace } from "@/components/chat/tool-call";
@@ -31,18 +25,6 @@ import type {
   WorkStepName,
 } from "@/lib/types";
 
-const STEP_ICONS: Record<
-  WorkStepName,
-  ComponentType<{ className?: string }>
-> = {
-  understand: BrainIcon,
-  retrieve: SearchIcon,
-  verify: BadgeCheckIcon,
-  decide: ScaleIcon,
-  generate: PenLineIcon,
-  cite: QuoteIcon,
-};
-
 /** The canonical phase order, independent of the order the steps were written. */
 const STEP_ORDER: WorkStepName[] = [
   "understand",
@@ -55,15 +37,15 @@ const STEP_ORDER: WorkStepName[] = [
 
 function StatusIcon({ status }: { status: WorkStep["status"] }) {
   if (status === "done") {
-    return <CheckCircle2Icon className="size-3.5 text-muted-foreground" />;
+    return <CheckCircle2Icon className="size-3 text-muted-foreground" />;
   }
   if (status === "started") {
-    return <Loader2Icon className="size-3.5 animate-spin" />;
+    return <Loader2Icon className="size-3 animate-spin" />;
   }
   if (status === "failed") {
-    return <XCircleIcon className="size-3.5 text-destructive" />;
+    return <XCircleIcon className="size-3 text-destructive" />;
   }
-  return <CircleDashedIcon className="size-3.5 opacity-60" />;
+  return <CircleDashedIcon className="size-3 opacity-60" />;
 }
 
 function stepTitle(step: WorkStep, t: ReturnType<typeof useT>): string {
@@ -84,9 +66,11 @@ function stepTitle(step: WorkStep, t: ReturnType<typeof useT>): string {
 }
 
 function WorkChainHeader({
+  steps,
   summary,
   policy,
 }: {
+  steps: WorkStep[];
   summary: string;
   policy: PolicyState;
 }) {
@@ -96,13 +80,14 @@ function WorkChainHeader({
       <BrainIcon className="size-4 shrink-0" />
       <TraceTitle>{t.chat.workChain}</TraceTitle>
       <TraceDescription>{summary}</TraceDescription>
+      <StepRail steps={steps} />
       <Badge variant="secondary">{t.chat.policyStates[policy]}</Badge>
     </TraceLine>
   );
 }
 
-/** Compact phase summary; details live in the chip title, not a second list. */
-function StepChips({ steps }: { steps: WorkStep[] }) {
+/** Inline phase rail: one node per phase, status and details in the tooltip. */
+function StepRail({ steps }: { steps: WorkStep[] }) {
   const t = useT();
   if (steps.length === 0) {
     return null;
@@ -111,25 +96,34 @@ function StepChips({ steps }: { steps: WorkStep[] }) {
     (left, right) => STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step),
   );
   return (
-    <div className="flex flex-wrap gap-1.5 pl-6">
-      {ordered.map((step) => {
-        const Icon = STEP_ICONS[step.step];
+    <span className="hidden shrink-0 items-center gap-1 sm:flex">
+      {ordered.map((step, index) => {
         const title = stepTitle(step, t);
+        const statusClass =
+          step.status === "failed"
+            ? "border-destructive/40 text-destructive"
+            : step.status === "started"
+              ? "border-primary/40 text-primary"
+              : step.status === "done"
+                ? "border-border bg-muted/60 text-muted-foreground"
+                : "border-border text-muted-foreground/50";
         return (
-          <Badge
-            key={step.step}
-            variant={step.status === "failed" ? "destructive" : "outline"}
-            className="gap-1 font-normal"
-            title={title}
-            aria-label={title}
-          >
-            <StatusIcon status={step.status} />
-            <Icon className="size-3" />
-            {t.chat.steps[step.step]}
-          </Badge>
+          <span key={step.step} className="flex items-center gap-1">
+            {index > 0 ? (
+              <span className="h-px w-2 bg-border" aria-hidden="true" />
+            ) : null}
+            <span
+              role="img"
+              aria-label={title}
+              title={title}
+              className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${statusClass}`}
+            >
+              <StatusIcon status={step.status} />
+            </span>
+          </span>
         );
       })}
-    </div>
+    </span>
   );
 }
 
@@ -186,14 +180,14 @@ export function WorkChain({
       ? format(t.chat.workChainSummary, { done, total: steps.length })
       : format(t.chat.toolCallsSummary, { count: toolCallCount });
 
-  const header = <WorkChainHeader summary={summary} policy={policy} />;
-  const chips = <StepChips steps={steps} />;
+  const header = (
+    <WorkChainHeader steps={steps} summary={summary} policy={policy} />
+  );
 
   return (
     <Trace role="group" aria-label={t.a11y.workChain}>
       <TraceCollapsible>
         <TraceCollapsibleTrigger>{header}</TraceCollapsibleTrigger>
-        {chips}
         <TraceCollapsibleContent>
           {events.length > 0 ? (
             <WorkChainEvents events={events} />
