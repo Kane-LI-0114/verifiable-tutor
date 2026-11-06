@@ -239,8 +239,8 @@ class ChatService:
         reasoning_part: str | None = None
         text_started = False
         steps: list[dict[str, Any]] = []
-        step_positions: dict[str, int] = {}
-        step_ids: dict[str, str] = {}
+        active_step_positions: dict[str, int] = {}
+        active_step_ids: dict[str, str] = {}
         chain_events: list[dict[str, Any]] = []
         tool_positions = 0
         turn_result: dict[str, Any] | None = None
@@ -266,28 +266,28 @@ class ChatService:
             """Merge a data-step frame into the ordered work-chain steps."""
 
             data = frame["data"]
-            position = step_positions.get(data["step"])
-            step_id = (
-                steps[position]["id"]
-                if position is not None
-                else uuid.uuid4().hex
-            )
+            name = data["step"]
+            position = active_step_positions.get(name)
+            if position is None:
+                step_id = uuid.uuid4().hex
+                position = len(steps)
+                steps.append({})
+                active_step_positions[name] = position
+            else:
+                step_id = steps[position]["id"]
             data["id"] = step_id
-            step_ids[data["step"]] = step_id
-            step = {
+            active_step_ids[name] = step_id
+            steps[position] = {
                 "id": step_id,
-                "step": data["step"],
+                "step": name,
                 "status": data["status"],
                 "detail": data.get("detail"),
                 "duration_ms": data.get("duration_ms"),
                 "policy": data.get("policy"),
                 "rule_id": data.get("rule_id"),
             }
-            if position is None:
-                step_positions[data["step"]] = len(steps)
-                steps.append(step)
-            else:
-                steps[position] = step
+            if data["status"] in {"done", "failed"}:
+                active_step_positions.pop(name, None)
 
         def emit(frame: dict[str, Any]) -> dict[str, Any]:
             if frame["type"] == "data-step":
@@ -358,7 +358,7 @@ class ChatService:
                             {
                                 "kind": "reasoning",
                                 "reasoning": reasoning,
-                                "step_id": step_ids.get("generate"),
+                                "step_id": active_step_ids.get("generate"),
                             }
                         )
                 elif event.kind == "tool_start":
@@ -378,12 +378,13 @@ class ChatService:
                                 "output": None,
                                 "result": None,
                                 "duration_ms": None,
-                                "step_id": step_ids.get(step_name),
+                                "step_id": active_step_ids.get(step_name),
                             }
                         )
                     )
                 elif event.kind == "tool_end":
                     data = event.data
+                    step_id = active_step_ids.get(data.get("step"))
                     yield emit(
                         streaming.data_tool(
                             {
@@ -394,7 +395,7 @@ class ChatService:
                                 "output": data.get("output"),
                                 "result": data.get("result"),
                                 "duration_ms": data.get("duration_ms"),
-                                "step_id": step_ids.get(data.get("step")),
+                                "step_id": step_id,
                             }
                         )
                     )
@@ -410,7 +411,7 @@ class ChatService:
                         {
                             "kind": "tool_call",
                             "tool_call_position": tool_positions,
-                            "step_id": step_ids.get(data.get("step")),
+                            "step_id": step_id,
                         }
                     )
                     tool_positions += 1

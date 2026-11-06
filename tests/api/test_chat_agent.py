@@ -147,6 +147,34 @@ def test_agent_persists_reasoning_before_each_tool_call(agent_api):
     assert events[2]["reasoning"] == "Now answer from the retrieved pages."
 
 
+def test_a_repeated_stage_gets_its_own_step_id(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    agent_api.adapter.scripts = [
+        tool_script(call_id="call_1"),
+        tool_script(call_id="call_2"),
+        text_script("Two retrievals answered."),
+    ]
+
+    response = agent_api.client.post("/api/chat", json={"message": "What is MPI?"})
+    session_id = response.headers["x-conversation-id"]
+    assistant = agent_api.client.get(
+        f"/api/sessions/{session_id}/messages"
+    ).json()["messages"][1]
+
+    retrieve_steps = [
+        step for step in assistant["work_steps"] if step["step"] == "retrieve"
+    ]
+    assert len(retrieve_steps) == 2
+    assert len({step["id"] for step in retrieve_steps}) == 2
+    tool_events = [
+        event for event in assistant["events"] if event["kind"] == "tool_call"
+    ]
+    assert [event["step_id"] for event in tool_events] == [
+        retrieve_steps[0]["id"],
+        retrieve_steps[1]["id"],
+    ]
+
+
 def test_agent_records_tool_frames_in_the_trace_and_replays_them(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     agent_api.adapter.scripts = [tool_script(), text_script()]

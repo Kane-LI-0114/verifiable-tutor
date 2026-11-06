@@ -80,6 +80,7 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
             "work_steps": [
                 {
                     "id": step["id"],
+                    "position": step["position"],
                     "step": step["step"],
                     "status": step["status"],
                     "detail": step["detail"],

@@ -78,6 +78,7 @@ CITATION_EXAMPLE: dict[str, Any] = {
 }
 WORK_STEP_EXAMPLE: dict[str, Any] = {
     "id": "step-1",
+    "position": 0,
     "step": "generate",
     "status": "done",
     "detail": None,
@@ -305,6 +306,7 @@ class WorkStepRecord(BaseModel):
     model_config = _example(WORK_STEP_EXAMPLE)
 
     id: str = _ex("step-1", "Stable work-chain step id.")
+    position: int = _ex(0, "0-based order of the step row.")
     step: Literal[
         "understand", "retrieve", "verify", "decide", "generate", "cite"
     ] = _ex(

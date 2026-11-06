@@ -131,7 +131,12 @@ def test_chat_persists_the_turn_metadata_with_the_answer(api):
     assert len(answer["work_steps"]) == 1
     stored_step = answer["work_steps"][0]
     assert stored_step["id"]
-    assert {key: value for key, value in stored_step.items() if key != "id"} == {
+    assert stored_step["position"] == 0
+    assert {
+        key: value
+        for key, value in stored_step.items()
+        if key not in {"id", "position"}
+    } == {
         "step": "generate",
         "status": "done",
         "detail": None,
