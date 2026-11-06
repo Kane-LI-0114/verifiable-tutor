@@ -25,7 +25,7 @@ import type {
   WorkStepName,
 } from "@/lib/types";
 
-/** The canonical phase order, independent of the order the steps were written. */
+/** The canonical phase order; only steps that actually exist are rendered. */
 const STEP_ORDER: WorkStepName[] = [
   "understand",
   "retrieve",
@@ -66,11 +66,9 @@ function stepTitle(step: WorkStep, t: ReturnType<typeof useT>): string {
 }
 
 function WorkChainHeader({
-  steps,
   summary,
   policy,
 }: {
-  steps: WorkStep[];
   summary: string;
   policy: PolicyState;
 }) {
@@ -80,85 +78,128 @@ function WorkChainHeader({
       <BrainIcon className="size-4 shrink-0" />
       <TraceTitle>{t.chat.workChain}</TraceTitle>
       <TraceDescription>{summary}</TraceDescription>
-      <StepRail steps={steps} />
       <Badge variant="secondary">{t.chat.policyStates[policy]}</Badge>
     </TraceLine>
   );
 }
 
-/** Inline phase rail: one node per phase, status and details in the tooltip. */
-function StepRail({ steps }: { steps: WorkStep[] }) {
+function ReasoningBlock({ text }: { text: string }) {
   const t = useT();
-  if (steps.length === 0) {
-    return null;
-  }
-  const ordered = [...steps].sort(
-    (left, right) => STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step),
-  );
   return (
-    <span className="hidden shrink-0 items-center gap-1 sm:flex">
-      {ordered.map((step, index) => {
-        const title = stepTitle(step, t);
-        const statusClass =
-          step.status === "failed"
-            ? "border-destructive/40 text-destructive"
-            : step.status === "started"
-              ? "border-primary/40 text-primary"
-              : step.status === "done"
-                ? "border-border bg-muted/60 text-muted-foreground"
-                : "border-border text-muted-foreground/50";
-        return (
-          <span key={step.step} className="flex items-center gap-1">
-            {index > 0 ? (
-              <span className="h-px w-2 bg-border" aria-hidden="true" />
-            ) : null}
-            <span
-              role="img"
-              aria-label={title}
-              title={title}
-              className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${statusClass}`}
-            >
-              <StatusIcon status={step.status} />
-            </span>
-          </span>
-        );
-      })}
-    </span>
+    <div className="space-y-1">
+      <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+        <BrainIcon className="size-3" />
+        {t.chat.reasoning}
+      </p>
+      <p className="max-h-64 overflow-auto whitespace-pre-wrap text-sm text-muted-foreground">
+        {text}
+      </p>
+    </div>
   );
 }
 
-/** The ordered execution timeline: reasoning segments and tool calls. */
-function WorkChainEvents({ events }: { events: WorkChainEvent[] }) {
-  const t = useT();
+function WorkChainEventView({
+  event,
+  index,
+}: {
+  event: WorkChainEvent;
+  index: number;
+}) {
+  if (event.kind === "reasoning") {
+    if (!event.reasoning) {
+      return null;
+    }
+    return <ReasoningBlock text={event.reasoning} />;
+  }
+  if (!event.tool_call) {
+    return null;
+  }
+  return (
+    <ToolCallTrace
+      key={event.tool_call.tool_call_id ?? `tool:${index}`}
+      call={event.tool_call}
+    />
+  );
+}
+
+function EventList({ events }: { events: WorkChainEvent[] }) {
   return (
     <div className="space-y-3">
-      {events.map((event, index) => {
-        if (event.kind === "reasoning") {
-          if (!event.reasoning) {
-            return null;
-          }
-          return (
-            <div key={`reasoning:${index}`} className="space-y-1">
-              <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                <BrainIcon className="size-3" />
-                {t.chat.reasoning}
-              </p>
-              <p className="max-h-64 overflow-auto whitespace-pre-wrap text-sm text-muted-foreground">
-                {event.reasoning}
-              </p>
-            </div>
-          );
-        }
-        if (!event.tool_call) {
-          return null;
-        }
+      {events.map((event, index) => (
+        <WorkChainEventView
+          key={`${event.kind}:${event.tool_call?.tool_call_id ?? index}`}
+          event={event}
+          index={index}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Every step that actually exists renders, even without events. Events are
+ * grouped under their step; event steps missing from message_steps still get a
+ * fallback section. Events without a step stay flat for legacy rows.
+ */
+function WorkChainSections({
+  steps,
+  events,
+}: {
+  steps: WorkStep[];
+  events: WorkChainEvent[];
+}) {
+  const t = useT();
+  const byStep = new Map<string, WorkChainEvent[]>();
+  const unstepped: WorkChainEvent[] = [];
+  const knownIds = new Set(steps.map((step) => step.id));
+  for (const event of events) {
+    if (event.step_id && knownIds.has(event.step_id)) {
+      const list = byStep.get(event.step_id) ?? [];
+      list.push(event);
+      byStep.set(event.step_id, list);
+    } else {
+      unstepped.push(event);
+    }
+  }
+
+  const ordered = [...steps].sort(
+    (left, right) => STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step),
+  );
+
+  return (
+    <div className="space-y-4">
+      {ordered.map((step) => {
+        const title = stepTitle(step, t);
+        const stepEvents = byStep.get(step.id) ?? [];
+        const showBody = step.detail !== undefined || stepEvents.length > 0;
         return (
-          <ToolCallTrace
-            key={event.tool_call.tool_call_id ?? `tool:${index}`}
-            call={event.tool_call}
-          />
+          <section key={step.id} aria-label={title} className="min-w-0">
+            <div
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground"
+              title={title}
+            >
+              <StatusIcon status={step.status} />
+              <span className="font-medium">{t.chat.steps[step.step]}</span>
+              {step.duration_ms !== undefined ? (
+                <TraceDescription>{step.duration_ms} ms</TraceDescription>
+              ) : null}
+            </div>
+            {showBody ? (
+              <div className="mt-2 space-y-3 border-l pl-4">
+                {step.detail ? (
+                  <p className="text-sm text-muted-foreground">{step.detail}</p>
+                ) : null}
+                {stepEvents.length > 0 ? <EventList events={stepEvents} /> : null}
+              </div>
+            ) : null}
+          </section>
         );
       })}
+      {unstepped.length > 0 ? (
+        <div className="space-y-3" aria-label={t.chat.workChain}>
+          <EventList events={unstepped} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -179,18 +220,17 @@ export function WorkChain({
     steps.length > 0
       ? format(t.chat.workChainSummary, { done, total: steps.length })
       : format(t.chat.toolCallsSummary, { count: toolCallCount });
-
-  const header = (
-    <WorkChainHeader steps={steps} summary={summary} policy={policy} />
-  );
+  const hasContent = steps.length > 0 || events.length > 0;
 
   return (
     <Trace role="group" aria-label={t.a11y.workChain}>
       <TraceCollapsible>
-        <TraceCollapsibleTrigger>{header}</TraceCollapsibleTrigger>
+        <TraceCollapsibleTrigger>
+          <WorkChainHeader summary={summary} policy={policy} />
+        </TraceCollapsibleTrigger>
         <TraceCollapsibleContent>
-          {events.length > 0 ? (
-            <WorkChainEvents events={events} />
+          {hasContent ? (
+            <WorkChainSections steps={steps} events={events} />
           ) : (
             <p className="text-xs text-muted-foreground">
               {t.chat.noWorkChainEvents}

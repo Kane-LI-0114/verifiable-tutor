@@ -101,6 +101,7 @@ export type WorkStepName =
 export type WorkStepStatus = "pending" | "started" | "done" | "failed";
 
 export interface WorkStep {
+  id: string;
   step: WorkStepName;
   status: WorkStepStatus;
   detail?: string;
@@ -125,6 +126,7 @@ export interface ToolCall {
 export interface WorkChainEvent {
   kind: "reasoning" | "tool_call";
   reasoning?: string | null;
+  step_id?: string | null;
   tool_call?: ToolCall | null;
 }
 

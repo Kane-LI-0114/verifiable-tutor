@@ -14,6 +14,7 @@ import type {
 
 /** Payload of the backend `data-step` frame, rendered by the work chain. */
 export interface WorkStepData {
+  id?: string;
   step: WorkStepName;
   status: WorkStepStatus;
   detail?: string;
@@ -40,6 +41,7 @@ export interface ToolCallData {
   output?: string | null;
   result?: unknown;
   duration_ms?: number | null;
+  step_id?: string;
 }
 
 export type TutorDataParts = {
@@ -74,14 +76,16 @@ function partText(part: TutorPart): string {
 
 function workSteps(parts: TutorPart[]): WorkStep[] {
   const steps: WorkStep[] = [];
-  const index = new Map<WorkStepName, number>();
+  const index = new Map<string, number>();
   for (const part of parts) {
     if (part.type !== "data-step") {
       continue;
     }
     const data = part.data as WorkStepData;
-    const existing = index.get(data.step);
+    const id = data.id ?? data.step;
+    const existing = index.get(id);
     const step: WorkStep = {
+      id,
       step: data.step,
       status: data.status,
       detail: data.detail,
@@ -90,7 +94,7 @@ function workSteps(parts: TutorPart[]): WorkStep[] {
       rule_id: data.rule_id,
     };
     if (existing === undefined) {
-      index.set(data.step, steps.length);
+      index.set(id, steps.length);
       steps.push(step);
     } else {
       steps[existing] = step;
@@ -134,16 +138,39 @@ function toolCalls(parts: TutorPart[]): ToolCall[] {
 function workChainEvents(parts: TutorPart[]): WorkChainEvent[] {
   const events: WorkChainEvent[] = [];
   const toolIndex = new Map<string, number>();
+  let generateStepId: string | undefined;
+  let currentStepId: string | undefined;
   let reasoning = "";
+  let reasoningStepId: string | undefined;
   const flushReasoning = () => {
     if (reasoning.trim().length === 0) {
       return;
     }
-    events.push({ kind: "reasoning", reasoning });
+    events.push({ kind: "reasoning", reasoning, step_id: reasoningStepId });
     reasoning = "";
   };
   for (const part of parts) {
+    if (part.type === "step-start") {
+      currentStepId = generateStepId;
+      continue;
+    }
+    if (part.type === "data-step") {
+      const data = part.data as WorkStepData;
+      const id = data.id ?? data.step;
+      if (data.step === "generate") {
+        generateStepId = id;
+      }
+      if (data.status === "started") {
+        currentStepId = id;
+      } else if (currentStepId === id) {
+        currentStepId = generateStepId;
+      }
+      continue;
+    }
     if (part.type === "reasoning") {
+      if (reasoning.length === 0) {
+        reasoningStepId = currentStepId;
+      }
       reasoning += part.text;
       continue;
     }
@@ -152,14 +179,15 @@ function workChainEvents(parts: TutorPart[]): WorkChainEvent[] {
     }
     const data = part.data as ToolCallData;
     flushReasoning();
+    const stepId = data.step_id ?? currentStepId;
     const key = data.tool_call_id ?? `${data.name}:${events.length}`;
     const call = toToolCall(data);
     const existing = toolIndex.get(key);
     if (existing === undefined) {
       toolIndex.set(key, events.length);
-      events.push({ kind: "tool_call", tool_call: call });
+      events.push({ kind: "tool_call", tool_call: call, step_id: stepId });
     } else {
-      events[existing] = { kind: "tool_call", tool_call: call };
+      events[existing] = { kind: "tool_call", tool_call: call, step_id: stepId };
     }
   }
   flushReasoning();

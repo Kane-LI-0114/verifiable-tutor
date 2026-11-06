@@ -3,7 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { sessionsApi } from "@/lib/api/sessions";
 import { useSession } from "@/lib/auth/session";
 import type { Messages } from "@/lib/i18n/en";
-import type { AssistantMeta, ConversationTurn, ToolCall } from "@/lib/types";
+import type {
+  AssistantMeta,
+  ConversationTurn,
+  ToolCall,
+} from "@/lib/types";
 
 import { toChunkStream } from "./stream";
 import { toToolCall, type ToolCallData, type WorkStepData } from "./ui-message";
@@ -86,11 +90,17 @@ function applyFrame(
   state: ReplayData,
   frame: ReplayFrame,
   assistantIndices: number[],
-  cursorRef: { current: number },
+  cursorRef: {
+    current: number;
+    stepId?: string;
+    generateStepId?: string;
+  },
 ): ReplayData {
   if (frame.type === "start") {
     const nextCursor = cursorRef.current + 1;
     cursorRef.current = nextCursor;
+    cursorRef.stepId = undefined;
+    cursorRef.generateStepId = undefined;
     const turns = [...state.turns];
     if (assistantIndices.length <= nextCursor) {
       turns.push(emptyAssistant(turns.length + 1));
@@ -114,21 +124,37 @@ function applyFrame(
   meta.events = meta.events ?? [];
   turn.meta = meta;
 
-  if (frame.type === "text-delta") {
+  if (frame.type === "start-step") {
+    cursorRef.stepId = cursorRef.generateStepId;
+  } else if (frame.type === "text-delta") {
     turn.message = { ...turn.message, content: turn.message.content + (frame.delta ?? "") };
   } else if (frame.type === "reasoning-delta") {
     const delta = frame.delta ?? "";
     meta.reasoning = (meta.reasoning ?? "") + delta;
     const last = meta.events[meta.events.length - 1];
-    if (last?.kind === "reasoning") {
+    if (last?.kind === "reasoning" && last.step_id === cursorRef.stepId) {
       last.reasoning = `${last.reasoning ?? ""}${delta}`;
     } else {
-      meta.events.push({ kind: "reasoning", reasoning: delta });
+      meta.events.push({
+        kind: "reasoning",
+        reasoning: delta,
+        step_id: cursorRef.stepId,
+      });
     }
   } else if (frame.type === "data-step" && frame.data) {
     const data = frame.data as WorkStepData;
-    const steps = meta.work_steps.filter((step) => step.step !== data.step);
+    const id = data.id ?? data.step;
+    if (data.step === "generate") {
+      cursorRef.generateStepId = id;
+    }
+    if (data.status === "started") {
+      cursorRef.stepId = id;
+    } else if (cursorRef.stepId === id) {
+      cursorRef.stepId = cursorRef.generateStepId;
+    }
+    const steps = meta.work_steps.filter((step) => step.id !== id);
     steps.push({
+      id,
       step: data.step,
       status: data.status,
       detail: data.detail,
@@ -140,6 +166,7 @@ function applyFrame(
   } else if (frame.type === "data-tool" && frame.data) {
     const data = frame.data as ToolCallData;
     const call: ToolCall = toToolCall(data);
+    const stepId = data.step_id ?? cursorRef.stepId;
     const key = call.tool_call_id ?? `${call.name}:${meta.events.length}`;
     const existing = meta.events.findIndex(
       (event) =>
@@ -147,9 +174,9 @@ function applyFrame(
         (event.tool_call?.tool_call_id ?? `${event.tool_call?.name}:${key}`) === key,
     );
     if (existing === -1) {
-      meta.events.push({ kind: "tool_call", tool_call: call });
+      meta.events.push({ kind: "tool_call", tool_call: call, step_id: stepId });
     } else {
-      meta.events[existing] = { kind: "tool_call", tool_call: call };
+      meta.events[existing] = { kind: "tool_call", tool_call: call, step_id: stepId };
     }
   } else if (frame.type === "error") {
     turn.message = { ...turn.message, content: "" };
@@ -197,7 +224,7 @@ export function useReplayStream({
     const assistantIndices = historyTurns
       .map((turn, index) => (turn.message.role === "assistant" ? index : -1))
       .filter((index) => index >= 0);
-    const cursor = { current: -1 };
+    const cursor: { current: number; stepId?: string; generateStepId?: string } = { current: -1 };
     setState(current);
 
     function fail() {

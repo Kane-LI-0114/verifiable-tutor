@@ -47,7 +47,7 @@ describe("chat page", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("shows the six document steps in the work chain header", async () => {
+  it("shows every existing stage even when it has no events", async () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
@@ -61,8 +61,11 @@ describe("chat page", () => {
       "Write the answer",
       "Attach citations",
     ]) {
-      expect(screen.getByTitle(new RegExp(label))).toBeInTheDocument();
+      expect(screen.getByText(label)).toBeInTheDocument();
     }
+    expect(
+      screen.getByText("Hybrid retrieval returned 5 pages, 3 cited."),
+    ).toBeInTheDocument();
     expect(
       screen.getByTitle(/active\.explain-current-topic/),
     ).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -54,20 +54,22 @@ const STORED_TOOL_CALL: ToolCall = {
 };
 const STORED_STEPS: WorkStep[] = [
   {
+    id: "understand",
     step: "understand",
     status: "done",
     duration_ms: 320,
     detail: STORED_STEP_DETAIL,
   },
-  { step: "retrieve", status: "done", duration_ms: 1180 },
+  { id: "retrieve", step: "retrieve", status: "done", duration_ms: 1180 },
   {
+    id: "decide",
     step: "decide",
     status: "done",
     duration_ms: 12,
     policy: "post-deadline",
     rule_id: "post-deadline.hint-only",
   },
-  { step: "generate", status: "done", duration_ms: 2400 },
+  { id: "generate", step: "generate", status: "done", duration_ms: 2400 },
 ];
 
 /** The null and empty metadata a user message persists with. */
@@ -107,6 +109,14 @@ const HISTORY: ChatMessage[] = [
     work_steps: STORED_STEPS,
     citations: [STORED_CITATION],
     tool_calls: [STORED_TOOL_CALL],
+    events: [
+      { kind: "reasoning", reasoning: STORED_REASONING, step_id: "generate" },
+      {
+        kind: "tool_call",
+        tool_call: STORED_TOOL_CALL,
+        step_id: "retrieve",
+      },
+    ],
   },
 ];
 
@@ -136,7 +146,7 @@ const NEW_HISTORY: ChatMessage[] = [
     reasoning: null,
     model: "deepseek-flash",
     thinking: "off",
-    work_steps: [{ step: "generate", status: "done", duration_ms: 120 }],
+    work_steps: [{ id: "generate", step: "generate", status: "done", duration_ms: 120 }],
     citations: [],
     tool_calls: [],
   },
@@ -203,6 +213,7 @@ const TOOL_STREAM_FRAMES = [
       tool_call_id: "call_1",
       name: "search_course",
       status: "running",
+      step_id: "retrieve",
       arguments: { query: "MPI_Allreduce" },
     },
   },
@@ -213,6 +224,7 @@ const TOOL_STREAM_FRAMES = [
       tool_call_id: "call_1",
       name: "search_course",
       status: "done",
+      step_id: "retrieve",
       arguments: { query: "MPI_Allreduce" },
       output: "1 course chunks",
       duration_ms: 42,
@@ -646,20 +658,26 @@ describe("live chat", () => {
       screen.getByRole("button", { name: "Open page 12" }),
     ).toBeInTheDocument();
 
-    // The steps stay as a compact summary; the rail carries their details.
-    expect(screen.getByTitle(/Retrieve course pages/)).toBeInTheDocument();
-    expect(
-      screen.getByTitle(/Parsed the halo exchange question/),
-    ).toBeInTheDocument();
+    // The work chain expands to one section per persisted step. Understand
+    // and decide have no events, but their sections still render.
+    await user.click(screen.getByRole("button", { name: /Work chain/ }));
+    expect(screen.getByText("Understand the question")).toBeInTheDocument();
+    expect(screen.getByText("Retrieve course pages")).toBeInTheDocument();
+    expect(screen.getByText("Apply the disclosure policy")).toBeInTheDocument();
+    expect(screen.getByText("Write the answer")).toBeInTheDocument();
+    expect(screen.queryByText("Verify quoted spans")).not.toBeInTheDocument();
+    expect(screen.queryByText("Attach citations")).not.toBeInTheDocument();
+    expect(screen.getByText(STORED_STEP_DETAIL)).toBeInTheDocument();
     expect(
       screen.getByTitle(/post-deadline\.hint-only/),
     ).toBeInTheDocument();
 
-    // The work chain expands to the persisted reasoning and tool calls only.
-    await user.click(screen.getByRole("button", { name: /Work chain/ }));
-    expect(await screen.findByText(STORED_REASONING)).toBeInTheDocument();
-    expect(screen.getByText("Tool call: course_search")).toBeInTheDocument();
-    expect(screen.queryByText(STORED_STEP_DETAIL)).not.toBeInTheDocument();
+    const retrieve = screen.getByRole("region", {
+      name: /Retrieve course pages/,
+    });
+    const generate = screen.getByRole("region", { name: /Write the answer/ });
+    expect(within(retrieve).getByText("Tool call: course_search")).toBeInTheDocument();
+    expect(within(generate).getByText(STORED_REASONING)).toBeInTheDocument();
   });
 
   it("renders a legacy answer without a work chain or thinking region", async () => {
@@ -1099,13 +1117,14 @@ describe("live chat", () => {
     // The live tool call is inside the live work chain; the stored turn has its own.
     const workChains = screen.getAllByRole("button", { name: /Work chain/ });
     await user.click(workChains[workChains.length - 1]);
-    const reasoning = await screen.findByText("First, search the course.");
     const toolCall = await screen.findByText("Tool call: search_course");
-    // The reasoning segment is rendered before the tool call it precedes.
-    expect(
-      reasoning.compareDocumentPosition(toolCall) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    // The reasoning and the tool call live under their own step sections.
+    const retrieve = screen.getByRole("region", {
+      name: /Retrieve course pages/,
+    });
+    const generate = screen.getByRole("region", { name: /Write the answer/ });
+    expect(within(retrieve).getByText("Tool call: search_course")).toBeInTheDocument();
+    expect(within(generate).getByText("First, search the course.")).toBeInTheDocument();
     await user.click(toolCall);
     expect(await screen.findByText("Arguments")).toBeInTheDocument();
     expect(await screen.findByText("1 course chunks")).toBeInTheDocument();
