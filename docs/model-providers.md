@@ -21,7 +21,7 @@ Scope and non-goals:
 | Speech to text | No | Yes: `mimo-v2.5-asr`, transcript output |
 | Text to speech | No | Yes: `mimo-v2.5-tts` family, base64 audio output |
 | Video input | No | Yes, both v2.6 tiers |
-| Thinking control | `thinking.type` plus `reasoning_effort` levels `none, low, high, max` | `thinking.type` only, `enabled` or `disabled` |
+| Thinking control | `thinking.type` plus `reasoning_effort` levels `none, low, high, max` | `thinking.type` only, `enabled` or `disabled`; the composer exposes Off and On, and `low` or `max` normalize to the enabled value |
 | JSON output | `response_format: json_object` only | `response_format: json_object` only |
 | Tool calling | OpenAI function tools; in thinking mode `tool_choice` must be `auto` or `none`, and `required` or a named function returns 400 | OpenAI function tools; `tool_choice` must be `auto` |
 | Web search | Standalone Search and Fetch REST APIs | Own `web_search` tool exists; not used by this project |
@@ -34,7 +34,7 @@ Routing rules the agent layer must enforce:
 3. Audio file input: supported only when the selected model is a MiMo 2.6 tier. If the selected model is `mimo-v2.6-flash`, flash handles the audio; if it is `mimo-v2.6-pro`, pro handles it. If the selected provider is DeepSeek, the adapter rejects the attachment with a capability error instead of rerouting it silently.
 4. Voice-to-text: the microphone in the composer uses MiMo `mimo-v2.5-asr`. The transcript is inserted into the text box, and the normal chat path then runs with the selected text provider. This is a transcription call, not a chat call.
 5. Text to speech: assistant output can be synthesized by the MiMo TTS family on demand. This path also serves as the candidate for teaching-video voiceover. It is a separate call and does not change the chat provider.
-6. Thinking: expose one unified control (`off`, `low`, `high`, `max`) and map it per provider. Tool-calling turns follow the per-provider `thinking.disable_for_tools` policy: DeepSeek keeps thinking with `tool_choice: auto` and requires previous `reasoning_content` to be replayed; MiMo disables thinking by default because tool calls with thinking are unstable unless `reasoning_content` is echoed. Force `off` for deterministic evaluation runs, because temperature is ignored while thinking is on.
+6. Thinking: expose one control; DeepSeek offers `off`, `low`, `high`, and `max`, while MiMo offers only Off and On, and `low` or `max` normalize to the enabled value. Tool-calling turns follow the per-provider `thinking.disable_for_tools` policy: DeepSeek keeps thinking with `tool_choice: auto` and requires previous `reasoning_content` to be replayed; MiMo disables thinking by default because tool calls with thinking are unstable unless `reasoning_content` is echoed. Force `off` for deterministic evaluation runs, because temperature is ignored while thinking is on.
 7. Web search: always call the DeepSeek Search and Fetch REST APIs, even when the chat model is MiMo. These APIs are provider independent and authenticated with the DeepSeek key.
 8. JSON output: no provider offers `json_schema`. Put the schema in the prompt, set `json_object`, validate with pydantic, and retry a bounded number of times.
 9. Tool calls: apply the per-provider thinking policy, echo the full assistant message (including `reasoning_content`) on every later turn when thinking is active, validate the tool arguments in code, and never rely on `tool_choice` other than `auto`.

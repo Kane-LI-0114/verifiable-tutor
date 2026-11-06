@@ -33,6 +33,8 @@ The configuration loader requires an entry for every configured provider and rej
 
 **Default policy:** DeepSeek `false`, MiMo `true`. The default chat thinking level is still `off`, so the behavior changes only when the user selects a thinking level. MiMo can be opted in, but the operator accepts the provider's instability warning.
 
+**MiMo exposes only Off and On.** The composer offers two choices for MiMo, and the adapter normalizes a stored or requested `low` or `max` to `high`, its enabled value, so the trace and the wire request never claim an effort MiMo does not have. DeepSeek keeps its four levels.
+
 ## Consequences
 
 **Positive:**

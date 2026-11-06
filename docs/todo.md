@@ -168,3 +168,4 @@ Foundations that exist and are tested. They are listed so the backlog is not rea
 | 2026-11-06 | Landed the minimal loop: VT-06, VT-07, and VT-11 move to In progress, VT-21 gets the web tools, and the Done table records the agent loop. Both DeepSeek Flash and MiMo Flash passed the live smoke. |
 | 2026-11-06 | Adopted ordered work-chain events (ADR-0017): reasoning and tool calls persist in `message_events`, the UI renders them in order inside the expanded chain, and schema version moves to 4. |
 | 2026-11-06 | Made `thinking.disable_for_tools` per provider (ADR-0018): DeepSeek keeps thinking with tools when `tool_choice` is auto, MiMo stays off by default, and the loop replays `reasoning_content`. |
+| 2026-11-06 | Restricted the MiMo thinking control to Off and On; stored `low` or `max` selections normalize to On, and the API trace records the normalized level. |
