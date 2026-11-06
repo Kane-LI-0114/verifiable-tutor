@@ -287,6 +287,8 @@ export const zh: Messages = {
     files: "文件",
     root: "全部文件",
     newMenu: "新建",
+    sort: "排序",
+    sortByName: "按名称排序",
     uploadFile: "上传文件",
     uploadDisabled: "TACC 解析与向量化链路验收通过前，上传保持关闭。",
     newFolder: "新建文件夹",

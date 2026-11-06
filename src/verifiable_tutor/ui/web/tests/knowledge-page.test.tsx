@@ -57,6 +57,8 @@ let stub: ReturnType<typeof createFetchStub> | null = null;
 
 function routes(overrides: StubRoute[] = []): StubRoute[] {
   return [
+    // Overrides come first so a test can replace a default route.
+    ...overrides,
     { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
     {
       method: "GET",
@@ -78,7 +80,6 @@ function routes(overrides: StubRoute[] = []): StubRoute[] {
       path: "/api/knowledge/cards",
       handler: () => jsonResponse({ cards: [], total: 0 }),
     },
-    ...overrides,
   ];
 }
 
@@ -104,13 +105,48 @@ describe("knowledge browser", () => {
       screen.getByRole("heading", { name: "Knowledge base" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Lectures")).toBeInTheDocument();
-    expect(screen.getByText("2 files")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sort" })).toBeInTheDocument();
+    expect(screen.queryByText("2 files")).not.toBeInTheDocument();
     const image = screen
       .getByTestId("file-tile-ACS_Lecture_1_2026F")
       .querySelector("img");
     expect(image?.getAttribute("src")).toBe(
       "/api/corpus/ACS_Lecture_1_2026F/pages/1.webp",
     );
+  });
+
+  it("sorts the file tiles by name after choosing the only sort menu item", async () => {
+    const unsorted: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [DOC_B, DOC_A], total: 2 }),
+    };
+    stub = createFetchStub(routes([unsorted]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    const tileIds = () =>
+      screen
+        .getAllByTestId(/^file-tile-/)
+        .map((tile) => tile.getAttribute("data-testid"));
+
+    expect(tileIds()).toEqual([
+      "file-tile-Tutorial_2",
+      "file-tile-ACS_Lecture_1_2026F",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(screen.getAllByRole("menuitemradio")).toHaveLength(1);
+    await user.click(screen.getByRole("menuitemradio", { name: "Sort by name" }));
+
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-ACS_Lecture_1_2026F",
+        "file-tile-Tutorial_2",
+      ]);
+    });
   });
 
   it("marks the indexing state of a file that is still being processed", async () => {

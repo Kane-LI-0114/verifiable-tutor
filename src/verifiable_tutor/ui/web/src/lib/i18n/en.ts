@@ -297,6 +297,8 @@ export const en = {
     files: "Files",
     root: "All files",
     newMenu: "New",
+    sort: "Sort",
+    sortByName: "Sort by name",
     uploadFile: "Upload file",
     uploadDisabled:
       "Uploads stay off until the TACC parse and embedding chain is verified end to end.",

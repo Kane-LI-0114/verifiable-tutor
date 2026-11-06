@@ -1,4 +1,4 @@
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { ArrowDownUpIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -19,12 +19,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -40,6 +41,23 @@ import { usePreview } from "@/lib/preview/context";
 const SEARCH_DEBOUNCE_MS = 200;
 const PANE_WIDTH_KEY = "vt.knowledge.pane.width";
 const PANE_COLLAPSED_KEY = "vt.knowledge.pane.collapsed";
+
+type SortOrder = "default" | "name";
+
+/** One collator instead of one per comparison: construction dominates the cost. */
+const NAME_COLLATOR = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: "base",
+});
+const NO_DOCUMENTS: KnowledgeDocument[] = [];
+const NO_HITS: SearchDocument[] = [];
+
+/** Sort a copy so the order returned by the API is never mutated. */
+function sortByName<T>(items: T[], nameOf: (item: T) => string): T[] {
+  return [...items].sort((left, right) =>
+    NAME_COLLATOR.compare(nameOf(left), nameOf(right)),
+  );
+}
 
 type Pending =
   | { kind: "new-folder" }
@@ -115,6 +133,7 @@ export function KnowledgePage() {
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOrder>("default");
   const [hits, setHits] = useState<SearchDocument[] | null>(null);
   const [dragging, setDragging] = useState(false);
   const [dropNotice, setDropNotice] = useState(false);
@@ -282,8 +301,35 @@ export function KnowledgePage() {
   }, [folders, pending]);
 
   const searching = query.trim().length > 0;
-  const visibleDocuments = searching ? [] : documents;
-  const childFolders = folders.filter((folder) => folder.parent_id === folderId);
+  const childFolders = useMemo(
+    () => folders.filter((folder) => folder.parent_id === folderId),
+    [folderId, folders],
+  );
+  const visibleDocuments = useMemo(
+    () => (searching ? NO_DOCUMENTS : documents),
+    [documents, searching],
+  );
+  const sortedFolders = useMemo(
+    () =>
+      sortBy === "name"
+        ? sortByName(childFolders, (folder) => folder.name)
+        : childFolders,
+    [childFolders, sortBy],
+  );
+  const sortedDocuments = useMemo(
+    () =>
+      sortBy === "name"
+        ? sortByName(visibleDocuments, (document) => document.title)
+        : visibleDocuments,
+    [sortBy, visibleDocuments],
+  );
+  const sortedHits = useMemo(
+    () =>
+      sortBy === "name"
+        ? sortByName(hits ?? NO_HITS, (document) => document.title)
+        : (hits ?? NO_HITS),
+    [hits, sortBy],
+  );
   const showEmpty =
     !loading &&
     !failed &&
@@ -356,14 +402,32 @@ export function KnowledgePage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Badge variant="secondary" className="h-8 px-3">
-            {format(
-              (searching ? (hits?.length ?? 0) : documents.length) === 1
-                ? t.knowledge.totalOne
-                : t.knowledge.total,
-              { count: searching ? (hits?.length ?? 0) : documents.length },
-            )}
-          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                aria-label={t.knowledge.sort}
+                title={t.knowledge.sort}
+              >
+                <ArrowDownUpIcon />
+                <span className="hidden sm:inline">{t.knowledge.sort}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(value) =>
+                  setSortBy(value === "name" ? "name" : "default")
+                }
+              >
+                <DropdownMenuRadioItem value="name">
+                  {t.knowledge.sortByName}
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div
@@ -405,7 +469,7 @@ export function KnowledgePage() {
           ) : searching ? (
             <SearchResults
               query={query}
-              documents={hits ?? []}
+              documents={sortedHits}
               onOpen={(docId) => {
                 setSelectedId(docId);
                 openDocument(docId);
@@ -413,7 +477,7 @@ export function KnowledgePage() {
             />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {childFolders.map((folder) => (
+              {sortedFolders.map((folder) => (
                   <FolderTile
                     key={folder.id}
                     folder={folder}
@@ -437,7 +501,7 @@ export function KnowledgePage() {
                     }
                   />
               ))}
-              {visibleDocuments.map((document) => (
+              {sortedDocuments.map((document) => (
                 <FileTile
                   key={document.id}
                   document={document}
