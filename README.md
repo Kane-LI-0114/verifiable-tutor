@@ -96,6 +96,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `docs/figures/` | PRD diagram sources and renders (use case, containers, sequence examples, ER), the generated physical schema diagram, and future report figures | present: PRD diagrams and the physical schema diagram |
 | `docs/prd.md` | Product requirements, scope, acceptance criteria, and milestones | present: PRD |
 | `docs/todo.md` | Ordered backlog, priorities, and item state, with the lead directives of 2026-11-06 | present: backlog |
+| `docs/research/` | Dated research notes that check a plan against first-party sources; evidence, not a source of truth | present: 2026-11-06 agent loop check |
 | `GLOSSARY.md` | Domain vocabulary used across the docs and code | present: glossary |
 | `docs/tech-selection.md`, `docs/adr/` | Technology decisions and the ADRs that argue them | present: decisions |
 | `docs/fastapi-reference.md` | FastAPI conventions for the local backend, distilled from the official documentation, for agents writing backend code | present: reference |
