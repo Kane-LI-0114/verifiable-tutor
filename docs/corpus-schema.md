@@ -115,7 +115,7 @@ Chunking rules: a chunk never spans pages; text is rebuilt from `blocks` rather 
 
 Retrieval adds derived data outside this record: the FTS5 row and the dense vector, both stored in the local knowledge tables.
 
-TODO: the chunking strategy is not final. An offline optimization pass should compare this page-first rule set against fixed-token windows, recursive splitting, section-aware splitting, and semantic (embedding-similarity) grouping on the retrieval benchmark, and record page-hit@k and nDCG per strategy before the rules are frozen. The candidate strategies and the evaluation seam are in [ADR-0015](adr/0015-local-knowledge-store-and-chunking.md#deferred-chunking-strategy-evaluation).
+TODO: the chunking strategy is not final. It is the last item of the deferred list in [ADR-0015](adr/0015-local-knowledge-store-and-chunking.md#deferred-work-in-order), after the upload chain, the citation system, and chunk injection, because the citation format and the injection budget decide what the retrieval unit should be. The pass compares this page-first rule set against fixed-token windows, recursive splitting, section-aware splitting, and semantic (embedding-similarity) grouping on the retrieval benchmark, and records page-hit@k and nDCG per strategy before the rules are frozen.
 
 ## Relationship to ADR-0002
 

@@ -30,20 +30,27 @@ Two product constraints shape the record shapes. First, every future citation mu
 
 **Document summaries come from Qwen on the platform.** A second request schema (`vt-summary-request/1`) runs in the existing `tacc/serve` job and emits one `vt-doc-summary/1` record per document. Course text used for the summary does not leave the platform.
 
-**Citation construction and model injection are out of scope for this stage.** Chunks, hits, and their metadata are produced and served; turning a hit into a stored citation, verifying its span, and injecting top-k chunks into the chat prompt are recorded as TODO in the code and in [prd.md](../prd.md). The retrieval entry point exists so the next stage can call it without changing the store.
+**Citation construction and model injection are out of scope for this stage.** Chunks, hits, and their metadata are produced and served; turning a hit into a stored citation, verifying its span, and injecting top-k chunks into the chat prompt are the second and third items of the ordered deferred list below. The retrieval entry point exists so the next stage can call it without changing the store.
 
-## Deferred: chunking strategy evaluation
+## Deferred work, in order
 
-The page-first rules above are the first implementation, not a settled answer. An offline optimization pass still has to choose the chunking strategy against the retrieval benchmark, because the four known strategies trade recall, coherence, and cost differently:
+The store and the retriever are only the first half of the RAG loop. The rest is ordered, because each step fixes a constraint the next one has to live with:
 
-| Strategy | Shape | Why it is still on the table |
-|---|---|---|
-| Fixed token window | split every page by a token budget, optionally with overlap | cheapest and most uniform, but cuts tables and formulas and ignores slide structure |
-| Recursive | split on the largest separator that fits, then recurse into the pieces | structure-aware without needing layout labels, and cheap to add |
-| Structure-aware | use the `paragraph_title`, `table`, `display_formula`, and `image` labels as the boundaries | what the current rules approximate; a real section builder that merges the slides under one title is still missing |
-| Semantic | group adjacent blocks while their embeddings stay close | the best topic purity, but it needs an embedding pass at ingestion and its own evaluation |
+1. **Upload chain.** `+` keeps the upload item disabled until this is verified: the browser posts a file, the backend stages it and submits the OCR job, and the chunk, embed, store, and summarize stages run exactly as `scripts/ingest_corpus.py` runs them today. No upload endpoint exists; the drop zone refuses the drop.
+2. **Citation system.** Turn a retrieved chunk into a stored citation: a `citations` row with `doc_id`, `page_no`, the quoted span, and the bbox, the span checked against the page text with the deterministic verifier before `verified_at` is set, and the evidence panel opening the cited page. Chunks already carry the page, the block ids, and the union box this needs; nothing writes a citation today.
+3. **Chunk injection and the agent tool.** The chat turn calls the retriever, puts the top-k excerpts and their metadata into the prompt, emits a `retrieve` work step, and persists the tool call. `GET /api/knowledge/retrieve` exists as the entry point; no prompt is written yet.
+4. **Chunking strategy optimization.** Choose the chunking rules against the retrieval benchmark instead of keeping the first implementation. The four known strategies trade recall, coherence, and cost differently:
 
-The evaluation seam is the retrieval question set with known answer pages: report page-hit@k and nDCG for each strategy on the same corpus, then keep the winner. `chunker_version` stays in the chunk record and in the index key so a rule change forces a rebuild instead of mixing two chunk shapes in one store. TODO, not scheduled.
+   | Strategy | Shape | Why it is still on the table |
+   |---|---|---|
+   | Fixed token window | split every page by a token budget, optionally with overlap | cheapest and most uniform, but cuts tables and formulas and ignores slide structure |
+   | Recursive | split on the largest separator that fits, then recurse into the pieces | structure-aware without needing layout labels, and cheap to add |
+   | Structure-aware | use the `paragraph_title`, `table`, `display_formula`, and `image` labels as the boundaries | what the current rules approximate; a real section builder that merges the slides under one title is still missing |
+   | Semantic | group adjacent blocks while their embeddings stay close | the best topic purity, but it needs an embedding pass at ingestion and its own evaluation |
+
+   The evaluation seam is the retrieval question set with known answer pages: report page-hit@k and nDCG per strategy on the same corpus, then keep the winner. `chunker_version` stays in the chunk record and in the index key, so a rule change forces a rebuild instead of mixing two chunk shapes in one store.
+
+Chunking is last on purpose. The citation format and the injection budget decide whether the retrieval unit should be a page, a merged section, or a semantic cluster, so evaluating the strategy before those constraints exist would measure the wrong thing.
 
 ## Consequences
 
