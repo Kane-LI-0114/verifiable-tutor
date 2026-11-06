@@ -35,7 +35,7 @@ The step declaration lives on `ToolSpec` as a stage name. The runner copies that
 
 **The header keeps the summary, not a second step display.** The phase rail added in an earlier iteration is removed. The header shows the work-chain title, the `N/N steps complete` summary, the policy badge, and the expand control. Steps exist only inside the expanded chain.
 
-**Legacy rows stay flat.** An event with `step_id = NULL` renders without a section header; a turn whose events all have NULL ids keeps the previous flat event list. The step headers still come from the surviving `message_steps` rows. Old replay traces infer the step from the existing `data-step` and `start-step` frames; if none are present, the events render flat.
+**Legacy rows stay flat.** An event with `step_id = NULL` renders without a section header; a turn whose events all have NULL ids keeps the previous flat event list. The UI also moves a reasoning event forward to the step of the tool call that follows it at render time, so turns stored before the backend attached reasoning to the tool step display together. The step headers still come from the surviving `message_steps` rows. Old replay traces infer the step from the existing `data-step` and `start-step` frames; if none are present, the events render flat.
 
 **The final answer text is not an event and is not duplicated.** `generate` is an ordinary section; when thinking is off it has no reasoning events but still shows its header, and the answer remains the message body below the chain.
 
