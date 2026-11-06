@@ -27,9 +27,9 @@ The agent loop is not a sequential phase pipeline. `generate` starts with the fi
 
 The step declaration lives on `ToolSpec` as a stage name. The runner copies that name into `tool_start` and `tool_end`; the chat service resolves it to the current `message_steps.id`, persists the id on the event, and includes it in the `data-tool` stream payload. The `data-step` frame also carries the id. The live UI and replay therefore use the same value as history.
 
-**The UI renders one section per stage name that actually exists.** The `message_steps` rows supply the id, position, status, duration, detail, policy, and rule id. Sections are ordered by the canonical phase order `understand`, `retrieve`, `verify`, `decide`, `generate`, `cite`. All events whose step maps to that name render under it in event order. A stage with no events still renders its header and detail. A stage that has no row is not synthesized, so a real turn that only emitted `generate` and `retrieve` shows only those two sections.
+**The UI renders one section per step row, keyed by `message_steps.id`.** The row supplies the id, position, status, duration, detail, policy, and rule id. Sections are ordered by the canonical phase order `understand`, `retrieve`, `verify`, `decide`, `generate`, `cite`, then by the row position for rows of the same phase. All events whose `step_id` matches the row render under it in event order. A row with no events still renders its header and detail. A step that has no row is not synthesized, so a real turn that only emitted `generate` and `retrieve` shows only those two sections.
 
-**The writer keeps one row per stage name; the UI merges same-name rows defensively.** A `started` frame updates the active row for that name; a `done` or `failed` frame closes it, and a later `started` reuses the same row rather than allocating a new one. If an older turn already stored two rows for one name, the UI merges them into one section and keeps their events in order. A reasoning segment that preceded tool calls stays with those tools in the same section.
+**The writer keeps one row per stage name.** A `started` frame updates the active row for that name; a `done` or `failed` frame closes it, and a later `started` reuses the same row rather than allocating a new one. Several tools in one stage therefore share one id and one section. If an older turn already stored two rows for one name, the UI renders them as two sections because their ids differ; the data keeps that distinction. A reasoning segment that preceded tool calls stays with those tools in the same section.
 
 **`message_steps` remains the aggregate stage record.** It is not replaced by event ids. An event whose `step_id` does not match a returned step row is rendered flat rather than guessed into a section.
 
@@ -52,7 +52,7 @@ The step declaration lives on `ToolSpec` as a stage name. The runner copies that
 
 - Schema version 5 adds a column and a migration; the physical data model page and image must be regenerated.
 - Sections are grouped by phase, so events under a phase are shown together rather than in one uninterrupted chronological stream. The event order within a section is preserved, and the phase order is canonical.
-- Several tool calls in one stage share one section, so the UI does not show a separate header per tool; the section duration is the sum of the stored step durations.
+- Several tool calls in one stage share one row and one section, so the UI does not show a separate header per tool. Older turns with duplicate same-name rows show one section per id.
 - The section order is a UI constant; a future custom phase order would need a persisted order or a new ADR.
 
 **Neutral:**
