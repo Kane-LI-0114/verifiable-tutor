@@ -463,7 +463,7 @@ Rules:
 - Never omit the control. Both providers default to thinking on.
 - Force `off` for every tool-calling turn on both providers.
 - Force `off` for evaluation runs that need deterministic output, because temperature is ignored while thinking is on.
-- MiMo cannot express intensity. The UI may show `low`, `high`, and `max` as the same effective mode on MiMo; record the degradation in the trace.
+- MiMo cannot express intensity. The UI offers Off and On; the project-level value for On is `on`, and any `low`, `high`, or `max` request normalizes to `on`. The adapter sends `{"type": "enabled"}`.
 
 ## 7. JSON output and tool calling contract for the agent layer
 
