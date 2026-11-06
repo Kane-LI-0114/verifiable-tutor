@@ -110,7 +110,7 @@ const HISTORY: ChatMessage[] = [
     citations: [STORED_CITATION],
     tool_calls: [STORED_TOOL_CALL],
     events: [
-      { kind: "reasoning", reasoning: STORED_REASONING, step_id: "generate" },
+      { kind: "reasoning", reasoning: STORED_REASONING, step_id: "retrieve" },
       {
         kind: "tool_call",
         tool_call: STORED_TOOL_CALL,
@@ -675,9 +675,8 @@ describe("live chat", () => {
     const retrieve = screen.getByRole("region", {
       name: /Retrieve course pages/,
     });
-    const generate = screen.getByRole("region", { name: /Write the answer/ });
     expect(within(retrieve).getByText("Tool call: course_search")).toBeInTheDocument();
-    expect(within(generate).getByText(STORED_REASONING)).toBeInTheDocument();
+    expect(within(retrieve).getByText(STORED_REASONING)).toBeInTheDocument();
   });
 
   it("renders a legacy answer without a work chain or thinking region", async () => {
@@ -1122,9 +1121,8 @@ describe("live chat", () => {
     const retrieve = screen.getByRole("region", {
       name: /Retrieve course pages/,
     });
-    const generate = screen.getByRole("region", { name: /Write the answer/ });
     expect(within(retrieve).getByText("Tool call: search_course")).toBeInTheDocument();
-    expect(within(generate).getByText("First, search the course.")).toBeInTheDocument();
+    expect(within(retrieve).getByText("First, search the course.")).toBeInTheDocument();
     await user.click(toolCall);
     expect(await screen.findByText("Arguments")).toBeInTheDocument();
     expect(await screen.findByText("1 course chunks")).toBeInTheDocument();

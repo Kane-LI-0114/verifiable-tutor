@@ -176,7 +176,7 @@ export const PREVIEW_TURNS: ConversationTurn[] = [
       events: [
         {
           kind: "reasoning",
-          step_id: "generate",
+          step_id: "retrieve",
           reasoning:
             "The question asks about a collective operation and its use in the assignment. The assignment is active, so I can explain the operation and the call, but I should not produce the missing kernel implementation.",
         },

@@ -167,6 +167,10 @@ function applyFrame(
     const data = frame.data as ToolCallData;
     const call: ToolCall = toToolCall(data);
     const stepId = data.step_id ?? cursorRef.stepId;
+    const last = meta.events[meta.events.length - 1];
+    if (last?.kind === "reasoning" && stepId) {
+      last.step_id = stepId;
+    }
     const key = call.tool_call_id ?? `${call.name}:${meta.events.length}`;
     const existing = meta.events.findIndex(
       (event) =>

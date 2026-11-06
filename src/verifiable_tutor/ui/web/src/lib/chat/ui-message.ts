@@ -191,6 +191,18 @@ function workChainEvents(parts: TutorPart[]): WorkChainEvent[] {
     }
   }
   flushReasoning();
+  // A reasoning segment belongs with the tool calls it produced. Walk backward
+  // so the last reasoning block before a tool adopts that tool's step; final
+  // reasoning with no later tool stays on generate.
+  let nextToolStepId: string | undefined;
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event.kind === "tool_call") {
+      nextToolStepId = event.step_id ?? nextToolStepId;
+    } else if (nextToolStepId !== undefined) {
+      events[index] = { ...event, step_id: nextToolStepId };
+    }
+  }
   return events;
 }
 

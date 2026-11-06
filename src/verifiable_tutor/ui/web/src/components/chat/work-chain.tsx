@@ -137,10 +137,41 @@ function EventList({ events }: { events: WorkChainEvent[] }) {
 }
 
 /**
- * Every step that actually exists renders, even without events. Events are
- * grouped under their step; event steps missing from message_steps still get a
- * fallback section. Events without a step stay flat for legacy rows.
+ * Every step name that actually exists renders once, even without events.
+ * Rows with the same name are merged so a repeated phase keeps one section,
+ * and events from all of its step ids stay in their original order.
  */
+function mergeStepRows(rows: WorkStep[]): WorkStep {
+  const ordered = [...rows].sort(
+    (left, right) => (left.position ?? 0) - (right.position ?? 0),
+  );
+  const base = ordered[0];
+  const status = ordered.some((row) => row.status === "failed")
+    ? "failed"
+    : ordered.some((row) => row.status === "started")
+      ? "started"
+      : ordered.every((row) => row.status === "done")
+        ? "done"
+        : base.status;
+  const durations = ordered
+    .map((row) => row.duration_ms)
+    .filter((value): value is number => value !== undefined);
+  const detail = ordered.find((row) => row.detail)?.detail;
+  const policy = ordered.find((row) => row.policy)?.policy;
+  const rule_id = ordered.find((row) => row.rule_id)?.rule_id;
+  return {
+    ...base,
+    status,
+    detail,
+    policy,
+    rule_id,
+    duration_ms:
+      durations.length > 0
+        ? durations.reduce((total, value) => total + value, 0)
+        : undefined,
+  };
+}
+
 function WorkChainSections({
   steps,
   events,
@@ -149,33 +180,42 @@ function WorkChainSections({
   events: WorkChainEvent[];
 }) {
   const t = useT();
-  const byStep = new Map<string, WorkChainEvent[]>();
+  const stepNameById = new Map(steps.map((step) => [step.id, step.step]));
+  const rowsByName = new Map<WorkStepName, WorkStep[]>();
+  for (const step of steps) {
+    const rows = rowsByName.get(step.step) ?? [];
+    rows.push(step);
+    rowsByName.set(step.step, rows);
+  }
+  const merged = new Map(
+    [...rowsByName.entries()].map(([name, rows]) => [name, mergeStepRows(rows)]),
+  );
+  const eventsByName = new Map<WorkStepName, WorkChainEvent[]>();
   const unstepped: WorkChainEvent[] = [];
-  const knownIds = new Set(steps.map((step) => step.id));
   for (const event of events) {
-    if (event.step_id && knownIds.has(event.step_id)) {
-      const list = byStep.get(event.step_id) ?? [];
+    const name = event.step_id
+      ? stepNameById.get(event.step_id)
+      : undefined;
+    if (name) {
+      const list = eventsByName.get(name) ?? [];
       list.push(event);
-      byStep.set(event.step_id, list);
+      eventsByName.set(name, list);
     } else {
       unstepped.push(event);
     }
   }
-
-  const ordered = [...steps].sort(
-    (left, right) =>
-      STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step) ||
-      (left.position ?? 0) - (right.position ?? 0),
+  const ordered = [...merged.values()].sort(
+    (left, right) => STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step),
   );
 
   return (
     <div className="space-y-4">
       {ordered.map((step) => {
         const title = stepTitle(step, t);
-        const stepEvents = byStep.get(step.id) ?? [];
+        const stepEvents = eventsByName.get(step.step) ?? [];
         const showBody = step.detail !== undefined || stepEvents.length > 0;
         return (
-          <section key={step.id} aria-label={title} className="min-w-0">
+          <section key={step.step} aria-label={title} className="min-w-0">
             <div
               className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground"
               title={title}
@@ -216,11 +256,14 @@ export function WorkChain({
   events: WorkChainEvent[];
 }) {
   const t = useT();
-  const done = steps.filter((step) => step.status === "done").length;
+  const uniqueSteps = [
+    ...new Map(steps.map((step) => [step.step, step])).values(),
+  ];
+  const done = uniqueSteps.filter((step) => step.status === "done").length;
   const toolCallCount = events.filter((event) => event.kind === "tool_call").length;
   const summary =
-    steps.length > 0
-      ? format(t.chat.workChainSummary, { done, total: steps.length })
+    uniqueSteps.length > 0
+      ? format(t.chat.workChainSummary, { done, total: uniqueSteps.length })
       : format(t.chat.toolCallsSummary, { count: toolCallCount });
   const hasContent = steps.length > 0 || events.length > 0;
 

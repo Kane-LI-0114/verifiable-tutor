@@ -40,7 +40,7 @@ describe("work chain", () => {
         step("decide"),
       ],
       [
-        { kind: "reasoning", reasoning: "Think first.", step_id: "generate" },
+        { kind: "reasoning", reasoning: "Think first.", step_id: "retrieve" },
         { kind: "tool_call", tool_call: TOOL_CALL, step_id: "retrieve" },
       ],
     );
@@ -123,15 +123,12 @@ describe("work chain", () => {
     );
     await expand();
 
-    const sections = screen.getAllByRole("region", {
+    const section = screen.getByRole("region", {
       name: /Retrieve course pages/,
     });
-    expect(sections).toHaveLength(2);
-    for (const section of sections) {
-      expect(
-        within(section).getByText("Tool call: search_course"),
-      ).toBeInTheDocument();
-    }
+    expect(
+      within(section).getAllByText("Tool call: search_course"),
+    ).toHaveLength(2);
   });
 
   it("renders events without a step flat for legacy rows", async () => {
