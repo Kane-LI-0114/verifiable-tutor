@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Refresh the committed physical data model when the storage schema changes.
+#
+# The page, Graphviz source, and PNG are generated from Storage.initialize. The
+# hook regenerates them when storage.py or schema_docs.py is staged, stages the
+# three artifacts, then verifies the bundle. Every other commit only verifies.
+set -euo pipefail
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+PYTHON="$REPO_ROOT/.venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+    echo "pre-commit: .venv/bin/python is missing; create the environment first." >&2
+    exit 1
+fi
+
+STAGED_SCHEMA=$(git diff --cached --name-only -- \
+    src/verifiable_tutor/storage.py \
+    src/verifiable_tutor/schema_docs.py)
+
+if [ -n "$STAGED_SCHEMA" ]; then
+    if ! command -v dot >/dev/null 2>&1; then
+        echo "pre-commit: Graphviz dot is missing; cannot refresh docs/figures/physical-db.png." >&2
+        exit 1
+    fi
+    "$PYTHON" scripts/build_data_model.py >/dev/null
+    dot -Gdpi=200 -Tpng docs/figures/physical-db.dot -o docs/figures/physical-db.png
+    git add docs/physical-data-model.md docs/figures/physical-db.dot docs/figures/physical-db.png
+    echo "pre-commit: refreshed the physical data model documents from the storage schema." >&2
+fi
+
+"$PYTHON" scripts/build_data_model.py --check >/dev/null

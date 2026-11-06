@@ -64,6 +64,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 
 | Path | Intended role | State |
 |---|---|---|
+| `.githooks/` | Versioned Git hooks; the pre-commit hook keeps the physical data model documents in sync with the SQLite schema | present: pre-commit |
 | `src/verifiable_tutor/auth/` | Accounts, authentication, sessions, and roles | present: accounts, sessions, email seam, seeding |
 | `src/verifiable_tutor/api/` | FastAPI application, routers, dependencies, and the AI SDK UI message stream adapter; serves the API and the built UI on one origin | present: factory, routers, chat and replay services, stream encoder |
 | `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | placeholder (`.gitkeep`) |
