@@ -95,6 +95,11 @@ TOOL_CALL_EXAMPLE: dict[str, Any] = {
     "duration_ms": 42,
     "status": "done",
 }
+MESSAGE_EVENT_EXAMPLE: dict[str, Any] = {
+    "kind": "reasoning",
+    "reasoning": "The question asks about a collective operation.",
+    "tool_call": None,
+}
 MESSAGE_EXAMPLE: dict[str, Any] = {
     "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
     "sequence": 2,
@@ -108,6 +113,7 @@ MESSAGE_EXAMPLE: dict[str, Any] = {
     "work_steps": [WORK_STEP_EXAMPLE],
     "citations": [CITATION_EXAMPLE],
     "tool_calls": [],
+    "events": [MESSAGE_EVENT_EXAMPLE],
     "created_at": _CREATED_AT,
 }
 CARD_EXAMPLE: dict[str, Any] = {
@@ -352,6 +358,20 @@ class ToolCallRecord(BaseModel):
     )
 
 
+class MessageEventRecord(BaseModel):
+    model_config = _example(MESSAGE_EVENT_EXAMPLE)
+
+    kind: Literal["reasoning", "tool_call"] = _ex(
+        "reasoning", "Work-chain event kind; reasoning or tool_call."
+    )
+    reasoning: str | None = _opt(
+        None, "Reasoning text for a reasoning event; null for a tool call."
+    )
+    tool_call: ToolCallRecord | None = _opt(
+        None, "The tool call for a tool_call event; null for reasoning."
+    )
+
+
 class MessageRecord(BaseModel):
     model_config = _example(MESSAGE_EXAMPLE)
 
@@ -396,6 +416,11 @@ class MessageRecord(BaseModel):
     tool_calls: list[ToolCallRecord] = _ex(
         [TOOL_CALL_EXAMPLE],
         "Tool calls executed for the answer, in display order.",
+    )
+    events: list[MessageEventRecord] = _ex(
+        [MESSAGE_EVENT_EXAMPLE],
+        "Ordered work-chain events: reasoning segments and tool calls, in the "
+        "order the model produced them.",
     )
     created_at: str = _ex(_CREATED_AT, "ISO-8601 UTC creation time.")
 

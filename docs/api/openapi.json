@@ -1442,6 +1442,53 @@
         "title": "MessageCitationRecord",
         "type": "object"
       },
+      "MessageEventRecord": {
+        "additionalProperties": false,
+        "example": {
+          "kind": "reasoning",
+          "reasoning": "The question asks about a collective operation."
+        },
+        "properties": {
+          "kind": {
+            "description": "Work-chain event kind; reasoning or tool_call.",
+            "enum": [
+              "reasoning",
+              "tool_call"
+            ],
+            "example": "reasoning",
+            "title": "Kind",
+            "type": "string"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reasoning text for a reasoning event; null for a tool call.",
+            "title": "Reasoning"
+          },
+          "tool_call": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolCallRecord"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tool call for a tool_call event; null for reasoning."
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "MessageEventRecord",
+        "type": "object"
+      },
       "MessageRecord": {
         "additionalProperties": false,
         "example": {
@@ -1454,6 +1501,12 @@
           ],
           "content": "MPI_Allreduce reduces a value across all ranks.",
           "created_at": "2026-11-02T12:00:00+00:00",
+          "events": [
+            {
+              "kind": "reasoning",
+              "reasoning": "The question asks about a collective operation."
+            }
+          ],
           "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
           "model": "deepseek-flash",
           "provider": "deepseek",
@@ -1498,6 +1551,20 @@
             "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
+          },
+          "events": {
+            "description": "Ordered work-chain events: reasoning segments and tool calls, in the order the model produced them.",
+            "example": [
+              {
+                "kind": "reasoning",
+                "reasoning": "The question asks about a collective operation."
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MessageEventRecord"
+            },
+            "title": "Events",
+            "type": "array"
           },
           "id": {
             "description": "Message id.",
@@ -1637,6 +1704,7 @@
           "work_steps",
           "citations",
           "tool_calls",
+          "events",
           "created_at"
         ],
         "title": "MessageRecord",
@@ -2329,6 +2397,12 @@
               ],
               "content": "MPI_Allreduce reduces a value across all ranks.",
               "created_at": "2026-11-02T12:00:00+00:00",
+              "events": [
+                {
+                  "kind": "reasoning",
+                  "reasoning": "The question asks about a collective operation."
+                }
+              ],
               "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
               "model": "deepseek-flash",
               "provider": "deepseek",
@@ -2363,6 +2437,12 @@
                 ],
                 "content": "MPI_Allreduce reduces a value across all ranks.",
                 "created_at": "2026-11-02T12:00:00+00:00",
+                "events": [
+                  {
+                    "kind": "reasoning",
+                    "reasoning": "The question asks about a collective operation."
+                  }
+                ],
                 "id": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
                 "model": "deepseek-flash",
                 "provider": "deepseek",

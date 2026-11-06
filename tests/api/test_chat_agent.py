@@ -82,6 +82,38 @@ def test_agent_streams_tool_frames_and_persists_the_call(agent_api):
     assert call["duration_ms"] is not None
 
 
+def test_agent_persists_reasoning_before_each_tool_call(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    first_call = [
+        StreamEvent(kind="reasoning", text="I should search the course pages."),
+        *tool_script(),
+    ]
+    second_call = [
+        StreamEvent(kind="reasoning", text="Now answer from the retrieved pages."),
+        *text_script("Allreduce sums a value across ranks."),
+    ]
+    agent_api.adapter.scripts = [first_call, second_call]
+
+    response = agent_api.client.post("/api/chat", json={"message": "What is MPI?"})
+
+    assert response.status_code == 200
+    session_id = response.headers["x-conversation-id"]
+    assistant = agent_api.client.get(
+        f"/api/sessions/{session_id}/messages"
+    ).json()["messages"][1]
+    events = assistant["events"]
+    assert [event["kind"] for event in events] == [
+        "reasoning",
+        "tool_call",
+        "reasoning",
+    ]
+    assert events[0]["reasoning"] == "I should search the course pages."
+    assert events[0]["tool_call"] is None
+    assert events[1]["tool_call"]["name"] == "search_course"
+    assert events[1]["tool_call"]["status"] == "done"
+    assert events[2]["reasoning"] == "Now answer from the retrieved pages."
+
+
 def test_agent_records_tool_frames_in_the_trace_and_replays_them(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     agent_api.adapter.scripts = [tool_script(), text_script()]

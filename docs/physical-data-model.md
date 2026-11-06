@@ -248,6 +248,33 @@ Indexes:
 
 - UNIQUE (`message_id`, `position`)
 
+### message_events
+
+Ordered work-chain events of one assistant answer (ADR-0017): a reasoning segment from one model call, or a reference to one row in `tool_calls`. The order is the order the model produced them, so the UI renders each reasoning segment immediately before the tool calls it precedes.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Event row id (uuid hex). |
+| `message_id` | TEXT | no | FK | Assistant message the event belongs to. |
+| `position` | INTEGER | no | - | 0-based order inside the work chain. |
+| `kind` | TEXT | no | - | reasoning or tool_call. |
+| `reasoning` | TEXT | yes | - | Reasoning text for a reasoning event; null for a tool call. |
+| `tool_call_position` | INTEGER | yes | - | Position of the referenced tool_calls row; null for reasoning. |
+
+Checks:
+
+- `CHECK (kind IN ('reasoning', 'tool_call'))`
+- `CHECK ((kind = 'reasoning' AND reasoning IS NOT NULL AND tool_call_position IS NULL) OR (kind = 'tool_call' AND tool_call_position IS NOT NULL))`
+
+Foreign keys:
+
+- `message_id` -> `messages.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_message_events_message`: index on (`message_id`, `position`)
+- UNIQUE (`message_id`, `position`)
+
 ### knowledge_builds
 
 State of one submitted Qwen knowledge-base build.
@@ -395,7 +422,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 3`.
+- Schema version: `PRAGMA user_version = 4`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

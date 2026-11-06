@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -148,6 +148,22 @@ CREATE TABLE IF NOT EXISTS tool_calls (
     duration_ms INTEGER,
     UNIQUE (message_id, position)
 );
+
+CREATE TABLE IF NOT EXISTS message_events (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('reasoning', 'tool_call')),
+    reasoning TEXT,
+    tool_call_position INTEGER,
+    UNIQUE (message_id, position),
+    CHECK (
+        (kind = 'reasoning' AND reasoning IS NOT NULL AND tool_call_position IS NULL)
+        OR (kind = 'tool_call' AND tool_call_position IS NOT NULL)
+    )
+);
+CREATE INDEX IF NOT EXISTS idx_message_events_message
+    ON message_events(message_id, position);
 
 CREATE TABLE IF NOT EXISTS knowledge_builds (
     id TEXT PRIMARY KEY,
@@ -648,6 +664,7 @@ class Storage:
                 message["work_steps"] = []
                 message["citations"] = []
                 message["tool_calls"] = []
+                message["events"] = []
 
             steps = connection.execute(
                 "SELECT s.* FROM message_steps s"
@@ -710,6 +727,35 @@ class Storage:
                         "duration_ms": row["duration_ms"],
                     }
                 )
+
+            events = connection.execute(
+                "SELECT e.* FROM message_events e"
+                " JOIN messages m ON m.id = e.message_id"
+                " WHERE m.conversation_id = ?"
+                " ORDER BY e.message_id, e.position",
+                (conversation_id,),
+            ).fetchall()
+            for row in events:
+                message = by_id[row["message_id"]]
+                tool_call = None
+                if row["kind"] == "tool_call":
+                    position = row["tool_call_position"]
+                    tool_call = next(
+                        (
+                            call
+                            for call in message["tool_calls"]
+                            if call["position"] == position
+                        ),
+                        None,
+                    )
+                message["events"].append(
+                    {
+                        "position": row["position"],
+                        "kind": row["kind"],
+                        "reasoning": row["reasoning"],
+                        "tool_call": tool_call,
+                    }
+                )
         return messages
 
     def add_assistant_turn(
@@ -728,6 +774,7 @@ class Storage:
         steps: Sequence[Mapping[str, Any]] = (),
         citations: Sequence[Mapping[str, Any]] = (),
         tool_calls: Sequence[Mapping[str, Any]] = (),
+        events: Sequence[Mapping[str, Any]] = (),
     ) -> dict[str, Any]:
         """Persist one assistant turn and its turn metadata in one transaction.
 
@@ -795,6 +842,21 @@ class Storage:
                         call.get("duration_ms"),
                     ),
                 )
+            for position, event in enumerate(events):
+                connection.execute(
+                    "INSERT INTO message_events"
+                    " (id, message_id, position, kind, reasoning,"
+                    "  tool_call_position)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        uuid.uuid4().hex,
+                        message_id,
+                        position,
+                        event["kind"],
+                        event.get("reasoning"),
+                        event.get("tool_call_position"),
+                    ),
+                )
         return {
             "id": message_id,
             "conversation_id": conversation_id,
@@ -810,6 +872,7 @@ class Storage:
             "work_steps": list(steps),
             "citations": list(citations),
             "tool_calls": list(tool_calls),
+            "events": list(events),
         }
 
     # -- knowledge builds --------------------------------------------------

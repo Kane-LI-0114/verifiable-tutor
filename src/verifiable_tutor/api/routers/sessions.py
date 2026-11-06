@@ -15,6 +15,20 @@ from ..schemas import SessionListResponse, SessionMessagesResponse
 router = APIRouter(tags=["sessions"])
 
 
+def _tool_call_payload(call: dict) -> dict:
+    return {
+        "tool_call_id": call.get("tool_call_id"),
+        "name": call["name"],
+        "arguments": call.get("arguments"),
+        "result": call.get("result"),
+        "command": call["command"] or [],
+        "exit_code": call["exit_code"],
+        "output": call["output"],
+        "duration_ms": call.get("duration_ms"),
+        "status": call["status"],
+    }
+
+
 def _conversation_or_404(storage, session_id: str, user: dict):
     conversation = storage.find_conversation(session_id)
     if conversation is None or conversation["user_id"] != user["id"]:
@@ -84,18 +98,19 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
                 for citation in message["citations"]
             ],
             "tool_calls": [
+                _tool_call_payload(call) for call in message["tool_calls"]
+            ],
+            "events": [
                 {
-                    "tool_call_id": call.get("tool_call_id"),
-                    "name": call["name"],
-                    "arguments": call.get("arguments"),
-                    "result": call.get("result"),
-                    "command": call["command"] or [],
-                    "exit_code": call["exit_code"],
-                    "output": call["output"],
-                    "duration_ms": call.get("duration_ms"),
-                    "status": call["status"],
+                    "kind": event["kind"],
+                    "reasoning": event.get("reasoning"),
+                    "tool_call": (
+                        _tool_call_payload(event["tool_call"])
+                        if event.get("tool_call")
+                        else None
+                    ),
                 }
-                for call in message["tool_calls"]
+                for event in message["events"]
             ],
             "created_at": message["created_at"],
         }

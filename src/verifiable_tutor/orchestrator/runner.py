@@ -252,6 +252,7 @@ class AgentRunner:
                     "call": model_calls + 1,
                     "finish_reason": finish_reason,
                     "usage": usage,
+                    "reasoning": "".join(reasoning_parts),
                 },
             }
         )

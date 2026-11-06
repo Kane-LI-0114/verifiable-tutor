@@ -30,6 +30,7 @@ SCHEMA_TABLE_ORDER = (
     "message_steps",
     "citations",
     "tool_calls",
+    "message_events",
     "knowledge_builds",
     "kb_folders",
     "kb_documents",
@@ -112,6 +113,13 @@ TABLE_NOTES = {
         "Typed tool calls of one assistant answer with the provider call id, "
         "parsed arguments, a structured result, command line, exit code, "
         "duration, and truncated output (FR-H3, ADR-0016)."
+    ),
+    "message_events": (
+        "Ordered work-chain events of one assistant answer (ADR-0017): a "
+        "reasoning segment from one model call, or a reference to one row in "
+        "`tool_calls`. The order is the order the model produced them, so the UI "
+        "renders each reasoning segment immediately before the tool calls it "
+        "precedes."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -218,6 +226,14 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "arguments_json": "JSON object of the parsed tool arguments.",
         "result_json": "JSON structured result the tool returned to the model.",
         "duration_ms": "Tool execution time in milliseconds when known.",
+    },
+    "message_events": {
+        "id": "Event row id (uuid hex).",
+        "message_id": "Assistant message the event belongs to.",
+        "position": "0-based order inside the work chain.",
+        "kind": "reasoning or tool_call.",
+        "reasoning": "Reasoning text for a reasoning event; null for a tool call.",
+        "tool_call_position": "Position of the referenced tool_calls row; null for reasoning.",
     },
     "knowledge_builds": {
         "id": "Build id.",

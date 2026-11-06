@@ -234,6 +234,8 @@ class ChatService:
         text_started = False
         steps: list[dict[str, Any]] = []
         step_positions: dict[str, int] = {}
+        chain_events: list[dict[str, Any]] = []
+        tool_positions = 0
         turn_result: dict[str, Any] | None = None
         model_started = False
         collected: list[str] = []
@@ -335,6 +337,11 @@ class ChatService:
                     yield from close_reasoning()
                     yield from close_text()
                     yield emit(streaming.finish_step())
+                    reasoning = str(event.data.get("reasoning") or "").strip()
+                    if reasoning:
+                        chain_events.append(
+                            {"kind": "reasoning", "reasoning": reasoning}
+                        )
                 elif event.kind == "tool_start":
                     yield from close_reasoning()
                     yield from close_text()
@@ -377,6 +384,10 @@ class ChatService:
                                 duration_ms=data.get("duration_ms"),
                             )
                         )
+                    chain_events.append(
+                        {"kind": "tool_call", "tool_call_position": tool_positions}
+                    )
+                    tool_positions += 1
                 elif event.kind == "turn_end":
                     turn_result = dict(event.data)
                     break
@@ -419,6 +430,7 @@ class ChatService:
                 reasoning=str(turn_result.get("reasoning") or "") or None,
                 steps=steps,
                 tool_calls=turn_result.get("tool_calls") or (),
+                events=chain_events,
             )
         except Exception:  # a storage failure must not claim a finished turn
             self._trace.append_event(

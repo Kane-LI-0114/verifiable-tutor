@@ -116,6 +116,44 @@ def test_legacy_tool_call_columns_are_null(tmp_path):
     assert call["duration_ms"] is None
 
 
+def test_work_chain_events_keep_reasoning_and_tool_calls_in_order(tmp_path):
+    storage = _seeded_storage(tmp_path)
+
+    _turn(
+        storage,
+        events=[
+            {"kind": "reasoning", "reasoning": "I should search the course."},
+            {"kind": "tool_call", "tool_call_position": 0},
+        ],
+        tool_calls=[_tool_call()],
+    )
+
+    assistant = storage.list_messages("conv-1")[1]
+    assert [event["kind"] for event in assistant["events"]] == [
+        "reasoning",
+        "tool_call",
+    ]
+    assert assistant["events"][0]["reasoning"] == "I should search the course."
+    assert assistant["events"][0]["tool_call"] is None
+    assert assistant["events"][1]["tool_call"]["name"] == "search_course"
+    assert assistant["events"][1]["tool_call"]["tool_call_id"] == "call_1"
+
+
+def test_a_reasoning_event_without_text_rolls_back_the_whole_turn(tmp_path):
+    storage = _seeded_storage(tmp_path)
+
+    with pytest.raises(sqlite3.IntegrityError):
+        _turn(
+            storage,
+            events=[{"kind": "reasoning", "reasoning": None}],
+            tool_calls=[],
+        )
+
+    assert [message["role"] for message in storage.list_messages("conv-1")] == [
+        "user"
+    ]
+
+
 def test_an_invalid_tool_status_rolls_back_the_whole_turn(tmp_path):
     storage = _seeded_storage(tmp_path)
 
