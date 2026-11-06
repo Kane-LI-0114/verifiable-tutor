@@ -239,9 +239,10 @@ class ChatService:
         reasoning_part: str | None = None
         text_started = False
         steps: list[dict[str, Any]] = []
-        active_step_positions: dict[str, int] = {}
-        active_step_ids: dict[str, str] = {}
+        step_positions: dict[str, int] = {}
+        step_ids: dict[str, str] = {}
         chain_events: list[dict[str, Any]] = []
+        pending_reasoning: str | None = None
         tool_positions = 0
         turn_result: dict[str, Any] | None = None
         model_started = False
@@ -267,16 +268,16 @@ class ChatService:
 
             data = frame["data"]
             name = data["step"]
-            position = active_step_positions.get(name)
+            position = step_positions.get(name)
             if position is None:
                 step_id = uuid.uuid4().hex
                 position = len(steps)
                 steps.append({})
-                active_step_positions[name] = position
+                step_positions[name] = position
             else:
                 step_id = steps[position]["id"]
             data["id"] = step_id
-            active_step_ids[name] = step_id
+            step_ids[name] = step_id
             steps[position] = {
                 "id": step_id,
                 "step": name,
@@ -286,8 +287,6 @@ class ChatService:
                 "policy": data.get("policy"),
                 "rule_id": data.get("rule_id"),
             }
-            if data["status"] in {"done", "failed"}:
-                active_step_positions.pop(name, None)
 
         def emit(frame: dict[str, Any]) -> dict[str, Any]:
             if frame["type"] == "data-step":
@@ -353,14 +352,7 @@ class ChatService:
                     yield from close_text()
                     yield emit(streaming.finish_step())
                     reasoning = str(event.data.get("reasoning") or "").strip()
-                    if reasoning:
-                        chain_events.append(
-                            {
-                                "kind": "reasoning",
-                                "reasoning": reasoning,
-                                "step_id": active_step_ids.get("generate"),
-                            }
-                        )
+                    pending_reasoning = reasoning or None
                 elif event.kind == "tool_start":
                     yield from close_reasoning()
                     yield from close_text()
@@ -368,6 +360,15 @@ class ChatService:
                     step_name = data.get("step")
                     if step_name == "retrieve":
                         yield emit(streaming.data_step("retrieve", "started"))
+                    if pending_reasoning is not None:
+                        chain_events.append(
+                            {
+                                "kind": "reasoning",
+                                "reasoning": pending_reasoning,
+                                "step_id": step_ids.get(step_name),
+                            }
+                        )
+                        pending_reasoning = None
                     yield emit(
                         streaming.data_tool(
                             {
@@ -378,13 +379,13 @@ class ChatService:
                                 "output": None,
                                 "result": None,
                                 "duration_ms": None,
-                                "step_id": active_step_ids.get(step_name),
+                                "step_id": step_ids.get(step_name),
                             }
                         )
                     )
                 elif event.kind == "tool_end":
                     data = event.data
-                    step_id = active_step_ids.get(data.get("step"))
+                    step_id = step_ids.get(data.get("step"))
                     yield emit(
                         streaming.data_tool(
                             {
@@ -416,6 +417,15 @@ class ChatService:
                     )
                     tool_positions += 1
                 elif event.kind == "turn_end":
+                    if pending_reasoning is not None:
+                        chain_events.append(
+                            {
+                                "kind": "reasoning",
+                                "reasoning": pending_reasoning,
+                                "step_id": step_ids.get("generate"),
+                            }
+                        )
+                        pending_reasoning = None
                     turn_result = dict(event.data)
                     break
         except Exception as exc:  # the stream already started: report in band

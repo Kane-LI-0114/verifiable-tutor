@@ -136,7 +136,7 @@ def test_agent_persists_reasoning_before_each_tool_call(agent_api):
     ]
     steps_by_name = {step["step"]: step["id"] for step in assistant["work_steps"]}
     assert [event["step_id"] for event in events] == [
-        steps_by_name["generate"],
+        steps_by_name["retrieve"],
         steps_by_name["retrieve"],
         steps_by_name["generate"],
     ]
@@ -147,7 +147,7 @@ def test_agent_persists_reasoning_before_each_tool_call(agent_api):
     assert events[2]["reasoning"] == "Now answer from the retrieved pages."
 
 
-def test_a_repeated_stage_gets_its_own_step_id(agent_api):
+def test_repeated_stage_events_share_one_step_id(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     agent_api.adapter.scripts = [
         tool_script(call_id="call_1"),
@@ -164,14 +164,13 @@ def test_a_repeated_stage_gets_its_own_step_id(agent_api):
     retrieve_steps = [
         step for step in assistant["work_steps"] if step["step"] == "retrieve"
     ]
-    assert len(retrieve_steps) == 2
-    assert len({step["id"] for step in retrieve_steps}) == 2
+    assert len(retrieve_steps) == 1
     tool_events = [
         event for event in assistant["events"] if event["kind"] == "tool_call"
     ]
     assert [event["step_id"] for event in tool_events] == [
         retrieve_steps[0]["id"],
-        retrieve_steps[1]["id"],
+        retrieve_steps[0]["id"],
     ]
 
 
