@@ -102,6 +102,7 @@ export type WorkStepStatus = "pending" | "started" | "done" | "failed";
 
 export interface WorkStep {
   id: string;
+  position?: number;
   step: WorkStepName;
   status: WorkStepStatus;
   detail?: string;

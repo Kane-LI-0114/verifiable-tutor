@@ -163,7 +163,9 @@ function WorkChainSections({
   }
 
   const ordered = [...steps].sort(
-    (left, right) => STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step),
+    (left, right) =>
+      STEP_ORDER.indexOf(left.step) - STEP_ORDER.indexOf(right.step) ||
+      (left.position ?? 0) - (right.position ?? 0),
   );
 
   return (

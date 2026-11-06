@@ -110,6 +110,30 @@ describe("work chain", () => {
     expect(screen.queryByText("Verify quoted spans")).not.toBeInTheDocument();
   });
 
+  it("renders two same-name step instances as separate sections", async () => {
+    renderChain(
+      [
+        step("retrieve", { id: "retrieve-1", position: 1 }),
+        step("retrieve", { id: "retrieve-2", position: 2 }),
+      ],
+      [
+        { kind: "tool_call", tool_call: TOOL_CALL, step_id: "retrieve-1" },
+        { kind: "tool_call", tool_call: TOOL_CALL, step_id: "retrieve-2" },
+      ],
+    );
+    await expand();
+
+    const sections = screen.getAllByRole("region", {
+      name: /Retrieve course pages/,
+    });
+    expect(sections).toHaveLength(2);
+    for (const section of sections) {
+      expect(
+        within(section).getByText("Tool call: search_course"),
+      ).toBeInTheDocument();
+    }
+  });
+
   it("renders events without a step flat for legacy rows", async () => {
     renderChain(
       [step("generate")],
