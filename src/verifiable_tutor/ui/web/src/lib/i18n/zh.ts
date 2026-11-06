@@ -155,6 +155,7 @@ export const zh: Messages = {
     replaySpeed: "速度",
     workChain: "工作链",
     workChainSummary: "{{done}}/{{total}} 步完成",
+    noWorkChainEvents: "本次回答没有记录思考或工具调用。",
     steps: {
       understand: "理解问题",
       retrieve: "检索课程页面",

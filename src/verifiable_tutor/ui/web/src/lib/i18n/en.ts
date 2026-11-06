@@ -155,6 +155,7 @@ export const en = {
     replaySpeed: "Speed",
     workChain: "Work chain",
     workChainSummary: "{{done}} of {{total}} steps complete",
+    noWorkChainEvents: "No reasoning or tool calls were recorded for this answer.",
     steps: {
       understand: "Understand the question",
       retrieve: "Retrieve course pages",

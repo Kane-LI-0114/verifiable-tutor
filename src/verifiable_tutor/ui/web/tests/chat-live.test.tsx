@@ -646,12 +646,20 @@ describe("live chat", () => {
       screen.getByRole("button", { name: "Open page 12" }),
     ).toBeInTheDocument();
 
-    // The work chain expands to the persisted steps, reasoning, and tool calls.
+    // The steps stay as a compact summary; the chips carry their details.
+    expect(screen.getByText("Retrieve course pages")).toBeInTheDocument();
+    expect(
+      screen.getByTitle(/Parsed the halo exchange question/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTitle(/post-deadline\.hint-only/),
+    ).toBeInTheDocument();
+
+    // The work chain expands to the persisted reasoning and tool calls only.
     await user.click(screen.getByRole("button", { name: /Work chain/ }));
-    expect(await screen.findByText(STORED_STEP_DETAIL)).toBeInTheDocument();
-    expect(screen.getByText(/post-deadline\.hint-only/)).toBeInTheDocument();
     expect(await screen.findByText(STORED_REASONING)).toBeInTheDocument();
     expect(screen.getByText("Tool call: course_search")).toBeInTheDocument();
+    expect(screen.queryByText(STORED_STEP_DETAIL)).not.toBeInTheDocument();
   });
 
   it("renders a legacy answer without a work chain or thinking region", async () => {

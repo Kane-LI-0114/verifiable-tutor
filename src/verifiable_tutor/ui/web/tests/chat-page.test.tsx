@@ -47,7 +47,7 @@ describe("chat page", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("expands the work chain to the six document steps", async () => {
+  it("shows the six document steps in the work chain header", async () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
@@ -64,7 +64,7 @@ describe("chat page", () => {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
     expect(
-      screen.getByText(/active\.explain-current-topic/),
+      screen.getByTitle(/active\.explain-current-topic/),
     ).toBeInTheDocument();
   });
 
