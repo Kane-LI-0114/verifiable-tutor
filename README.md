@@ -112,6 +112,53 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `docs/tacc-notes.md` | Platform constraints, budgets, and mechanics | present: notes |
 | `proposal/` | Proposal sources: v1 `proposal.md`, v2 `proposal_v2.md`, and v3 `proposal_v3.md`, `build_proposal.py`, figure `.dot` sources, rendered PDFs, DOCX files, and v3 previews | present: proposal sources |
 
+## Local environment
+
+The backend and the browser UI run on the developer laptop. TACC is reached only through job submission, so a local setup needs Python, Node, the model API keys, and optionally the local BGE-M3 weights for the dense retrieval arm. Prerequisites: Python 3.12 and Node 18 or later with npm; the TACC command line is needed only for the OCR, index, and knowledge-base jobs.
+
+1. Create the Python environment. [requirements.txt](requirements.txt) is generated from `pyproject.toml` and `uv.lock` and pins every dependency to an exact version, so plain `pip` reproduces the locked environment:
+
+   ```bash
+   python3.12 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   pip install -e .
+   ```
+
+   The same steps with `uv`: `uv venv .venv --python 3.12`, `uv pip install -r requirements.txt`, `uv pip install -e .`. The file covers the runtime, the `dev` extra, and the optional `embedding` extra (torch and transformers); `pip install -e '.[dev]'` skips the embedding stack when the local dense arm is not wanted. Regenerate the file with the command in [AGENTS.md](AGENTS.md#toolchain-and-commands) after a dependency change, and never edit it by hand.
+
+2. Configure the secrets. Copy the template and fill in the keys:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   `DEEPSEEK_API_KEY` serves chat and search, `MIMO_API_KEY` serves image, audio, and speech calls, and `SESSION_SECRET` signs the session cookie and must be non-empty before `./start.sh` runs. `SMTP_*` is only for registration and reset email ([docs/email-local.md](docs/email-local.md)), and `LANGFUSE_*` is optional local tracing ([docs/langfuse-local.md](docs/langfuse-local.md)). `.env` is gitignored; never commit it.
+
+3. Optionally install the embedding weights. Dense retrieval loads `BAAI/bge-m3` from `embedding.model_path` in [config/models.yaml](config/models.yaml), which defaults to `~/models/bge-m3`:
+
+   ```bash
+   .venv/bin/hf download BAAI/bge-m3 --local-dir ~/models/bge-m3
+   ```
+
+   The weights are about 2.3 GB and are runtime artifacts, not source: they stay outside the repository, and `.gitignore` blocks a checkout-local `models/` directory and the common weight formats. Without the weights the backend still starts, says the dense arm is unavailable, and falls back to the lexical arm.
+
+4. Build the UI and start the app:
+
+   ```bash
+   ./start.sh
+   ```
+
+   The script installs the UI dependencies when the lockfile is newer, builds the SPA, and serves the UI with the API on `http://127.0.0.1:8000/`. `./start.sh --dev` runs the Vite dev server beside the backend, `--no-build` reuses the last build, `--preview` builds the offline demo, and `--port` changes the port. For the backend alone, run `.venv/bin/fastapi dev`; a missing UI build only disables the UI mount.
+
+5. Run the tests:
+
+   ```bash
+   .venv/bin/python -m pytest
+   ```
+
+TACC jobs use their own pinned layer, [scripts/tacc/requirements-tacc.txt](scripts/tacc/requirements-tacc.txt) (PaddleOCR, PaddlePaddle, `pypdfium2`), installed into `$HOME` by `scripts/tacc/bootstrap.sh`; the submit, poll, and download workflow is in [AGENTS.md](AGENTS.md#tacc-and-model-serving). Runtime state lives under `data/`, the local model weights under `~/models/`, and both are gitignored.
+
 ## Evaluation plan
 
 All evaluation work is planned and the repository contains no results. The project is task-oriented (the course brief's task learning and adaptation direction): it quantifies tutoring-task performance against baselines, and reports efficiency as a secondary metric in RQ4. Four research questions, detailed in [proposal section 4](proposal/proposal_v3.md#4-evaluation-plan):
