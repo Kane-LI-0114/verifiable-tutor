@@ -93,11 +93,15 @@ The line-anchored teaching output over a student's own submitted solution.
 _Avoid_: Grader, feedback, review
 
 **Work chain**:
-The user-visible sequence of agent steps, model thinking, and tool calls that produced an answer.
+The ordered, persisted record of what the agent did for one answer: each model reasoning segment, immediately followed by the tool calls that segment preceded, then the next model call. The expanded chain shows the coarse steps first and these events in order.
 _Avoid_: Trace, log, debug view
 
+**Work-chain event**:
+One entry in the work chain, either a reasoning segment from one model call or one tool call. Events are stored in order and survive history reload and replay (ADR-0017).
+_Avoid_: Step, timeline item
+
 **Thinking**:
-The model's reasoning content streamed before the answer. It is shown as unverified model output, not as a citation.
+The model's reasoning content streamed before the answer. It is stored as a work-chain event before the tool calls of the same model call and shown as unverified model output, not as a citation.
 _Avoid_: Chain of thought, reasoning trace, scratchpad
 
 **Tool call**:
