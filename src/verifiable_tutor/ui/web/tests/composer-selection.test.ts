@@ -30,6 +30,27 @@ describe("composer selection storage", () => {
     );
   });
 
+  it("clamps a MiMo selection to off or on", () => {
+    saveComposerSelection({ model: "mimo-flash", thinking: "max" });
+
+    expect(readComposerSelection()).toEqual({
+      model: "mimo-flash",
+      thinking: "high",
+    });
+    expect(window.localStorage.getItem(COMPOSER_SELECTION_KEY)).toContain(
+      '"thinking":"high"',
+    );
+
+    window.localStorage.setItem(
+      COMPOSER_SELECTION_KEY,
+      JSON.stringify({ model: "mimo-pro", thinking: "low" }),
+    );
+    expect(readComposerSelection()).toEqual({
+      model: "mimo-pro",
+      thinking: "high",
+    });
+  });
+
   it("falls back field by field for unknown stored values", () => {
     window.localStorage.setItem(
       COMPOSER_SELECTION_KEY,

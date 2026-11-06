@@ -144,6 +144,7 @@ export const en = {
     thinkingLow: "Low",
     thinkingHigh: "High",
     thinkingMax: "Max",
+    thinkingOn: "On",
     attachAudio: "Attach audio",
     audioAttached: "Audio attached",
     removeAudio: "Remove the audio attachment",

@@ -241,6 +241,9 @@ class ModelAdapter:
         level = thinking or role_config.thinking or self._config.defaults.thinking
         if tools and self._config.thinking.disable_for_tools.get(provider_name, True):
             level = "off"
+        supported = self._config.providers[provider_name].supports.thinking_levels
+        if level not in supported:
+            level = "off" if level == "off" else ("high" if "high" in supported else supported[0])
         return level
 
     def _has_image_input(self, messages: Sequence[Mapping[str, Any]]) -> bool:
@@ -355,7 +358,7 @@ class ModelAdapter:
         """Resolve a chat turn's effective provider, model, and thinking level."""
 
         provider_name, model_id = self._resolve(role, provider, tier)
-        level = self._effective_thinking(role, thinking, None)
+        level = self._effective_thinking(role, thinking, None, provider_name)
         return ModelSelection(
             provider=provider_name,
             model=model_id,

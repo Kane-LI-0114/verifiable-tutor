@@ -4,7 +4,11 @@ import { useNavigate } from "react-router";
 
 import { useSession } from "@/lib/auth/session";
 import type { Messages } from "@/lib/i18n/en";
-import { type ModelId, type ThinkingLevel } from "@/lib/models";
+import {
+  normalizeThinkingLevel,
+  type ModelId,
+  type ThinkingLevel,
+} from "@/lib/models";
 import { useConversations } from "@/lib/session/conversations";
 import type { ChatMessage } from "@/lib/types";
 
@@ -92,11 +96,21 @@ export function useTutorChat({
   const conversations = useConversations();
   const { expire } = useSession();
 
-  const [model, setModel] = useState<ModelId>(
+  const [model, setModelState] = useState<ModelId>(
     () => readComposerSelection().model,
   );
-  const [thinking, setThinking] = useState<ThinkingLevel>(
+  const [thinking, setThinkingState] = useState<ThinkingLevel>(
     () => readComposerSelection().thinking,
+  );
+  const setModel = useCallback((next: ModelId) => {
+    setModelState(next);
+    setThinkingState((current) => normalizeThinkingLevel(next, current));
+  }, []);
+  const setThinking = useCallback(
+    (next: ThinkingLevel) => {
+      setThinkingState(normalizeThinkingLevel(model, next));
+    },
+    [model],
   );
   const selection = useRef<TutorSelection>({ model, thinking });
   selection.current = { model, thinking };

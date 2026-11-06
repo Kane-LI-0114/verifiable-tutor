@@ -189,6 +189,20 @@ def test_tool_call_is_normalized_and_thinking_forced_off() -> None:
     assert result.finish_reason == "tool_calls"
 
 
+def test_selection_normalizes_mimo_to_off_or_on() -> None:
+    adapter = make_adapter(lambda request: httpx.Response(200, json={}))
+
+    assert adapter.resolve_selection(
+        provider="mimo", tier="flash", thinking="low"
+    ).thinking == "high"
+    assert adapter.resolve_selection(
+        provider="mimo", tier="flash", thinking="max"
+    ).thinking == "high"
+    assert adapter.resolve_selection(
+        provider="deepseek", thinking="low"
+    ).thinking == "low"
+
+
 def test_assistant_reasoning_content_is_sent_for_mimo_tool_replay() -> None:
     captured: list[httpx.Request] = []
 

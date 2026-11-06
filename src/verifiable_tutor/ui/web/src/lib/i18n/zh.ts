@@ -144,6 +144,7 @@ export const zh: Messages = {
     thinkingLow: "低",
     thinkingHigh: "高",
     thinkingMax: "最高",
+    thinkingOn: "开",
     attachAudio: "附加音频",
     audioAttached: "已附加音频",
     removeAudio: "移除音频附件",

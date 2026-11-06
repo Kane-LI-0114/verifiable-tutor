@@ -1,6 +1,7 @@
 import {
   MODEL_OPTIONS,
   THINKING_LEVELS,
+  normalizeThinkingLevel,
   type ModelId,
   type ThinkingLevel,
 } from "@/lib/models";
@@ -54,11 +55,15 @@ export function readComposerSelection(): ComposerSelection {
       return DEFAULT_COMPOSER_SELECTION;
     }
     const { model, thinking } = parsed as Record<string, unknown>;
+    const resolvedModel = isModelId(model)
+      ? model
+      : DEFAULT_COMPOSER_SELECTION.model;
+    const resolvedThinking = isThinkingLevel(thinking)
+      ? thinking
+      : DEFAULT_COMPOSER_SELECTION.thinking;
     return {
-      model: isModelId(model) ? model : DEFAULT_COMPOSER_SELECTION.model,
-      thinking: isThinkingLevel(thinking)
-        ? thinking
-        : DEFAULT_COMPOSER_SELECTION.thinking,
+      model: resolvedModel,
+      thinking: normalizeThinkingLevel(resolvedModel, resolvedThinking),
     };
   } catch {
     return DEFAULT_COMPOSER_SELECTION;
@@ -73,7 +78,10 @@ export function saveComposerSelection(selection: ComposerSelection): void {
     }
     window.localStorage?.setItem(
       COMPOSER_SELECTION_KEY,
-      JSON.stringify(selection),
+      JSON.stringify({
+        model: selection.model,
+        thinking: normalizeThinkingLevel(selection.model, selection.thinking),
+      }),
     );
   } catch {
     // Private mode or quota refusal: the in-memory selection still works.

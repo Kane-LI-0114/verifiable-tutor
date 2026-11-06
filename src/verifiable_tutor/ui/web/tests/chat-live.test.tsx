@@ -443,7 +443,17 @@ describe("live chat", () => {
       await screen.findByRole("menuitemradio", { name: "MiMo Pro" }),
     );
     await user.click(screen.getByRole("button", { name: "Off" }));
-    await user.click(await screen.findByRole("menuitemradio", { name: "High" }));
+    // MiMo exposes on and off only; it has no effort levels.
+    expect(
+      await screen.findByRole("menuitemradio", { name: "On" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitemradio", { name: "Low" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitemradio", { name: "Max" }),
+    ).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("menuitemradio", { name: "On" }));
     await user.click(screen.getByRole("button", { name: "Send" }));
 
     await waitFor(() => expect(postCalls()).toHaveLength(1));
@@ -497,7 +507,7 @@ describe("live chat", () => {
       await screen.findByRole("menuitemradio", { name: "MiMo Pro" }),
     );
     await user.click(screen.getByRole("button", { name: "Off" }));
-    await user.click(await screen.findByRole("menuitemradio", { name: "High" }));
+    await user.click(await screen.findByRole("menuitemradio", { name: "On" }));
 
     // A refresh remounts the route; the last selection comes back.
     cleanup();
@@ -506,7 +516,7 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
-    expect(screen.getByRole("button", { name: "High" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
 
     // Switching to another conversation keeps the same last selection.
     cleanup();
@@ -515,7 +525,7 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
-    expect(screen.getByRole("button", { name: "High" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
 
     // A new conversation keeps the last choice too.
     cleanup();
@@ -524,7 +534,7 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
-    expect(screen.getByRole("button", { name: "High" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
   });
 
   it("streams the answer progressively and then opens the new conversation", async () => {

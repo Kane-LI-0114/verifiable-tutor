@@ -37,7 +37,7 @@ import {
 import { useT } from "@/lib/i18n";
 import {
   MODEL_OPTIONS,
-  THINKING_LEVELS,
+  thinkingLevelsFor,
   type ModelId,
   type ThinkingLevel,
 } from "@/lib/models";
@@ -87,6 +87,13 @@ export function Composer({
   preview?: boolean;
 }) {
   const t = useT();
+  const thinkingLevels = thinkingLevelsFor(model);
+  const thinkingLabel = (level: ThinkingLevel) =>
+    t.chat[
+      model.startsWith("mimo") && level === "high"
+        ? "thinkingOn"
+        : THINKING_LABEL_KEYS[level]
+    ];
   const canSend = value.trim().length > 0;
 
   return (
@@ -173,7 +180,7 @@ export function Composer({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <InputGroupButton size="sm">
-                {t.chat[THINKING_LABEL_KEYS[thinking]]}
+                {thinkingLabel(thinking)}
                 <ChevronDownIcon />
               </InputGroupButton>
             </DropdownMenuTrigger>
@@ -184,9 +191,9 @@ export function Composer({
               >
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>{t.chat.thinking}</DropdownMenuLabel>
-                  {THINKING_LEVELS.map((level) => (
+                  {thinkingLevels.map((level) => (
                     <DropdownMenuRadioItem key={level} value={level}>
-                      {t.chat[THINKING_LABEL_KEYS[level]]}
+                      {thinkingLabel(level)}
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuGroup>
