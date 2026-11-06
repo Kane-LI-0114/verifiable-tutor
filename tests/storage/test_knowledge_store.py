@@ -110,6 +110,24 @@ def test_a_stored_document_can_be_read_back_with_its_chunks(tmp_path) -> None:
     ]
 
 
+def test_page_chunks_returns_one_page_in_reading_order(tmp_path) -> None:
+    store = make_store(tmp_path)
+    store.upsert_document(
+        document(),
+        [
+            chunk("ACS_Lecture_1_2026F", 1, 0, "first part"),
+            chunk("ACS_Lecture_1_2026F", 1, 1, "second part"),
+            chunk("ACS_Lecture_1_2026F", 2, 0, "other page"),
+        ],
+    )
+
+    page = store.page_chunks("ACS_Lecture_1_2026F", 1)
+
+    assert [item["chunk_index"] for item in page] == [0, 1]
+    assert [item["text"] for item in page] == ["first part", "second part"]
+    assert store.page_chunks("ACS_Lecture_1_2026F", 9) == []
+
+
 def test_storing_the_same_document_twice_replaces_its_chunks_and_search_rows(
     tmp_path,
 ) -> None:

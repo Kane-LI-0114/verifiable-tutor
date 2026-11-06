@@ -387,6 +387,17 @@ class KnowledgeStore:
         by_id = {row["id"]: _chunk_dict(row) for row in rows}
         return [by_id[chunk_id] for chunk_id in ids if chunk_id in by_id]
 
+    def page_chunks(self, doc_id: str, page_no: int) -> list[dict[str, Any]]:
+        """Return one page's chunks in reading order, or an empty list."""
+
+        with self._storage.connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM kb_chunks WHERE doc_id = ? AND page_no = ?"
+                " ORDER BY chunk_index",
+                (doc_id, page_no),
+            ).fetchall()
+        return [_chunk_dict(row) for row in rows]
+
     def search_chunks(
         self, query: str, *, limit: int = 20, doc_id: str | None = None
     ) -> list[dict[str, Any]]:
