@@ -191,19 +191,29 @@ function workChainEvents(parts: TutorPart[]): WorkChainEvent[] {
     }
   }
   flushReasoning();
-  // A reasoning segment belongs with the tool calls it produced. Walk backward
-  // so the last reasoning block before a tool adopts that tool's step; final
-  // reasoning with no later tool stays on generate.
+  return alignReasoningSteps(events);
+}
+
+/**
+ * A reasoning segment belongs with the tool calls it produced. Walk backward so
+ * the last reasoning block before a tool adopts that tool's step; final
+ * reasoning with no later tool stays on generate. This also repairs turns
+ * stored before the backend attached reasoning to the tool step.
+ */
+export function alignReasoningSteps(
+  events: WorkChainEvent[],
+): WorkChainEvent[] {
+  const aligned = events.map((event) => ({ ...event }));
   let nextToolStepId: string | undefined;
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index];
+  for (let index = aligned.length - 1; index >= 0; index -= 1) {
+    const event = aligned[index];
     if (event.kind === "tool_call") {
       nextToolStepId = event.step_id ?? nextToolStepId;
     } else if (nextToolStepId !== undefined) {
-      events[index] = { ...event, step_id: nextToolStepId };
+      aligned[index] = { ...event, step_id: nextToolStepId };
     }
   }
-  return events;
+  return aligned;
 }
 
 function legacyEvents(reasoning: string, calls: ToolCall[]): WorkChainEvent[] {

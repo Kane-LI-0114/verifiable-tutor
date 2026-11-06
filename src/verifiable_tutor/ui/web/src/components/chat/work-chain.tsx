@@ -8,6 +8,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { ToolCallTrace } from "@/components/chat/tool-call";
+import { alignReasoningSteps } from "@/lib/chat/ui-message";
 import {
   Trace,
   TraceCollapsible,
@@ -180,6 +181,7 @@ function WorkChainSections({
   events: WorkChainEvent[];
 }) {
   const t = useT();
+  const alignedEvents = alignReasoningSteps(events);
   const stepNameById = new Map(steps.map((step) => [step.id, step.step]));
   const rowsByName = new Map<WorkStepName, WorkStep[]>();
   for (const step of steps) {
@@ -192,7 +194,7 @@ function WorkChainSections({
   );
   const eventsByName = new Map<WorkStepName, WorkChainEvent[]>();
   const unstepped: WorkChainEvent[] = [];
-  for (const event of events) {
+  for (const event of alignedEvents) {
     const name = event.step_id
       ? stepNameById.get(event.step_id)
       : undefined;

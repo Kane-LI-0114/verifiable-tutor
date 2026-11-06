@@ -40,7 +40,9 @@ describe("work chain", () => {
         step("decide"),
       ],
       [
-        { kind: "reasoning", reasoning: "Think first.", step_id: "retrieve" },
+        // A stored turn from before the backend moved reasoning to the tool
+        // step: the UI still renders it with the tool it produced.
+        { kind: "reasoning", reasoning: "Think first.", step_id: "generate" },
         { kind: "tool_call", tool_call: TOOL_CALL, step_id: "retrieve" },
       ],
     );
@@ -95,8 +97,8 @@ describe("work chain", () => {
       name: /Write the answer/,
     });
     expect(within(retrieve).getByText("Tool call: search_course")).toBeInTheDocument();
-    expect(within(generate).getByText("Think first.")).toBeInTheDocument();
-    expect(within(retrieve).queryByText("Think first.")).not.toBeInTheDocument();
+    expect(within(retrieve).getByText("Think first.")).toBeInTheDocument();
+    expect(within(generate).queryByText("Think first.")).not.toBeInTheDocument();
   });
 
   it("renders an event whose step id has no step row flat", async () => {
