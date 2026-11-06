@@ -553,7 +553,8 @@
                   "off",
                   "low",
                   "high",
-                  "max"
+                  "max",
+                  "on"
                 ],
                 "type": "string"
               },

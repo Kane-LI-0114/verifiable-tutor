@@ -45,11 +45,11 @@ providers:
       image: true
       audio: true
       video: true
-      thinking_levels: ["off", high]
+      thinking_levels: ["off", "on"]
 thinking:
   mapping:
     deepseek: {"off": none, low: low, high: high, max: max}
-    mimo: {"off": disabled, low: enabled, high: enabled, max: enabled}
+    mimo: {"off": disabled, "on": enabled}
   disable_for_tools:
     deepseek: false
     mimo: true
@@ -221,4 +221,4 @@ def test_repository_config_matches_provider_documentation() -> None:
     assert resolved.config.tts.models["default"] == "mimo-v2.5-tts"
     assert resolved.config.tts.default_voice == "mimo_default"
     assert resolved.config.thinking.mapping["deepseek"]["off"] == "none"
-    assert resolved.config.thinking.mapping["mimo"]["high"] == "enabled"
+    assert resolved.config.thinking.mapping["mimo"]["on"] == "enabled"

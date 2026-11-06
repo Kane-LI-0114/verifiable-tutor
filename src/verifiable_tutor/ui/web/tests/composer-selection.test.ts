@@ -19,11 +19,11 @@ describe("composer selection storage", () => {
   });
 
   it("round-trips a chosen model and thinking level", () => {
-    saveComposerSelection({ model: "mimo-pro", thinking: "high" });
+    saveComposerSelection({ model: "mimo-pro", thinking: "on" });
 
     expect(readComposerSelection()).toEqual({
       model: "mimo-pro",
-      thinking: "high",
+      thinking: "on",
     });
     expect(window.localStorage.getItem(COMPOSER_SELECTION_KEY)).toContain(
       "mimo-pro",
@@ -35,10 +35,10 @@ describe("composer selection storage", () => {
 
     expect(readComposerSelection()).toEqual({
       model: "mimo-flash",
-      thinking: "high",
+      thinking: "on",
     });
     expect(window.localStorage.getItem(COMPOSER_SELECTION_KEY)).toContain(
-      '"thinking":"high"',
+      '"thinking":"on"',
     );
 
     window.localStorage.setItem(
@@ -47,7 +47,7 @@ describe("composer selection storage", () => {
     );
     expect(readComposerSelection()).toEqual({
       model: "mimo-pro",
-      thinking: "high",
+      thinking: "on",
     });
   });
 

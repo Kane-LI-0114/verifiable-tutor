@@ -194,13 +194,16 @@ def test_selection_normalizes_mimo_to_off_or_on() -> None:
 
     assert adapter.resolve_selection(
         provider="mimo", tier="flash", thinking="low"
-    ).thinking == "high"
+    ).thinking == "on"
     assert adapter.resolve_selection(
         provider="mimo", tier="flash", thinking="max"
-    ).thinking == "high"
+    ).thinking == "on"
     assert adapter.resolve_selection(
         provider="deepseek", thinking="low"
     ).thinking == "low"
+    assert adapter.resolve_selection(
+        provider="deepseek", thinking="on"
+    ).thinking == "high"
 
 
 def test_assistant_reasoning_content_is_sent_for_mimo_tool_replay() -> None:

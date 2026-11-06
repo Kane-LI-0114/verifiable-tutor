@@ -243,7 +243,14 @@ class ModelAdapter:
             level = "off"
         supported = self._config.providers[provider_name].supports.thinking_levels
         if level not in supported:
-            level = "off" if level == "off" else ("high" if "high" in supported else supported[0])
+            if level == "off":
+                level = "off"
+            elif "on" in supported:
+                level = "on"
+            elif "high" in supported:
+                level = "high"
+            else:
+                level = supported[0]
         return level
 
     def _has_image_input(self, messages: Sequence[Mapping[str, Any]]) -> bool:

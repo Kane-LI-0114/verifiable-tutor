@@ -62,7 +62,7 @@ class ChatBody(BaseModel):
             "Empty uses the default."
         ),
     )
-    thinking: Literal["off", "low", "high", "max"] | None = Field(
+    thinking: Literal["off", "low", "high", "max", "on"] | None = Field(
         default=None,
         description=(
             "Unified thinking level; one of off, low, high, max. "

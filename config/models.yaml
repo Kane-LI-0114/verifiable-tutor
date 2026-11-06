@@ -53,13 +53,13 @@ providers:
       audio: true
       video: true
       # MiMo has only on and off; low and max degrade to on.
-      thinking_levels: ["off", high]
+      thinking_levels: ["off", "on"]
 
 thinking:
   # Unified level -> provider-specific request value.
   mapping:
     deepseek: {"off": none, low: low, high: high, max: max}
-    mimo: {"off": disabled, low: enabled, high: enabled, max: enabled}
+    mimo: {"off": disabled, "on": enabled}
   # Tool-calling turns disable thinking per provider. DeepSeek accepts tools
   # with thinking as long as tool_choice stays auto; MiMo needs the previous
   # reasoning_content echoed back, so it stays off there by default.

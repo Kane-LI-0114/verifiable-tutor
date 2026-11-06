@@ -461,7 +461,7 @@ describe("live chat", () => {
       message: FOLLOW_UP,
       provider: "mimo",
       tier: "pro",
-      thinking: "high",
+      thinking: "on",
     });
 
     await waitFor(() =>

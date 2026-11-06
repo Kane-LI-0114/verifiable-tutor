@@ -53,6 +53,7 @@ const THINKING_LABEL_KEYS = {
   low: "thinkingLow",
   high: "thinkingHigh",
   max: "thinkingMax",
+  on: "thinkingOn",
 } as const;
 
 export function Composer({
@@ -89,11 +90,7 @@ export function Composer({
   const t = useT();
   const thinkingLevels = thinkingLevelsFor(model);
   const thinkingLabel = (level: ThinkingLevel) =>
-    t.chat[
-      model.startsWith("mimo") && level === "high"
-        ? "thinkingOn"
-        : THINKING_LABEL_KEYS[level]
-    ];
+    t.chat[THINKING_LABEL_KEYS[level]];
   const canSend = value.trim().length > 0;
 
   return (
