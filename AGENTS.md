@@ -20,6 +20,7 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 | Page previews | v1: submitted previews, frozen; v2 and v3: `proposal/preview_v2/` and `proposal/preview_v3/` | v1 previews are manual and frozen; v2 and v3 with `pdftoppm -png -r 130 <pdf> <preview-dir>/page` |
 | Project description and directory roles | [README.md](README.md) | Edit by hand |
 | Product requirements and acceptance | [docs/prd.md](docs/prd.md) | Edit by hand; proposal v1 is the submitted artifact, v2 is a previous draft, v3 is current, and this file owns what ships |
+| Backlog order, priorities, and item state | [docs/todo.md](docs/todo.md) | Edit by hand; update an item's row in the same commit that lands it |
 | RQ2 benchmark protocol | [docs/benchmark-protocol.md](docs/benchmark-protocol.md) | Edit by hand; rerun the dry run after changing the baseline, the shared set, or the target values |
 | Domain vocabulary | [GLOSSARY.md](GLOSSARY.md) | Edit by hand when a term is resolved |
 | Technology decisions | [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/` | Edit by hand; append a new ADR to supersede a decision |
@@ -182,6 +183,8 @@ This repository is a standalone Git repository nested inside the course workspac
 ## Known gaps and open decisions
 
 Known gaps:
+
+The ordered backlog, priorities, and item state live in [docs/todo.md](docs/todo.md); the bullets here keep the constraints that shape new work.
 
 - No root `requirements.txt`; packaging lives in `pyproject.toml` with `uv.lock`, and the TACC job requirements live in `scripts/tacc/requirements-tacc.txt`.
 - The backend serves health, accounts, chat streaming and replay, voice, knowledge cards and builds, and corpus page images. Retrieval and citations, the disclosure gate and deadline registry, the LangGraph runtime, teaching and practice generation, and `tacc/exec` execution do not exist yet. The UI page structure exists; authentication, the server-side session, conversation history, streamed chat, and replay are wired live, and the offline preview demo remains available ([docs/ui-structure.md](docs/ui-structure.md)). The practice-run route is a documented 503 scaffold, and a knowledge-base build needs `knowledge.pages_path` plus TACC access before it can run.
