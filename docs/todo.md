@@ -48,6 +48,10 @@ State on 2026-11-06, before the items below. The audit read the code, not the de
 
 Status values are Open, In progress, Blocked, and Done.
 
+### Minimal vertical slice
+
+The first runnable agent loop is the smallest set that closes perceive, decide, act, observe, and answer: VT-06 as one retrieval tool, a reduced VT-07 loop with a step cap, and the tool frame from VT-11. It does not need VT-04 first, because the tool returns chunks directly; VT-04 remains the document-scoped context path, and VT-05 can land after the loop runs. The slice exists so the first demo is not blocked on the full backlog.
+
 ### Now (P0)
 
 | ID | Item | Source | Priority | Status | Depends on | Note |
@@ -62,8 +66,8 @@ Status values are Open, In progress, Blocked, and Done.
 
 | ID | Item | Source | Priority | Status | Depends on | Note |
 |---|---|---|---|---|---|---|
-| VT-06 | Add the typed tool layer: a closed, versioned tool set, argument schemas, a dispatcher, a tool stream frame, and persistence in `tool_calls`; the first tools are retrieve, read page, and verify span. | FR-H1, FR-H3 ([5.6](prd.md#56-execution-and-tools)), [ADR-0009](adr/0009-typed-agent-tools-instead-of-a-shell.md) | P0 | Open | VT-04 | No generic shell. An unknown tool call is rejected and shown in the work chain. |
-| VT-07 | Replace the single model call with the LangGraph `StateGraph`: understand, retrieve, verify, decide, generate, cite; SQLite checkpointer; per-request budgets enforced at node boundaries; streamed node events. | FR-B9, [ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md), tech-selection | P0 | Open | VT-03, VT-05, VT-06 | Includes the TACC import spike for LangGraph and the checkpointer fallback. The graph topology and state schema are recorded before the first node lands. |
+| VT-06 | Add the typed tool layer: a closed, versioned tool set, argument schemas, a dispatcher, a tool stream frame, and persistence in `tool_calls`; the first tools are retrieve, read page, and verify span. | FR-H1, FR-H3 ([5.6](prd.md#56-execution-and-tools)), [ADR-0009](adr/0009-typed-agent-tools-instead-of-a-shell.md) | P0 | Open | none | No generic shell. An unknown tool call is rejected and shown in the work chain. |
+| VT-07 | Replace the single model call with the LangGraph `StateGraph`: understand, retrieve, verify, decide, generate, cite; SQLite checkpointer; per-request budgets enforced at node boundaries; streamed node events. | FR-B9, [ADR-0008](adr/0008-langgraph-as-agent-orchestration-runtime.md), tech-selection | P0 | Open | VT-03, VT-06 | Includes the TACC import spike for LangGraph and the checkpointer fallback. The graph topology and state schema are recorded before the first node lands. |
 | VT-08 | Add the disclosure gate and the deadline registry: five policy states from a versioned `config/deadlines.yaml`, the five intent classes from VT-01, refusal and hints before the deadline, full teaching after it, decision log with rule id and clock, fail closed on a bad registry. | FR-C1 to FR-C8 ([5.3](prd.md#53-disclosure-policy)) | P0 | Open | VT-01, VT-07 | The clock is injected. The gate is code, not a prompt instruction. |
 | VT-09 | Accept images in the chat composer: file attachment and paste into the text input, both producing an attachment chip; define storage, limits, provider capability checks, and how an answer marks that it used an attachment. | D3, FR-B6 ([5.2](prd.md#52-conversation-and-evidence)) | P0 | Open | none | Settle the [D3 open questions](#d3-image-attachment-and-paste) first. An attached image is not in the corpus, so citation behavior must be decided, not assumed. |
 | VT-10 | Add the document upload chain: the browser posts a file, the backend stages it, submits OCR, and runs chunk, embed, store, and summarize exactly as the ingest driver does; folder and document states appear in the UI. | [ADR-0015](adr/0015-local-knowledge-store-and-chunking.md) item 1, FR-K1 ([5.8](prd.md#58-knowledge-base)) | P0 | Open | none | The `+` upload item stays disabled until the round trip is verified. |
@@ -154,3 +158,4 @@ Foundations that exist and are tested. They are listed so the backlog is not rea
 | Date | Change |
 |---|---|
 | 2026-11-06 | Created from the five-component gap audit and lead directives D1, D2, and D3. Imported the four ADR-0015 deferred items and mapped them to VT-10, VT-05, VT-04 with VT-06, and VT-14. |
+| 2026-11-06 | Recorded the minimal vertical slice: VT-06 can start without VT-04 and VT-07 without VT-05, because the retrieval tool returns chunks directly. The two dependency cells were adjusted. |
