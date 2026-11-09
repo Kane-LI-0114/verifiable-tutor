@@ -296,6 +296,28 @@ describe("conversation scroll during an answer", () => {
     expect(viewport.scrollTop).toBe(690);
   });
 
+  it("keeps following when the wheel keeps turning at the end", () => {
+    const { container, rerender } = render(view(ANSWER_ID));
+    const viewport = viewportOf(container);
+    installGeometry(viewport);
+    longAnswer();
+    rerender(view(ANSWER_ID, "Hello"));
+    expect(viewport.scrollTop).toBe(ANSWER_TOP);
+
+    // The reader wheels to the end of the thread and keeps turning with nowhere
+    // left to scroll, which fires wheel events but no scroll events.
+    fireEvent.wheel(viewport, { deltaY: 320 });
+    viewport.scrollTop = 700;
+    fireEvent.scroll(viewport);
+    fireEvent.wheel(viewport, { deltaY: 60 });
+    fireEvent.wheel(viewport, { deltaY: 24 });
+
+    geometry.answerHeight = 1200;
+    geometry.scrollHeight = 1400;
+    rerender(view(ANSWER_ID, "Hello world, longer still"));
+    expect(viewport.scrollTop).toBe(1000);
+  });
+
   it("stops moving the thread once the reader scrolls during generation", () => {
     const { container, rerender } = render(view(ANSWER_ID));
     const viewport = viewportOf(container);

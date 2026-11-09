@@ -3,6 +3,7 @@ import type {
   MouseEvent,
   ReactNode,
   UIEvent,
+  WheelEvent,
 } from "react";
 import {
   useCallback,
@@ -145,16 +146,8 @@ const SCROLL_SETTLE_MAX_MS = 1000;
 const SCROLL_EPSILON_PX = 1;
 /** A reader scroll this close to the end of the thread asks to follow again. */
 const SCROLL_FOLLOW_EPSILON_PX = 4;
-/** Keys the browser uses to scroll a focused region. */
-const SCROLL_KEYS = new Set([
-  "ArrowDown",
-  "ArrowUp",
-  "End",
-  "Home",
-  "PageDown",
-  "PageUp",
-  " ",
-]);
+/** Keys that move the thread up: they hand the scroll back to the reader. */
+const UPWARD_SCROLL_KEYS = new Set(["ArrowUp", "Home", "PageUp"]);
 
 export function ChatSessionShell({
   title,
@@ -192,18 +185,27 @@ export function ChatSessionShell({
     userInteracted.current = true;
   }, []);
 
-  /** A wheel or touch scroll hands the thread back to the reader. */
-  const markReaderGesture = useCallback(() => {
+  /**
+   * An upward wheel takes the thread back from the answer, so the mode changes
+   * without waiting for the scroll. A downward wheel asks for more, so the
+   * position decides: a reader who keeps turning the wheel at the end fires
+   * more wheel events but no scroll events, which must not stop the follow.
+   */
+  function handleViewportWheel(event: WheelEvent<HTMLDivElement>) {
     markUserIntent();
-    if (generatingId.current !== null) {
+    if (event.deltaY < 0 && generatingId.current !== null) {
       scrollMode.current = "free";
     }
-  }, [markUserIntent]);
+  }
 
-  /** Enter on a citation chip is not a scroll, so only scroll keys count. */
+  /**
+   * The keys that move the view up take the thread back immediately, for the
+   * same reason as an upward wheel. Enter on a citation chip is not a scroll,
+   * so it only marks intent.
+   */
   function handleViewportKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     markUserIntent();
-    if (SCROLL_KEYS.has(event.key) && generatingId.current !== null) {
+    if (UPWARD_SCROLL_KEYS.has(event.key) && generatingId.current !== null) {
       scrollMode.current = "free";
     }
   }
@@ -515,8 +517,8 @@ export function ChatSessionShell({
                 <MessageScrollerViewport
                   ref={viewportRef}
                   onScroll={handleScroll}
-                  onWheel={markReaderGesture}
-                  onTouchMove={markReaderGesture}
+                  onWheel={handleViewportWheel}
+                  onTouchMove={markUserIntent}
                   onKeyDown={handleViewportKeyDown}
                 >
                   <MessageScrollerContent
