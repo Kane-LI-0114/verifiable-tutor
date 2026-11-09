@@ -121,6 +121,103 @@ describe("knowledge browser", () => {
     );
   });
 
+  it("sorts files by created time ascending by default and selects that menu item", async () => {
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const newestFirst: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [newer, older], total: 2 }),
+    };
+    stub = createFetchStub(routes([newestFirst]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    expect(tileIds()).toEqual([
+      "file-tile-ACS_Lecture_1_2026F",
+      "file-tile-Tutorial_2",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    const created = screen.getByRole("menuitem", { name: "Sort by created time" });
+    const name = screen.getByRole("menuitem", { name: "Sort by name" });
+    expect(created).toHaveAttribute("title", "Ascending");
+    expect(name).not.toHaveAttribute("title");
+    expect(created.querySelectorAll("svg").length).toBeGreaterThan(0);
+    expect(name.querySelectorAll("svg")).toHaveLength(0);
+  });
+
+  it("falls back to created time ascending when the stored sort is invalid", async () => {
+    window.localStorage.setItem("vt.knowledge.sort", "created:sideways");
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const newestFirst: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [newer, older], total: 2 }),
+    };
+    stub = createFetchStub(routes([newestFirst]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    expect(tileIds()).toEqual([
+      "file-tile-ACS_Lecture_1_2026F",
+      "file-tile-Tutorial_2",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Sort by created time" }),
+    ).toHaveAttribute("title", "Ascending");
+  });
+
+  it("restores the sort key and direction from browser storage on the next visit", async () => {
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const newestFirst: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [newer, older], total: 2 }),
+    };
+    stub = createFetchStub(routes([newestFirst]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-Tutorial_2",
+        "file-tile-ACS_Lecture_1_2026F",
+      ]);
+    });
+    expect(window.localStorage.getItem("vt.knowledge.sort")).toBe("name:desc");
+
+    cleanup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+    expect(tileIds()).toEqual([
+      "file-tile-Tutorial_2",
+      "file-tile-ACS_Lecture_1_2026F",
+    ]);
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Sort by name" }),
+    ).toHaveAttribute("title", "Descending");
+    expect(
+      screen.getByRole("menuitem", { name: "Sort by created time" }),
+    ).not.toHaveAttribute("title");
+  });
+
   it("sorts the file tiles by name after choosing the name sort item", async () => {
     const unsorted: StubRoute = {
       method: "GET",

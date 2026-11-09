@@ -46,6 +46,7 @@ import { usePreview } from "@/lib/preview/context";
 const SEARCH_DEBOUNCE_MS = 200;
 const PANE_WIDTH_KEY = "vt.knowledge.pane.width";
 const PANE_COLLAPSED_KEY = "vt.knowledge.pane.collapsed";
+const SORT_STORAGE_KEY = "vt.knowledge.sort";
 
 type SortKey = "name" | "created";
 type SortDirection = "asc" | "desc";
@@ -55,6 +56,53 @@ interface SortState {
 }
 
 const SORT_KEYS: SortKey[] = ["created", "name"];
+const DEFAULT_SORT: SortState = { key: "created", direction: "asc" };
+const DEFAULT_DIRECTION: Record<SortKey, SortDirection> = {
+  created: "asc",
+  name: "asc",
+};
+
+function isSortKey(value: string | undefined): value is SortKey {
+  return value !== undefined && SORT_KEYS.some((key) => key === value);
+}
+
+/** Persisted sort is "key:direction"; unknown keys or corrupt values are ignored. */
+function parseStoredSort(raw: string): SortState | null {
+  const [key, direction] = raw.split(":");
+  if (!isSortKey(key) || (direction !== "asc" && direction !== "desc")) {
+    return null;
+  }
+  return { key, direction };
+}
+
+/** Read the last sort choice; storage failures fall back to the default. */
+function readStoredSort(): SortState {
+  if (typeof window === "undefined") {
+    return DEFAULT_SORT;
+  }
+  try {
+    const raw = window.localStorage?.getItem(SORT_STORAGE_KEY);
+    if (raw === null || raw === undefined) {
+      return DEFAULT_SORT;
+    }
+    return parseStoredSort(raw) ?? DEFAULT_SORT;
+  } catch {
+    // Private browsing and some test environments deny storage access.
+    return DEFAULT_SORT;
+  }
+}
+
+/** Persist the sort choice; storage failures leave the in-memory state intact. */
+function storeSort(sort: SortState): void {
+  try {
+    window.localStorage?.setItem(
+      SORT_STORAGE_KEY,
+      `${sort.key}:${sort.direction}`,
+    );
+  } catch {
+    // The in-memory choice still applies for this session.
+  }
+}
 
 /** One collator instead of one per comparison: construction dominates the cost. */
 const NAME_COLLATOR = new Intl.Collator(undefined, {
@@ -76,13 +124,10 @@ function compareTimes(left: string, right: string): number {
 /** Sort a copy so the order returned by the API is never mutated. */
 function sortKnowledgeItems<T>(
   items: T[],
-  sort: SortState | null,
+  sort: SortState,
   nameOf: (item: T) => string,
   createdAtOf: (item: T) => string,
 ): T[] {
-  if (sort === null) {
-    return items;
-  }
   const compare = sort.key === "name" ? compareNames : compareTimes;
   const valueOf = sort.key === "name" ? nameOf : createdAtOf;
   const factor = sort.direction === "asc" ? 1 : -1;
@@ -165,7 +210,7 @@ export function KnowledgePage() {
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortState | null>(null);
+  const [sort, setSort] = useState<SortState>(readStoredSort);
   const [hits, setHits] = useState<SearchDocument[] | null>(null);
   const [dragging, setDragging] = useState(false);
   const [dropNotice, setDropNotice] = useState(false);
@@ -178,11 +223,15 @@ export function KnowledgePage() {
   const reload = useCallback(() => setReloadToken((value) => value + 1), []);
   const chooseSort = useCallback((key: SortKey) => {
     setSort((current) =>
-      current === null || current.key !== key
-        ? { key, direction: key === "created" ? "desc" : "asc" }
+      current.key !== key
+        ? { key, direction: DEFAULT_DIRECTION[key] }
         : { key, direction: current.direction === "asc" ? "desc" : "asc" },
     );
   }, []);
+
+  useEffect(() => {
+    storeSort(sort);
+  }, [sort]);
 
   useEffect(() => {
     if (preview) {
@@ -468,8 +517,7 @@ export function KnowledgePage() {
               className="w-max whitespace-nowrap"
             >
               {SORT_KEYS.map((key) => {
-                const activeSort =
-                  sort !== null && sort.key === key ? sort : null;
+                const activeSort = sort.key === key ? sort : null;
                 const label =
                   key === "created"
                     ? t.knowledge.sortByCreated
