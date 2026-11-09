@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 
+import { AnswerPending } from "@/components/chat/answer-pending";
 import { ChatMessageView } from "@/components/chat/chat-message";
 import { EvidencePanel } from "@/components/chat/evidence-panel";
 import {
@@ -20,6 +21,7 @@ import {
   writeEvidenceCollapsed,
 } from "@/components/chat/evidence-pane";
 import { Badge } from "@/components/ui/badge";
+import { Message, MessageContent } from "@/components/ui/message";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -50,6 +52,12 @@ import {
 } from "@/lib/chat/scroll-memory";
 import type { Citation, ConversationTurn } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use-media-query";
+
+/**
+ * The id the pending answer's placeholder answers to. It is not a message, but
+ * the shell anchors scrolling by message id, so the placeholder carries one.
+ */
+const PENDING_ANSWER_ID = "pending-answer";
 
 /** The view state one turn adds on top of the shared message composition. */
 export interface ChatTurnState {
@@ -91,6 +99,13 @@ export interface ChatSessionShellProps {
    * undefined means no answer is in progress.
    */
   generatingMessageId?: string | null;
+  /**
+   * The question is sent and no answer has arrived yet, so the thread holds the
+   * answer's first line open instead of ending at the question. The placeholder
+   * takes the place of the generating message as the scrolling anchor, so the
+   * view follows the answer from the moment it is awaited.
+   */
+  awaitingAnswer?: boolean;
   /**
    * Live chat only: the first answer navigates and remounts the thread, so the
    * read position is handed over to the newly created conversation.
@@ -149,6 +164,7 @@ export function ChatSessionShell({
   composer,
   turnState,
   generatingMessageId,
+  awaitingAnswer = false,
   handoffOnFinish = false,
   showEvidence = true,
 }: ChatSessionShellProps) {
@@ -332,7 +348,8 @@ export function ChatSessionShell({
   // committed DOM before paint, so the chosen anchor never flickers away. The
   // end of a generation only changes the mode: it must not move the view.
   useLayoutEffect(() => {
-    const next = generatingMessageId ?? null;
+    const next =
+      generatingMessageId ?? (awaitingAnswer ? PENDING_ANSWER_ID : null);
     const previous = generatingId.current;
     if (next !== previous) {
       generatingId.current = next;
@@ -343,7 +360,9 @@ export function ChatSessionShell({
         if (
           handoffOnFinish &&
           scrollKey === undefined &&
-          lastGeneratedId.current !== null
+          lastGeneratedId.current !== null &&
+          // A question whose answer never started hands over no answer to open.
+          lastGeneratedId.current !== PENDING_ANSWER_ID
         ) {
           rememberPendingOpenScroll(
             lastGeneratedId.current,
@@ -501,6 +520,18 @@ export function ChatSessionShell({
                         </MessageScrollerItem>
                       );
                     })}
+                    {awaitingAnswer ? (
+                      <MessageScrollerItem
+                        messageId={PENDING_ANSWER_ID}
+                        scrollAnchor={false}
+                      >
+                        <Message>
+                          <MessageContent>
+                            <AnswerPending />
+                          </MessageContent>
+                        </Message>
+                      </MessageScrollerItem>
+                    ) : null}
                   </MessageScrollerContent>
                 </MessageScrollerViewport>
                 <MessageScrollerButton onClick={handleScrollToEnd} />

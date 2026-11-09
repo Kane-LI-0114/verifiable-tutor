@@ -281,7 +281,7 @@ function history(messages: ChatMessage[] = HISTORY): StubRoute {
   });
 }
 
-function chatRoute(handler: () => Response): StubRoute {
+function chatRoute(handler: () => Response | Promise<Response>): StubRoute {
   return { method: "POST", path: "/api/chat", handler };
 }
 
@@ -547,6 +547,43 @@ describe("live chat", () => {
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
     expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
+  });
+
+  it("shows a pending answer from the moment the question is sent", async () => {
+    const answering = deferred();
+    stub = createFetchStub(
+      routes([
+        chatRoute(async () => {
+          await answering.promise;
+          return sseResponse(STREAM_FRAMES, {
+            headers: { "x-conversation-id": NEW_SESSION_ID },
+          });
+        }),
+        history(),
+      ]),
+    );
+    const user = userEvent.setup();
+    renderLiveRoute("/chat");
+
+    const composer = await screen.findByLabelText("Your question");
+    await user.type(composer, QUESTION);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    // The request is in flight and no frame has arrived, so the thread holds a
+    // place for the answer instead of staying blank until the first token.
+    expect(await screen.findByText("Generating the answer")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-slot="answer-pending"]'),
+    ).not.toBeNull();
+    expect(screen.getByText(QUESTION)).toBeInTheDocument();
+    expect(screen.queryByText("Hello")).not.toBeInTheDocument();
+
+    answering.resolve();
+
+    expect(await screen.findByText("Hello")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-slot="answer-pending"]'),
+    ).toBeNull();
   });
 
   it("streams the answer progressively and then opens the new conversation", async () => {

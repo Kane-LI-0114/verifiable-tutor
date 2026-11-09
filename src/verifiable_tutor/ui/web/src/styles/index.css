@@ -146,3 +146,17 @@
 .prose-quote {
   text-wrap: pretty;
 }
+
+/* The pending answer pulses in place. Opacity only, so the thread never moves
+   while the reader waits for the first token. The floor stays above a ghost so
+   the dots read as waiting rather than as an unfinished render. */
+@keyframes answer-pending-dot {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}

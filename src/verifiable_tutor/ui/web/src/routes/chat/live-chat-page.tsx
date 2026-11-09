@@ -243,9 +243,12 @@ function LiveChatSession({
   const chat = useTutorChat({ sessionId, initialMessages, storedMessages, t });
   const [composer, setComposer] = useState("");
   const title = conversationTitle(sessions, sessionId, t.chat.title);
-  // The assistant message only exists once the stream starts; before that the
-  // last turn is the question, and there is nothing to anchor the view to yet.
+  // The assistant message only exists once the stream starts; while the request
+  // is in flight the last turn is the question, and the thread holds the
+  // answer's place open at the end instead of going blank.
   const lastTurn = chat.turns[chat.turns.length - 1];
+  const awaitingAnswer =
+    chat.streaming && lastTurn?.message.role !== "assistant";
   const generatingMessageId =
     chat.streaming && lastTurn?.message.role === "assistant"
       ? lastTurn.message.id
@@ -274,6 +277,7 @@ function LiveChatSession({
       scrollKey={sessionId ?? undefined}
       turns={chat.turns}
       generatingMessageId={generatingMessageId}
+      awaitingAnswer={awaitingAnswer}
       handoffOnFinish
       placeholder={
         chat.turns.length === 0 && !chat.streaming ? (

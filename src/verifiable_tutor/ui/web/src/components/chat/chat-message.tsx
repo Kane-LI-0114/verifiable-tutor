@@ -6,6 +6,7 @@ import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message";
 import { Markdown } from "@/components/ai/markdown";
+import { AnswerPending } from "@/components/chat/answer-pending";
 import { CitationRow } from "@/components/chat/citation-row";
 import { PageError } from "@/components/layout/page-states";
 import { SourcesList } from "@/components/chat/sources";
@@ -135,9 +136,7 @@ export function ChatMessageView({
             onRetry={onRetry}
           />
         ) : message.content === "" && streaming ? (
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {t.chat.generating}
-          </p>
+          <AnswerPending />
         ) : (
           <>
             <Markdown>{message.content}</Markdown>

@@ -126,6 +126,7 @@ npx shadcn@latest add sidebar button dropdown-menu avatar badge separator toolti
 |---|---|---|
 | Message scroller | `components/ui/message-scroller.tsx` | shadcn registry |
 | Message bubbles | `components/ui/message.tsx`, `components/ui/bubble.tsx`, `components/chat/chat-message.tsx` | shadcn registry plus a composition |
+| Pending answer | `components/chat/answer-pending.tsx` | composition on the message content |
 | Trace and task timeline | `components/ui/trace.tsx`, `components/chat/work-chain.tsx` | shadcn registry plus a composition |
 | Inline citation | `components/chat/citation-row.tsx` | shadcn hover card and button |
 | Sources | `components/chat/sources.tsx` | composition on trace |
@@ -138,7 +139,9 @@ npx shadcn@latest add sidebar button dropdown-menu avatar badge separator toolti
 | Test results | `components/practice/test-results.tsx` | composition on trace and code block |
 | Markdown with math and code | `components/ai/markdown.tsx` | streamdown with the code, math, and CJK plugins, KaTeX CSS |
 
-The live and preview chat pages render the shared session shell in `src/verifiable_tutor/ui/web/src/components/chat/chat-session-shell.tsx` (thread, evidence pane, narrow-screen evidence sheet, and replay banner) and each page keeps its own data access; together they wire Message Scroller, the message composition, and the composer. They do not copy the documentation demos, which depend on a fake transport, `motion`, and Next.js helpers. Not every pattern needs its own file: model selection and confirmation are small compositions inside the page that uses them.
+The live and preview chat pages render the shared session shell in `src/verifiable_tutor/ui/web/src/components/chat/chat-session-shell.tsx` (thread, pending answer placeholder, evidence pane, narrow-screen evidence sheet, and replay banner) and each page keeps its own data access; together they wire Message Scroller, the message composition, and the composer. They do not copy the documentation demos, which depend on a fake transport, `motion`, and Next.js helpers. Not every pattern needs its own file: model selection and confirmation are small compositions inside the page that uses them.
+
+The pending answer placeholder holds the answer's first line open between sending a question and the first streamed frame, and again while a started answer has no text yet; its dot wave is the `answer-pending-dot` keyframes in `src/verifiable_tutor/ui/web/src/styles/index.css`. The shell treats the placeholder as the scrolling anchor, so the thread follows the answer from the moment it is awaited, and a reader gesture still hands the scroll back.
 
 Not used yet: Plan, Context, Chain of Thought, Questionnaire, the audio player and speech input patterns (built from a button and a native element), and animation. In live mode the streaming state comes from `@ai-sdk/react` `useChat` with the project transport; the preview demo keeps its fixture-based chat. Voice input and playback stay structured but unwired.
 
