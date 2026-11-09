@@ -62,12 +62,14 @@ export function DocChatPane({
   });
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  // Only a new turn moves the pane. Watching `chat.streaming` as well used to
+  // throw the reader to the bottom when the answer stopped generating.
   useEffect(() => {
     const element = scrollerRef.current;
     if (element !== null) {
       element.scrollTop = element.scrollHeight;
     }
-  }, [chat.turns.length, chat.streaming]);
+  }, [chat.turns.length]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

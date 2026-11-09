@@ -1,4 +1,9 @@
-import type { ReactNode, UIEvent } from "react";
+import type {
+  KeyboardEvent,
+  MouseEvent,
+  ReactNode,
+  UIEvent,
+} from "react";
 import {
   useCallback,
   useEffect,
@@ -37,7 +42,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useT } from "@/lib/i18n";
-import { readChatScroll, writeChatScroll } from "@/lib/chat/scroll-memory";
+import {
+  readChatScroll,
+  rememberPendingOpenScroll,
+  takePendingOpenScroll,
+  writeChatScroll,
+} from "@/lib/chat/scroll-memory";
 import type { Citation, ConversationTurn } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -75,11 +85,33 @@ export interface ChatSessionShellProps {
   /** Extra view state per turn; the shell does not know how a page tracks progress. */
   turnState?: (turn: ConversationTurn, index: number) => ChatTurnState;
   /**
+   * Id of the assistant message currently being generated. The shell keeps a
+   * short answer at the bottom and aligns the viewport top to the answer only
+   * once it outgrows the viewport; a reader scroll stops all of that. Null or
+   * undefined means no answer is in progress.
+   */
+  generatingMessageId?: string | null;
+  /**
+   * Live chat only: the first answer navigates and remounts the thread, so the
+   * read position is handed over to the newly created conversation.
+   */
+  handoffOnFinish?: boolean;
+  /**
    * Whether to render the evidence pane and its narrow-screen sheet. Replay has
    * no evidence pane, because a recorded trace has no citations yet.
    */
   showEvidence?: boolean;
 }
+
+/**
+ * How the thread follows a generating answer:
+ * - `short`: the answer still fits the viewport, so it grows at the bottom.
+ * - `anchored`: the answer outgrew the viewport, so its top stays at the top.
+ * - `following`: the reader asked for the bottom, so the view follows it down.
+ * - `free`: the reader scrolled, so no programmatic scroll happens at all.
+ * - `idle`: no answer is generating; only the opening position applies.
+ */
+type ScrollMode = "short" | "anchored" | "following" | "free" | "idle";
 
 /**
  * The shared conversation layout: thread, optional banner, optional composer,
@@ -94,6 +126,18 @@ export interface ChatSessionShellProps {
 const SCROLL_SAVE_DELAY_MS = 120;
 /** How long the thread re-applies its opening position while layout settles. */
 const SCROLL_SETTLE_MAX_MS = 1000;
+/** A scroll event this close to our own target is not a reader scroll. */
+const SCROLL_EPSILON_PX = 1;
+/** Keys the browser uses to scroll a focused region. */
+const SCROLL_KEYS = new Set([
+  "ArrowDown",
+  "ArrowUp",
+  "End",
+  "Home",
+  "PageDown",
+  "PageUp",
+  " ",
+]);
 
 export function ChatSessionShell({
   title,
@@ -104,6 +148,8 @@ export function ChatSessionShell({
   footer,
   composer,
   turnState,
+  generatingMessageId,
+  handoffOnFinish = false,
   showEvidence = true,
 }: ChatSessionShellProps) {
   const t = useT();
@@ -113,14 +159,98 @@ export function ChatSessionShell({
     readEvidenceCollapsed(),
   );
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTop = useRef<number | null>(null);
+  const lastKnownTop = useRef(0);
   const saveTimer = useRef<number | null>(null);
   const userInteracted = useRef(false);
   const settleFrame = useRef<number | null>(null);
+  const scrollMode = useRef<ScrollMode>("idle");
+  const generatingId = useRef<string | null>(null);
+  const lastGeneratedId = useRef<string | null>(null);
+  const programmaticTop = useRef<number | null>(null);
 
   const markUserIntent = useCallback(() => {
     userInteracted.current = true;
   }, []);
+
+  /** A wheel or touch scroll hands the thread back to the reader. */
+  const markReaderGesture = useCallback(() => {
+    markUserIntent();
+    if (generatingId.current !== null) {
+      scrollMode.current = "free";
+    }
+  }, [markUserIntent]);
+
+  /** Enter on a citation chip is not a scroll, so only scroll keys count. */
+  function handleViewportKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    markUserIntent();
+    if (SCROLL_KEYS.has(event.key) && generatingId.current !== null) {
+      scrollMode.current = "free";
+    }
+  }
+
+  /** Move the viewport and remember the target so onScroll can ignore it. */
+  function setViewportTop(viewport: HTMLDivElement, top: number) {
+    viewport.scrollTop = top;
+    // Browsers clamp the value, so record what actually landed.
+    lastKnownTop.current = viewport.scrollTop;
+    programmaticTop.current = viewport.scrollTop;
+  }
+
+  function messageElement(id: string | null): HTMLElement | null {
+    const content = contentRef.current;
+    if (content === null || id === null) {
+      return null;
+    }
+    for (const child of content.children) {
+      if (child instanceof HTMLElement && child.dataset.messageId === id) {
+        return child;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Only an answer taller than the viewport is worth aligning to its top.
+   * A short answer stays at the bottom: pushing it to the top would need an
+   * artificial blank area underneath, which reads as an empty broken thread.
+   */
+  function answerExceedsViewport(): boolean {
+    const viewport = viewportRef.current;
+    const answer = messageElement(generatingId.current);
+    return (
+      viewport !== null &&
+      answer !== null &&
+      answer.getBoundingClientRect().height > viewport.clientHeight
+    );
+  }
+
+  /** Keep the top of the generating answer level with the top of the thread. */
+  function applyAnchor() {
+    const viewport = viewportRef.current;
+    const anchor = messageElement(generatingId.current);
+    if (viewport === null || anchor === null) {
+      return;
+    }
+    const top =
+      anchor.getBoundingClientRect().top -
+      viewport.getBoundingClientRect().top +
+      viewport.scrollTop;
+    setViewportTop(viewport, Math.max(0, top));
+  }
+
+  /** Follow the end of the thread as the answer grows. */
+  function applyBottom() {
+    const viewport = viewportRef.current;
+    if (viewport === null) {
+      return;
+    }
+    setViewportTop(
+      viewport,
+      Math.max(0, viewport.scrollHeight - viewport.clientHeight),
+    );
+  }
 
   const flushScrollPosition = useCallback(() => {
     if (saveTimer.current !== null) {
@@ -135,7 +265,8 @@ export function ChatSessionShell({
   // The scroller's own end position is measured before off-screen messages have
   // their final height, so a single programmatic scroll can land near the first
   // question. Re-apply the opening position for a few frames until the layout is
-  // stable, unless the reader has already taken over the scroll.
+  // stable, unless the reader has already taken over the scroll. A conversation
+  // opened by a finished answer keeps that answer's position across the remount.
   useLayoutEffect(() => {
     if (scrollKey === undefined) {
       return;
@@ -145,15 +276,23 @@ export function ChatSessionShell({
       return;
     }
     const saved = readChatScroll(scrollKey);
+    const last = turns[turns.length - 1];
+    const handoff =
+      saved === null && last?.message.role === "assistant"
+        ? takePendingOpenScroll(last.message.id)
+        : null;
+    const opening = saved ?? handoff;
     lastScrollTop.current = null;
     userInteracted.current = false;
-    // Apply the opening position before the first paint; the frames below only
-    // correct it while message heights settle.
-    const initialMax = Math.max(
-      0,
-      viewport.scrollHeight - viewport.clientHeight,
+    const applyOpening = (element: HTMLDivElement, max: number) => {
+      setViewportTop(element, opening ?? max);
+    };
+    // Apply before the first paint; the frames below only correct it while
+    // message heights settle. `turns` is deliberately not a dependency.
+    applyOpening(
+      viewport,
+      Math.max(0, viewport.scrollHeight - viewport.clientHeight),
     );
-    viewport.scrollTop = saved === null ? initialMax : saved;
     const startedAt = window.performance.now();
     let lastMax = -1;
     let stableFrames = 0;
@@ -161,13 +300,15 @@ export function ChatSessionShell({
     const settle = () => {
       settleFrame.current = null;
       const element = viewportRef.current;
-      if (element === null || userInteracted.current) {
+      if (
+        element === null ||
+        userInteracted.current ||
+        generatingId.current !== null
+      ) {
         return;
       }
       const max = Math.max(0, element.scrollHeight - element.clientHeight);
-      // A new conversation opens on its latest answer; a remembered one opens
-      // where the reader left it.
-      element.scrollTop = saved === null ? max : saved;
+      applyOpening(element, max);
       stableFrames = max === lastMax ? stableFrames + 1 : 0;
       lastMax = max;
       if (
@@ -187,20 +328,83 @@ export function ChatSessionShell({
     };
   }, [scrollKey]);
 
+  // Streaming re-renders the thread token by token. A layout effect sees the
+  // committed DOM before paint, so the chosen anchor never flickers away. The
+  // end of a generation only changes the mode: it must not move the view.
+  useLayoutEffect(() => {
+    const next = generatingMessageId ?? null;
+    const previous = generatingId.current;
+    if (next !== previous) {
+      generatingId.current = next;
+      if (next !== null) {
+        lastGeneratedId.current = next;
+        scrollMode.current = "short";
+      } else {
+        if (
+          handoffOnFinish &&
+          scrollKey === undefined &&
+          lastGeneratedId.current !== null
+        ) {
+          rememberPendingOpenScroll(
+            lastGeneratedId.current,
+            viewportRef.current?.scrollTop ?? lastKnownTop.current,
+          );
+        }
+        scrollMode.current = "idle";
+      }
+    }
+    if (scrollMode.current === "short") {
+      // Crossing the viewport height switches to the top anchor once. A reader
+      // who already scrolled stays in `free` and is never re-anchored.
+      if (answerExceedsViewport()) {
+        scrollMode.current = "anchored";
+        applyAnchor();
+      } else {
+        applyBottom();
+      }
+    } else if (scrollMode.current === "anchored") {
+      applyAnchor();
+    } else if (scrollMode.current === "following") {
+      applyBottom();
+    }
+  });
+
   // Leaving the page must not lose the position the reader last stopped at.
   useEffect(() => {
     return () => {
       flushScrollPosition();
+      if (
+        handoffOnFinish &&
+        scrollKey === undefined &&
+        lastGeneratedId.current !== null
+      ) {
+        rememberPendingOpenScroll(
+          lastGeneratedId.current,
+          viewportRef.current?.scrollTop ?? lastKnownTop.current,
+        );
+      }
     };
-  }, [flushScrollPosition]);
+  }, [flushScrollPosition, handoffOnFinish, scrollKey]);
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
+    const viewport = event.currentTarget;
+    const top = viewport.scrollTop;
+    lastKnownTop.current = top;
+    const expected = programmaticTop.current;
+    const isOurScroll =
+      expected !== null && Math.abs(top - expected) <= SCROLL_EPSILON_PX;
+    if (!isOurScroll) {
+      programmaticTop.current = null;
+      if (generatingId.current !== null) {
+        scrollMode.current = "free";
+      }
+    }
     // Only a reader's own scrolling is remembered. The programmatic positioning
     // on mount must not overwrite the stored position with a measured guess.
     if (scrollKey === undefined || !userInteracted.current) {
       return;
     }
-    lastScrollTop.current = event.currentTarget.scrollTop;
+    lastScrollTop.current = top;
     if (saveTimer.current !== null) {
       window.clearTimeout(saveTimer.current);
     }
@@ -237,6 +441,17 @@ export function ChatSessionShell({
     setActiveCitation(null);
   }
 
+  /** The arrow asks to follow the answer down, so the bottom becomes the anchor. */
+  function handleScrollToEnd(event: MouseEvent<HTMLButtonElement>) {
+    if (generatingId.current === null) {
+      // An idle thread keeps the scroller's own smooth scroll.
+      return;
+    }
+    event.preventDefault();
+    scrollMode.current = "following";
+    applyBottom();
+  }
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
       <section
@@ -253,23 +468,28 @@ export function ChatSessionShell({
             onPointerDown={markUserIntent}
           >
             <h1 className="sr-only">{title}</h1>
-            <MessageScrollerProvider>
+            {/* The shell owns the streaming anchor, so the primitive only
+                measures scrollability and renders the arrow button. */}
+            <MessageScrollerProvider autoScroll={false}>
               <MessageScroller className="flex-1">
                 <MessageScrollerViewport
                   ref={viewportRef}
                   onScroll={handleScroll}
-                  onWheel={markUserIntent}
-                  onTouchMove={markUserIntent}
-                  onKeyDown={markUserIntent}
+                  onWheel={markReaderGesture}
+                  onTouchMove={markReaderGesture}
+                  onKeyDown={handleViewportKeyDown}
                 >
-                  <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
+                  <MessageScrollerContent
+                    ref={contentRef}
+                    className="mx-auto w-full max-w-3xl px-4 py-6"
+                  >
                     {turns.map((turn, index) => {
                       const state = turnState?.(turn, index);
                       return (
                         <MessageScrollerItem
                           key={turn.message.id}
                           messageId={turn.message.id}
-                          scrollAnchor={turn.message.role === "user"}
+                          scrollAnchor={false}
                         >
                           <ChatMessageView
                             turn={turn}
@@ -283,7 +503,7 @@ export function ChatSessionShell({
                     })}
                   </MessageScrollerContent>
                 </MessageScrollerViewport>
-                <MessageScrollerButton />
+                <MessageScrollerButton onClick={handleScrollToEnd} />
               </MessageScroller>
             </MessageScrollerProvider>
           </div>

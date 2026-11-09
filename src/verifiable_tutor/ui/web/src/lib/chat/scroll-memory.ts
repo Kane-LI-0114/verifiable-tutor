@@ -33,6 +33,27 @@ export function readChatScroll(sessionId: string): number | null {
   }
 }
 
+/**
+ * The first answer of a new conversation ends by navigating, which remounts
+ * the thread under its new conversation id. Carry the offset the reader was at
+ * across that one mount, so the finished answer is not thrown to the bottom.
+ */
+let pendingOpenScroll: { messageId: string; top: number } | null = null;
+
+export function rememberPendingOpenScroll(messageId: string, top: number): void {
+  pendingOpenScroll = { messageId, top };
+}
+
+/** Consume the handoff only for a thread that shows the same last answer. */
+export function takePendingOpenScroll(messageId: string | null): number | null {
+  const pending = pendingOpenScroll;
+  pendingOpenScroll = null;
+  if (pending === null || messageId === null || pending.messageId !== messageId) {
+    return null;
+  }
+  return pending.top >= 0 && Number.isFinite(pending.top) ? pending.top : null;
+}
+
 /** Store the scroll offset of one conversation; unavailable storage is ignored. */
 export function writeChatScroll(sessionId: string, top: number): void {
   try {

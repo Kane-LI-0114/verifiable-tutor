@@ -243,6 +243,13 @@ function LiveChatSession({
   const chat = useTutorChat({ sessionId, initialMessages, storedMessages, t });
   const [composer, setComposer] = useState("");
   const title = conversationTitle(sessions, sessionId, t.chat.title);
+  // The assistant message only exists once the stream starts; before that the
+  // last turn is the question, and there is nothing to anchor the view to yet.
+  const lastTurn = chat.turns[chat.turns.length - 1];
+  const generatingMessageId =
+    chat.streaming && lastTurn?.message.role === "assistant"
+      ? lastTurn.message.id
+      : null;
 
   function retryFailure() {
     const question = chat.retryComposerText();
@@ -266,6 +273,8 @@ function LiveChatSession({
       title={title}
       scrollKey={sessionId ?? undefined}
       turns={chat.turns}
+      generatingMessageId={generatingMessageId}
+      handoffOnFinish
       placeholder={
         chat.turns.length === 0 && !chat.streaming ? (
           <ChatEmpty onPick={setComposer} />
@@ -331,11 +340,17 @@ function ReplaySession({
   );
 
   const replayFailed = replay.status === "error" && replay.errorDescription === null;
+  const lastVisible = visibleTurns[visibleTurns.length - 1];
+  const generatingMessageId =
+    replay.status === "streaming" && lastVisible?.message.role === "assistant"
+      ? lastVisible.message.id
+      : null;
 
   return (
     <ChatSessionShell
       title={title}
       turns={visibleTurns}
+      generatingMessageId={generatingMessageId}
       showEvidence={false}
       banner={<ReplayBanner speed={speed} onSpeedChange={setSpeed} />}
       placeholder={
