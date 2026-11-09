@@ -235,6 +235,67 @@ describe("conversation scroll during an answer", () => {
     expect(viewport.scrollTop).toBe(1000);
   });
 
+  it("follows the answer again after the reader scrolls back to the bottom", () => {
+    const { container, rerender } = render(view(ANSWER_ID));
+    const viewport = viewportOf(container);
+    installGeometry(viewport);
+    longAnswer();
+    rerender(view(ANSWER_ID, "Hello"));
+    expect(viewport.scrollTop).toBe(ANSWER_TOP);
+
+    // The reader scrolls up, which stops the follow.
+    fireEvent.wheel(viewport, { deltaY: -120 });
+    viewport.scrollTop = 300;
+    fireEvent.scroll(viewport);
+
+    // Scrolling back down to the end of the thread is the arrow's request too:
+    // the answer is followed again from there.
+    fireEvent.wheel(viewport, { deltaY: 400 });
+    viewport.scrollTop = 700;
+    fireEvent.scroll(viewport);
+
+    geometry.answerHeight = 1200;
+    geometry.scrollHeight = 1400;
+    rerender(view(ANSWER_ID, "Hello world, longer still"));
+    expect(viewport.scrollTop).toBe(1000);
+  });
+
+  it("keeps following when the reader stops a scroll tick short of the end", () => {
+    const { container, rerender } = render(view(ANSWER_ID));
+    const viewport = viewportOf(container);
+    installGeometry(viewport);
+    longAnswer();
+    rerender(view(ANSWER_ID, "Hello"));
+    expect(viewport.scrollTop).toBe(ANSWER_TOP);
+
+    // 698px of 700px: rounding and momentum leave the reader a pixel or two
+    // short of the end, which still reads as the end.
+    viewport.scrollTop = 698;
+    fireEvent.scroll(viewport);
+
+    geometry.answerHeight = 1200;
+    geometry.scrollHeight = 1400;
+    rerender(view(ANSWER_ID, "Hello world, longer still"));
+    expect(viewport.scrollTop).toBe(1000);
+  });
+
+  it("does not follow when the reader stops well above the end", () => {
+    const { container, rerender } = render(view(ANSWER_ID));
+    const viewport = viewportOf(container);
+    installGeometry(viewport);
+    longAnswer();
+    rerender(view(ANSWER_ID, "Hello"));
+    expect(viewport.scrollTop).toBe(ANSWER_TOP);
+
+    viewport.scrollTop = 690;
+    fireEvent.scroll(viewport);
+
+    geometry.answerHeight = 1200;
+    geometry.scrollHeight = 1400;
+    rerender(view(ANSWER_ID, "Hello world, longer still"));
+    expect(viewport.scrollTop).toBe(690);
+  });
+
   it("stops moving the thread once the reader scrolls during generation", () => {
     const { container, rerender } = render(view(ANSWER_ID));
     const viewport = viewportOf(container);

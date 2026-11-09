@@ -143,6 +143,8 @@ const SCROLL_SAVE_DELAY_MS = 120;
 const SCROLL_SETTLE_MAX_MS = 1000;
 /** A scroll event this close to our own target is not a reader scroll. */
 const SCROLL_EPSILON_PX = 1;
+/** A reader scroll this close to the end of the thread asks to follow again. */
+const SCROLL_FOLLOW_EPSILON_PX = 4;
 /** Keys the browser uses to scroll a focused region. */
 const SCROLL_KEYS = new Set([
   "ArrowDown",
@@ -405,6 +407,24 @@ export function ChatSessionShell({
     };
   }, [flushScrollPosition, handoffOnFinish, scrollKey]);
 
+  /** Follow the answer down: the bottom becomes the anchor. */
+  function followAnswer() {
+    scrollMode.current = "following";
+    applyBottom();
+  }
+
+  /**
+   * Whether the reader reached the end of the thread. Momentum and fractional
+   * device pixels leave a reader a pixel or two short of the exact end, so the
+   * last few pixels count as the bottom.
+   */
+  function atThreadEnd(viewport: HTMLDivElement): boolean {
+    return (
+      viewport.scrollTop + viewport.clientHeight >=
+      viewport.scrollHeight - SCROLL_FOLLOW_EPSILON_PX
+    );
+  }
+
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     const viewport = event.currentTarget;
     const top = viewport.scrollTop;
@@ -415,7 +435,9 @@ export function ChatSessionShell({
     if (!isOurScroll) {
       programmaticTop.current = null;
       if (generatingId.current !== null) {
-        scrollMode.current = "free";
+        // Reaching the end by hand is the arrow's request: follow again. Any
+        // other position is the reader taking the thread back.
+        scrollMode.current = atThreadEnd(viewport) ? "following" : "free";
       }
     }
     // Only a reader's own scrolling is remembered. The programmatic positioning
@@ -467,8 +489,7 @@ export function ChatSessionShell({
       return;
     }
     event.preventDefault();
-    scrollMode.current = "following";
-    applyBottom();
+    followAnswer();
   }
 
   return (
