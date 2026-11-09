@@ -58,6 +58,15 @@ const STREAM_FRAMES = [
 
 let stub: ReturnType<typeof createFetchStub> | null = null;
 
+/** A promise the test resolves when it wants the held request to answer. */
+function deferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve!: () => void;
+  const promise = new Promise<void>((fulfil) => {
+    resolve = fulfil;
+  });
+  return { promise, resolve };
+}
+
 function routes(overrides: StubRoute[] = []): StubRoute[] {
   return [
     { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
@@ -165,5 +174,43 @@ describe("document preview", () => {
     expect(
       await within(pane).findByText(/GPU memory hierarchy/),
     ).toBeInTheDocument();
+  });
+
+  it("holds the answer's place in the pane while the reply is awaited", async () => {
+    const answering = deferred();
+    const chat: StubRoute = {
+      method: "POST",
+      path: "/api/chat",
+      handler: async () => {
+        await answering.promise;
+        return sseResponse(STREAM_FRAMES, {
+          headers: { "x-conversation-id": "conversation-1" },
+        });
+      },
+    };
+    stub = createFetchStub(routes([chat]));
+    const user = userEvent.setup();
+    renderLiveRoute("/knowledge/docs/ACS_Lecture_1_2026F?page=7");
+
+    await screen.findByText("7 / 67");
+    const pane = screen.getByTestId("document-chat-pane");
+    await user.type(within(pane).getByLabelText("Your question"), "explain this page");
+    await user.click(within(pane).getByRole("button", { name: "Send" }));
+
+    // Nothing has streamed yet, so the pane shows the pending answer where the
+    // answer will start instead of ending at the question.
+    expect(
+      await within(pane).findByText("Generating the answer"),
+    ).toBeInTheDocument();
+    expect(
+      pane.querySelector('[data-slot="answer-pending"]'),
+    ).not.toBeNull();
+
+    answering.resolve();
+
+    expect(
+      await within(pane).findByText(/GPU memory hierarchy/),
+    ).toBeInTheDocument();
+    expect(pane.querySelector('[data-slot="answer-pending"]')).toBeNull();
   });
 });

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
+import { AnswerPending } from "@/components/chat/answer-pending";
 import { ChatMessageView } from "@/components/chat/chat-message";
 import { Composer } from "@/components/chat/composer";
+import { Message, MessageContent } from "@/components/ui/message";
 import { useT } from "@/lib/i18n";
 import { useTutorChat } from "@/lib/chat/use-tutor-chat";
 
@@ -71,23 +73,38 @@ export function DocChatPane({
     }
   }, [chat.turns.length]);
 
+  // The assistant turn only exists once the stream starts; until then the pane
+  // holds the answer's place open at the end instead of ending at the question.
+  const lastTurn = chat.turns[chat.turns.length - 1];
+  const awaitingAnswer =
+    chat.streaming && lastTurn?.message.role !== "assistant";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <p className="border-b bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         {t.knowledge.chatNotice}
       </p>
       <div ref={scrollerRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
-        {chat.turns.length === 0 ? (
+        {chat.turns.length === 0 && !awaitingAnswer ? (
           <p className="text-sm text-muted-foreground">{t.knowledge.chatEmpty}</p>
         ) : (
-          chat.turns.map((turn, index) => (
-            <ChatMessageView
-              key={turn.message.id}
-              turn={turn}
-              onOpenCitation={() => {}}
-              streaming={chat.streaming && index === chat.turns.length - 1}
-            />
-          ))
+          <>
+            {chat.turns.map((turn, index) => (
+              <ChatMessageView
+                key={turn.message.id}
+                turn={turn}
+                onOpenCitation={() => {}}
+                streaming={chat.streaming && index === chat.turns.length - 1}
+              />
+            ))}
+            {awaitingAnswer ? (
+              <Message>
+                <MessageContent>
+                  <AnswerPending />
+                </MessageContent>
+              </Message>
+            ) : null}
+          </>
         )}
       </div>
       {chat.failure ? (
