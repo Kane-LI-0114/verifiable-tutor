@@ -463,7 +463,10 @@ export function KnowledgePage() {
                 <span className="hidden sm:inline">{t.knowledge.sort}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              className="w-max whitespace-nowrap"
+            >
               {SORT_KEYS.map((key) => {
                 const activeSort =
                   sort !== null && sort.key === key ? sort : null;

@@ -88,6 +88,17 @@ describe("chat page", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps the model menu as wide as its longest label", async () => {
+    const user = userEvent.setup();
+    renderRoute(SESSION);
+
+    await user.click(screen.getByRole("button", { name: "Model selection" }));
+
+    const menu = document.querySelector('[data-slot="dropdown-menu-content"]');
+    expect(menu).toHaveClass("w-max", "whitespace-nowrap");
+    expect(menu).not.toHaveClass("w-(--radix-dropdown-menu-trigger-width)");
+  });
+
   it("shows the failure copy and a retry action when the answer fails", () => {
     renderRoute(SESSION, { pageState: "error" });
 

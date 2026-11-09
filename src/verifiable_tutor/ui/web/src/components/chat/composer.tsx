@@ -157,7 +157,10 @@ export function Composer({
                 <ChevronDownIcon />
               </InputGroupButton>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent
+              align="start"
+              className="w-max whitespace-nowrap"
+            >
               <DropdownMenuRadioGroup
                 value={model}
                 onValueChange={(next) => onModelChange(next as ModelId)}

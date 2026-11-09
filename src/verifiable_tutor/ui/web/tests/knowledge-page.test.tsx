@@ -150,6 +150,20 @@ describe("knowledge browser", () => {
     });
   });
 
+  it("keeps the sort menu as wide as its longest label", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+
+    const menu = document.querySelector('[data-slot="dropdown-menu-content"]');
+    expect(menu).toHaveClass("w-max", "whitespace-nowrap");
+    expect(menu).not.toHaveClass("w-(--radix-dropdown-menu-trigger-width)");
+  });
+
   it("toggles the name direction when the same sort item is clicked twice", async () => {
     const unsorted: StubRoute = {
       method: "GET",
