@@ -1,5 +1,9 @@
 """Streaming TTS endpoint contract."""
 
+import pytest
+
+from verifiable_tutor.llm.adapter import ModelResponseError
+
 from helpers import parse_sse
 
 ANSWER = "MPI_Allreduce combines values from all ranks."
@@ -42,3 +46,22 @@ def test_voice_stream_endpoint_rejects_blank_answer_text(api):
     assert response.status_code == 400
     assert response.json() == {"detail": "text must not be empty"}
     assert api.adapter.calls == []
+
+
+def test_voice_stream_endpoint_reports_pre_stream_model_failure_as_unavailable(api):
+    api.create_active_account("alice@ust.hk")
+    api.adapter.speak_stream_fail_before_first = ModelResponseError(
+        "unavailable", 3, "fake pre-stream failure"
+    )
+
+    try:
+        response = api.client.post(
+            "/api/voice/speech/stream", json={"text": ANSWER}
+        )
+    except Exception as exc:
+        pytest.fail(f"pre-stream failure surfaced as {type(exc).__name__}, not 503")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "The model is temporarily unavailable. Please try again."
+    }

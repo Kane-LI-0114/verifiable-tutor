@@ -416,8 +416,21 @@ def speech_stream(body: SpeechStreamBody, user: CurrentUser, model: ModelDep):
     if not body.text.strip():
         raise HTTPException(status_code=400, detail="text must not be empty")
 
+    frames = model.speak_stream(body.text, voice=body.voice)
+    try:
+        first = next(frames, None)
+    except (
+        CapabilityError,
+        ModelSelectionError,
+        ModelResponseError,
+        ProviderAPIError,
+    ) as exc:
+        raise _model_failure(exc) from exc
+
     def body_stream():
-        for frame in model.speak_stream(body.text, voice=body.voice):
+        if first is not None:
+            yield streaming.sse({"audio": first})
+        for frame in frames:
             yield streaming.sse({"audio": frame})
         yield streaming.DONE_FRAME
 
