@@ -84,7 +84,7 @@ function AnswerActions({
     const controller = new AbortController();
     controllerRef.current = controller;
     try {
-      const player = createPcmPlayer();
+      const player = createPcmPlayer(() => stopSpeech());
       playerRef.current = player;
       await player.resume();
       let started = false;
@@ -98,6 +98,7 @@ function AnswerActions({
           setSpeechState("playing");
         }
       }
+      player.complete();
     } catch (error) {
       playerRef.current?.stop();
       if (isAbortError(error) || cancelledRef.current) {

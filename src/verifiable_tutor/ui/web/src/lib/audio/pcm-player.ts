@@ -4,6 +4,8 @@ export const PCM_SAMPLE_RATE = 24000;
 export interface PcmPlayer {
   resume(): Promise<void>;
   enqueue(samples: Int16Array): void;
+  /** Mark the upstream stream as finished; completion waits for queued audio. */
+  complete(): void;
   stop(): void;
 }
 
@@ -14,9 +16,10 @@ export function createPcmPlayer(onFinished?: () => void): PcmPlayer {
   let nextStartTime = context.currentTime;
   let pending = 0;
   let stopped = false;
+  let completed = false;
 
   function finish() {
-    if (stopped || pending > 0) {
+    if (stopped || !completed || pending > 0) {
       return;
     }
     stopped = true;
@@ -48,10 +51,12 @@ export function createPcmPlayer(onFinished?: () => void): PcmPlayer {
       pending += 1;
       source.onended = () => {
         pending -= 1;
-        if (pending === 0) {
-          finish();
-        }
+        finish();
       };
+    },
+    complete() {
+      completed = true;
+      finish();
     },
     stop() {
       if (stopped) {

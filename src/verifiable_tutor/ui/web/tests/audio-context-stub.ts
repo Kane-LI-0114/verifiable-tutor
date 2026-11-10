@@ -60,6 +60,11 @@ export function installAudioContextStub() {
     finish() {
       sources[sources.length - 1]?.onended?.();
     },
+    finishAll() {
+      for (const source of sources) {
+        source.onended?.();
+      }
+    },
     restore() {
       vi.unstubAllGlobals();
     },

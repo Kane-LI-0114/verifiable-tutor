@@ -182,4 +182,45 @@ describe("answer read-aloud", () => {
     );
     expect(audio?.starts).toHaveLength(1);
   });
+
+  it("keeps one active answer across messages", async () => {
+    const user = userEvent.setup();
+    render(
+      <I18nProvider initialLang="en">
+        <ChatMessageView
+          turn={answerTurn("First answer.")}
+          onOpenCitation={() => {}}
+        />
+        <ChatMessageView
+          turn={answerTurn("Second answer.")}
+          onOpenCitation={() => {}}
+        />
+      </I18nProvider>,
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Read aloud" })[0]);
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1),
+    );
+
+    await user.click(screen.getAllByRole("button", { name: "Read aloud" })[0]);
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1),
+    );
+    expect(screen.getAllByRole("button", { name: "Read aloud" })).toHaveLength(
+      1,
+    );
+    expect(audio?.sources[0]?.stop).toHaveBeenCalledTimes(1);
+    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
+    expect(stub?.calls).toHaveLength(2);
+
+    releaseGate?.();
+    await waitFor(() => expect(audio?.starts.length).toBeGreaterThan(2));
+    audio?.finishAll();
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Read aloud" })).toHaveLength(
+        2,
+      ),
+    );
+  });
 });
