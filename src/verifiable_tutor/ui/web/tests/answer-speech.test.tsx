@@ -150,4 +150,30 @@ describe("answer read-aloud", () => {
     });
     await waitFor(() => expect(button).toBeEnabled());
   });
+
+  it("stops a playing answer when the speak action is clicked again", async () => {
+    const user = userEvent.setup();
+    const { container } = renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await user.click(await screen.findByRole("button", { name: "Stop" }));
+
+    expect(vi.mocked(HTMLMediaElement.prototype.pause)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
+      "blob:mock-audio",
+    );
+    expect(screen.getByRole("button", { name: "Read aloud" })).toBeEnabled();
+
+    // Playback that finishes on its own also resets the action.
+    const audio = container.querySelector("audio");
+    expect(audio).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await screen.findByRole("button", { name: "Stop" });
+    fireEvent(audio as HTMLAudioElement, new Event("ended"));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Read aloud" }),
+      ).toBeInTheDocument(),
+    );
+  });
 });

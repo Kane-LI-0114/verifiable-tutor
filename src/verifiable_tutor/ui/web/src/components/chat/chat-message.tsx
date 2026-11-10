@@ -24,9 +24,12 @@ function AnswerActions({
 }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
-  const [speechState, setSpeechState] = useState<"idle" | "loading">("idle");
+  const [speechState, setSpeechState] = useState<
+    "idle" | "loading" | "playing"
+  >("idle");
   const copyTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   // The feedback timer must not outlive the answer it belongs to.
   useEffect(() => {
@@ -63,8 +66,19 @@ function AnswerActions({
     if (audio === null) {
       return;
     }
-    audio.src = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    blobUrlRef.current = url;
+    audio.src = url;
     await audio.play();
+    setSpeechState("playing");
+  }
+
+  function stopSpeech() {
+    audioRef.current?.pause();
+    if (blobUrlRef.current !== null) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     setSpeechState("idle");
   }
 
@@ -87,10 +101,12 @@ function AnswerActions({
         type="button"
         variant="ghost"
         size="icon-xs"
-        aria-label={t.common.speak}
+        aria-label={
+          speechState === "playing" ? t.common.stop : t.common.speak
+        }
         aria-busy={speechState === "loading"}
         disabled={speechState === "loading"}
-        onClick={speak}
+        onClick={speechState === "playing" ? stopSpeech : speak}
       >
         <Volume2Icon />
       </Button>
@@ -105,7 +121,7 @@ function AnswerActions({
           <RotateCcwIcon />
         </Button>
       ) : null}
-      <audio ref={audioRef} className="hidden" />
+      <audio ref={audioRef} className="hidden" onEnded={stopSpeech} />
     </MessageFooter>
   );
 }
