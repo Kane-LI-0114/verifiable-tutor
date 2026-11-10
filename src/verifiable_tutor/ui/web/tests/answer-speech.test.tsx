@@ -246,4 +246,46 @@ describe("answer read-aloud", () => {
       "blob:mock-audio",
     );
   });
+
+  it("releases the audio URL and cancels the request when the answer unmounts", async () => {
+    const user = userEvent.setup();
+    const playing = renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await screen.findByRole("button", { name: "Stop" });
+    playing.unmount();
+
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
+      "blob:mock-audio",
+    );
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(HTMLMediaElement.prototype.pause)).toHaveBeenCalled();
+    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
+
+    // A request that is still in flight is cancelled the same way.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    stub?.restore();
+    stub = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: async () => {
+          await gate;
+          return audioResponse();
+        },
+      },
+    ]);
+    const pending = renderAnswer();
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await waitFor(() => expect(stub?.calls).toHaveLength(1));
+    pending.unmount();
+
+    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
+    await act(async () => {
+      release();
+    });
+  });
 });

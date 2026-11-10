@@ -29,14 +29,20 @@ function AnswerActions({
   >("idle");
   const copyTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const cancelledRef = useRef(false);
 
-  // The feedback timer must not outlive the answer it belongs to.
+  // The feedback timer and the audio must not outlive the answer it belongs to.
   useEffect(() => {
     return () => {
       if (copyTimer.current !== null) {
         window.clearTimeout(copyTimer.current);
       }
+      cancelledRef.current = true;
+      controllerRef.current?.abort();
+      releaseAudio();
     };
   }, []);
 
@@ -61,25 +67,38 @@ function AnswerActions({
       return;
     }
     setSpeechState("loading");
+    const controller = new AbortController();
+    controllerRef.current = controller;
     try {
-      const blob = await synthesizeSpeech(content);
+      const blob = await synthesizeSpeech(content, controller.signal);
+      if (cancelledRef.current) {
+        return;
+      }
       const audio = audioRef.current;
       if (audio === null) {
         return;
       }
+      audioElementRef.current = audio;
       const url = URL.createObjectURL(blob);
       blobUrlRef.current = url;
       audio.src = url;
       await audio.play();
+      if (cancelledRef.current) {
+        return;
+      }
       setSpeechState("playing");
     } catch {
       releaseAudio();
-      setSpeechState("error");
+      if (!cancelledRef.current) {
+        setSpeechState("error");
+      }
     }
   }
 
   function releaseAudio() {
-    audioRef.current?.pause();
+    // React detaches the JSX ref before passive effect cleanup runs, so the
+    // element reference kept during playback survives an unmount.
+    (audioElementRef.current ?? audioRef.current)?.pause();
     if (blobUrlRef.current !== null) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
