@@ -50,6 +50,7 @@ function AnswerActions({
       }
       cancelledRef.current = true;
       controllerRef.current?.abort();
+      playerRef.current?.stop();
       if (activePlayback === playbackRef.current) {
         activePlayback = null;
       }

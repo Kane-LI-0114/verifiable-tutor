@@ -162,4 +162,24 @@ describe("answer read-aloud", () => {
       expect(screen.getByRole("alert")).toHaveTextContent("无法朗读这条答案。"),
     );
   });
+
+  it("cancels the stream and closes audio when the answer unmounts", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await waitFor(() => expect(audio?.starts).toHaveLength(1));
+
+    unmount();
+
+    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
+    expect(audio?.sources[0]?.stop).toHaveBeenCalledTimes(1);
+    expect(audio?.context.close).toHaveBeenCalled();
+
+    releaseGate?.();
+    await waitFor(() =>
+      expect(audio?.context.createBuffer).toHaveBeenCalledTimes(1),
+    );
+    expect(audio?.starts).toHaveLength(1);
+  });
 });

@@ -112,12 +112,21 @@ export function sseResponse(frames: unknown[], options: SseOptions = {}): Respon
       for (const frame of frames) {
         const line =
           frame === "[DONE]" ? "data: [DONE]\n\n" : `data: ${JSON.stringify(frame)}\n\n`;
-        controller.enqueue(encoder.encode(line));
+        try {
+          controller.enqueue(encoder.encode(line));
+        } catch {
+          // The reader cancelled the stream before the remaining frames arrived.
+          return;
+        }
         if (options.gate) {
           await options.gate;
         }
       }
-      controller.close();
+      try {
+        controller.close();
+      } catch {
+        // Already closed by a cancelled reader.
+      }
     },
   });
   const headers: Record<string, string> = {
