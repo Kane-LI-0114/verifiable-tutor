@@ -86,4 +86,31 @@ describe("streamSpeech", () => {
     controller.abort();
     await expect(frames.next()).rejects.toMatchObject({ name: "AbortError" });
   });
+
+  it("surfaces an in-band error frame", async () => {
+    const errorText = "The model is temporarily unavailable. Please try again.";
+    stub = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech/stream",
+        handler: () =>
+          sseResponse(
+            [{ audio: FRAMES[0] }, { type: "error", errorText }, "[DONE]"],
+            { protocol: "plain" },
+          ),
+      },
+    ]);
+
+    const chunks: Int16Array[] = [];
+    await expect(async () => {
+      for await (const chunk of streamSpeech(ANSWER_MARKDOWN)) {
+        chunks.push(chunk);
+      }
+    }).rejects.toMatchObject({
+      name: "ApiError",
+      status: 503,
+      detail: errorText,
+    });
+    expect(chunks.map((chunk) => Array.from(chunk))).toEqual([[0, 1]]);
+  });
 });

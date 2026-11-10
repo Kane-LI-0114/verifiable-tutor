@@ -123,7 +123,14 @@ export async function* streamSpeech(
           if (payload === "[DONE]") {
             return;
           }
-          const frame = JSON.parse(payload) as { audio?: string };
+          const frame = JSON.parse(payload) as {
+            audio?: string;
+            type?: string;
+            errorText?: string;
+          };
+          if (frame.type === "error") {
+            throw new ApiError(503, frame.errorText ?? "speech stream failed");
+          }
           if (typeof frame.audio === "string") {
             yield pcm16FromBase64(frame.audio);
           }
@@ -132,7 +139,7 @@ export async function* streamSpeech(
       }
     }
   } catch (error) {
-    if (isAbortError(error)) {
+    if (isAbortError(error) || error instanceof ApiError) {
       throw error;
     }
     throw new ApiError(NETWORK_ERROR_STATUS, "network error");
