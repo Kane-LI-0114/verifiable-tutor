@@ -4,6 +4,13 @@ import { synthesizeSpeech } from "@/lib/api/voice";
 
 import { createFetchStub, errorResponse } from "./api-stub";
 
+function audioResponse(): Response {
+  return new Response(new Uint8Array([1, 2, 3]), {
+    status: 200,
+    headers: { "content-type": "audio/wav" },
+  });
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -55,5 +62,34 @@ describe("synthesizeSpeech", () => {
       status: 0,
       detail: "network error",
     });
+  });
+
+  it("forwards the caller's abort signal and keeps a real abort intact", async () => {
+    const controller = new AbortController();
+    const completed = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: () => audioResponse(),
+      },
+    ]);
+    await synthesizeSpeech("hello", controller.signal);
+    expect(completed.calls[0].init.signal).toBe(controller.signal);
+    completed.restore();
+
+    const abort = new DOMException("The operation was aborted.", "AbortError");
+    const cancelled = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: () => {
+          throw abort;
+        },
+      },
+    ]);
+    await expect(synthesizeSpeech("hello", controller.signal)).rejects.toBe(
+      abort,
+    );
+    cancelled.restore();
   });
 });

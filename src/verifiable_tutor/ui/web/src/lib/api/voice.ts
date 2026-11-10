@@ -1,8 +1,11 @@
 import { ApiError, NETWORK_ERROR_STATUS } from "./client";
-import { detailFromPayload } from "./http";
+import { detailFromPayload, isAbortError } from "./http";
 
 /** Synthesize one answer as audio bytes from the local TTS endpoint. */
-export async function synthesizeSpeech(text: string): Promise<Blob> {
+export async function synthesizeSpeech(
+  text: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
   let response: Response;
   try {
     response = await fetch("/api/voice/speech", {
@@ -10,8 +13,12 @@ export async function synthesizeSpeech(text: string): Promise<Blob> {
       credentials: "same-origin",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text }),
+      signal,
     });
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
     throw new ApiError(NETWORK_ERROR_STATUS, "network error");
   }
   if (!response.ok) {
