@@ -72,13 +72,23 @@ function pcm16FromBase64(data: string): Int16Array {
 /** Stream one answer as PCM16 sample chunks from the local TTS endpoint. */
 export async function* streamSpeech(
   text: string,
+  signal?: AbortSignal,
 ): AsyncGenerator<Int16Array> {
-  const response = await fetch("/api/voice/speech/stream", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text: toSpeechText(text) }),
-  });
+  let response: Response;
+  try {
+    response = await fetch("/api/voice/speech/stream", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: toSpeechText(text) }),
+      signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+    throw new ApiError(NETWORK_ERROR_STATUS, "network error");
+  }
   if (!response.ok) {
     let detail = response.statusText || `HTTP ${response.status}`;
     try {
@@ -94,30 +104,39 @@ export async function* streamSpeech(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      return;
-    }
-    buffer += decoder.decode(value, { stream: true });
-    let boundary = buffer.indexOf("\n\n");
-    while (boundary !== -1) {
-      const raw = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
-      for (const line of raw.split("\n")) {
-        if (!line.startsWith("data:")) {
-          continue;
-        }
-        const payload = line.slice(5).trim();
-        if (payload === "[DONE]") {
-          return;
-        }
-        const frame = JSON.parse(payload) as { audio?: string };
-        if (typeof frame.audio === "string") {
-          yield pcm16FromBase64(frame.audio);
-        }
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        return;
       }
-      boundary = buffer.indexOf("\n\n");
+      buffer += decoder.decode(value, { stream: true });
+      let boundary = buffer.indexOf("\n\n");
+      while (boundary !== -1) {
+        const raw = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        for (const line of raw.split("\n")) {
+          if (!line.startsWith("data:")) {
+            continue;
+          }
+          const payload = line.slice(5).trim();
+          if (payload === "[DONE]") {
+            return;
+          }
+          const frame = JSON.parse(payload) as { audio?: string };
+          if (typeof frame.audio === "string") {
+            yield pcm16FromBase64(frame.audio);
+          }
+        }
+        boundary = buffer.indexOf("\n\n");
+      }
     }
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+    throw new ApiError(NETWORK_ERROR_STATUS, "network error");
+  } finally {
+    void reader.cancel().catch(() => {});
   }
 }
