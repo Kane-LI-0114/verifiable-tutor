@@ -222,6 +222,7 @@ export const zh: Messages = {
     answerActions: "答案操作",
     stopStreaming: "停止生成",
     copyAnswer: "复制答案",
+    speakError: "无法朗读这条答案。",
     capabilityErrorTitle: "该模型不支持音频",
     capabilityErrorBody: "DeepSeek 没有音频输入。请选择 MiMo Flash 或 MiMo Pro，或移除附件。",
     emptyCitation: "未选择引用",

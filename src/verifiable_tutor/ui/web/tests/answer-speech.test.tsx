@@ -6,7 +6,7 @@ import { ChatMessageView } from "@/components/chat/chat-message";
 import { I18nProvider } from "@/lib/i18n";
 import type { ConversationTurn } from "@/lib/types";
 
-import { createFetchStub } from "./api-stub";
+import { createFetchStub, errorResponse } from "./api-stub";
 
 const ANSWER = "MPI_Allreduce combines values from all ranks.";
 
@@ -39,9 +39,9 @@ function answerTurn(content: string): ConversationTurn {
   };
 }
 
-function renderAnswer(content = ANSWER) {
+function renderAnswer(content = ANSWER, lang: "en" | "zh" = "en") {
   return render(
-    <I18nProvider initialLang="en">
+    <I18nProvider initialLang={lang}>
       <ChatMessageView turn={answerTurn(content)} onOpenCitation={() => {}} />
     </I18nProvider>,
   );
@@ -174,6 +174,54 @@ describe("answer read-aloud", () => {
       expect(
         screen.getByRole("button", { name: "Read aloud" }),
       ).toBeInTheDocument(),
+    );
+  });
+
+  it("offers a localized failure message and a retry after a speech error", async () => {
+    let attempts = 0;
+    stub?.restore();
+    stub = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: () => {
+          attempts += 1;
+          return attempts === 1
+            ? errorResponse("The model is temporarily unavailable.", 503)
+            : audioResponse();
+        },
+      },
+    ]);
+    const user = userEvent.setup();
+    const { unmount } = renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Could not read this answer aloud.",
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(stub?.calls).toHaveLength(2));
+    await waitFor(() =>
+      expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(1),
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    unmount();
+
+    stub?.restore();
+    stub = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: () =>
+          errorResponse("The model is temporarily unavailable.", 503),
+      },
+    ]);
+    renderAnswer(ANSWER, "zh");
+    await user.click(screen.getByRole("button", { name: "朗读" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("无法朗读这条答案。"),
     );
   });
 });

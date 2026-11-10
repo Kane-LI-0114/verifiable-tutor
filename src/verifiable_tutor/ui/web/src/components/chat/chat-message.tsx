@@ -25,7 +25,7 @@ function AnswerActions({
   const t = useT();
   const [copied, setCopied] = useState(false);
   const [speechState, setSpeechState] = useState<
-    "idle" | "loading" | "playing"
+    "idle" | "loading" | "playing" | "error"
   >("idle");
   const copyTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -61,16 +61,20 @@ function AnswerActions({
       return;
     }
     setSpeechState("loading");
-    const blob = await synthesizeSpeech(content);
-    const audio = audioRef.current;
-    if (audio === null) {
-      return;
+    try {
+      const blob = await synthesizeSpeech(content);
+      const audio = audioRef.current;
+      if (audio === null) {
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      blobUrlRef.current = url;
+      audio.src = url;
+      await audio.play();
+      setSpeechState("playing");
+    } catch {
+      setSpeechState("error");
     }
-    const url = URL.createObjectURL(blob);
-    blobUrlRef.current = url;
-    audio.src = url;
-    await audio.play();
-    setSpeechState("playing");
   }
 
   function stopSpeech() {
@@ -81,6 +85,13 @@ function AnswerActions({
     }
     setSpeechState("idle");
   }
+
+  const speechLabel =
+    speechState === "playing"
+      ? t.common.stop
+      : speechState === "error"
+        ? t.common.retry
+        : t.common.speak;
 
   return (
     <MessageFooter
@@ -101,9 +112,7 @@ function AnswerActions({
         type="button"
         variant="ghost"
         size="icon-xs"
-        aria-label={
-          speechState === "playing" ? t.common.stop : t.common.speak
-        }
+        aria-label={speechLabel}
         aria-busy={speechState === "loading"}
         disabled={speechState === "loading"}
         onClick={speechState === "playing" ? stopSpeech : speak}
@@ -120,6 +129,9 @@ function AnswerActions({
         >
           <RotateCcwIcon />
         </Button>
+      ) : null}
+      {speechState === "error" ? (
+        <span role="alert">{t.chat.speakError}</span>
       ) : null}
       <audio ref={audioRef} className="hidden" onEnded={stopSpeech} />
     </MessageFooter>

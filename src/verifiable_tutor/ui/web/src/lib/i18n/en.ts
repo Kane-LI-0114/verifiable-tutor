@@ -226,6 +226,7 @@ export const en = {
     answerActions: "Answer actions",
     stopStreaming: "Stop generating",
     copyAnswer: "Copy the answer",
+    speakError: "Could not read this answer aloud.",
     capabilityErrorTitle: "This model cannot take audio",
     capabilityErrorBody:
       "DeepSeek has no audio input. Select MiMo Flash or MiMo Pro, or remove the attachment.",
