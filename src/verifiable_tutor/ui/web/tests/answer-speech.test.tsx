@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -79,6 +86,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Unmount while the media spies are still installed, or jsdom reports an
+  // unimplemented pause() when the cleanup effect releases the audio element.
+  cleanup();
   stub?.restore();
   stub = null;
   vi.restoreAllMocks();
@@ -287,5 +297,45 @@ describe("answer read-aloud", () => {
     await act(async () => {
       release();
     });
+  });
+
+  it("stops one answer when another answer starts reading aloud", async () => {
+    const user = userEvent.setup();
+    render(
+      <I18nProvider initialLang="en">
+        <ChatMessageView
+          turn={answerTurn("First answer.")}
+          onOpenCitation={() => {}}
+        />
+        <ChatMessageView
+          turn={answerTurn("Second answer.")}
+          onOpenCitation={() => {}}
+        />
+      </I18nProvider>,
+    );
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Read aloud" })[0],
+    );
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1),
+    );
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Read aloud" })[0],
+    );
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1),
+    );
+
+    expect(screen.getAllByRole("button", { name: "Read aloud" })).toHaveLength(
+      1,
+    );
+    expect(vi.mocked(HTMLMediaElement.prototype.pause)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
+      "blob:mock-audio",
+    );
+    expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(2);
+    expect(stub?.calls).toHaveLength(2);
   });
 });

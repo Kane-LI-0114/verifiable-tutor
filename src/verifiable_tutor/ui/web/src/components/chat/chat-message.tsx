@@ -15,6 +15,13 @@ import { useT } from "@/lib/i18n";
 import { synthesizeSpeech } from "@/lib/api/voice";
 import type { Citation, ConversationTurn } from "@/lib/types";
 
+interface ActivePlayback {
+  stop: () => void;
+}
+
+/** Only one answer may play at a time, across every rendered message. */
+let activePlayback: ActivePlayback | null = null;
+
 function AnswerActions({
   content,
   onRetry,
@@ -33,6 +40,7 @@ function AnswerActions({
   const blobUrlRef = useRef<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
+  const playbackRef = useRef<ActivePlayback>({ stop: () => {} });
 
   // The feedback timer and the audio must not outlive the answer it belongs to.
   useEffect(() => {
@@ -43,6 +51,9 @@ function AnswerActions({
       cancelledRef.current = true;
       controllerRef.current?.abort();
       releaseAudio();
+      if (activePlayback === playbackRef.current) {
+        activePlayback = null;
+      }
     };
   }, []);
 
@@ -67,6 +78,9 @@ function AnswerActions({
       return;
     }
     setSpeechState("loading");
+    activePlayback?.stop();
+    playbackRef.current.stop = stopSpeech;
+    activePlayback = playbackRef.current;
     const controller = new AbortController();
     controllerRef.current = controller;
     try {
@@ -107,6 +121,9 @@ function AnswerActions({
 
   function stopSpeech() {
     releaseAudio();
+    if (activePlayback === playbackRef.current) {
+      activePlayback = null;
+    }
     setSpeechState("idle");
   }
 
