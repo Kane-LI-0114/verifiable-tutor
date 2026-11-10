@@ -38,4 +38,22 @@ describe("synthesizeSpeech", () => {
     });
     unsigned.restore();
   });
+
+  it("reports an unreachable speech backend as a network error", async () => {
+    createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: () => {
+          throw new TypeError("fetch failed");
+        },
+      },
+    ]);
+
+    await expect(synthesizeSpeech("hello")).rejects.toMatchObject({
+      name: "ApiError",
+      status: 0,
+      detail: "network error",
+    });
+  });
 });
