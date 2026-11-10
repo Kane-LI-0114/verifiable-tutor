@@ -64,5 +64,8 @@ src/verifiable_tutor/ui/static/
 .vscode/
 *.swp
 
+# --- AI agent local state (session memory, logs; never commit) ---
+.workbuddy/
+
 # --- TACC task staging (shared scripts copied in at submit time) ---
 tacc/*/_staged/
