@@ -11,8 +11,9 @@ import { CitationRow } from "@/components/chat/citation-row";
 import { PageError } from "@/components/layout/page-states";
 import { SourcesList } from "@/components/chat/sources";
 import { WorkChain } from "@/components/chat/work-chain";
+import { createPcmPlayer, type PcmPlayer } from "@/lib/audio/pcm-player";
 import { useT } from "@/lib/i18n";
-import { synthesizeSpeech } from "@/lib/api/voice";
+import { streamSpeech } from "@/lib/api/voice";
 import type { Citation, ConversationTurn } from "@/lib/types";
 
 interface ActivePlayback {
@@ -35,9 +36,7 @@ function AnswerActions({
     "idle" | "loading" | "playing" | "error"
   >("idle");
   const copyTimer = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const blobUrlRef = useRef<string | null>(null);
+  const playerRef = useRef<PcmPlayer | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
   const playbackRef = useRef<ActivePlayback>({ stop: () => {} });
@@ -50,7 +49,6 @@ function AnswerActions({
       }
       cancelledRef.current = true;
       controllerRef.current?.abort();
-      releaseAudio();
       if (activePlayback === playbackRef.current) {
         activePlayback = null;
       }
@@ -84,43 +82,29 @@ function AnswerActions({
     const controller = new AbortController();
     controllerRef.current = controller;
     try {
-      const blob = await synthesizeSpeech(content, controller.signal);
-      if (cancelledRef.current) {
-        return;
+      const player = createPcmPlayer();
+      playerRef.current = player;
+      await player.resume();
+      let started = false;
+      for await (const chunk of streamSpeech(content, controller.signal)) {
+        if (cancelledRef.current) {
+          return;
+        }
+        player.enqueue(chunk);
+        if (!started) {
+          started = true;
+          setSpeechState("playing");
+        }
       }
-      const audio = audioRef.current;
-      if (audio === null) {
-        return;
-      }
-      audioElementRef.current = audio;
-      const url = URL.createObjectURL(blob);
-      blobUrlRef.current = url;
-      audio.src = url;
-      await audio.play();
-      if (cancelledRef.current) {
-        return;
-      }
-      setSpeechState("playing");
     } catch {
-      releaseAudio();
       if (!cancelledRef.current) {
         setSpeechState("error");
       }
     }
   }
 
-  function releaseAudio() {
-    // React detaches the JSX ref before passive effect cleanup runs, so the
-    // element reference kept during playback survives an unmount.
-    (audioElementRef.current ?? audioRef.current)?.pause();
-    if (blobUrlRef.current !== null) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-  }
-
   function stopSpeech() {
-    releaseAudio();
+    controllerRef.current?.abort();
     if (activePlayback === playbackRef.current) {
       activePlayback = null;
     }
@@ -174,7 +158,6 @@ function AnswerActions({
       {speechState === "error" ? (
         <span role="alert">{t.chat.speakError}</span>
       ) : null}
-      <audio ref={audioRef} className="hidden" onEnded={stopSpeech} />
     </MessageFooter>
   );
 }

@@ -1,7 +1,5 @@
 import {
-  act,
   cleanup,
-  fireEvent,
   render,
   screen,
   waitFor,
@@ -13,20 +11,12 @@ import { ChatMessageView } from "@/components/chat/chat-message";
 import { I18nProvider } from "@/lib/i18n";
 import type { ConversationTurn } from "@/lib/types";
 
-import { createFetchStub, errorResponse } from "./api-stub";
+import { createFetchStub, sseResponse } from "./api-stub";
+import { installAudioContextStub } from "./audio-context-stub";
 
 const ANSWER = "MPI_Allreduce combines values from all ranks.";
-// The request carries the speakable form, not the raw Markdown or identifier.
 const SPEAKABLE_ANSWER = "MPI Allreduce combines values from all ranks.";
-
-const originalCreateObjectURL = Object.getOwnPropertyDescriptor(
-  URL,
-  "createObjectURL",
-);
-const originalRevokeObjectURL = Object.getOwnPropertyDescriptor(
-  URL,
-  "revokeObjectURL",
-);
+const FRAMES = ["AAABAA==", "AgADAA=="];
 
 function answerTurn(content: string): ConversationTurn {
   return {
@@ -56,286 +46,57 @@ function renderAnswer(content = ANSWER, lang: "en" | "zh" = "en") {
   );
 }
 
-function audioResponse(): Response {
-  return new Response(new Uint8Array([1, 2, 3]), {
-    status: 200,
-    headers: { "content-type": "audio/wav" },
-  });
-}
-
 let stub: ReturnType<typeof createFetchStub> | null = null;
+let audio: ReturnType<typeof installAudioContextStub> | null = null;
+let releaseGate: (() => void) | null = null;
 
 beforeEach(() => {
-  vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
-  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
-  Object.defineProperty(URL, "createObjectURL", {
-    configurable: true,
-    value: vi.fn(() => "blob:mock-audio"),
-  });
-  Object.defineProperty(URL, "revokeObjectURL", {
-    configurable: true,
-    value: vi.fn(),
+  audio = installAudioContextStub();
+  const gate = new Promise<void>((resolve) => {
+    releaseGate = resolve;
   });
   stub = createFetchStub([
     {
       method: "POST",
-      path: "/api/voice/speech",
-      handler: () => audioResponse(),
+      path: "/api/voice/speech/stream",
+      handler: () =>
+        sseResponse(
+          [{ audio: FRAMES[0] }, { audio: FRAMES[1] }, "[DONE]"],
+          { protocol: "plain", gate },
+        ),
     },
   ]);
 });
 
 afterEach(() => {
-  // Unmount while the media spies are still installed, or jsdom reports an
-  // unimplemented pause() when the cleanup effect releases the audio element.
+  // Unmount while the Web Audio stub is still installed, before any global
+  // restore removes AudioContext from under the cleanup effect.
   cleanup();
   stub?.restore();
+  audio?.restore();
+  releaseGate?.();
+  releaseGate = null;
   stub = null;
+  audio = null;
   vi.restoreAllMocks();
-  if (originalCreateObjectURL) {
-    Object.defineProperty(URL, "createObjectURL", originalCreateObjectURL);
-  } else {
-    delete (URL as unknown as { createObjectURL?: unknown }).createObjectURL;
-  }
-  if (originalRevokeObjectURL) {
-    Object.defineProperty(URL, "revokeObjectURL", originalRevokeObjectURL);
-  } else {
-    delete (URL as unknown as { revokeObjectURL?: unknown }).revokeObjectURL;
-  }
 });
 
 describe("answer read-aloud", () => {
-  it("reads an answer aloud when the speak action is clicked", async () => {
-    const user = userEvent.setup();
-    const { container } = renderAnswer();
-
-    const button = screen.getByRole("button", { name: "Read aloud" });
-    expect(button).toBeEnabled();
-
-    await user.click(button);
-
-    await waitFor(() => expect(stub?.calls).toHaveLength(1));
-    const call = stub?.calls[0];
-    expect(call?.path).toBe("/api/voice/speech");
-    expect(call?.method).toBe("POST");
-    expect(call?.init.credentials).toBe("same-origin");
-    expect(call?.init.headers).toEqual({ "content-type": "application/json" });
-    expect(call?.body).toEqual({ text: SPEAKABLE_ANSWER });
-
-    const audio = container.querySelector("audio");
-    expect(audio).not.toBeNull();
-    await waitFor(() => expect(audio?.src).toContain("blob:"));
-    expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(URL.createObjectURL)).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps a pending read-aloud from sending a second request", async () => {
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    stub?.restore();
-    stub = createFetchStub([
-      {
-        method: "POST",
-        path: "/api/voice/speech",
-        handler: async () => {
-          await gate;
-          return audioResponse();
-        },
-      },
-    ]);
-
+  it("plays the first frame before the stream ends", async () => {
     const user = userEvent.setup();
     renderAnswer();
-    const button = screen.getByRole("button", { name: "Read aloud" });
 
-    await user.click(button);
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
 
-    await waitFor(() => expect(button).toBeDisabled());
-    expect(button).toHaveAttribute("aria-busy", "true");
-    fireEvent.click(button);
+    await waitFor(() => expect(audio?.starts).toHaveLength(1));
+    expect(audio?.context.createBuffer).toHaveBeenCalledWith(1, 2, 24000);
+    expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument();
     expect(stub?.calls).toHaveLength(1);
+    expect(stub?.calls[0]?.path).toBe("/api/voice/speech/stream");
+    expect(stub?.calls[0]?.body).toEqual({ text: SPEAKABLE_ANSWER });
+    expect(audio?.starts).toHaveLength(1);
 
-    await act(async () => {
-      release();
-    });
-    await waitFor(() => expect(button).toBeEnabled());
-  });
-
-  it("stops a playing answer when the speak action is clicked again", async () => {
-    const user = userEvent.setup();
-    const { container } = renderAnswer();
-
-    await user.click(screen.getByRole("button", { name: "Read aloud" }));
-    await user.click(await screen.findByRole("button", { name: "Stop" }));
-
-    expect(vi.mocked(HTMLMediaElement.prototype.pause)).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
-      "blob:mock-audio",
-    );
-    expect(screen.getByRole("button", { name: "Read aloud" })).toBeEnabled();
-
-    // Playback that finishes on its own also resets the action.
-    const audio = container.querySelector("audio");
-    expect(audio).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: "Read aloud" }));
-    await screen.findByRole("button", { name: "Stop" });
-    fireEvent(audio as HTMLAudioElement, new Event("ended"));
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Read aloud" }),
-      ).toBeInTheDocument(),
-    );
-  });
-
-  it("offers a localized failure message and a retry after a speech error", async () => {
-    let attempts = 0;
-    stub?.restore();
-    stub = createFetchStub([
-      {
-        method: "POST",
-        path: "/api/voice/speech",
-        handler: () => {
-          attempts += 1;
-          return attempts === 1
-            ? errorResponse("The model is temporarily unavailable.", 503)
-            : audioResponse();
-        },
-      },
-    ]);
-    const user = userEvent.setup();
-    const { unmount } = renderAnswer();
-
-    await user.click(screen.getByRole("button", { name: "Read aloud" }));
-    await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(
-        "Could not read this answer aloud.",
-      ),
-    );
-    await user.click(screen.getByRole("button", { name: "Retry" }));
-    await waitFor(() => expect(stub?.calls).toHaveLength(2));
-    await waitFor(() =>
-      expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(1),
-    );
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    unmount();
-
-    stub?.restore();
-    stub = createFetchStub([
-      {
-        method: "POST",
-        path: "/api/voice/speech",
-        handler: () =>
-          errorResponse("The model is temporarily unavailable.", 503),
-      },
-    ]);
-    renderAnswer(ANSWER, "zh");
-    await user.click(screen.getByRole("button", { name: "朗读" }));
-    await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent("无法朗读这条答案。"),
-    );
-  });
-
-  it("releases the audio URL when the browser blocks playback", async () => {
-    vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(
-      new DOMException("The play request was blocked", "NotAllowedError"),
-    );
-    const user = userEvent.setup();
-    renderAnswer();
-
-    await user.click(screen.getByRole("button", { name: "Read aloud" }));
-
-    await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(
-        "Could not read this answer aloud.",
-      ),
-    );
-    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
-    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
-      "blob:mock-audio",
-    );
-  });
-
-  it("releases the audio URL and cancels the request when the answer unmounts", async () => {
-    const user = userEvent.setup();
-    const playing = renderAnswer();
-
-    await user.click(screen.getByRole("button", { name: "Read aloud" }));
-    await screen.findByRole("button", { name: "Stop" });
-    playing.unmount();
-
-    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
-      "blob:mock-audio",
-    );
-    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(HTMLMediaElement.prototype.pause)).toHaveBeenCalled();
-    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
-
-    // A request that is still in flight is cancelled the same way.
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    stub?.restore();
-    stub = createFetchStub([
-      {
-        method: "POST",
-        path: "/api/voice/speech",
-        handler: async () => {
-          await gate;
-          return audioResponse();
-        },
-      },
-    ]);
-    const pending = renderAnswer();
-    await user.click(screen.getByRole("button", { name: "Read aloud" }));
-    await waitFor(() => expect(stub?.calls).toHaveLength(1));
-    pending.unmount();
-
-    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
-    await act(async () => {
-      release();
-    });
-  });
-
-  it("stops one answer when another answer starts reading aloud", async () => {
-    const user = userEvent.setup();
-    render(
-      <I18nProvider initialLang="en">
-        <ChatMessageView
-          turn={answerTurn("First answer.")}
-          onOpenCitation={() => {}}
-        />
-        <ChatMessageView
-          turn={answerTurn("Second answer.")}
-          onOpenCitation={() => {}}
-        />
-      </I18nProvider>,
-    );
-
-    await user.click(
-      screen.getAllByRole("button", { name: "Read aloud" })[0],
-    );
-    await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1),
-    );
-
-    await user.click(
-      screen.getAllByRole("button", { name: "Read aloud" })[0],
-    );
-    await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1),
-    );
-
-    expect(screen.getAllByRole("button", { name: "Read aloud" })).toHaveLength(
-      1,
-    );
-    expect(vi.mocked(HTMLMediaElement.prototype.pause)).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
-      "blob:mock-audio",
-    );
-    expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(2);
-    expect(stub?.calls).toHaveLength(2);
+    releaseGate?.();
+    await waitFor(() => expect(audio?.starts).toHaveLength(2));
   });
 });
