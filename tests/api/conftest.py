@@ -171,6 +171,9 @@ class FakeAdapter:
         )
         self.transcribe_error: Exception | None = None
         self.speak_error: Exception | None = None
+        self.speech_stream_frames: list[str] = ["AAABAA==", "AgADAA=="]
+        self.speak_stream_fail_before_first: Exception | None = None
+        self.speak_stream_fail_after: int | None = None
 
     def resolve_selection(
         self,
@@ -243,6 +246,18 @@ class FakeAdapter:
         if self.speak_error is not None:
             raise self.speak_error
         return self.speech
+
+    def speak_stream(self, text: str, **kwargs: Any):
+        self.calls.append({"text": text, "kwargs": dict(kwargs)})
+        if self.speak_stream_fail_before_first is not None:
+            raise self.speak_stream_fail_before_first
+        for index, frame in enumerate(self.speech_stream_frames):
+            if (
+                self.speak_stream_fail_after is not None
+                and index == self.speak_stream_fail_after
+            ):
+                raise ModelResponseError("unavailable", 3, "fake mid-stream failure")
+            yield frame
 
 
 class FakeBuildRunner:

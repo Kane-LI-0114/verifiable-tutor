@@ -231,6 +231,7 @@ Streaming is a first-class part of this backend: a chat answer streams while it 
 - Dependencies with `yield` and streaming: keep the default `"request"` scope when the stream uses the dependency, because teardown runs after the response is sent. A database session shared with the stream must not be closed at function scope ([advanced dependencies](https://fastapi.tiangolo.com/advanced/advanced-dependencies/)).
 - Never buffer a whole answer to return it at the end. Emit per chunk, flush after each chunk, and write the JSONL trace as the chunks are produced so a mid-stream failure still leaves a usable trace (PRD FR-B10, FR-B12).
 - Streaming cuts both ways in tests: the test reads the stream incrementally with `client.stream(...)` and asserts the framing of the first and last chunks, not just a 200 status.
+- The TTS stream uses `StreamingResponse` with `streaming.sse()` framing and only `cache-control: no-cache`, not the AI SDK UI message stream. It emits one `{"audio": "<base64 pcm16>"}` frame per upstream chunk, reports failures with an in-band `error` frame, and always terminates with `data: [DONE]`.
 
 ### 4.9 Serving the React build and assets
 
@@ -308,7 +309,7 @@ The documented API must work offline, so the repository owns its Swagger UI asse
 - `/docs` is a custom route that calls `get_swagger_ui_html` with the local asset URLs; `/api-docs/` mounts `docs/api/` as static files; `/openapi.json` remains the live schema; ReDoc is disabled because it has no local assets.
 - `create_app(..., docs_api_dir=...)` accepts the bundle location; when it is absent the two documentation routes are disabled with a warning and the API keeps working.
 - Regenerate with `.venv/bin/python scripts/build_api_docs.py`; `.venv/bin/python scripts/build_api_docs.py --check` fails when the bundle is stale, and the check runs in `tests/api/`. Upgrade the assets only through `bash scripts/vendor_swagger_ui.sh`, then regenerate.
-- Audio responses: the TTS routes declare `response_class=Response` and document only `audio/wav`, `audio/mpeg`, and `audio/pcm`, so Swagger UI does not try to parse JSON. Swagger UI's native player loads the *request URL*, so `POST /api/voice/speech` cannot be played (the player would issue a GET to a POST-only route). A GET variant on the same path carries the synthesis input in the query string and returns the audio, which makes the built-in Swagger UI player work; the POST variant remains the canonical client API. A standalone page at `/api/voice/speech/player` (not in the OpenAPI schema) plays the POST output with the session cookie.
+- Audio responses: the TTS routes declare `response_class=Response` and document only `audio/wav`, `audio/mpeg`, and `audio/pcm`, so Swagger UI does not try to parse JSON. Swagger UI's native player loads the *request URL*, so `POST /api/voice/speech` cannot be played (the player would issue a GET to a POST-only route). A GET variant on the same path carries the synthesis input in the query string and returns the audio, which makes the built-in Swagger UI player work; the POST variant remains the canonical client API. A standalone page at `/api/voice/speech/player` (not in the OpenAPI schema) plays the POST output with the session cookie. The streaming route `POST /api/voice/speech/stream` is separate: it returns `text/event-stream` JSON frames with base64 PCM16 audio at 24 kHz mono, ends with `[DONE]`, and does not carry the AI SDK stream header.
 - The decision and trade-offs are in [ADR-0013](adr/0013-local-offline-swagger-ui.md); the file-level procedure is in [docs/api/README.md](api/README.md).
 
 ## 5. Implemented interface surface
@@ -331,6 +332,7 @@ The backend exposes the surface below. Every route is covered by tests in `tests
 | `GET /api/sessions/{session_id}/replay` | replay the recorded stream at a speed factor | SSE | session |
 | `POST /api/voice/transcriptions` | MiMo ASR on an uploaded audio file | no | session |
 | `POST /api/voice/speech` | MiMo TTS audio bytes | no | session |
+| `POST /api/voice/speech/stream` | MiMo TTS as SSE PCM16 frames at 24 kHz mono | SSE | session |
 | `GET /api/knowledge/cards` | browse validated knowledge cards | no | session |
 | `POST /api/knowledge/builds` | queue a Qwen build job | no | instructor |
 | `GET /api/knowledge/builds` | list builds | no | instructor |
@@ -349,6 +351,7 @@ Deferred with no route in this pass: retrieval and citation frames, the disclosu
 - [ ] Blocking calls are in `def` routes or dependencies, or moved off the loop with `anyio.to_thread.run_sync`.
 - [ ] The response model filters every secret and internal field; no key, cookie, password, or token appears in logs.
 - [ ] Streaming routes emit per chunk, write the JSONL trace as they go, and report failure in band after the first byte.
+- [ ] The TTS stream emits JSON audio frames rather than raw bytes, omits the `x-vercel-ai-ui-message-stream` header, and terminates with `[DONE]` even after an in-band error.
 - [ ] New secrets are in the ignored `.env` and named in `.env.example`; one `.env` reader exists.
 - [ ] Changed behavior, configuration, or layout is recorded in its owner ([README.md](../README.md), [AGENTS.md](../AGENTS.md), [tech-selection.md](tech-selection.md), or a new ADR), and paths and links in this file still resolve.
 - [ ] New commands are recorded in [AGENTS.md](../AGENTS.md#toolchain-and-commands).

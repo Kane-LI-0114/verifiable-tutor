@@ -25,6 +25,7 @@ EXPECTED = {
         "/api/chat",
         "/api/voice/transcriptions",
         "/api/voice/speech",
+        "/api/voice/speech/stream",
         "/api/knowledge/builds",
         "/api/practice/runs",
     ],

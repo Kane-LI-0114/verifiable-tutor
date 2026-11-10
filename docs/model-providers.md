@@ -392,13 +392,13 @@ Request shape: the `user` message carries style instructions, and the `assistant
 }
 ```
 
-- `audio.format`: `wav` by default, or `mp3`, `pcm`, `pcm16`. With `stream: true` the default becomes `pcm`; use `pcm16` when concatenating chunks.
+- `audio.format`: `wav` by default, or `mp3`, `pcm`, `pcm16`. With `stream: true` the default becomes `pcm`; use `pcm16` when concatenating chunks. The project's streaming route requests `pcm16` through `tts.stream_format` in `config/models.yaml`.
 - `audio.voice` preset ids: `mimo_default`, `冰糖`, `茉莉`, `苏打`, `白桦`, `Mia`, `Chloe`, `Milo`, `Dean`.
 - `mimo-v2.5-tts-voiceclone` requires `audio.voice` to be a base64 audio sample in mp3 or wav.
 - `mimo-v2.5-tts-voicedesign` omits `audio.voice` and takes the voice description in the user message; `audio.optimize_text_preview` may preview an optimized script.
 - Singing mode prefixes the assistant text with `(唱歌)`, `(sing)`, or `(singing)`; style tags such as `(怅然)` are allowed.
 
-Response: `choices[0].message.audio.data` is base64 audio, `content` is empty, and `audio.transcript` and `audio.expires_at` are null. Streaming returns audio chunks.
+Response: `choices[0].message.audio.data` is base64 audio, `content` is empty, and `audio.transcript` and `audio.expires_at` are null. Streaming returns audio chunks in `choices[0].delta.audio.data`, one base64 PCM16 payload per `chat.completion.chunk`, with `finish_reason: stop` before the `data: [DONE]` marker. The frontend route republishes those chunks as SSE JSON frames with an `audio` field instead of forwarding the provider shape.
 
 Cost and constraints:
 
@@ -569,7 +569,7 @@ Live smoke verification on 2026-10-29: `scripts/smoke_model_adapter.py` exercise
 
 - DeepSeek: images combined with thinking or with tools; `json_schema` on chat completions; `parallel_tool_calls`, `seed`, and `n`; exact SSE wire sample; whether `deepseek-v4-pro` rejects image blocks with an error.
 - MiMo: whether `json_schema` returns 400 or is ignored; `max_tokens` alias; `seed`, `n`, `logprobs`, `stream_options`; maximum parallel tool calls and maximum media per request; ASR maximum duration and sample-rate requirements; thinking combined with `json_object`; `force_search` versus `forced_search` in the MiMo web search docs.
-- MiMo audio and TTS: latency and token cost of audio-file omni calls compared with ASR; TTS speech quality, long-text behaviour, streaming chunk format, voice-clone quality and consent handling, and whether the free period persists.
+- MiMo audio and TTS: latency and token cost of audio-file omni calls compared with ASR; TTS speech quality, long-text behaviour, voice-clone quality and consent handling, and whether the free period persists. Streaming chunk format was verified on 2026-11-10 with a short live request: `stream: true` and `audio.format: pcm16` returned 13 `chat.completion.chunk` frames over `text/event-stream`, each `choices[0].delta.audio.data` carrying base64 PCM16 at 24 kHz mono and 16-bit little endian, with `finish_reason: stop` and a `data: [DONE]` marker. The first frame arrived in 0.623 s, the stream finished in 1.508 s, and 153600 bytes decoded to 3.2 s of audio. Only `mimo-v2.5-tts` offers low-latency streaming; `mimo-v2.5-tts-voicedesign` and `mimo-v2.5-tts-voiceclone` return one compatibility frame after inference finishes.
 - Both: real quality and latency on the course corpus, cost under our workload, and behaviour when mixing images with tool loops. These need a small live smoke test rather than more document reading.
 
 ## 11. Sources

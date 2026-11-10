@@ -13,9 +13,10 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from .. import streaming
 from ..deps import CurrentUser, ModelDep
 from ..schemas import TranscriptionResponse
 from ...llm.adapter import (
@@ -160,6 +161,21 @@ class SpeechBody(BaseModel):
             "Example: default."
         ),
     )
+
+
+class SpeechStreamBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(
+        description="Text to synthesize. Example: MPI_Allreduce combines values from all ranks."
+    )
+    voice: str | None = Field(
+        default=None,
+        description="Configured TTS voice id; empty uses the configured default.",
+    )
+
+
+_STREAM_HEADERS = {"cache-control": "no-cache"}
 
 
 def _model_failure(exc: Exception) -> HTTPException:
@@ -372,4 +388,38 @@ def speech(body: SpeechBody, user: CurrentUser, model: ModelDep):
         voice=body.voice,
         format=body.format,
         model_alias=body.model_alias,
+    )
+
+
+@router.post(
+    "/api/voice/speech/stream",
+    summary="Stream synthesized speech as PCM16 frames",
+    description=(
+        "Synthesize speech and stream base64 PCM16 audio frames as server-sent "
+        "events. Each frame carries an audio field, and the stream ends with "
+        "the [DONE] marker. The model alias and audio format are fixed here."
+    ),
+    responses={
+        200: {
+            "description": "SSE frames with base64 PCM16 audio, ending with [DONE].",
+            "content": {"text/event-stream": {"schema": {"type": "string"}}},
+        },
+        400: {"description": "Blank text."},
+        401: {"description": "Not signed in."},
+        422: {"description": "Missing or invalid request field."},
+        503: {"description": "Model layer unavailable."},
+    },
+)
+def speech_stream(body: SpeechStreamBody, model: ModelDep):
+    """Stream one Answer as PCM16 audio frames."""
+
+    def body_stream():
+        for frame in model.speak_stream(body.text, voice=body.voice):
+            yield streaming.sse({"audio": frame})
+        yield streaming.DONE_FRAME
+
+    return StreamingResponse(
+        body_stream(),
+        media_type=streaming.STREAM_MEDIA_TYPE,
+        headers=_STREAM_HEADERS,
     )

@@ -2610,6 +2610,33 @@
         "title": "SpeechBody",
         "type": "object"
       },
+      "SpeechStreamBody": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "description": "Text to synthesize. Example: MPI_Allreduce combines values from all ranks.",
+            "title": "Text",
+            "type": "string"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Configured TTS voice id; empty uses the configured default.",
+            "title": "Voice"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "SpeechStreamBody",
+        "type": "object"
+      },
       "ToolCallRecord": {
         "additionalProperties": false,
         "example": {
@@ -4603,6 +4630,53 @@
           }
         },
         "summary": "Synthesize speech with MiMo TTS",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/api/voice/speech/stream": {
+      "post": {
+        "description": "Synthesize speech and stream base64 PCM16 audio frames as server-sent events. Each frame carries an audio field, and the stream ends with the [DONE] marker. The model alias and audio format are fixed here.",
+        "operationId": "speech_stream_api_voice_speech_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechStreamBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "SSE frames with base64 PCM16 audio, ending with [DONE]."
+          },
+          "400": {
+            "description": "Blank text."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Missing or invalid request field."
+          },
+          "503": {
+            "description": "Model layer unavailable."
+          }
+        },
+        "summary": "Stream synthesized speech as PCM16 frames",
         "tags": [
           "voice"
         ]
