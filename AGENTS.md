@@ -2,6 +2,17 @@
 
 This file tells an AI agent how to work in this repository: what exists now, which files are the sources of truth, which commands are safe, which conventions to follow, and the workflow that feature work must follow. For the reader-facing project description, use [README.md](README.md); for what each directory is for, use [README.md#repository-layout](README.md#repository-layout).
 
+## Required workflow: commit each stage immediately
+
+This section is a mandatory action rule, not background documentation. An agent that completes a stage and ends its turn without committing it has not finished the work. Read it before any other section.
+
+1. A stage is one logical change that stands on its own: a feature slice that just passed its test, a documentation edit, a regenerated artifact with the source that produces it, or a fix with its regression test.
+2. Commit each stage as soon as it is complete, without waiting for the user to ask, and before starting the next stage. Do not ask whether to commit.
+3. Make every commit through the `git-commit` skill of the agent harness, invoked as `/git-commit`. Let the skill read the diff, stage the files by path, derive the type, scope, and summary, and run `git commit`. Do not hand-write a message the skill would produce differently.
+4. Do not push, amend, rebase, otherwise rewrite history, or change the Git configuration. The skill stops at the local commit.
+
+[Commits](#commits) owns the message format, staging, and quality rules of this workflow. This section owns when the commit happens and which tool performs it.
+
 ## Current state
 
 - Substantive content: the course project proposal, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the documentation entry points (`README.md`, `AGENTS.md`), the setup docs under `docs/agents/`, the platform notes in [docs/tacc-notes.md](docs/tacc-notes.md), the technology selection in [docs/tech-selection.md](docs/tech-selection.md), nineteen decision records under `docs/adr/`, the local tracing and email runbooks in [docs/langfuse-local.md](docs/langfuse-local.md) and [docs/email-local.md](docs/email-local.md), the PaddleOCR-VL request and response reference in [docs/paddleocr-vl-api.md](docs/paddleocr-vl-api.md), the RQ2 benchmark protocol in [docs/benchmark-protocol.md](docs/benchmark-protocol.md), the FastAPI reference for the local backend in [docs/fastapi-reference.md](docs/fastapi-reference.md), the offline Swagger UI API documentation bundle in [docs/api/](docs/api/) with its build and vendor scripts, the generated physical SQLite data model in [docs/physical-data-model.md](docs/physical-data-model.md) with its build script, the PRD use case, container, and entity relationship diagrams under `docs/figures/`, the TACC bootstrap and shared OCR stage helpers under `scripts/tacc/`, the spike jobs under `tacc/env-spike/`, `tacc/ocr-smoke/` and `tacc/pdf-parse/`, the Qwen knowledge-base job under `tacc/serve/`, the knowledge-base chunk, request and validation helpers under `src/verifiable_tutor/knowledge/`, the local knowledge-base driver in `scripts/tacc/run_kb_job.py`, the `tests/knowledge/` and `tests/tacc/` suites, the model provider configuration in `config/models.yaml` with the committed `.env.example` template, and the implemented model layer: `src/verifiable_tutor/llm/config.py`, `src/verifiable_tutor/llm/adapter.py` (chat, streaming with replay, ASR, TTS, MiMo audio-file routing, DeepSeek search and fetch, file-backed response cache), the model prompt texts under `src/verifiable_tutor/prompts/`, the `tests/llm/` and `tests/prompts/` suites, `pyproject.toml`, `uv.lock`, the generated `requirements.txt`, and `scripts/smoke_model_adapter.py`. Proposal assets: `.gitignore`, `proposal/build_proposal.py`, version 1 as `proposal/proposal.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase.dot`, `proposal/figs/fig1_usecase.png`, `proposal/figs/fig2_components.dot`, `proposal/figs/fig2_components.png`, and two committed page previews under `proposal/preview/`; version 2 as `proposal/proposal_v2.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v2.docx`, the matching `.pdf`, `proposal/figs/fig2_components_v2.dot`, `proposal/figs/fig2_components_v2.png`, and two previews under `proposal/preview_v2/`; version 3 as `proposal/proposal_v3.md`, `proposal/CSIT6000V_Project_Proposal_2026F_LI_TIAN_XIE_v3.docx`, the matching `.pdf`, `proposal/figs/fig1_usecase_v3.dot`, `proposal/figs/fig1_usecase_v3.png`, `proposal/figs/fig2_components_v3.dot`, `proposal/figs/fig2_components_v3.png`, and two previews under `proposal/preview_v3/`.
@@ -147,14 +158,12 @@ Tests live under `tests/` and mirror the package path: `src/verifiable_tutor/pol
 
 ## Commits
 
-Commit every stage of work as soon as it is complete, without waiting for the user to ask for a commit. A stage is one logical change that stands on its own: a feature slice that just passed its test, a documentation edit, a regenerated artifact with the source that produces it, or a fix with its regression test. Commit the stage, then start the next one.
+[Required workflow](#required-workflow-commit-each-stage-immediately) owns when a stage is committed and which tool performs the commit. This section owns the message, staging, and quality rules.
 
-- Make every commit with the `git-commit` skill of the agent harness, invoked as `/git-commit`. The skill reads the diff, stages the related files, writes the Conventional Commits message, and runs `git commit`; do not hand-write a message the skill would produce differently.
 - Commit messages follow Conventional Commits with a scope, matching the existing history: `chore(repo): initialize project repository` and `docs(proposal): add student IDs to title block`. Keep one logical change per commit.
 - Stage the files of the stage by path, and only those files. Do not use `git add -A` or `git add .`: the working tree can hold another agent's unfinished work, and a stage that mixes two changes has to be split instead of committed whole.
 - Do not commit a red test without its implementation, a stage whose tests fail, or a generated artifact that its own build or `--check` has not refreshed. The conditions in [Before claiming a change is done](#before-claiming-a-change-is-done) hold for the stage before it is committed.
-- Change nothing in the Git configuration, and do not create an empty commit when the stage changed nothing.
-- Do not push, amend, rebase, or otherwise rewrite history unless the user asks. The `git-commit` skill stops at the local commit.
+- Do not create an empty commit when the stage changed nothing.
 - If the stage was made by a delegated agent, the agent that made the change commits it, so the work does not come back to the parent as an uncommitted working tree.
 
 ## TACC and model serving
@@ -181,7 +190,7 @@ This repository is a standalone Git repository nested inside the course workspac
 - File hygiene: `git status --short` shows only the intended files, scaffold `.gitkeep` files are untouched (the generated `ui/static/` directory is not tracked), and no generated artifact, cache, log, environment file, or benchmark dump is staged.
 - Dependencies: after a change to `pyproject.toml` or `uv.lock`, regenerate `requirements.txt` with the command in [Toolchain and commands](#toolchain-and-commands) and confirm `git diff requirements.txt` holds only the intended pin changes.
 - Schema: the installed pre-commit hook regenerates and stages the physical data model page, Graphviz source, and PNG when `storage.py` or `schema_docs.py` is staged. Do not bypass it with `--no-verify`; commit the refreshed artifacts with the schema change.
-- Commits: the stage is committed with the `git-commit` skill. A stage that is complete but uncommitted is not finished; the workflow is owned by [Commits](#commits).
+- Commits: the stage is committed with the `git-commit` skill. A stage that is complete but uncommitted is not finished; the workflow is owned by [Required workflow](#required-workflow-commit-each-stage-immediately).
 - Features: every slice has a test that was seen to fail for the intended reason before the implementation, passes after it, and the seams covered are stated in the change description.
 - Code: run `.venv/bin/python -m pytest` locally and the same suite on TACC when a job can execute it, cancel any GPU job started for the test, and record the exact command used.
 
