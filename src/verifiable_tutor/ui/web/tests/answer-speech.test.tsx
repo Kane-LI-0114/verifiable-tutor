@@ -49,8 +49,13 @@ function renderAnswer(content = ANSWER, lang: "en" | "zh" = "en") {
 let stub: ReturnType<typeof createFetchStub> | null = null;
 let audio: ReturnType<typeof installAudioContextStub> | null = null;
 let releaseGate: (() => void) | null = null;
+let streamMode: "success" | "error" = "success";
+
+const STREAM_ERROR =
+  "The model is temporarily unavailable. Please try again.";
 
 beforeEach(() => {
+  streamMode = "success";
   audio = installAudioContextStub();
   const gate = new Promise<void>((resolve) => {
     releaseGate = resolve;
@@ -59,11 +64,18 @@ beforeEach(() => {
     {
       method: "POST",
       path: "/api/voice/speech/stream",
-      handler: () =>
-        sseResponse(
+      handler: () => {
+        if (streamMode === "error") {
+          return sseResponse(
+            [{ type: "error", errorText: STREAM_ERROR }, "[DONE]"],
+            { protocol: "plain" },
+          );
+        }
+        return sseResponse(
           [{ audio: FRAMES[0] }, { audio: FRAMES[1] }, "[DONE]"],
           { protocol: "plain", gate },
-        ),
+        );
+      },
     },
   ]);
 });
@@ -118,5 +130,36 @@ describe("answer read-aloud", () => {
       expect(audio?.context.createBuffer).toHaveBeenCalledTimes(1),
     );
     expect(audio?.starts).toHaveLength(1);
+  });
+
+  it("offers retry after a stream failure", async () => {
+    const user = userEvent.setup();
+    streamMode = "error";
+    renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Could not read this answer aloud.",
+      ),
+    );
+    expect(audio?.context.close).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+
+    streamMode = "success";
+    releaseGate?.();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(audio?.context.createBuffer).toHaveBeenCalled());
+    expect(stub?.calls).toHaveLength(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    cleanup();
+    streamMode = "error";
+    renderAnswer(ANSWER, "zh");
+    await user.click(screen.getByRole("button", { name: "朗读" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("无法朗读这条答案。"),
+    );
   });
 });

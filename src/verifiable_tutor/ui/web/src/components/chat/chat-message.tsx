@@ -98,6 +98,7 @@ function AnswerActions({
         }
       }
     } catch (error) {
+      playerRef.current?.stop();
       if (isAbortError(error) || cancelledRef.current) {
         return;
       }
