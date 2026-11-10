@@ -23,3 +23,10 @@ def test_voice_stream_endpoint_emits_pcm16_frames_and_the_done_marker(api):
     call = api.adapter.calls[-1]
     assert call["text"] == ANSWER
     assert call["kwargs"] == {"voice": None}
+
+
+def test_voice_stream_endpoint_requires_a_signed_in_account(api):
+    response = api.client.post("/api/voice/speech/stream", json={"text": ANSWER})
+
+    assert response.status_code == 401
+    assert api.adapter.calls == []

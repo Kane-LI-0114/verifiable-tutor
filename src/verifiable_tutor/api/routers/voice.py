@@ -410,7 +410,7 @@ def speech(body: SpeechBody, user: CurrentUser, model: ModelDep):
         503: {"description": "Model layer unavailable."},
     },
 )
-def speech_stream(body: SpeechStreamBody, model: ModelDep):
+def speech_stream(body: SpeechStreamBody, user: CurrentUser, model: ModelDep):
     """Stream one Answer as PCM16 audio frames."""
 
     def body_stream():
