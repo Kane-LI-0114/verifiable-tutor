@@ -59,3 +59,65 @@ export async function synthesizeSpeech(
   }
   return response.blob();
 }
+
+function pcm16FromBase64(data: string): Int16Array {
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
+}
+
+/** Stream one answer as PCM16 sample chunks from the local TTS endpoint. */
+export async function* streamSpeech(
+  text: string,
+): AsyncGenerator<Int16Array> {
+  const response = await fetch("/api/voice/speech/stream", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: toSpeechText(text) }),
+  });
+  if (!response.ok) {
+    let detail = response.statusText || `HTTP ${response.status}`;
+    try {
+      detail = detailFromPayload(await response.json(), detail);
+    } catch {
+      // A non-JSON error body keeps the status text.
+    }
+    throw new ApiError(response.status, detail);
+  }
+  if (response.body === null) {
+    throw new ApiError(NETWORK_ERROR_STATUS, "empty response body");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      return;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    let boundary = buffer.indexOf("\n\n");
+    while (boundary !== -1) {
+      const raw = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      for (const line of raw.split("\n")) {
+        if (!line.startsWith("data:")) {
+          continue;
+        }
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") {
+          return;
+        }
+        const frame = JSON.parse(payload) as { audio?: string };
+        if (typeof frame.audio === "string") {
+          yield pcm16FromBase64(frame.audio);
+        }
+      }
+      boundary = buffer.indexOf("\n\n");
+    }
+  }
+}
