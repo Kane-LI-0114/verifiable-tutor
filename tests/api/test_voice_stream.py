@@ -65,3 +65,28 @@ def test_voice_stream_endpoint_reports_pre_stream_model_failure_as_unavailable(a
     assert response.json() == {
         "detail": "The model is temporarily unavailable. Please try again."
     }
+
+
+def test_voice_stream_endpoint_reports_mid_stream_failure_in_band(api):
+    api.create_active_account("alice@ust.hk")
+    api.adapter.speech_stream_frames = FRAMES
+    api.adapter.speak_stream_fail_after = 1
+
+    try:
+        response = api.client.post(
+            "/api/voice/speech/stream", json={"text": ANSWER}
+        )
+    except Exception as exc:
+        pytest.fail(
+            f"mid-stream failure surfaced as {type(exc).__name__}, not an error frame"
+        )
+
+    assert response.status_code == 200
+    assert parse_sse(response.text) == [
+        {"audio": FRAMES[0]},
+        {
+            "type": "error",
+            "errorText": "The model is temporarily unavailable. Please try again.",
+        },
+        "[DONE]",
+    ]

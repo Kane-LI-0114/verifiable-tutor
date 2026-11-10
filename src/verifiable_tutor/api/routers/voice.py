@@ -430,8 +430,17 @@ def speech_stream(body: SpeechStreamBody, user: CurrentUser, model: ModelDep):
     def body_stream():
         if first is not None:
             yield streaming.sse({"audio": first})
-        for frame in frames:
-            yield streaming.sse({"audio": frame})
+        try:
+            for frame in frames:
+                yield streaming.sse({"audio": frame})
+        except (
+            CapabilityError,
+            ModelSelectionError,
+            ModelResponseError,
+            ProviderAPIError,
+        ) as exc:
+            failure = _model_failure(exc)
+            yield streaming.sse(streaming.error(str(failure.detail)))
         yield streaming.DONE_FRAME
 
     return StreamingResponse(
