@@ -73,16 +73,21 @@ function AnswerActions({
       await audio.play();
       setSpeechState("playing");
     } catch {
+      releaseAudio();
       setSpeechState("error");
     }
   }
 
-  function stopSpeech() {
+  function releaseAudio() {
     audioRef.current?.pause();
     if (blobUrlRef.current !== null) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
     }
+  }
+
+  function stopSpeech() {
+    releaseAudio();
     setSpeechState("idle");
   }
 

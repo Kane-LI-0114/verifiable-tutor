@@ -224,4 +224,24 @@ describe("answer read-aloud", () => {
       expect(screen.getByRole("alert")).toHaveTextContent("无法朗读这条答案。"),
     );
   });
+
+  it("releases the audio URL when the browser blocks playback", async () => {
+    vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(
+      new DOMException("The play request was blocked", "NotAllowedError"),
+    );
+    const user = userEvent.setup();
+    renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Could not read this answer aloud.",
+      ),
+    );
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith(
+      "blob:mock-audio",
+    );
+  });
 });
