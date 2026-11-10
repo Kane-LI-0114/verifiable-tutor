@@ -89,6 +89,7 @@ class TtsConfig(_StrictModel):
     models: dict[str, str]
     default_voice: str
     default_format: str
+    stream_format: str = "pcm16"
     voices: list[str]
     formats: list[str]
     default_instructions: str
@@ -255,6 +256,10 @@ def _validate_tts(config: ModelConfig) -> None:
     if tts.default_format not in tts.formats:
         raise ConfigError(
             f"tts default format {tts.default_format!r} is not in {tts.formats}"
+        )
+    if tts.stream_format not in tts.formats:
+        raise ConfigError(
+            f"tts stream format {tts.stream_format!r} is not in {tts.formats}"
         )
     if tts.default_voice not in tts.voices:
         raise ConfigError(

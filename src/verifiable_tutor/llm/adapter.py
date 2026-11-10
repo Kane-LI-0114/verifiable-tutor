@@ -725,6 +725,41 @@ class ModelAdapter:
             self._cache.set("tts", cache_key, _speech_to_dict(result))
         return result
 
+    def speak_stream(
+        self,
+        text: str,
+        *,
+        voice: str | None = None,
+        use_cache: bool = True,
+    ) -> Iterator[str]:
+        """Synthesize an answer as a stream of base64 PCM16 audio chunks."""
+        tts = self._config.tts
+        resolved_voice = voice or tts.default_voice
+        model_id = tts.models["default"]
+        request: dict[str, Any] = {
+            "model": model_id,
+            "messages": [
+                {"role": "user", "content": tts.default_instructions},
+                {"role": "assistant", "content": text},
+            ],
+            "extra_body": {
+                "audio": {"format": tts.stream_format, "voice": resolved_voice}
+            },
+            "stream": True,
+        }
+        stream = self._client(tts.provider).chat.completions.create(**request)
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            audio_payload = _extra_field(delta, "audio")
+            if isinstance(audio_payload, Mapping):
+                audio_data = audio_payload.get("data")
+            else:
+                audio_data = getattr(audio_payload, "data", None)
+            if isinstance(audio_data, str) and audio_data:
+                yield audio_data
+
     # -- DeepSeek REST search and fetch -----------------------------------
     def _rest_http_client(self) -> httpx.Client:
         client = getattr(self, "_rest_client", None)

@@ -79,8 +79,9 @@ tts:
     default: mimo-v2.5-tts
   default_voice: mimo_default
   default_format: wav
+  stream_format: pcm16
   voices: [mimo_default, 茉莉]
-  formats: [wav, mp3]
+  formats: [wav, mp3, pcm16]
   default_instructions: "Speak clearly with a steady pace."
 cache:
   enabled: true
