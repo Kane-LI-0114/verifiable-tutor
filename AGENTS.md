@@ -4,14 +4,7 @@ This file tells an AI agent how to work in this repository: what exists now, whi
 
 ## Required workflow: commit each stage immediately
 
-This section is a mandatory action rule, not background documentation. An agent that completes a stage and ends its turn without committing it has not finished the work. Read it before any other section.
-
-1. A stage is one logical change that stands on its own: a feature slice that just passed its test, a documentation edit, a regenerated artifact with the source that produces it, or a fix with its regression test.
-2. Commit each stage as soon as it is complete, without waiting for the user to ask, and before starting the next stage. Do not ask whether to commit.
-3. Make every commit through the `git-commit` skill of the agent harness, invoked as `/git-commit`. Let the skill read the diff, stage the files by path, derive the type, scope, and summary, and run `git commit`. Do not hand-write a message the skill would produce differently.
-4. Do not push, amend, rebase, otherwise rewrite history, or change the Git configuration. The skill stops at the local commit.
-
-[Commits](#commits) owns the message format, staging, and quality rules of this workflow. This section owns when the commit happens and which tool performs it.
+Mandatory action rule, read before any other section. Commit each completed stage with the `git-commit` skill (`/git-commit`) before starting the next stage, without waiting for the user to ask and without asking whether to commit. A completed but uncommitted stage is unfinished work. Do not push, amend, rebase, or change the Git configuration. [Commits](#commits) holds the stage definition and the message, staging, and safety rules.
 
 ## Current state
 
@@ -160,6 +153,8 @@ Tests live under `tests/` and mirror the package path: `src/verifiable_tutor/pol
 
 [Required workflow](#required-workflow-commit-each-stage-immediately) owns when a stage is committed and which tool performs the commit. This section owns the message, staging, and quality rules.
 
+- A stage is one logical change that stands on its own: a feature slice that just passed its test, a documentation edit, a regenerated artifact with the source that produces it, or a fix with its regression test. Commit the stage, then start the next one.
+- The `git-commit` skill reads the diff, stages the related files by path, derives the type, scope, and summary, and runs `git commit`. Do not hand-write a message the skill would produce differently, and do not bypass its hooks.
 - Commit messages follow Conventional Commits with a scope, matching the existing history: `chore(repo): initialize project repository` and `docs(proposal): add student IDs to title block`. Keep one logical change per commit.
 - Stage the files of the stage by path, and only those files. Do not use `git add -A` or `git add .`: the working tree can hold another agent's unfinished work, and a stage that mixes two changes has to be split instead of committed whole.
 - Do not commit a red test without its implementation, a stage whose tests fail, or a generated artifact that its own build or `--check` has not refreshed. The conditions in [Before claiming a change is done](#before-claiming-a-change-is-done) hold for the stage before it is committed.
