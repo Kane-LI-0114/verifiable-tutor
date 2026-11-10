@@ -9,6 +9,8 @@ import type { ConversationTurn } from "@/lib/types";
 import { createFetchStub, errorResponse } from "./api-stub";
 
 const ANSWER = "MPI_Allreduce combines values from all ranks.";
+// The request carries the speakable form, not the raw Markdown or identifier.
+const SPEAKABLE_ANSWER = "MPI Allreduce combines values from all ranks.";
 
 const originalCreateObjectURL = Object.getOwnPropertyDescriptor(
   URL,
@@ -108,7 +110,7 @@ describe("answer read-aloud", () => {
     expect(call?.method).toBe("POST");
     expect(call?.init.credentials).toBe("same-origin");
     expect(call?.init.headers).toEqual({ "content-type": "application/json" });
-    expect(call?.body).toEqual({ text: ANSWER });
+    expect(call?.body).toEqual({ text: SPEAKABLE_ANSWER });
 
     const audio = container.querySelector("audio");
     expect(audio).not.toBeNull();

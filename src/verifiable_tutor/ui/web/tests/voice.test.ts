@@ -4,6 +4,32 @@ import { synthesizeSpeech } from "@/lib/api/voice";
 
 import { createFetchStub, errorResponse } from "./api-stub";
 
+const ANSWER_MARKDOWN = [
+  "## Softmax",
+  "",
+  "**Softmax** turns logits into probabilities: $\\sigma(z_i) = e^{z_i} / \\sum_j e^{z_j}$.",
+  "",
+  "```python",
+  "def softmax(z):",
+  "    return np.exp(z) / np.sum(np.exp(z))",
+  "```",
+  "",
+  "See [the lecture notes](https://example.test/notes) for the derivation.",
+  "",
+  "- Every entry is positive.",
+  "- The probabilities always sum to one.",
+].join("\n");
+
+const EXPECTED_SPEECH_TEXT = [
+  "Softmax",
+  "Softmax turns logits into probabilities: sigma(z i) = e z i / sum j e z j.",
+  "def softmax(z):",
+  "return np.exp(z) / np.sum(np.exp(z))",
+  "See the lecture notes for the derivation.",
+  "Every entry is positive.",
+  "The probabilities always sum to one.",
+].join("\n");
+
 function audioResponse(): Response {
   return new Response(new Uint8Array([1, 2, 3]), {
     status: 200,
@@ -91,5 +117,24 @@ describe("synthesizeSpeech", () => {
       abort,
     );
     cancelled.restore();
+  });
+
+  it("sends a speakable plain text version of an answer without truncating it", async () => {
+    const stub = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: () => audioResponse(),
+      },
+    ]);
+
+    await synthesizeSpeech(ANSWER_MARKDOWN);
+
+    const sent = (stub.calls[0].body as { text: string }).text;
+    expect(sent).toEqual(EXPECTED_SPEECH_TEXT);
+    expect(sent).not.toContain("```");
+    expect(sent).not.toContain("**");
+    expect(sent).toContain("The probabilities always sum to one.");
+    stub.restore();
   });
 });
