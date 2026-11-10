@@ -30,3 +30,15 @@ def test_voice_stream_endpoint_requires_a_signed_in_account(api):
 
     assert response.status_code == 401
     assert api.adapter.calls == []
+
+
+def test_voice_stream_endpoint_rejects_blank_answer_text(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post(
+        "/api/voice/speech/stream", json={"text": "   \n  "}
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "text must not be empty"}
+    assert api.adapter.calls == []

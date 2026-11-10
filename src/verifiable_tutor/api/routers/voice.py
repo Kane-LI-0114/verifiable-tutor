@@ -413,6 +413,9 @@ def speech(body: SpeechBody, user: CurrentUser, model: ModelDep):
 def speech_stream(body: SpeechStreamBody, user: CurrentUser, model: ModelDep):
     """Stream one Answer as PCM16 audio frames."""
 
+    if not body.text.strip():
+        raise HTTPException(status_code=400, detail="text must not be empty")
+
     def body_stream():
         for frame in model.speak_stream(body.text, voice=body.voice):
             yield streaming.sse({"audio": frame})
