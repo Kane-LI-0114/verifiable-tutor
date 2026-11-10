@@ -12,6 +12,7 @@ import { PageError } from "@/components/layout/page-states";
 import { SourcesList } from "@/components/chat/sources";
 import { WorkChain } from "@/components/chat/work-chain";
 import { createPcmPlayer, type PcmPlayer } from "@/lib/audio/pcm-player";
+import { isAbortError } from "@/lib/api/http";
 import { useT } from "@/lib/i18n";
 import { streamSpeech } from "@/lib/api/voice";
 import type { Citation, ConversationTurn } from "@/lib/types";
@@ -96,15 +97,17 @@ function AnswerActions({
           setSpeechState("playing");
         }
       }
-    } catch {
-      if (!cancelledRef.current) {
-        setSpeechState("error");
+    } catch (error) {
+      if (isAbortError(error) || cancelledRef.current) {
+        return;
       }
+      setSpeechState("error");
     }
   }
 
   function stopSpeech() {
     controllerRef.current?.abort();
+    playerRef.current?.stop();
     if (activePlayback === playbackRef.current) {
       activePlayback = null;
     }

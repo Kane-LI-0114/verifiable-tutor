@@ -99,4 +99,24 @@ describe("answer read-aloud", () => {
     releaseGate?.();
     await waitFor(() => expect(audio?.starts).toHaveLength(2));
   });
+
+  it("stops queued sources when the speak action is clicked again", async () => {
+    const user = userEvent.setup();
+    renderAnswer();
+
+    await user.click(screen.getByRole("button", { name: "Read aloud" }));
+    await waitFor(() => expect(audio?.starts).toHaveLength(1));
+    await user.click(screen.getByRole("button", { name: "Stop" }));
+
+    expect(audio?.sources[0]?.stop).toHaveBeenCalledTimes(1);
+    expect(audio?.context.close).toHaveBeenCalled();
+    expect(stub?.calls[0]?.init.signal?.aborted).toBe(true);
+    expect(screen.getByRole("button", { name: "Read aloud" })).toBeEnabled();
+
+    releaseGate?.();
+    await waitFor(() =>
+      expect(audio?.context.createBuffer).toHaveBeenCalledTimes(1),
+    );
+    expect(audio?.starts).toHaveLength(1);
+  });
 });
