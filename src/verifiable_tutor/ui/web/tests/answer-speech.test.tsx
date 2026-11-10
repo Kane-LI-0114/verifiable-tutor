@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -115,5 +115,39 @@ describe("answer read-aloud", () => {
     await waitFor(() => expect(audio?.src).toContain("blob:"));
     expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(1);
     expect(vi.mocked(URL.createObjectURL)).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a pending read-aloud from sending a second request", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    stub?.restore();
+    stub = createFetchStub([
+      {
+        method: "POST",
+        path: "/api/voice/speech",
+        handler: async () => {
+          await gate;
+          return audioResponse();
+        },
+      },
+    ]);
+
+    const user = userEvent.setup();
+    renderAnswer();
+    const button = screen.getByRole("button", { name: "Read aloud" });
+
+    await user.click(button);
+
+    await waitFor(() => expect(button).toBeDisabled());
+    expect(button).toHaveAttribute("aria-busy", "true");
+    fireEvent.click(button);
+    expect(stub?.calls).toHaveLength(1);
+
+    await act(async () => {
+      release();
+    });
+    await waitFor(() => expect(button).toBeEnabled());
   });
 });

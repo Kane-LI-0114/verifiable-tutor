@@ -24,6 +24,7 @@ function AnswerActions({
 }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
+  const [speechState, setSpeechState] = useState<"idle" | "loading">("idle");
   const copyTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -53,6 +54,10 @@ function AnswerActions({
   }
 
   async function speak() {
+    if (speechState === "loading") {
+      return;
+    }
+    setSpeechState("loading");
     const blob = await synthesizeSpeech(content);
     const audio = audioRef.current;
     if (audio === null) {
@@ -60,6 +65,7 @@ function AnswerActions({
     }
     audio.src = URL.createObjectURL(blob);
     await audio.play();
+    setSpeechState("idle");
   }
 
   return (
@@ -82,6 +88,8 @@ function AnswerActions({
         variant="ghost"
         size="icon-xs"
         aria-label={t.common.speak}
+        aria-busy={speechState === "loading"}
+        disabled={speechState === "loading"}
         onClick={speak}
       >
         <Volume2Icon />
