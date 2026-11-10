@@ -747,18 +747,48 @@ class ModelAdapter:
             },
             "stream": True,
         }
-        stream = self._client(tts.provider).chat.completions.create(**request)
-        for chunk in stream:
-            if not chunk.choices:
-                continue
-            delta = chunk.choices[0].delta
-            audio_payload = _extra_field(delta, "audio")
-            if isinstance(audio_payload, Mapping):
-                audio_data = audio_payload.get("data")
-            else:
-                audio_data = getattr(audio_payload, "data", None)
-            if isinstance(audio_data, str) and audio_data:
-                yield audio_data
+        attempts = self._config.defaults.max_retries + 1
+        last_error: ProviderAPIError | None = None
+        stream = None
+        for attempt in range(attempts):
+            try:
+                stream = self._client(tts.provider).chat.completions.create(**request)
+                break
+            except openai.APIStatusError as exc:
+                last_error = ProviderAPIError(exc.status_code, _error_message(exc))
+            except openai.APITimeoutError as exc:
+                last_error = ProviderAPIError(None, str(exc), timed_out=True)
+            except openai.APIConnectionError as exc:
+                last_error = ProviderAPIError(None, str(exc))
+            if not last_error.retryable:
+                raise last_error
+            if attempt + 1 >= attempts:
+                raise _model_response_error(last_error, attempts) from last_error
+
+        if stream is None:  # pragma: no cover - the loop either returns or raises
+            raise _model_response_error(ProviderAPIError(None, "no stream"), attempts)
+
+        try:
+            for chunk in stream:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                audio_payload = _extra_field(delta, "audio")
+                if isinstance(audio_payload, Mapping):
+                    audio_data = audio_payload.get("data")
+                else:
+                    audio_data = getattr(audio_payload, "data", None)
+                if isinstance(audio_data, str) and audio_data:
+                    yield audio_data
+        except (openai.APIError, httpx.HTTPError) as exc:
+            raise _model_response_error(
+                ProviderAPIError(
+                    None,
+                    str(exc),
+                    timed_out=isinstance(exc, openai.APITimeoutError),
+                ),
+                attempts,
+            ) from exc
 
     # -- DeepSeek REST search and fetch -----------------------------------
     def _rest_http_client(self) -> httpx.Client:

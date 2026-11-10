@@ -2,8 +2,9 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
 
-from verifiable_tutor.llm.adapter import ModelAdapter
+from verifiable_tutor.llm.adapter import ModelAdapter, ModelResponseError
 from verifiable_tutor.llm.config import load_model_config
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -70,3 +71,39 @@ def test_speak_stream_decodes_pcm16_chunks_from_the_mimo_stream() -> None:
     assert body["model"] == "mimo-v2.5-tts"
     assert body["audio"] == {"format": "pcm16", "voice": "mimo_default"}
     assert body["messages"][1] == {"role": "assistant", "content": ANSWER}
+
+
+def test_speak_stream_reports_mid_stream_upstream_failures() -> None:
+    class DroppingStream(httpx.SyncByteStream):
+        def __iter__(self):
+            first = {
+                "id": "tts-stream",
+                "object": "chat.completion.chunk",
+                "created": 1,
+                "model": "mimo-v2.5-tts",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"audio": {"id": "audio-1", "data": FRAMES[0]}},
+                        "finish_reason": None,
+                    }
+                ],
+            }
+            yield f"data: {json.dumps(first)}\n\n".encode("utf-8")
+            raise httpx.ReadError("upstream dropped the stream")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/event-stream"},
+            stream=DroppingStream(),
+        )
+
+    frames = make_adapter(handler).speak_stream(ANSWER)
+    assert next(frames) == FRAMES[0]
+
+    with pytest.raises(Exception) as raised:
+        next(frames)
+    assert isinstance(raised.value, ModelResponseError), (
+        f"mid-stream failure surfaced as {type(raised.value).__name__}"
+    )
