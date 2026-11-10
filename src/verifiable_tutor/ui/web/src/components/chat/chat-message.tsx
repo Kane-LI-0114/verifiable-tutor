@@ -12,6 +12,7 @@ import { PageError } from "@/components/layout/page-states";
 import { SourcesList } from "@/components/chat/sources";
 import { WorkChain } from "@/components/chat/work-chain";
 import { useT } from "@/lib/i18n";
+import { synthesizeSpeech } from "@/lib/api/voice";
 import type { Citation, ConversationTurn } from "@/lib/types";
 
 function AnswerActions({
@@ -24,6 +25,7 @@ function AnswerActions({
   const t = useT();
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // The feedback timer must not outlive the answer it belongs to.
   useEffect(() => {
@@ -50,6 +52,16 @@ function AnswerActions({
     }
   }
 
+  async function speak() {
+    const blob = await synthesizeSpeech(content);
+    const audio = audioRef.current;
+    if (audio === null) {
+      return;
+    }
+    audio.src = URL.createObjectURL(blob);
+    await audio.play();
+  }
+
   return (
     <MessageFooter
       role="group"
@@ -70,8 +82,7 @@ function AnswerActions({
         variant="ghost"
         size="icon-xs"
         aria-label={t.common.speak}
-        disabled
-        title={t.common.unavailable}
+        onClick={speak}
       >
         <Volume2Icon />
       </Button>
@@ -86,6 +97,7 @@ function AnswerActions({
           <RotateCcwIcon />
         </Button>
       ) : null}
+      <audio ref={audioRef} className="hidden" />
     </MessageFooter>
   );
 }
