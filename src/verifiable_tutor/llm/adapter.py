@@ -747,6 +747,20 @@ class ModelAdapter:
             },
             "stream": True,
         }
+        cache_key = {
+            "stream": True,
+            "format": tts.stream_format,
+            "model": model_id,
+            "messages": request["messages"],
+            "voice": resolved_voice,
+        }
+        if use_cache:
+            cached = self._cache.get("tts_stream", cache_key)
+            if isinstance(cached, list) and all(
+                isinstance(frame, str) for frame in cached
+            ):
+                yield from cached
+                return
         attempts = self._config.defaults.max_retries + 1
         last_error: ProviderAPIError | None = None
         stream = None
@@ -768,6 +782,7 @@ class ModelAdapter:
         if stream is None:  # pragma: no cover - the loop either returns or raises
             raise _model_response_error(ProviderAPIError(None, "no stream"), attempts)
 
+        frames: list[str] = []
         try:
             for chunk in stream:
                 if not chunk.choices:
@@ -779,6 +794,7 @@ class ModelAdapter:
                 else:
                     audio_data = getattr(audio_payload, "data", None)
                 if isinstance(audio_data, str) and audio_data:
+                    frames.append(audio_data)
                     yield audio_data
         except (openai.APIError, httpx.HTTPError) as exc:
             raise _model_response_error(
@@ -789,6 +805,8 @@ class ModelAdapter:
                 ),
                 attempts,
             ) from exc
+        if use_cache:
+            self._cache.set("tts_stream", cache_key, frames)
 
     # -- DeepSeek REST search and fetch -----------------------------------
     def _rest_http_client(self) -> httpx.Client:
