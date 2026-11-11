@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon, RotateCcwIcon, Volume2Icon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
@@ -7,15 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message";
 import { Markdown } from "@/components/ai/markdown";
 import { AnswerPending } from "@/components/chat/answer-pending";
-import { CitationRow } from "@/components/chat/citation-row";
+import { SourceCapsule } from "@/components/chat/source-capsule";
 import { PageError } from "@/components/layout/page-states";
-import { SourcesList } from "@/components/chat/sources";
 import { WorkChain } from "@/components/chat/work-chain";
 import { createPcmPlayer, type PcmPlayer } from "@/lib/audio/pcm-player";
 import { isAbortError } from "@/lib/api/http";
 import { useT } from "@/lib/i18n";
 import { streamSpeech } from "@/lib/api/voice";
-import type { Citation, ConversationTurn } from "@/lib/types";
+import type { ConversationTurn } from "@/lib/types";
 
 interface ActivePlayback {
   stop: () => void;
@@ -170,19 +169,24 @@ function AnswerActions({
 
 export function ChatMessageView({
   turn,
-  onOpenCitation,
   failed = false,
   streaming = false,
   onRetry,
+  sourcesOpen = false,
+  onToggleSources,
 }: {
   turn: ConversationTurn;
-  onOpenCitation: (citation: Citation) => void;
   failed?: boolean;
   streaming?: boolean;
   onRetry?: () => void;
+  sourcesOpen?: boolean;
+  onToggleSources?: (turnId: string) => void;
 }) {
   const t = useT();
   const { message, meta } = turn;
+  const toggleSources = useCallback(() => {
+    onToggleSources?.(message.id);
+  }, [message.id, onToggleSources]);
 
   if (message.role === "user") {
     return (
@@ -217,18 +221,19 @@ export function ChatMessageView({
           <AnswerPending />
         ) : (
           <>
-            <Markdown>{message.content}</Markdown>
-            {meta ? (
-              <CitationRow
-                citations={meta.citations}
-                onOpen={onOpenCitation}
-              />
-            ) : null}
-            {meta ? (
-              <SourcesList
-                citations={meta.citations}
-                onOpen={onOpenCitation}
-              />
+            <Markdown sources={meta?.sources ?? []}>
+              {message.content}
+            </Markdown>
+            {meta !== undefined &&
+            (meta.sources ?? []).length > 0 &&
+            onToggleSources !== undefined ? (
+              <div className="mt-3">
+                <SourceCapsule
+                  sources={meta.sources}
+                  open={sourcesOpen}
+                  onToggle={toggleSources}
+                />
+              </div>
             ) : null}
           </>
         )}

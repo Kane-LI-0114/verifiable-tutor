@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -38,6 +38,7 @@ const HISTORY: ChatMessage[] = [
     thinking: null,
     work_steps: [],
     citations: [],
+    sources: [],
     tool_calls: [],
   },
   {
@@ -53,6 +54,7 @@ const HISTORY: ChatMessage[] = [
     thinking: null,
     work_steps: [],
     citations: [],
+    sources: [],
     tool_calls: [],
   },
 ];
@@ -77,6 +79,23 @@ const REPLAY_FRAMES = [
   { type: "text-delta", id: "t1", delta: "Hel" },
   { type: "text-delta", id: "t1", delta: "lo" },
   { type: "text-end", id: "t1" },
+  {
+    type: "data-sources",
+    data: {
+      sources: [
+        {
+          marker: 1,
+          kind: "course",
+          title: "Lecture 3: Attention",
+          summary: "Subtracting the row maximum keeps the computation stable.",
+          doc_id: "ACS_lecture_3_2026F",
+          page_no: 9,
+          url: null,
+          chunk_id: "ACS_lecture_3_2026F:p009:c00",
+        },
+      ],
+    },
+  },
   { type: "data-step", data: { step: "generate", status: "done" } },
   { type: "finish" },
   "[DONE]",
@@ -139,6 +158,18 @@ describe("replay", () => {
     // The recorded turn carries its own trace: work chain and reasoning.
     expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
     const user = userEvent.setup();
+
+    const capsule = screen.getByRole("button", {
+      name: /Show this answer's citation sources/,
+    });
+    expect(capsule).toHaveTextContent("1 course page");
+    await user.click(capsule);
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Lecture 3: Attention")).toBeInTheDocument();
+    await user.click(
+      within(pane).getByRole("button", { name: "Collapse citation sources" }),
+    );
+
     await user.click(screen.getByRole("button", { name: /Work chain/ }));
     expect(await screen.findByText("Check the row maximum.")).toBeInTheDocument();
     // The stored answer text is not shown; only the replays frames fill the turn.

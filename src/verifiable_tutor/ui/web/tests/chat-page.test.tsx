@@ -10,15 +10,16 @@ const SESSION_ATTENTION = `/chat/${PREVIEW_SESSIONS[1].id}`;
 const SESSION_KERNEL = `/chat/${PREVIEW_SESSIONS[2].id}`;
 
 describe("chat page", () => {
-  it("renders the conversation, the composer, the work chain, and the evidence panel", () => {
+  it("renders the conversation, the composer, the work chain, and a closed source pane", () => {
     renderRoute(SESSION);
 
     expect(
       screen.getByRole("region", { name: "Conversation messages" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Your question")).toBeInTheDocument();
+    expect(screen.queryByTestId("source-pane")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("complementary", { name: "Evidence panel" }),
+      screen.getByRole("button", { name: /Show this answer's citation sources/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Work chain/ }),
@@ -28,23 +29,43 @@ describe("chat page", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens the cited page in the evidence panel from a citation chip", async () => {
+  it("opens one turn's sources from the answer capsule and starts closed", async () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
-    const evidence = screen.getByRole("complementary", { name: "Evidence panel" });
-    expect(within(evidence).getByText("Open a citation")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Open page 12" }));
+    expect(screen.queryByTestId("source-pane")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open page 12" })).toBeNull();
 
     expect(
-      within(evidence).getByText("Page 12 of ACS_lecture_2_2026F"),
+      screen.getByRole("link", {
+        name: "Citation 1: Lecture 2: Collectives",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "/knowledge/docs/ACS_lecture_2_2026F?page=12",
+    );
+
+    const capsule = screen.getByRole("button", {
+      name: /Show this answer's citation sources/,
+    });
+    expect(capsule).toHaveTextContent("3 course pages · 1 web page");
+
+    await user.click(capsule);
+
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Lecture 2: Collectives")).toBeInTheDocument();
+    expect(
+      within(pane).getByText("DeepSeek API documentation"),
     ).toBeInTheDocument();
     expect(
-      within(evidence).getAllByText(
-        "MPI_Allreduce combines values from all ranks and distributes the result to all ranks.",
-      ).length,
-    ).toBeGreaterThan(0);
+      within(pane).getByRole("link", { name: /Lecture 2: Collectives/ }),
+    ).toHaveAttribute("href", "/knowledge/docs/ACS_lecture_2_2026F?page=12");
+
+    await user.click(
+      within(pane).getByRole("button", { name: "Collapse citation sources" }),
+    );
+
+    expect(screen.queryByTestId("source-pane")).not.toBeInTheDocument();
   });
 
   it("shows every existing stage even when it has no events", async () => {
@@ -215,7 +236,7 @@ describe("chat page", () => {
     renderRoute(SESSION);
 
     expect(
-      screen.getByRole("group", { name: "Citations" }),
+      screen.getByRole("button", { name: /Show this answer's citation sources/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("group", { name: "Work chain" }),

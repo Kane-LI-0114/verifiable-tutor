@@ -1,9 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AnswerPending } from "@/components/chat/answer-pending";
 import { ChatMessageView } from "@/components/chat/chat-message";
 import { Composer } from "@/components/chat/composer";
+import { SourceList } from "@/components/chat/source-list";
 import { Message, MessageContent } from "@/components/ui/message";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useT } from "@/lib/i18n";
 import { useTutorChat } from "@/lib/chat/use-tutor-chat";
 
@@ -44,6 +51,10 @@ export function DocChatPane({
     readStoredSession(docId),
   );
   const [draft, setDraft] = useState("");
+  const [activeTurnId, setActiveTurnId] = useState<string | null>(null);
+  const toggleSources = useCallback((turnId: string) => {
+    setActiveTurnId((current) => (current === turnId ? null : turnId));
+  }, []);
 
   useEffect(() => {
     setSessionId(readStoredSession(docId));
@@ -93,8 +104,9 @@ export function DocChatPane({
               <ChatMessageView
                 key={turn.message.id}
                 turn={turn}
-                onOpenCitation={() => {}}
                 streaming={chat.streaming && index === chat.turns.length - 1}
+                sourcesOpen={activeTurnId === turn.message.id}
+                onToggleSources={toggleSources}
               />
             ))}
             {awaitingAnswer ? (
@@ -118,6 +130,7 @@ export function DocChatPane({
         onSubmit={() => {
           const text = draft;
           setDraft("");
+          setActiveTurnId(null);
           void chat.send(text);
         }}
         onStop={chat.stop}
@@ -127,6 +140,32 @@ export function DocChatPane({
         thinking={chat.thinking}
         onThinkingChange={chat.setThinking}
       />
+      <Sheet
+        open={activeTurnId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveTurnId(null);
+          }
+        }}
+      >
+        <SheetContent
+          id="source-pane"
+          side="right"
+          className="flex w-full flex-col p-0 sm:max-w-md"
+        >
+          <SheetHeader className="border-b">
+            <SheetTitle>{t.chat.sourcesTitle}</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <SourceList
+              sources={
+                chat.turns.find((turn) => turn.message.id === activeTurnId)?.meta
+                  ?.sources ?? []
+              }
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

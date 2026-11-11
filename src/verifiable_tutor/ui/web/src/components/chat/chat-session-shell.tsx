@@ -15,12 +15,8 @@ import {
 
 import { AnswerPending } from "@/components/chat/answer-pending";
 import { ChatMessageView } from "@/components/chat/chat-message";
-import { EvidencePanel } from "@/components/chat/evidence-panel";
-import {
-  EvidencePane,
-  readEvidenceCollapsed,
-  writeEvidenceCollapsed,
-} from "@/components/chat/evidence-pane";
+import { SourceList } from "@/components/chat/source-list";
+import { SourcePane } from "@/components/chat/source-pane";
 import { Badge } from "@/components/ui/badge";
 import { Message, MessageContent } from "@/components/ui/message";
 import {
@@ -51,7 +47,7 @@ import {
   takePendingOpenScroll,
   writeChatScroll,
 } from "@/lib/chat/scroll-memory";
-import type { Citation, ConversationTurn } from "@/lib/types";
+import type { CitationSource, ConversationTurn } from "@/lib/types";
 import { useMediaQuery } from "@/lib/use-media-query";
 
 /**
@@ -59,6 +55,9 @@ import { useMediaQuery } from "@/lib/use-media-query";
  * the shell anchors scrolling by message id, so the placeholder carries one.
  */
 const PENDING_ANSWER_ID = "pending-answer";
+
+/** Stable empty list so a closed pane does not allocate on every render. */
+const EMPTY_SOURCES: CitationSource[] = [];
 
 /** The view state one turn adds on top of the shared message composition. */
 export interface ChatTurnState {
@@ -69,8 +68,8 @@ export interface ChatTurnState {
 
 /** Handles the shell exposes to the page's composer area. */
 export interface ChatSessionControls {
-  /** Clear the active citation, for a page whose send action starts a new question. */
-  clearCitation: () => void;
+  /** Close the source pane, for a page whose send action starts a new question. */
+  clearSources: () => void;
 }
 
 export interface ChatSessionShellProps {
@@ -81,7 +80,7 @@ export interface ChatSessionShellProps {
    * disables remembering it, which replay and the preview demo want.
    */
   scrollKey?: string;
-  /** The turns to show; also the source of the citations offered to the evidence pane. */
+  /** The turns to show; each answer offers its own sources to the source pane. */
   turns: ConversationTurn[];
   /** Replaces the thread body, for pages with a loading, empty, or failed state. */
   placeholder?: ReactNode;
@@ -112,11 +111,6 @@ export interface ChatSessionShellProps {
    * read position is handed over to the newly created conversation.
    */
   handoffOnFinish?: boolean;
-  /**
-   * Whether to render the evidence pane and its narrow-screen sheet. Replay has
-   * no evidence pane, because a recorded trace has no citations yet.
-   */
-  showEvidence?: boolean;
 }
 
 /**
@@ -131,12 +125,12 @@ type ScrollMode = "short" | "anchored" | "following" | "free" | "idle";
 
 /**
  * The shared conversation layout: thread, optional banner, optional composer,
- * and the evidence pane with its narrow-screen sheet. The live and preview pages
+ * and the citation source pane with its narrow-screen sheet. The live and preview pages
  * differ in their data source, not in this structure, so both render the shell
  * and keep only their own state and data access.
  *
- * The shell owns the evidence selection and the persisted collapse state, since
- * the citation chips and the pane that answers them live here.
+ * The shell owns the active answer turn for the source pane, because the capsule
+ * that opens it and the pane that answers it live here.
  */
 /** How long a debounced scroll write waits after the last scroll event. */
 const SCROLL_SAVE_DELAY_MS = 120;
@@ -161,14 +155,10 @@ export function ChatSessionShell({
   generatingMessageId,
   awaitingAnswer = false,
   handoffOnFinish = false,
-  showEvidence = true,
 }: ChatSessionShellProps) {
   const t = useT();
   const isNarrow = useMediaQuery("(max-width: 1023px)");
-  const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
-  const [evidenceCollapsed, setEvidenceCollapsed] = useState<boolean>(() =>
-    readEvidenceCollapsed(),
-  );
+  const [activeTurnId, setActiveTurnId] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTop = useRef<number | null>(null);
@@ -459,30 +449,19 @@ export function ChatSessionShell({
     }, SCROLL_SAVE_DELAY_MS);
   }
 
-  const citations = turns.flatMap((turn) => turn.meta?.citations ?? []);
-  const activeIndex =
-    activeCitation === null ? null : Math.max(citations.indexOf(activeCitation), 0);
+  const activeTurn =
+    activeTurnId === null
+      ? undefined
+      : turns.find((turn) => turn.message.id === activeTurnId);
+  const activeSources: CitationSource[] = activeTurn?.meta?.sources ?? EMPTY_SOURCES;
 
-  function setCollapsed(collapsed: boolean) {
-    setEvidenceCollapsed(collapsed);
-    writeEvidenceCollapsed(collapsed);
-  }
+  const toggleSources = useCallback((turnId: string) => {
+    setActiveTurnId((current) => (current === turnId ? null : turnId));
+  }, []);
 
-  // A citation chip must reveal the cited page even when the pane is collapsed.
-  function openCitation(citation: Citation) {
-    setActiveCitation(citation);
-    if (evidenceCollapsed) {
-      setCollapsed(false);
-    }
-  }
-
-  function selectCitation(index: number) {
-    setActiveCitation(citations[index] ?? null);
-  }
-
-  function clearCitation() {
-    setActiveCitation(null);
-  }
+  const clearSources = useCallback(() => {
+    setActiveTurnId(null);
+  }, []);
 
   /** The arrow asks to follow the answer down, so the bottom becomes the anchor. */
   function handleScrollToEnd(event: MouseEvent<HTMLButtonElement>) {
@@ -538,7 +517,8 @@ export function ChatSessionShell({
                             streaming={state?.streaming}
                             failed={state?.failed}
                             onRetry={state?.onRetry}
-                            onOpenCitation={openCitation}
+                            sourcesOpen={activeTurnId === turn.message.id}
+                            onToggleSources={toggleSources}
                           />
                         </MessageScrollerItem>
                       );
@@ -565,42 +545,35 @@ export function ChatSessionShell({
 
         {footer}
 
-        {composer?.({ clearCitation })}
+        {composer?.({ clearSources })}
       </section>
 
-      {showEvidence ? (
-        <>
-          <EvidencePane
-            citations={citations}
-            activeIndex={activeIndex}
-            onSelect={selectCitation}
-            collapsed={evidenceCollapsed}
-            onCollapsedChange={setCollapsed}
-          />
+      {activeTurnId !== null && !isNarrow ? (
+        <SourcePane sources={activeSources} onClose={clearSources} />
+      ) : null}
 
-          {isNarrow ? (
-            <Sheet
-              open={activeCitation !== null}
-              onOpenChange={(open) => {
-                if (!open) {
-                  setActiveCitation(null);
-                }
-              }}
-            >
-              <SheetContent side="right" className="w-full p-0 sm:max-w-md">
-                <SheetHeader className="border-b">
-                  <SheetTitle>{t.chat.evidenceTitle}</SheetTitle>
-                </SheetHeader>
-                <EvidencePanel
-                  citations={citations}
-                  activeIndex={activeIndex}
-                  onSelect={selectCitation}
-                  className="min-h-0 flex-1"
-                />
-              </SheetContent>
-            </Sheet>
-          ) : null}
-        </>
+      {isNarrow ? (
+        <Sheet
+          open={activeTurnId !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              clearSources();
+            }
+          }}
+        >
+          <SheetContent
+            id="source-pane"
+            side="right"
+            className="flex w-full flex-col p-0 sm:max-w-md"
+          >
+            <SheetHeader className="border-b">
+              <SheetTitle>{t.chat.sourcesTitle}</SheetTitle>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+              <SourceList sources={activeSources} />
+            </div>
+          </SheetContent>
+        </Sheet>
       ) : null}
     </div>
   );

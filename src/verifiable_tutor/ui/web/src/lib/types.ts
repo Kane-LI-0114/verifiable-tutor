@@ -35,9 +35,25 @@ export interface ChatMessage {
   thinking: string | null;
   work_steps: WorkStep[];
   citations: Citation[];
+  /** Retrieved sources for this answer, in marker order. */
+  sources: CitationSource[];
   tool_calls: ToolCall[];
   /** Ordered work-chain events; absent on legacy rows. */
   events?: WorkChainEvent[];
+}
+
+export type SourceKind = "course" | "web";
+
+/** One retrieved source behind an answer, keyed by its turn-scoped marker. */
+export interface CitationSource {
+  marker: number;
+  kind: SourceKind;
+  title: string;
+  summary: string;
+  doc_id?: string | null;
+  page_no?: number | null;
+  url?: string | null;
+  chunk_id?: string | null;
 }
 
 /** Normalized page box, [x1, y1, x2, y2], from the OCR page record. */
@@ -136,6 +152,7 @@ export interface AssistantMeta {
   work_steps: WorkStep[];
   reasoning: string;
   citations: Citation[];
+  sources: CitationSource[];
   tool_calls: ToolCall[];
   /** Ordered work-chain events; absent on preview and legacy turns. */
   events?: WorkChainEvent[];
@@ -206,14 +223,6 @@ export interface DeadlineRegistry {
   version: string;
   clock: string;
   entries: DeadlineEntry[];
-}
-
-export interface EvidencePage {
-  doc_id: string;
-  page_no: number;
-  image_url: string;
-  highlights: BboxNorm[];
-  quote: string;
 }
 
 /** Page-level preview state, selected by the developer controls. */

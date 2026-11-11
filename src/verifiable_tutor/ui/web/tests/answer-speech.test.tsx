@@ -33,6 +33,7 @@ function answerTurn(content: string): ConversationTurn {
       thinking: null,
       work_steps: [],
       citations: [],
+      sources: [],
       tool_calls: [],
     },
   };
@@ -41,7 +42,7 @@ function answerTurn(content: string): ConversationTurn {
 function renderAnswer(content = ANSWER, lang: "en" | "zh" = "en") {
   return render(
     <I18nProvider initialLang={lang}>
-      <ChatMessageView turn={answerTurn(content)} onOpenCitation={() => {}} />
+      <ChatMessageView turn={answerTurn(content)} />
     </I18nProvider>,
   );
 }
@@ -187,14 +188,8 @@ describe("answer read-aloud", () => {
     const user = userEvent.setup();
     render(
       <I18nProvider initialLang="en">
-        <ChatMessageView
-          turn={answerTurn("First answer.")}
-          onOpenCitation={() => {}}
-        />
-        <ChatMessageView
-          turn={answerTurn("Second answer.")}
-          onOpenCitation={() => {}}
-        />
+        <ChatMessageView turn={answerTurn("First answer.")} />
+        <ChatMessageView turn={answerTurn("Second answer.")} />
       </I18nProvider>,
     );
 

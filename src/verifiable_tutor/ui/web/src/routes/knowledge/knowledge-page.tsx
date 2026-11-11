@@ -681,7 +681,6 @@ export function KnowledgePage() {
         expandLabel={t.knowledge.paneExpand}
         resizeLabel={t.knowledge.paneResize}
         widthKey={PANE_WIDTH_KEY}
-        collapsedKey={PANE_COLLAPSED_KEY}
         collapsed={paneCollapsed}
         onCollapsedChange={(next) => {
           setPaneCollapsed(next);

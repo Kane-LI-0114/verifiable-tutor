@@ -5,12 +5,18 @@ import { useSession } from "@/lib/auth/session";
 import type { Messages } from "@/lib/i18n/en";
 import type {
   AssistantMeta,
+  CitationSource,
   ConversationTurn,
   ToolCall,
 } from "@/lib/types";
 
 import { toChunkStream } from "./stream";
-import { toToolCall, type ToolCallData, type WorkStepData } from "./ui-message";
+import {
+  toToolCall,
+  type SourcesData,
+  type ToolCallData,
+  type WorkStepData,
+} from "./ui-message";
 
 export type ReplayStatus = "loading" | "streaming" | "done" | "error";
 
@@ -26,7 +32,7 @@ interface ReplayFrame {
   type: string;
   messageId?: string;
   delta?: string;
-  data?: WorkStepData | ToolCallData;
+  data?: WorkStepData | ToolCallData | SourcesData;
   errorText?: string;
 }
 
@@ -35,6 +41,7 @@ function emptyMeta(): AssistantMeta {
     work_steps: [],
     reasoning: "",
     citations: [],
+    sources: [],
     tool_calls: [],
     events: [],
     policy_state: "active",
@@ -56,6 +63,7 @@ function emptyAssistant(sequence: number): ConversationTurn {
       thinking: null,
       work_steps: [],
       citations: [],
+      sources: [],
       tool_calls: [],
     },
     meta: emptyMeta(),
@@ -181,6 +189,11 @@ function applyFrame(
       meta.events.push({ kind: "tool_call", tool_call: call, step_id: stepId });
     } else {
       meta.events[existing] = { kind: "tool_call", tool_call: call, step_id: stepId };
+    }
+  } else if (frame.type === "data-sources" && frame.data) {
+    const data = frame.data as SourcesData;
+    if (Array.isArray(data.sources)) {
+      meta.sources = data.sources as CitationSource[];
     }
   } else if (frame.type === "error") {
     turn.message = { ...turn.message, content: "" };

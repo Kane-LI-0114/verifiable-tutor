@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * Resizable, collapsible right-hand pane.
  *
- * The chat page shows citations in it and the knowledge page shows file details
+ * The chat page shows one answer's source list in it and the knowledge page shows file details
  * or a conversation, so the resize, collapse, persistence, and keyboard
  * mechanics live here once. The caller supplies the labels, the storage keys,
  * and the header content.
@@ -22,7 +22,6 @@ export interface SidePaneProps {
   resizeLabel: string;
   /** localStorage keys so each page remembers its own width and state. */
   widthKey: string;
-  collapsedKey: string;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   /** Header content, shown when the pane is open. */
@@ -30,6 +29,7 @@ export interface SidePaneProps {
   children: ReactNode;
   className?: string;
   testId?: string;
+  id?: string;
   defaultWidth?: number;
   minWidth?: number;
   maxWidth?: number;
@@ -98,13 +98,13 @@ export function SidePane({
   expandLabel,
   resizeLabel,
   widthKey,
-  collapsedKey: _collapsedKey,
   collapsed,
   onCollapsedChange,
   header,
   children,
   className,
   testId,
+  id,
   defaultWidth = 380,
   minWidth = 280,
   maxWidth = 640,
@@ -187,6 +187,7 @@ export function SidePane({
 
   return (
     <aside
+      id={id}
       data-testid={testId}
       data-collapsed={collapsed ? "true" : "false"}
       aria-label={collapsed ? collapsedLabel : label}

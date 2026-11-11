@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
-import { CitationRow } from "@/components/chat/citation-row";
-import { EvidencePanel } from "@/components/chat/evidence-panel";
+import { CitationRow } from "@/components/practice/citation-row";
+import { EvidencePanel } from "@/components/practice/evidence-panel";
 import { PageEmpty, PageError, PageHeader, PageLoading } from "@/components/layout/page-states";
 import { TestResults } from "@/components/practice/test-results";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

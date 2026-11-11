@@ -261,13 +261,13 @@ function LiveChatSession({
     }
   }
 
-  async function submit(clearCitation: () => void) {
+  async function submit(clearSources: () => void) {
     const text = composer.trim();
     if (text.length === 0 || chat.streaming) {
       return;
     }
     setComposer("");
-    clearCitation();
+    clearSources();
     await chat.send(text);
   }
 
@@ -295,12 +295,12 @@ function LiveChatSession({
           </div>
         ) : undefined
       }
-      composer={({ clearCitation }) => (
+      composer={({ clearSources }) => (
         <Composer
           value={composer}
           onChange={setComposer}
           onSubmit={() => {
-            void submit(clearCitation);
+            void submit(clearSources);
           }}
           onStop={chat.stop}
           streaming={chat.streaming}
@@ -355,7 +355,6 @@ function ReplaySession({
       title={title}
       turns={visibleTurns}
       generatingMessageId={generatingMessageId}
-      showEvidence={false}
       banner={<ReplayBanner speed={speed} onSpeedChange={setSpeed} />}
       placeholder={
         replay.status === "error" && replay.errorDescription !== null ? (

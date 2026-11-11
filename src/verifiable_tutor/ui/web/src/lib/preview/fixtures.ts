@@ -1,10 +1,10 @@
 import type {
   ChatMessage,
   Citation,
+  CitationSource,
   Conversation,
   ConversationTurn,
   DeadlineRegistry,
-  EvidencePage,
   GradingResult,
   KnowledgeBuild,
   KnowledgeCard,
@@ -77,29 +77,47 @@ export const PREVIEW_CITATIONS: Citation[] = [
   CITATION_TACC_TUTORIAL,
 ];
 
-export const PREVIEW_EVIDENCE_PAGES: EvidencePage[] = [
+export const PREVIEW_SOURCES: CitationSource[] = [
   {
-    doc_id: CITATION_ALLREDUCE.doc_id,
-    page_no: CITATION_ALLREDUCE.page_no,
-    image_url: `/api/corpus/${CITATION_ALLREDUCE.doc_id}/pages/${CITATION_ALLREDUCE.page_no}.webp`,
-    highlights: [CITATION_ALLREDUCE.bbox_norm ?? [0.08, 0.22, 0.9, 0.3]],
-    quote: CITATION_ALLREDUCE.quote,
+    marker: 1,
+    kind: "course",
+    title: "Lecture 2: Collectives",
+    summary:
+      "MPI_Allreduce combines values from all ranks and distributes the result to all ranks.",
+    doc_id: "ACS_lecture_2_2026F",
+    page_no: 12,
+    url: null,
   },
   {
-    doc_id: CITATION_COURSE_PROJECT.doc_id,
-    page_no: CITATION_COURSE_PROJECT.page_no,
-    image_url: `/api/corpus/${CITATION_COURSE_PROJECT.doc_id}/pages/${CITATION_COURSE_PROJECT.page_no}.webp`,
-    highlights: [CITATION_COURSE_PROJECT.bbox_norm ?? [0.12, 0.18, 0.86, 0.26]],
-    quote: CITATION_COURSE_PROJECT.quote,
+    marker: 2,
+    kind: "course",
+    title: "Reduction and broadcast",
+    summary:
+      "MPI_Reduce leaves the result on the root, while MPI_Allreduce broadcasts it.",
+    doc_id: "ACS_lecture_2_2026F",
+    page_no: 13,
+    url: null,
   },
   {
-    doc_id: CITATION_TACC_TUTORIAL.doc_id,
-    page_no: CITATION_TACC_TUTORIAL.page_no,
-    image_url: `/api/corpus/${CITATION_TACC_TUTORIAL.doc_id}/pages/${CITATION_TACC_TUTORIAL.page_no}.webp`,
-    highlights: [CITATION_TACC_TUTORIAL.bbox_norm ?? [0.1, 0.42, 0.88, 0.5]],
-    quote: CITATION_TACC_TUTORIAL.quote,
+    marker: 3,
+    kind: "course",
+    title: "TACC Tutorial",
+    summary: "Submit the job with tcloud submit and record the Job ID.",
+    doc_id: "TACC_Toturial",
+    page_no: 4,
+    url: null,
+  },
+  {
+    marker: 4,
+    kind: "web",
+    title: "DeepSeek API documentation",
+    summary: "Search and fetch API reference for external sources.",
+    doc_id: null,
+    page_no: null,
+    url: "https://api-docs.deepseek.com/guides/search",
   },
 ];
+
 
 const QUESTION: ChatMessage = {
   id: "message-user-1",
@@ -114,6 +132,7 @@ const QUESTION: ChatMessage = {
   thinking: null,
   work_steps: [],
   citations: [],
+  sources: [],
   tool_calls: [],
 };
 
@@ -122,19 +141,21 @@ const ANSWER: ChatMessage = {
   sequence: 2,
   role: "assistant",
   content: [
-    "`MPI_Allreduce` is a collective that reduces one value per rank and leaves the result on **every** rank. It is the reduction counterpart of `MPI_Reduce`, which leaves the result only on the root.",
+    "`MPI_Allreduce` is a collective that reduces one value per rank and leaves the result on **every** rank. It is the reduction counterpart of `MPI_Reduce`, which leaves the result only on the root. [1]",
     "",
     "For a row of the output matrix, you can sum the partial products across ranks:",
     "",
     "$$C_{ij} = \\sum_{k} A_{ik} B_{kj}$$",
     "",
-    "The call is:",
+    "The call is [2]:",
     "",
     "```c",
     "MPI_Allreduce(local, global, count, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);",
     "```",
     "",
-    "Use it when every rank needs the reduced block, for example before writing the output tile. If only rank 0 writes the result, `MPI_Reduce` is cheaper.",
+    "Use it when every rank needs the reduced block, for example before writing the output tile. If only rank 0 writes the result, `MPI_Reduce` is cheaper. [2]",
+    "",
+    "Submit the assignment job with `tcloud submit` and keep the returned Job ID [3]. The API reference is external material [4].",
   ].join("\n"),
   provider: "deepseek",
   tier: "flash",
@@ -144,6 +165,7 @@ const ANSWER: ChatMessage = {
   thinking: null,
   work_steps: [],
   citations: [],
+  sources: [],
   tool_calls: [],
 };
 
@@ -156,6 +178,7 @@ export const PREVIEW_TURNS: ConversationTurn[] = [
       reasoning:
         "The question asks about a collective operation and its use in the assignment. The assignment is active, so I can explain the operation and the call, but I should not produce the missing kernel implementation.",
       citations: PREVIEW_CITATIONS,
+      sources: PREVIEW_SOURCES,
       tool_calls: [
         {
           name: "course_search",
@@ -270,6 +293,7 @@ const QUESTION_ATTENTION: ChatMessage = {
   thinking: null,
   work_steps: [],
   citations: [],
+  sources: [],
   tool_calls: [],
 };
 
@@ -294,6 +318,7 @@ const ANSWER_ATTENTION: ChatMessage = {
   thinking: null,
   work_steps: [],
   citations: [],
+  sources: [],
   tool_calls: [],
 };
 
@@ -310,6 +335,7 @@ const QUESTION_KERNEL: ChatMessage = {
   thinking: null,
   work_steps: [],
   citations: [],
+  sources: [],
   tool_calls: [],
 };
 
@@ -341,6 +367,7 @@ const ANSWER_KERNEL: ChatMessage = {
   thinking: null,
   work_steps: [],
   citations: [],
+  sources: [],
   tool_calls: [],
 };
 
@@ -353,6 +380,7 @@ const ATTENTION_TURNS: ConversationTurn[] = [
       reasoning:
         "The question asks about numerical stability rather than for the assignment kernel. The assignment is active, so I can explain the stabilization trick and leave the kernel code base to the student.",
       citations: [CITATION_SOFTMAX],
+      sources: [PREVIEW_SOURCES[0]],
       tool_calls: [
         {
           name: "course_search",
@@ -410,6 +438,7 @@ const KERNEL_TURNS: ConversationTurn[] = [
       reasoning:
         "The question is about kernel layout, which the assignment scores. The active disclosure rule allows structural guidance about the starter layout but not a finished kernel, so I describe the tile and warp mapping and stop before the full implementation.",
       citations: [CITATION_KERNEL],
+      sources: [PREVIEW_SOURCES[2]],
       tool_calls: [
         {
           name: "course_search",

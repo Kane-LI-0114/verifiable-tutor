@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type {
   ChatMessage,
   Citation,
+  CitationSource,
   Conversation,
   Me,
   ToolCall,
@@ -45,6 +46,18 @@ const STORED_CITATION: Citation = {
     "MPI_Allreduce combines values from all ranks and distributes the result to all ranks.",
   bbox_norm: [0.08, 0.22, 0.9, 0.3],
 };
+
+const STORED_SOURCES: CitationSource[] = [
+  {
+    marker: 1,
+    kind: "course",
+    title: "Lecture 2: Collectives",
+    summary: "MPI_Allreduce combines values from all ranks.",
+    doc_id: "ACS_lecture_2_2026F",
+    page_no: 12,
+    url: null,
+  },
+];
 const STORED_TOOL_CALL: ToolCall = {
   name: "course_search",
   command: ["course_search", "--query", "halo exchange", "--top-k", "5"],
@@ -80,6 +93,7 @@ function noTurnMeta() {
     thinking: null,
     work_steps: [] as WorkStep[],
     citations: [] as Citation[],
+    sources: [] as CitationSource[],
     tool_calls: [] as ToolCall[],
   };
 }
@@ -108,6 +122,7 @@ const HISTORY: ChatMessage[] = [
     thinking: "high",
     work_steps: STORED_STEPS,
     citations: [STORED_CITATION],
+    sources: STORED_SOURCES,
     tool_calls: [STORED_TOOL_CALL],
     events: [
       { kind: "reasoning", reasoning: STORED_REASONING, step_id: "retrieve" },
@@ -148,6 +163,7 @@ const NEW_HISTORY: ChatMessage[] = [
     thinking: "off",
     work_steps: [{ id: "generate", step: "generate", status: "done", duration_ms: 120 }],
     citations: [],
+    sources: [],
     tool_calls: [],
   },
 ];
@@ -228,6 +244,23 @@ const TOOL_STREAM_FRAMES = [
       arguments: { query: "MPI_Allreduce" },
       output: "1 course chunks",
       duration_ms: 42,
+    },
+  },
+  {
+    type: "data-sources",
+    data: {
+      sources: [
+        {
+          marker: 1,
+          kind: "course",
+          title: "Tutorial 2: Collectives",
+          summary: "MPI_Allreduce reduces a value across all ranks.",
+          doc_id: "Tutorial_2",
+          page_no: 8,
+          url: null,
+          chunk_id: "Tutorial_2:p008:c00",
+        },
+      ],
     },
   },
   { type: "data-step", data: { step: "retrieve", status: "done" } },
@@ -690,10 +723,16 @@ describe("live chat", () => {
     expect(screen.getByText("4 of 4 steps complete")).toBeInTheDocument();
     // The policy state of the persisted decide step labels the work chain.
     expect(screen.getAllByText("Post-deadline").length).toBeGreaterThan(0);
-    expect(screen.getByRole("group", { name: "Citations" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Open page 12" }),
-    ).toBeInTheDocument();
+    const capsules = screen.getAllByRole("button", {
+      name: /Show this answer's citation sources/,
+    });
+    const capsule = capsules[capsules.length - 1];
+    expect(capsule).toHaveTextContent("1 course page");
+
+    await user.click(capsule);
+
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Lecture 2: Collectives")).toBeInTheDocument();
 
     // The work chain expands to one section per persisted step. Understand
     // and decide have no events, but their sections still render.
@@ -1149,6 +1188,20 @@ describe("live chat", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
 
     expect(await screen.findByText("Allreduce sums a value.")).toBeInTheDocument();
+
+    const capsules = screen.getAllByRole("button", {
+      name: /Show this answer's citation sources/,
+    });
+    const capsule = capsules[capsules.length - 1];
+    expect(capsule).toHaveTextContent("1 course page");
+
+    await user.click(capsule);
+
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Tutorial 2: Collectives")).toBeInTheDocument();
+    await user.click(
+      within(pane).getByRole("button", { name: "Collapse citation sources" }),
+    );
 
     // The live tool call is inside the live work chain; the stored turn has its own.
     const workChains = screen.getAllByRole("button", { name: /Work chain/ });

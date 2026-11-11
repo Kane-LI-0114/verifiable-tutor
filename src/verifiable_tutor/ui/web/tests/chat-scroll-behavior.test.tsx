@@ -32,6 +32,7 @@ function makeTurn(
       thinking: null,
       work_steps: [],
       citations: [],
+      sources: [],
       tool_calls: [],
       events: [],
     },
@@ -56,7 +57,6 @@ function view(
         turns={turns}
         generatingMessageId={generatingMessageId}
         handoffOnFinish={handoffOnFinish}
-        showEvidence={false}
       />
     </I18nProvider>
   );
