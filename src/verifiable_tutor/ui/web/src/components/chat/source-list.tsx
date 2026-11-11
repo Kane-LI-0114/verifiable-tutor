@@ -85,7 +85,7 @@ function SourceItemView({ source }: { source: CitationSource }) {
       </ItemContent>
       <ItemActions className="self-start">
         <Badge variant="outline" className="font-mono tabular-nums">
-          [{source.marker}]
+          {source.marker}
         </Badge>
       </ItemActions>
     </>
@@ -129,7 +129,11 @@ function SourceListView({ sources }: { sources: CitationSource[] }) {
   return (
     <ItemGroup className="gap-0">
       {sources.map((source, index) => (
-        <li key={`${source.kind}:${source.marker}`} className="list-none">
+        <li
+          key={`${source.kind}:${source.marker}`}
+          className="source-row-enter list-none"
+          style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+        >
           {index > 0 ? <ItemSeparator /> : null}
           <SourceItem source={source} />
         </li>

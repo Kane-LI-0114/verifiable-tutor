@@ -194,7 +194,7 @@ export const en = {
     sourceCourseMeta: "Course page {{page}}",
     sourceWebMeta: "Web page · {{host}}",
     sourceNoSummary: "No summary available.",
-    closeSources: "Collapse citation sources",
+    closeSources: "Close citation sources",
     sourcesResize: "Resize the citation sources pane",
     sourcePage: "Page {{page}}",
     openEvidence: "Open page {{page}}",

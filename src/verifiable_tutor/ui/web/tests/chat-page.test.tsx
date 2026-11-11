@@ -17,7 +17,9 @@ describe("chat page", () => {
       screen.getByRole("region", { name: "Conversation messages" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Your question")).toBeInTheDocument();
-    expect(screen.queryByTestId("source-pane")).not.toBeInTheDocument();
+    const pane = screen.getByTestId("source-pane");
+    expect(pane).toHaveAttribute("data-open", "false");
+    expect(pane).toHaveStyle({ width: "0px" });
     expect(
       screen.getByRole("button", { name: /Show this answer's citation sources/ }),
     ).toBeInTheDocument();
@@ -33,7 +35,10 @@ describe("chat page", () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
-    expect(screen.queryByTestId("source-pane")).not.toBeInTheDocument();
+    expect(screen.getByTestId("source-pane")).toHaveAttribute(
+      "data-open",
+      "false",
+    );
     expect(screen.queryByRole("button", { name: "Open page 12" })).toBeNull();
 
     expect(
@@ -53,6 +58,7 @@ describe("chat page", () => {
     await user.click(capsule);
 
     const pane = await screen.findByTestId("source-pane");
+    expect(pane).toHaveAttribute("data-open", "true");
     expect(within(pane).getByText("Lecture 2: Collectives")).toBeInTheDocument();
     expect(
       within(pane).getByText("DeepSeek API documentation"),
@@ -62,10 +68,11 @@ describe("chat page", () => {
     ).toHaveAttribute("href", "/knowledge/docs/ACS_lecture_2_2026F?page=12");
 
     await user.click(
-      within(pane).getByRole("button", { name: "Collapse citation sources" }),
+      within(pane).getByRole("button", { name: "Close citation sources" }),
     );
 
-    expect(screen.queryByTestId("source-pane")).not.toBeInTheDocument();
+    expect(pane).toHaveAttribute("data-open", "false");
+    expect(pane).toHaveStyle({ width: "0px" });
   });
 
   it("shows every existing stage even when it has no events", async () => {

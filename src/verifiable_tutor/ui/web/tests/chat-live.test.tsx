@@ -1200,7 +1200,7 @@ describe("live chat", () => {
     const pane = await screen.findByTestId("source-pane");
     expect(within(pane).getByText("Tutorial 2: Collectives")).toBeInTheDocument();
     await user.click(
-      within(pane).getByRole("button", { name: "Collapse citation sources" }),
+      within(pane).getByRole("button", { name: "Close citation sources" }),
     );
 
     // The live tool call is inside the live work chain; the stored turn has its own.

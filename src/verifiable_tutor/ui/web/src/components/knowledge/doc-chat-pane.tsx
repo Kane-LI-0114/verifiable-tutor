@@ -158,6 +158,7 @@ export function DocChatPane({
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
             <SourceList
+              key={activeTurnId ?? "none"}
               sources={
                 chat.turns.find((turn) => turn.message.id === activeTurnId)?.meta
                   ?.sources ?? []

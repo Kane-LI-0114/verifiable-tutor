@@ -30,11 +30,22 @@ const SOURCES: CitationSource[] = [
   },
 ];
 
-function renderPane(onClose = vi.fn()) {
+function renderPane({
+  open = true,
+  onClose = vi.fn(),
+}: {
+  open?: boolean;
+  onClose?: () => void;
+} = {}) {
   render(
     <I18nProvider initialLang="en">
       <MemoryRouter>
-        <SourcePane sources={SOURCES} onClose={onClose} />
+        <SourcePane
+          sources={SOURCES}
+          open={open}
+          turnId="turn-1"
+          onClose={onClose}
+        />
       </MemoryRouter>
     </I18nProvider>,
   );
@@ -58,8 +69,8 @@ describe("source pane", () => {
     expect(
       within(pane).getByText("MPI_Allreduce combines values from all ranks."),
     ).toBeInTheDocument();
-    expect(within(pane).getByText("[1]")).toBeInTheDocument();
-    expect(within(pane).getByText("[4]")).toBeInTheDocument();
+    expect(within(pane).getByText("1")).toBeInTheDocument();
+    expect(within(pane).getByText("4")).toBeInTheDocument();
     expect(within(pane).getByText("Course page 12")).toBeInTheDocument();
     expect(
       within(pane).getByText("Web page · api-docs.deepseek.com"),
@@ -80,15 +91,41 @@ describe("source pane", () => {
     expect(web).toHaveAttribute("rel", "noopener noreferrer");
   });
 
-  it("closes from the pane header button", async () => {
+  it("closes from the pane header X", async () => {
     const user = userEvent.setup();
     const onClose = renderPane();
 
-    await user.click(
-      screen.getByRole("button", { name: "Collapse citation sources" }),
-    );
+    const close = screen.getByRole("button", {
+      name: "Close citation sources",
+    });
+    expect(close.querySelector(".lucide-x")).not.toBeNull();
+
+    await user.click(close);
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("is closed at width zero and opens with staged rows", () => {
+    renderPane({ open: false });
+
+    const closed = screen.getByTestId("source-pane");
+    expect(closed).toHaveAttribute("data-open", "false");
+    expect(closed).toHaveAttribute("aria-hidden", "true");
+    expect(closed).toHaveStyle({ width: "0px" });
+  });
+
+  it("staggers the source rows from the top when open", () => {
+    renderPane({ open: true });
+
+    const pane = screen.getByTestId("source-pane");
+    expect(pane).toHaveAttribute("data-open", "true");
+    expect(pane).toHaveStyle({ width: "380px" });
+
+    const rows = within(pane).getAllByRole("listitem");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveClass("source-row-enter");
+    expect(rows[0]).toHaveStyle({ animationDelay: "0ms" });
+    expect(rows[1]).toHaveStyle({ animationDelay: "30ms" });
   });
 
   it("starts at the default width and remembers a pointer resize", () => {

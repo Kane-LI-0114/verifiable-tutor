@@ -194,7 +194,7 @@ export const zh: Messages = {
     sourceCourseMeta: "课件 · 第 {{page}} 页",
     sourceWebMeta: "网页 · {{host}}",
     sourceNoSummary: "没有可展示的概要。",
-    closeSources: "收起引用来源",
+    closeSources: "关闭引用来源",
     sourcesResize: "调整引用来源栏宽度",
     sourcePage: "第 {{page}} 页",
     openEvidence: "打开第 {{page}} 页",

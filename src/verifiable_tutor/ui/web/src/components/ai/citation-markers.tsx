@@ -16,7 +16,7 @@ import { format, useT } from "@/lib/i18n";
 import type { CitationSource } from "@/lib/types";
 
 const CITATION_PREFIX = "#cite-";
-const CITATION_MARKER = /\[(\d{1,2})\]/g;
+const CITATION_MARKER = /\[ref_(\d{1,3})\]/gi;
 
 interface MarkdownNode {
   type: string;
@@ -95,7 +95,7 @@ function walk(node: MarkdownNode, insideLink: boolean): void {
   }
 }
 
-/** Turn `[n]` text into marker links that the renderer resolves to a source. */
+/** Turn `[ref_n]` text into marker links that the renderer resolves to a source. */
 export function remarkCitationMarkers() {
   return (tree: MarkdownNode): void => {
     walk(tree, false);
@@ -166,11 +166,11 @@ export function CitationMarkerLink({
       target="_blank"
       rel="noopener noreferrer"
     >
-      {children}
+      {source.marker}
     </a>
   ) : (
     <Link to={target.href} className={MARKER_CLASS} aria-label={label}>
-      {children}
+      {source.marker}
     </Link>
   );
   return (

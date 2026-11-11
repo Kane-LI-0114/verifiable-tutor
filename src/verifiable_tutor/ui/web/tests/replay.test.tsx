@@ -167,7 +167,7 @@ describe("replay", () => {
     const pane = await screen.findByTestId("source-pane");
     expect(within(pane).getByText("Lecture 3: Attention")).toBeInTheDocument();
     await user.click(
-      within(pane).getByRole("button", { name: "Collapse citation sources" }),
+      within(pane).getByRole("button", { name: "Close citation sources" }),
     );
 
     await user.click(screen.getByRole("button", { name: /Work chain/ }));

@@ -1,4 +1,3 @@
-import { PanelRightOpenIcon } from "lucide-react";
 import { memo, useMemo } from "react";
 
 import { SourceThumbnail } from "@/components/chat/source-thumbnail";
@@ -66,7 +65,7 @@ function SourceCapsuleView({
       type="button"
       variant="outline"
       size="sm"
-      className="h-8 gap-2 rounded-full py-0 pr-3 pl-1.5 font-normal"
+      className="h-8 gap-2 rounded-full py-0 pr-2.5 pl-1.5 font-normal"
       aria-label={`${t.chat.openSources}: ${label}`}
       aria-expanded={open}
       aria-controls="source-pane"
@@ -86,10 +85,6 @@ function SourceCapsuleView({
         ) : null}
       </AvatarGroup>
       <span className="text-xs tabular-nums">{label}</span>
-      <PanelRightOpenIcon
-        className="size-3.5 text-muted-foreground"
-        aria-hidden="true"
-      />
     </Button>
   );
 }

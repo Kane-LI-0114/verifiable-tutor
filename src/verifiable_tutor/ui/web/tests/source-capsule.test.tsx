@@ -84,6 +84,14 @@ describe("source capsule", () => {
     ).toHaveTextContent("2 course pages · 2 web pages");
   });
 
+  it("has no pane expand icon", () => {
+    renderCapsule(SOURCES);
+
+    expect(
+      document.querySelector(".lucide-panel-right-open"),
+    ).toBeNull();
+  });
+
   it("toggles the pane from the capsule", async () => {
     const user = userEvent.setup();
     const onToggle = renderCapsule(SOURCES);

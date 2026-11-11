@@ -158,7 +158,10 @@ export function ChatSessionShell({
 }: ChatSessionShellProps) {
   const t = useT();
   const isNarrow = useMediaQuery("(max-width: 1023px)");
-  const [activeTurnId, setActiveTurnId] = useState<string | null>(null);
+  const [sourcePane, setSourcePane] = useState<{
+    turnId: string;
+    open: boolean;
+  } | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTop = useRef<number | null>(null);
@@ -450,17 +453,27 @@ export function ChatSessionShell({
   }
 
   const activeTurn =
-    activeTurnId === null
+    sourcePane === null
       ? undefined
-      : turns.find((turn) => turn.message.id === activeTurnId);
+      : turns.find((turn) => turn.message.id === sourcePane.turnId);
   const activeSources: CitationSource[] = activeTurn?.meta?.sources ?? EMPTY_SOURCES;
 
   const toggleSources = useCallback((turnId: string) => {
-    setActiveTurnId((current) => (current === turnId ? null : turnId));
+    setSourcePane((current) =>
+      current?.turnId === turnId
+        ? { ...current, open: !current.open }
+        : { turnId, open: true },
+    );
+  }, []);
+
+  const closeSources = useCallback(() => {
+    setSourcePane((current) =>
+      current === null ? null : { ...current, open: false },
+    );
   }, []);
 
   const clearSources = useCallback(() => {
-    setActiveTurnId(null);
+    setSourcePane(null);
   }, []);
 
   /** The arrow asks to follow the answer down, so the bottom becomes the anchor. */
@@ -517,7 +530,10 @@ export function ChatSessionShell({
                             streaming={state?.streaming}
                             failed={state?.failed}
                             onRetry={state?.onRetry}
-                            sourcesOpen={activeTurnId === turn.message.id}
+                            sourcesOpen={
+                              sourcePane?.turnId === turn.message.id &&
+                              sourcePane.open
+                            }
                             onToggleSources={toggleSources}
                           />
                         </MessageScrollerItem>
@@ -548,16 +564,19 @@ export function ChatSessionShell({
         {composer?.({ clearSources })}
       </section>
 
-      {activeTurnId !== null && !isNarrow ? (
-        <SourcePane sources={activeSources} onClose={clearSources} />
-      ) : null}
+      <SourcePane
+        sources={activeSources}
+        open={sourcePane?.open ?? false}
+        turnId={sourcePane?.turnId ?? null}
+        onClose={closeSources}
+      />
 
       {isNarrow ? (
         <Sheet
-          open={activeTurnId !== null}
+          open={sourcePane?.open ?? false}
           onOpenChange={(open) => {
             if (!open) {
-              clearSources();
+              closeSources();
             }
           }}
         >
@@ -570,7 +589,10 @@ export function ChatSessionShell({
               <SheetTitle>{t.chat.sourcesTitle}</SheetTitle>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
-              <SourceList sources={activeSources} />
+              <SourceList
+                key={sourcePane?.turnId ?? "none"}
+                sources={activeSources}
+              />
             </div>
           </SheetContent>
         </Sheet>

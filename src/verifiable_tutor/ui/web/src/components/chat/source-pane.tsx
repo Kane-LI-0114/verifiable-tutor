@@ -1,4 +1,4 @@
-import { FileTextIcon } from "lucide-react";
+import { FileTextIcon, XIcon } from "lucide-react";
 import { memo } from "react";
 
 import { SourceList } from "@/components/chat/source-list";
@@ -21,10 +21,14 @@ export const SOURCE_PANE_MAX_WIDTH = 640;
 
 function SourcePaneView({
   sources,
+  open = true,
+  turnId = null,
   onClose,
   className,
 }: {
   sources: CitationSource[];
+  open?: boolean;
+  turnId?: string | null;
   onClose: () => void;
   className?: string;
 }) {
@@ -40,6 +44,8 @@ function SourcePaneView({
       expandLabel={t.chat.openSources}
       resizeLabel={t.chat.sourcesResize}
       widthKey={SOURCE_PANE_WIDTH_KEY}
+      open={open}
+      closeIcon={<XIcon />}
       collapsed={false}
       onCollapsedChange={(collapsed) => {
         if (collapsed) {
@@ -73,7 +79,10 @@ function SourcePaneView({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
-          <SourceList sources={sources} />
+          <SourceList
+            key={`${turnId ?? "none"}:${open ? "open" : "closed"}`}
+            sources={sources}
+          />
         </div>
       )}
     </SidePane>
