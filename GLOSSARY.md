@@ -13,7 +13,7 @@ One course page or one web page retrieved for an answer. A source carries a titl
 _Avoid_: Verified citation, reference, link
 
 **Source marker**:
-The 1-based number a source carries inside one answer, written as `[n]` at the end of a paragraph and listed in the source pane. Markers restart at 1 for each answer.
+The 1-based number a source carries inside one answer, written by the model as `[ref_n]` at the end of a paragraph and listed in the source pane. The UI renders only the number, not the token or brackets. Markers restart at 1 for each answer.
 _Avoid_: Citation number, footnote number
 
 **Citation**:
