@@ -242,7 +242,7 @@ One origin serves the API and the built UI: FastAPI serves the static build of t
 - `app.frontend()` can also be registered on a router and included under a prefix, which is how a tool UI could be isolated later; path operations everywhere still win ([frontend](https://fastapi.tiangolo.com/tutorial/frontend/)).
 - For simple asset directories (page images, self-hosted KaTeX fonts), mount `StaticFiles(directory=...)` at a sub-path such as `/assets`. A mounted app is independent: its paths are not part of the API schema ([static files](https://fastapi.tiangolo.com/tutorial/static-files/)).
 - Do not mount `StaticFiles` at `/` to emulate SPA fallback; the frontend helper exists for that and applies the Accept and method rules correctly.
-- Serve one page image per request by file path with `FileResponse`, which sets `Content-Length`, `Last-Modified`, `ETag`, and a filename for downloads. The citation panel fetches the WebP plus highlight boxes from the OCR records ([custom response](https://fastapi.tiangolo.com/advanced/custom-response/), [prd.md](prd.md) evidence panel).
+- Serve one page image per request by file path with `FileResponse`, which sets `Content-Length`, `Last-Modified`, `ETag`, and a filename for downloads. The source pane uses the WebP as a thumbnail, and the knowledge browser uses it as a page preview ([custom response](https://fastapi.tiangolo.com/advanced/custom-response/), [prd.md](prd.md) citation source pane).
 - During local UI development the Vite dev server runs on `http://localhost:5173` and calls the API on `http://127.0.0.1:8000`, which is cross-origin. Add `CORSMiddleware` for local development only, with `allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"]`, `allow_credentials=True`, and the methods and headers the UI uses. The delivered app is same-origin and needs no CORS ([CORS](https://fastapi.tiangolo.com/tutorial/cors/)).
 
 ### 4.10 Settings and environment
@@ -337,7 +337,7 @@ The backend exposes the surface below. Every route is covered by tests in `tests
 | `POST /api/knowledge/builds` | queue a Qwen build job | no | instructor |
 | `GET /api/knowledge/builds` | list builds | no | instructor |
 | `GET /api/knowledge/builds/{build_id}` | build state and result | no | instructor |
-| `GET /api/corpus/{doc_id}/pages/{page_no}.webp` | page image for the citation panel | no | session |
+| `GET /api/corpus/{doc_id}/pages/{page_no}.webp` | page image for source thumbnails and the knowledge preview | no | session |
 | `POST /api/practice/runs` | scaffold only: documented 503 until `tacc/exec` exists | no | session |
 
 Deferred with no route in this pass: retrieval and citation frames, the disclosure gate and deadline registry, LangGraph orchestration, teaching and explainer, practice generation and grading, `tacc/exec` execution, the optional OpenAI-compatible interop endpoint, and the UI build. The full rationale is in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).

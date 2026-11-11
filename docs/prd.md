@@ -2,15 +2,15 @@
 
 | | |
 |---|---|
-| **Status** | Draft for review, version 0.10 |
-| **Date** | 2026-11-01 |
+| **Status** | Draft for review, version 0.11 |
+| **Date** | 2026-11-11 |
 | **Owners** | LI Jinchuan, TIAN Yujia, XIE Yifeng |
 | **Scope** | What the system must do and how it is accepted |
 | **Supersedes** | Proposal v1 (submitted 2026-10-27) remains the submitted artifact; proposal v2 (dated 2026-10-30) is a previous draft; proposal v3 (dated 2026-11-01) is the current statement of the plan and aligns with this document. This document is the living product specification; [tech-selection.md](tech-selection.md) and the ADRs own how the system is built |
 
 This document is the source of truth for what ships. Proposal v1 records why the project exists and what was promised to the course; proposal v3 records the required TACC model-serving backend and the knowledge base. When a requirement here contradicts proposal v1, the report explains the change; proposal v3 aligns with this document. The technology selection and the ADRs record implementation decisions.
 
-Version 0.10 records the 2026-11-01 staff requirement that TACC be a required model-serving backend, adds the Qwen knowledge-base pipeline, and updates proposal references from v2 to v3.
+Version 0.11 records numbered source markers and the per-answer citation source pane, and separates retrieved sources from verified citations. Version 0.10 records the 2026-11-01 staff requirement that TACC be a required model-serving backend, adds the Qwen knowledge-base pipeline, and updates proposal references from v2 to v3.
 
 ## 1. Problem and goals
 
@@ -59,7 +59,7 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 **P0, required for the first end-to-end demo and evaluation run:**
 
 - Accounts: registration with student email, verification code, login and logout, password reset, roles, per-user isolation.
-- Conversation: bilingual course questions with hybrid retrieval, page-level citations with quoted spans, deterministic span verification with one repair round or abstention, an evidence panel with page images and highlights.
+- Conversation: bilingual course questions with hybrid retrieval, numbered source markers for course pages and web pages, a per-answer citation source pane, page-level citations with quoted spans, and deterministic span verification with one repair round or abstention.
 - Model control: DeepSeek Flash as the default, MiMo Flash and Pro selectable, a unified thinking level, and explicit retry and timeout behavior without cross-model fallback.
 - Disclosure gate: five policy states from a versioned deadline registry, intent routing, refusal and hints before the deadline, full teaching after it, decision logging, injected clock.
 - Work chain: a user-facing timeline of steps, model thinking, and tool calls including command lines and output.
@@ -103,7 +103,7 @@ Priorities are build order, not a cut list. All P0 and P1 content is committed; 
 
 Each journey is a demo or evaluation script and is accepted against its numbered requirements.
 
-- **J1 First visit and first question.** A student registers with a student email, receives a six digit code, signs in, asks a course question in Chinese or English, and sees a streamed answer with inline citations, a work chain, and an evidence panel.
+- **J1 First visit and first question.** A student registers with a student email, receives a six digit code, signs in, asks a course question in Chinese or English, and sees a streamed answer with numbered source markers, a source capsule, a work chain, and a citation source pane.
 - **J2 Homework request before the deadline.** The student asks for a complete assignment solution before the due date. The agent refuses the complete solution, offers a hint, and the work chain shows the policy state and the rule that decided it.
 - **J3 Teaching after the deadline.** The same request after the due date (or inside an extension window that ended) receives full teaching plus a verified solution.
 - **J4 Review outline and self-test.** The student asks for a review outline or a self-test on a topic, optionally naming the question type. The agent generates cited questions and reference answers that do not reveal the current assignment solution.
@@ -154,9 +154,9 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 |---|---|---|---|
 | FR-B1 | Answer in the language of the question (Chinese or English), with course terms preserved | P0 | Five benchmark questions in each language produce answers in the matching language |
 | FR-B2 | Hybrid retrieval over the course corpus (SQLite FTS5 BM25 plus BGE-M3 dense, reciprocal rank fusion) | P0 | The ablation arms BM25, dense, and hybrid are runnable and reported |
-| FR-B3 | Every course fact carries a citation with document id, page number, and the quoted span | P0 | A citation chip opens the evidence panel at the cited page and highlights the span |
+| FR-B3 | Every course fact carries a citation with document id, page number, and the quoted span | P0 | A citation marker opens the cited source at its page and exposes the verified quoted span |
 | FR-B4 | Deterministic span verification: after whitespace and case normalization the quoted span must occur on the cited page; one repair round; otherwise abstain | P0 | A fabricated citation is rejected by the verifier; an answer that cannot be repaired becomes an abstention with the missing evidence named |
-| FR-B5 | Evidence panel: server-rendered page image plus highlight rectangles from OCR block boxes | P0 | No PDF viewer and no CDN are required; the panel works offline |
+| FR-B5 | Citation source pane: a per-answer list of the course pages and web pages retrieved for that answer, each with a marker, title, truncated summary, and navigation target | P0 | Every retrieved source appears once and in marker order; the answer capsule is the only way to open the pane; a course row opens the knowledge browser at its page; a web row opens the source URL; no PDF viewer and no CDN are required |
 | FR-B6 | Model selection: DeepSeek Flash default, MiMo Flash, MiMo Pro; one thinking control with four levels on DeepSeek and Off and On on MiMo (On is the enabled value); MiMo degradation is recorded. Qwen on TACC is an offline knowledge-base backend, not a selectable chat model. | P0 | The selected model and the effective thinking level appear in the trace; the MiMo control has no effort levels; a MiMo selection with audio uses that same tier |
 | FR-B7 | Same-model retries only; after exhaustion show a timeout or unavailable message with a retry action; no cross-model fallback and no raw provider error | P0 | A forced 503 sequence produces the user copy after three attempts and no call to another model |
 | FR-B8 | Cache successful model calls and replay identical requests without a paid call | P0 | A repeated benchmark request produces the same result with no network call |
@@ -164,6 +164,8 @@ IDs are stable. Priority uses P0, P1, and P2 from section 3. Acceptance criteria
 | FR-B10 | Record every session as JSONL and replay it through the same UI stream | P0 | Replay works with the network disabled |
 | FR-B11 | Per-user conversation history with resume | P0 | A signed-in user sees their own conversations only |
 | FR-B12 | Streamed response; a failed stream after partial output stops with the failure copy and does not replay a partial answer | P0 | A mid-stream failure shows the error state and the answer is not cached |
+
+FR-B3 and FR-B4 describe the verified citation layer. The current implementation ships numbered retrieval sources and the source pane, and defers span verification and claim support to [issue #1](https://github.com/Kane-LI-0114/verifiable-tutor/issues/1). A source marker therefore means that the source was retrieved for the answer, not that the source supports the surrounding claim.
 
 ### 5.3 Disclosure policy
 

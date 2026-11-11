@@ -8,9 +8,17 @@ Vocabulary for the course-grounded tutoring agent. It is a single-context reposi
 A response to a student's message that contains course content. An answer is either verified, partially verified with named gaps, or an abstention.
 _Avoid_: Reply, completion, output
 
+**Source**:
+One course page or one web page retrieved for an answer. A source carries a title, a short summary, and a navigation target. It is evidence a reader can open, not a verified citation; only a quoted span that passes the span verifier turns a source into a citation.
+_Avoid_: Verified citation, reference, link
+
+**Source marker**:
+The 1-based number a source carries inside one answer, written as `[n]` at the end of a paragraph and listed in the source pane. Markers restart at 1 for each answer.
+_Avoid_: Citation number, footnote number
+
 **Citation**:
 A reference from a claim in an answer to one document, one page, and one quoted span. A citation without a quoted span is not a citation.
-_Avoid_: Source, reference, footnote
+_Avoid_: Reference, footnote
 
 **Quoted span**:
 The exact text from the OCR page that a citation rests on. It must occur on the cited page after whitespace and case normalization.
