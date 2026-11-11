@@ -226,7 +226,7 @@ Numbered sources one assistant answer retrieved, in citation-marker order. A cou
 | `id` | TEXT | yes | PK | Source row id (uuid hex). |
 | `message_id` | TEXT | no | FK | Assistant message whose answer cites the source. |
 | `position` | INTEGER | no | - | 0-based display order inside the turn. |
-| `marker` | INTEGER | no | - | 1-based citation number the answer uses as [n]. |
+| `marker` | INTEGER | no | - | 1-based citation number the answer uses as [ref_n]. |
 | `kind` | TEXT | no | - | course or web. |
 | `title` | TEXT | no | - | Course document title or web page title. |
 | `summary` | TEXT | no | - | Fixed-length excerpt of the retrieved page or web result. |

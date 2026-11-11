@@ -175,7 +175,7 @@ def test_search_course_returns_numbered_sources():
     assert result.status == "done"
     payload = json.loads(result.content)
     assert payload["chunks"][0]["marker"] == 1
-    assert payload["chunks"][0]["citation"] == "[1]"
+    assert payload["chunks"][0]["citation"] == "[ref_1]"
     assert payload["sources"] == [
         {
             "marker": 1,
@@ -249,7 +249,7 @@ def test_read_course_page_returns_the_page_marker():
     assert result.status == "done"
     payload = json.loads(result.content)
     assert payload["marker"] == 1
-    assert payload["citation"] == "[1]"
+    assert payload["citation"] == "[ref_1]"
     assert payload["sources"][0]["title"] == "Tutorial 2: Collectives"
     assert payload["sources"][0]["doc_id"] == "Tutorial_2"
     assert payload["sources"][0]["page_no"] == 8
@@ -311,7 +311,7 @@ def test_web_search_returns_numbered_web_sources():
     assert result.status == "done"
     payload = json.loads(result.content)
     assert payload["results"][0]["marker"] == 1
-    assert payload["results"][0]["citation"] == "[1]"
+    assert payload["results"][0]["citation"] == "[ref_1]"
     assert payload["sources"] == [
         {
             "marker": 1,
@@ -382,7 +382,7 @@ def test_web_fetch_returns_a_numbered_source():
     assert result.status == "done"
     payload = json.loads(result.content)
     assert payload["marker"] == 1
-    assert payload["citation"] == "[1]"
+    assert payload["citation"] == "[ref_1]"
     assert payload["sources"][0]["marker"] == 1
     assert payload["sources"][0]["title"] == "Example"
     assert payload["sources"][0]["url"] == "https://example.com"

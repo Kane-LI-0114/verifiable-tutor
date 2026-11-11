@@ -1,7 +1,7 @@
 """Turn-scoped source registry for numbered citation markers.
 
 One chat turn numbers the sources it retrieves so the model can cite them as
-``[n]``. A course page is identified by its document and page, a web source by
+``[ref_n]``. A course page is identified by its document and page, a web source by
 its URL without the fragment, and the first retrieval of a source fixes its
 marker for the rest of the turn. The registry produces the same plain dicts the
 history API and the stream frame carry.
@@ -16,7 +16,16 @@ from urllib.parse import urlsplit, urlunsplit
 #: Longest summary one source row carries. A page keeps its leading text.
 SOURCE_SUMMARY_CHARS = 200
 
+#: Namespace that separates a citation marker from ordinary bracketed text.
+CITATION_TOKEN_PREFIX = "ref_"
+
 SourceKind = Literal["course", "web"]
+
+
+def citation_token(marker: int) -> str:
+    """The model-facing citation token for one 1-based source marker."""
+
+    return f"[{CITATION_TOKEN_PREFIX}{marker}]"
 
 
 def _summarise(text: str, limit: int) -> str:

@@ -107,7 +107,7 @@ class FakeToolRegistry:
                 "url": "https://example.com/deepseek",
                 "summary": "A summary.",
                 "marker": source.marker,
-                "citation": f"[{source.marker}]",
+                "citation": f"[ref_{source.marker}]",
             }
             payload = {
                 "source": "web",
@@ -138,7 +138,7 @@ class FakeToolRegistry:
                     "section": "Collectives",
                     "text": "MPI_Allreduce reduces a value across all ranks.",
                     "marker": source.marker,
-                    "citation": f"[{source.marker}]",
+                    "citation": f"[ref_{source.marker}]",
                 }
             ],
             "sources": [source.as_dict()],

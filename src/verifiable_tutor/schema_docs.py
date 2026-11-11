@@ -224,7 +224,7 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "id": "Source row id (uuid hex).",
         "message_id": "Assistant message whose answer cites the source.",
         "position": "0-based display order inside the turn.",
-        "marker": "1-based citation number the answer uses as [n].",
+        "marker": "1-based citation number the answer uses as [ref_n].",
         "kind": "course or web.",
         "title": "Course document title or web page title.",
         "summary": "Fixed-length excerpt of the retrieved page or web result.",

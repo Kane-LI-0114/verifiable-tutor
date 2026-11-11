@@ -168,3 +168,10 @@ def test_snapshot_exposes_plain_dicts_in_marker_order():
             "chunk_id": None,
         },
     ]
+
+
+def test_citation_token_namespaces_the_marker():
+    from verifiable_tutor.evidence import sources
+
+    assert sources.citation_token(1) == "[ref_1]"
+    assert sources.citation_token(12) == "[ref_12]"
