@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -142,6 +142,27 @@ CREATE TABLE IF NOT EXISTS citations (
     bbox_norm TEXT,
     verified_at TEXT,
     UNIQUE (message_id, position)
+);
+
+
+CREATE TABLE IF NOT EXISTS message_sources (
+    id TEXT PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    marker INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('course', 'web')),
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    doc_id TEXT,
+    page_no INTEGER,
+    url TEXT,
+    chunk_id TEXT,
+    UNIQUE (message_id, position),
+    UNIQUE (message_id, marker),
+    CHECK (
+        (kind = 'course' AND doc_id IS NOT NULL AND page_no IS NOT NULL AND url IS NULL)
+        OR (kind = 'web' AND url IS NOT NULL AND doc_id IS NULL AND page_no IS NULL)
+    )
 );
 
 CREATE TABLE IF NOT EXISTS tool_calls (
@@ -704,6 +725,7 @@ class Storage:
             by_id = {message["id"]: message for message in messages}
             for message in messages:
                 message["work_steps"] = []
+                message["sources"] = []
                 message["citations"] = []
                 message["tool_calls"] = []
                 message["events"] = []
@@ -726,6 +748,28 @@ class Storage:
                         "duration_ms": row["duration_ms"],
                         "policy": row["policy"],
                         "rule_id": row["rule_id"],
+                    }
+                )
+
+            sources = connection.execute(
+                "SELECT s.* FROM message_sources s"
+                " JOIN messages m ON m.id = s.message_id"
+                " WHERE m.conversation_id = ?"
+                " ORDER BY s.message_id, s.position",
+                (conversation_id,),
+            ).fetchall()
+            for row in sources:
+                by_id[row["message_id"]]["sources"].append(
+                    {
+                        "position": row["position"],
+                        "marker": row["marker"],
+                        "kind": row["kind"],
+                        "title": row["title"],
+                        "summary": row["summary"],
+                        "doc_id": row["doc_id"],
+                        "page_no": row["page_no"],
+                        "url": row["url"],
+                        "chunk_id": row["chunk_id"],
                     }
                 )
 
@@ -816,6 +860,7 @@ class Storage:
         thinking: str | None = None,
         reasoning: str | None = None,
         steps: Sequence[Mapping[str, Any]] = (),
+        sources: Sequence[Mapping[str, Any]] = (),
         citations: Sequence[Mapping[str, Any]] = (),
         tool_calls: Sequence[Mapping[str, Any]] = (),
         events: Sequence[Mapping[str, Any]] = (),
@@ -847,6 +892,26 @@ class Storage:
             )
             for position, step in enumerate(steps):
                 _insert_step(connection, message_id, position, step)
+            for position, source in enumerate(sources):
+                connection.execute(
+                    "INSERT INTO message_sources"
+                    " (id, message_id, position, marker, kind, title, summary,"
+                    "  doc_id, page_no, url, chunk_id)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        uuid.uuid4().hex,
+                        message_id,
+                        position,
+                        int(source["marker"]),
+                        source["kind"],
+                        source["title"],
+                        source["summary"],
+                        source.get("doc_id"),
+                        source.get("page_no"),
+                        source.get("url"),
+                        source.get("chunk_id"),
+                    ),
+                )
             for position, citation in enumerate(citations):
                 connection.execute(
                     "INSERT INTO citations"
@@ -915,6 +980,7 @@ class Storage:
             "model": model,
             "thinking": thinking,
             "work_steps": list(steps),
+            "sources": list(sources),
             "citations": list(citations),
             "tool_calls": list(tool_calls),
             "events": list(events),

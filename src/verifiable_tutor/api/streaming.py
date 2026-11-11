@@ -55,6 +55,12 @@ def data_tool(data: dict[str, Any]) -> dict[str, Any]:
     return {"type": "data-tool", "data": data}
 
 
+def data_sources(sources: list[dict[str, Any]]) -> dict[str, Any]:
+    """One custom data part carrying the turn's numbered sources so far."""
+
+    return {"type": "data-sources", "data": {"sources": sources}}
+
+
 def text_start(part_id: str) -> dict[str, Any]:
     return {"type": "text-start", "id": part_id}
 

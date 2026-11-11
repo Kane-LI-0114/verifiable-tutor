@@ -97,16 +97,23 @@ class FakeToolRegistry:
                 status="failed",
             )
         if name == "web_search":
+            source = context.sources.add_web(
+                url="https://example.com/deepseek",
+                title="DeepSeek V4 released",
+                summary="A summary.",
+            )
+            result = {
+                "title": "DeepSeek V4 released",
+                "url": "https://example.com/deepseek",
+                "summary": "A summary.",
+                "marker": source.marker,
+                "citation": f"[{source.marker}]",
+            }
             payload = {
                 "source": "web",
                 "untrusted": True,
-                "results": [
-                    {
-                        "title": "DeepSeek V4 released",
-                        "url": "https://example.com/deepseek",
-                        "summary": "A summary.",
-                    }
-                ],
+                "results": [result],
+                "sources": [source.as_dict()],
             }
             return ToolResult(
                 content=json.dumps(payload),
@@ -114,6 +121,13 @@ class FakeToolRegistry:
                 result=payload,
                 status="done",
             )
+        source = context.sources.add_course(
+            doc_id="Tutorial_2",
+            page_no=8,
+            title="Tutorial 2: Collectives",
+            text="MPI_Allreduce reduces a value across all ranks.",
+            chunk_id="Tutorial_2:p008:c00",
+        )
         payload = {
             "source": "course",
             "chunks": [
@@ -123,8 +137,11 @@ class FakeToolRegistry:
                     "chunk_id": "Tutorial_2:p008:c00",
                     "section": "Collectives",
                     "text": "MPI_Allreduce reduces a value across all ranks.",
+                    "marker": source.marker,
+                    "citation": f"[{source.marker}]",
                 }
             ],
+            "sources": [source.as_dict()],
         }
         return ToolResult(
             content=json.dumps(payload),

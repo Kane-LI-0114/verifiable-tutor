@@ -17,8 +17,9 @@ from verifiable_tutor.storage import Storage
 # ADR-0016 bumps it to 3 for the provider-call columns on tool_calls,
 # ADR-0017 bumps it to 4 for the ordered work-chain events, and ADR-0019
 # bumps it to 5 for the step tag on each event. Version 6 adds the soft-delete
-# stamps to the knowledge tables.
-SCHEMA_VERSION = 6
+# stamps to the knowledge tables. Version 7 adds the numbered sources a turn
+# retrieved.
+SCHEMA_VERSION = 7
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -122,7 +123,13 @@ def test_initialize_upgrades_a_legacy_database_without_losing_rows(tmp_path):
                 "SELECT name FROM sqlite_master WHERE type = 'table'"
             )
         }
-        assert {"message_steps", "citations", "tool_calls", "message_events"} <= tables
+        assert {
+            "message_steps",
+            "citations",
+            "tool_calls",
+            "message_events",
+            "message_sources",
+        } <= tables
         event_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(message_events)")
         }
@@ -194,6 +201,7 @@ def test_initialize_creates_the_current_schema_on_a_fresh_database(tmp_path):
             "citations",
             "tool_calls",
             "message_events",
+            "message_sources",
             "knowledge_builds",
             "kb_folders",
             "kb_documents",

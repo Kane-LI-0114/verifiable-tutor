@@ -236,3 +236,48 @@ def test_web_search_tool_can_run_through_the_agent(agent_api):
     ).json()["messages"][1]
     assert assistant["tool_calls"][0]["name"] == "web_search"
     assert assistant["tool_calls"][0]["result"]["untrusted"] is True
+
+
+def test_agent_streams_data_sources_and_persists_them(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    agent_api.adapter.scripts = [tool_script(), text_script()]
+
+    response = agent_api.client.post("/api/chat", json={"message": "What is MPI?"})
+
+    assert response.status_code == 200
+    types, parts = sse_types(response)
+    assert types.count("data-sources") == 1
+    assert types.index("data-tool") < types.index("data-sources")
+    sources_frame = next(
+        part for part in parts if isinstance(part, dict) and part["type"] == "data-sources"
+    )
+    assert sources_frame["data"]["sources"] == [
+        {
+            "marker": 1,
+            "kind": "course",
+            "title": "Tutorial 2: Collectives",
+            "summary": "MPI_Allreduce reduces a value across all ranks.",
+            "doc_id": "Tutorial_2",
+            "page_no": 8,
+            "url": None,
+            "chunk_id": "Tutorial_2:p008:c00",
+        }
+    ]
+
+    session_id = response.headers["x-conversation-id"]
+    assistant = agent_api.client.get(
+        f"/api/sessions/{session_id}/messages"
+    ).json()["messages"][1]
+    assert assistant["sources"] == [
+        {
+            "marker": 1,
+            "kind": "course",
+            "title": "Tutorial 2: Collectives",
+            "summary": "MPI_Allreduce reduces a value across all ranks.",
+            "doc_id": "Tutorial_2",
+            "page_no": 8,
+            "url": None,
+            "chunk_id": "Tutorial_2:p008:c00",
+        }
+    ]
+    assert assistant["citations"] == []

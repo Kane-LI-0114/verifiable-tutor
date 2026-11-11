@@ -1529,6 +1529,17 @@
           "reasoning": "The question asks about a collective operation.",
           "role": "assistant",
           "sequence": 2,
+          "sources": [
+            {
+              "chunk_id": "course_project:p001:c00",
+              "doc_id": "course_project",
+              "kind": "course",
+              "marker": 1,
+              "page_no": 1,
+              "summary": "Building an End-to-End Agent System",
+              "title": "Course Project"
+            }
+          ],
           "thinking": "high",
           "tier": "flash",
           "tool_calls": [],
@@ -1544,7 +1555,7 @@
         },
         "properties": {
           "citations": {
-            "description": "Page citations carried by the answer, in display order.",
+            "description": "Verified page citations carried by the answer, in display order.",
             "example": [
               {
                 "doc_id": "course_project",
@@ -1644,6 +1655,25 @@
             "title": "Sequence",
             "type": "integer"
           },
+          "sources": {
+            "description": "Numbered sources the answer retrieved, in marker order.",
+            "example": [
+              {
+                "chunk_id": "course_project:p001:c00",
+                "doc_id": "course_project",
+                "kind": "course",
+                "marker": 1,
+                "page_no": 1,
+                "summary": "Building an End-to-End Agent System",
+                "title": "Course Project"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MessageSourceRecord"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
           "thinking": {
             "anyOf": [
               {
@@ -1723,12 +1753,114 @@
           "role",
           "content",
           "work_steps",
+          "sources",
           "citations",
           "tool_calls",
           "events",
           "created_at"
         ],
         "title": "MessageRecord",
+        "type": "object"
+      },
+      "MessageSourceRecord": {
+        "additionalProperties": false,
+        "example": {
+          "chunk_id": "course_project:p001:c00",
+          "doc_id": "course_project",
+          "kind": "course",
+          "marker": 1,
+          "page_no": 1,
+          "summary": "Building an End-to-End Agent System",
+          "title": "Course Project"
+        },
+        "properties": {
+          "chunk_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chunk id that introduced the source, when known.",
+            "example": "course_project:p001:c00",
+            "title": "Chunk Id"
+          },
+          "doc_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Course document id; null for web.",
+            "example": "course_project",
+            "title": "Doc Id"
+          },
+          "kind": {
+            "description": "Course page or web page.",
+            "enum": [
+              "course",
+              "web"
+            ],
+            "example": "course",
+            "title": "Kind",
+            "type": "string"
+          },
+          "marker": {
+            "description": "1-based citation number the answer uses as [n].",
+            "example": 1,
+            "title": "Marker",
+            "type": "integer"
+          },
+          "page_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Course page number; null for web.",
+            "example": 1,
+            "title": "Page No"
+          },
+          "summary": {
+            "description": "Fixed-length excerpt of the retrieved page or web result.",
+            "example": "Building an End-to-End Agent System",
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "description": "Course document title or web page title.",
+            "example": "Course Project",
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Web source URL; null for a course source.",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "marker",
+          "kind",
+          "title",
+          "summary"
+        ],
+        "title": "MessageSourceRecord",
         "type": "object"
       },
       "PracticeRunBody": {
@@ -2431,6 +2563,17 @@
               "reasoning": "The question asks about a collective operation.",
               "role": "assistant",
               "sequence": 2,
+              "sources": [
+                {
+                  "chunk_id": "course_project:p001:c00",
+                  "doc_id": "course_project",
+                  "kind": "course",
+                  "marker": 1,
+                  "page_no": 1,
+                  "summary": "Building an End-to-End Agent System",
+                  "title": "Course Project"
+                }
+              ],
               "thinking": "high",
               "tier": "flash",
               "tool_calls": [],
@@ -2474,6 +2617,17 @@
                 "reasoning": "The question asks about a collective operation.",
                 "role": "assistant",
                 "sequence": 2,
+                "sources": [
+                  {
+                    "chunk_id": "course_project:p001:c00",
+                    "doc_id": "course_project",
+                    "kind": "course",
+                    "marker": 1,
+                    "page_no": 1,
+                    "summary": "Building an End-to-End Agent System",
+                    "title": "Course Project"
+                  }
+                ],
                 "thinking": "high",
                 "tier": "flash",
                 "tool_calls": [],

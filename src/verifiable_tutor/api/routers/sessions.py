@@ -90,6 +90,19 @@ def session_messages(session_id: str, user: CurrentUser, storage: StorageDep):
                 }
                 for step in message["work_steps"]
             ],
+            "sources": [
+                {
+                    "marker": source["marker"],
+                    "kind": source["kind"],
+                    "title": source["title"],
+                    "summary": source["summary"],
+                    "doc_id": source["doc_id"],
+                    "page_no": source["page_no"],
+                    "url": source["url"],
+                    "chunk_id": source["chunk_id"],
+                }
+                for source in message["sources"]
+            ],
             "citations": [
                 {
                     "doc_id": citation["doc_id"],

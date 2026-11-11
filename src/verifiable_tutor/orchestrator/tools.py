@@ -14,6 +14,8 @@ from typing import Any, Callable, Sequence
 
 from pydantic import BaseModel, ValidationError
 
+from ..evidence.sources import SourceRegistry
+
 TOOL_STATUSES = {"done", "failed"}
 
 
@@ -39,6 +41,7 @@ class ToolContext:
     retriever: Any
     store: Any
     settings: Any
+    sources: SourceRegistry
 
 
 @dataclass(frozen=True)

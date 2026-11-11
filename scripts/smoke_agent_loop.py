@@ -31,6 +31,7 @@ if str(SRC) not in sys.path:
 from verifiable_tutor.api.factory import _build_embedder  # noqa: E402
 from verifiable_tutor.corpus.store import KnowledgeStore  # noqa: E402
 from verifiable_tutor.evidence.retrieval import HybridRetriever  # noqa: E402
+from verifiable_tutor.evidence.sources import SourceRegistry  # noqa: E402
 from verifiable_tutor.llm.adapter import ModelAdapter  # noqa: E402
 from verifiable_tutor.llm.config import load_model_config  # noqa: E402
 from verifiable_tutor.orchestrator.builtin_tools import build_tool_registry  # noqa: E402
@@ -192,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         retriever=retriever,
         store=store,
         settings=settings,
+        sources=SourceRegistry(),
     )
     providers = (
         ["deepseek", "mimo"] if args.provider == "all" else [args.provider]

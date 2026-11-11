@@ -122,6 +122,64 @@ def test_assistant_turn_metadata_round_trips(tmp_path):
     assert assistant["tool_calls"][0]["status"] == "done"
 
 
+def test_assistant_sources_round_trip(tmp_path):
+    storage = _seeded_storage(tmp_path)
+
+    _assistant_turn(
+        storage,
+        sources=[
+            {
+                "marker": 1,
+                "kind": "course",
+                "title": "Lecture 2: Collectives",
+                "summary": "MPI_Allreduce combines values from all ranks.",
+                "doc_id": "ACS_lecture_2",
+                "page_no": 12,
+                "url": None,
+                "chunk_id": "ACS_lecture_2:p012:c00",
+            },
+            {
+                "marker": 2,
+                "kind": "web",
+                "title": "DeepSeek API documentation",
+                "summary": "Search API reference.",
+                "doc_id": None,
+                "page_no": None,
+                "url": "https://api-docs.deepseek.com/guides/search",
+                "chunk_id": None,
+            },
+        ],
+    )
+
+    messages = storage.list_messages("conv-1")
+    assert [message["role"] for message in messages] == ["user", "assistant"]
+    assert messages[0]["sources"] == []
+    assert messages[1]["sources"] == [
+        {
+            "position": 0,
+            "marker": 1,
+            "kind": "course",
+            "title": "Lecture 2: Collectives",
+            "summary": "MPI_Allreduce combines values from all ranks.",
+            "doc_id": "ACS_lecture_2",
+            "page_no": 12,
+            "url": None,
+            "chunk_id": "ACS_lecture_2:p012:c00",
+        },
+        {
+            "position": 1,
+            "marker": 2,
+            "kind": "web",
+            "title": "DeepSeek API documentation",
+            "summary": "Search API reference.",
+            "doc_id": None,
+            "page_no": None,
+            "url": "https://api-docs.deepseek.com/guides/search",
+            "chunk_id": None,
+        },
+    ]
+
+
 def test_an_invalid_step_rolls_back_the_whole_turn(tmp_path):
     storage = _seeded_storage(tmp_path)
 

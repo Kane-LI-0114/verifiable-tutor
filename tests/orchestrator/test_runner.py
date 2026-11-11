@@ -276,6 +276,38 @@ def test_mid_stream_failure_propagates_to_the_caller():
         _run(Boom())
 
 
+def test_turn_end_carries_the_turn_sources():
+    adapter = ScriptAdapter([_tool_script(), _text_script("Answer.")])
+
+    events = _run(adapter)
+
+    turn = events[-1].data
+    assert turn["sources"] == [
+        {
+            "marker": 1,
+            "kind": "course",
+            "title": "Tutorial_2",
+            "summary": "MPI_Allreduce reduces a value across all ranks.",
+            "doc_id": "Tutorial_2",
+            "page_no": 8,
+            "url": None,
+            "chunk_id": "Tutorial_2:p008:c00",
+        }
+    ]
+
+
+def test_sources_event_follows_the_tool_result():
+    adapter = ScriptAdapter([_tool_script(), _text_script("Answer.")])
+
+    events = _run(adapter)
+
+    kinds = [event.kind for event in events]
+    assert kinds.index("tool_end") < kinds.index("sources")
+    sources = [event for event in events if event.kind == "sources"]
+    assert len(sources) == 1
+    assert sources[0].data["sources"][0]["marker"] == 1
+
+
 def test_an_empty_final_answer_uses_the_fallback_copy():
     adapter = ScriptAdapter(
         [[StreamEvent(kind="finish", finish_reason="stop")]]
