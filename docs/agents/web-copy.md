@@ -52,8 +52,7 @@ code, it does not exist.
 ## 3. Research base
 
 Captured on 2026-11-13 with `web_fetch` and `agent-browser`. Full quotes and failures are
-in `../../.agents/skills/web-copy/research/2026-11-13-web-copy-audit.md` in the course
-workspace.
+in [2026-11-13-web-copy.md](../research/2026-11-13-web-copy.md).
 
 | Site | URL | What it is | Status |
 |---|---|---|---|
