@@ -8,6 +8,7 @@ import { Message, MessageContent, MessageFooter } from "@/components/ui/message"
 import { Markdown } from "@/components/ai/markdown";
 import { AnswerPending } from "@/components/chat/answer-pending";
 import { SourceCapsule } from "@/components/chat/source-capsule";
+import { SourceDisclosure } from "@/components/chat/source-disclosure";
 import { PageError } from "@/components/layout/page-states";
 import { WorkChain } from "@/components/chat/work-chain";
 import { createPcmPlayer, type PcmPlayer } from "@/lib/audio/pcm-player";
@@ -174,6 +175,7 @@ export function ChatMessageView({
   onRetry,
   sourcesOpen = false,
   onToggleSources,
+  sourceStyle = "capsule",
 }: {
   turn: ConversationTurn;
   failed?: boolean;
@@ -181,6 +183,8 @@ export function ChatMessageView({
   onRetry?: () => void;
   sourcesOpen?: boolean;
   onToggleSources?: (turnId: string) => void;
+  /** How citations close the answer: the pane-opening capsule, or an inline fold. */
+  sourceStyle?: "capsule" | "disclosure";
 }) {
   const t = useT();
   const { message, meta } = turn;
@@ -224,15 +228,17 @@ export function ChatMessageView({
             <Markdown sources={meta?.sources ?? []}>
               {message.content}
             </Markdown>
-            {meta !== undefined &&
-            (meta.sources ?? []).length > 0 &&
-            onToggleSources !== undefined ? (
+            {meta !== undefined && (meta.sources ?? []).length > 0 ? (
               <div className="mt-3">
-                <SourceCapsule
-                  sources={meta.sources}
-                  open={sourcesOpen}
-                  onToggle={toggleSources}
-                />
+                {sourceStyle === "disclosure" ? (
+                  <SourceDisclosure sources={meta.sources} />
+                ) : onToggleSources !== undefined ? (
+                  <SourceCapsule
+                    sources={meta.sources}
+                    open={sourcesOpen}
+                    onToggle={toggleSources}
+                  />
+                ) : null}
               </div>
             ) : null}
           </>

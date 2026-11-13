@@ -25,6 +25,10 @@ import { useMediaQuery } from "@/lib/use-media-query";
 import { apiFetchBinary } from "@/lib/api/client";
 import { knowledgeApi, type KnowledgeDocument } from "@/lib/api/knowledge";
 import { format, useT } from "@/lib/i18n";
+import {
+  clearDocumentPath,
+  rememberDocumentPath,
+} from "@/lib/knowledge/return-path";
 import { usePreview } from "@/lib/preview/context";
 import { cn } from "@/lib/utils";
 
@@ -114,6 +118,20 @@ export function DocumentPage() {
     [pageCount, requestedPage],
   );
 
+  // Keep the knowledge nav pointed at this file while the reader is here, so
+  // leaving for the conversation view and coming back lands on the same page.
+  // The memory is in the tab, not storage: a reload starts at the grid.
+  const returnPath = useMemo(() => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (from) {
+      params.set("from", from);
+    }
+    return `/knowledge/docs/${encodeURIComponent(docId)}?${params.toString()}`;
+  }, [docId, from, page]);
+  useEffect(() => {
+    rememberDocumentPath(returnPath);
+  }, [returnPath]);
+
   useEffect(() => {
     if (isPreview) {
       setDocument(previewDocument(docId));
@@ -201,6 +219,7 @@ export function DocumentPage() {
   }
 
   function back() {
+    clearDocumentPath();
     if (from) {
       navigate(`/knowledge?folder=${encodeURIComponent(from)}`);
     } else {
@@ -365,7 +384,7 @@ export function DocumentPage() {
             <SheetHeader className="border-b">
               <SheetTitle>{t.knowledge.chatTitle}</SheetTitle>
             </SheetHeader>
-            <DocChatPane docId={docId} pageNo={page} />
+            <DocChatPane key={docId} docId={docId} pageNo={page} />
           </SheetContent>
         </Sheet>
       ) : (
@@ -385,7 +404,7 @@ export function DocumentPage() {
         header={t.knowledge.chatTitle}
         defaultWidth={400}
       >
-        <DocChatPane docId={docId} pageNo={page} />
+        <DocChatPane key={docId} docId={docId} pageNo={page} />
       </SidePane>
       )}
     </div>

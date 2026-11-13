@@ -1,10 +1,11 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { createFetchStub, jsonResponse, sseResponse, type StubRoute } from "./api-stub";
 import { installMemoryStorage } from "./memory-storage";
 import { renderLiveRoute } from "./render-live-route";
+import { clearDocumentPath } from "@/lib/knowledge/return-path";
 
 // pdf.js needs a worker and a real canvas; the page's own controls are what
 // this seam tests, so the renderer is replaced with a resolving stub.
@@ -95,6 +96,7 @@ function routes(overrides: StubRoute[] = []): StubRoute[] {
 
 beforeEach(() => {
   installMemoryStorage();
+  clearDocumentPath();
   HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
     clearRect: vi.fn(),
     fillRect: vi.fn(),
@@ -105,6 +107,77 @@ afterEach(() => {
   stub?.restore();
   stub = null;
 });
+
+const STORED_TURNS = [
+  {
+    id: "stored-question",
+    sequence: 1,
+    role: "user",
+    content: "What is on this page?",
+    provider: null,
+    tier: null,
+    created_at: "2026-11-13T08:00:00+00:00",
+    reasoning: null,
+    model: null,
+    thinking: null,
+    work_steps: [],
+    citations: [],
+    sources: [],
+    tool_calls: [],
+  },
+  {
+    id: "stored-answer",
+    sequence: 2,
+    role: "assistant",
+    content: "The page introduces the GPU memory hierarchy.",
+    provider: "deepseek",
+    tier: "flash",
+    created_at: "2026-11-13T08:00:04+00:00",
+    reasoning: null,
+    model: "deepseek-chat",
+    thinking: "off",
+    work_steps: [],
+    citations: [],
+    sources: [
+      {
+        marker: 1,
+        kind: "course",
+        title: "Lecture 1: GPU architecture",
+        summary: "Registers, shared memory, and global memory sit at different levels.",
+        doc_id: "ACS_Lecture_1_2026F",
+        page_no: 7,
+        url: null,
+      },
+    ],
+    tool_calls: [],
+  },
+];
+
+const SOURCE_FRAMES = [
+  { type: "start", messageId: "answer-src" },
+  { type: "text-start", id: "t1" },
+  { type: "text-delta", id: "t1", delta: "This page maps the memory hierarchy." },
+  { type: "text-end", id: "t1" },
+  {
+    type: "data-sources",
+    data: {
+      sources: [
+        {
+          marker: 1,
+          kind: "course",
+          title: "Lecture 1: GPU architecture",
+          summary: "Registers, shared memory, and global memory sit at different levels.",
+          doc_id: "ACS_Lecture_1_2026F",
+          page_no: 7,
+          url: null,
+          chunk_id: "ACS_Lecture_1_2026F:p007:c00",
+        },
+      ],
+    },
+  },
+  { type: "finish" },
+  "[DONE]",
+];
 
 describe("document preview", () => {
   it("opens the file with a back arrow and page controls", async () => {
@@ -230,7 +303,7 @@ describe("document preview", () => {
     await screen.findByText("7 / 67");
     const pane = screen.getByTestId("document-chat-pane");
     expect(
-      within(pane).getByText(/content is not/i),
+      within(pane).getByText(/read the open page/i),
     ).toBeInTheDocument();
 
     await user.type(within(pane).getByLabelText("Your question"), "explain this page");
@@ -288,4 +361,104 @@ describe("document preview", () => {
     ).toBeInTheDocument();
     expect(pane.querySelector('[data-slot="answer-pending"]')).toBeNull();
   });
+  it("loads this document's earlier conversation from the history button", async () => {
+    window.localStorage.setItem(
+      "vt.knowledge.chat.ACS_Lecture_1_2026F",
+      "conversation-1",
+    );
+    const history: StubRoute = {
+      method: "GET",
+      path: "/api/sessions/conversation-1/messages",
+      handler: () =>
+        jsonResponse({ session_id: "conversation-1", messages: STORED_TURNS }),
+    };
+    stub = createFetchStub(routes([history]));
+    const user = userEvent.setup();
+    renderLiveRoute("/knowledge/docs/ACS_Lecture_1_2026F?page=7");
+
+    await screen.findByText("7 / 67");
+    const pane = screen.getByTestId("document-chat-pane");
+    await user.click(
+      within(pane).getByRole("button", {
+        name: /earlier conversation for this file/i,
+      }),
+    );
+
+    expect(
+      await within(pane).findByText("What is on this page?"),
+    ).toBeInTheDocument();
+    expect(
+      within(pane).getByText(/introduces the GPU memory hierarchy/),
+    ).toBeInTheDocument();
+    expect(
+      within(pane).getByRole("button", { name: /Sources: 1 course page/i }),
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("shows an answer's sources inline and expands them in place", async () => {
+    const chat: StubRoute = {
+      method: "POST",
+      path: "/api/chat",
+      handler: () =>
+        sseResponse(SOURCE_FRAMES, {
+          headers: { "x-conversation-id": "conversation-1" },
+        }),
+    };
+    stub = createFetchStub(routes([chat]));
+    const user = userEvent.setup();
+    renderLiveRoute("/knowledge/docs/ACS_Lecture_1_2026F?page=7");
+
+    await screen.findByText("7 / 67");
+    const pane = screen.getByTestId("document-chat-pane");
+    await user.type(within(pane).getByLabelText("Your question"), "explain this page");
+    await user.click(within(pane).getByRole("button", { name: "Send" }));
+
+    const disclosure = await within(pane).findByRole("button", {
+      name: /Sources: 1 course page/i,
+    });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(
+      within(pane).queryByText("Lecture 1: GPU architecture"),
+    ).not.toBeInTheDocument();
+
+    await user.click(disclosure);
+
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    expect(
+      within(pane).getByText("Lecture 1: GPU architecture"),
+    ).toBeInTheDocument();
+    expect(
+      within(pane).getByRole("link", { name: /Lecture 1: GPU architecture/ }),
+    ).toHaveAttribute("href", "/knowledge/docs/ACS_Lecture_1_2026F?page=7");
+  });
+
+  it("returns to the last document page from another view", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+    const router = renderLiveRoute(
+      "/knowledge/docs/ACS_Lecture_1_2026F?page=7&from=f-lectures",
+    );
+
+    await screen.findByText("7 / 67");
+
+    await act(async () => {
+      await router.navigate("/chat");
+    });
+    await user.click(screen.getByRole("link", { name: "Knowledge base" }));
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(
+        "/knowledge/docs/ACS_Lecture_1_2026F",
+      ),
+    );
+    expect(router.state.location.search).toBe("?page=7&from=f-lectures");
+    expect(await screen.findByText("7 / 67")).toBeInTheDocument();
+
+    // The same item returns to the library once the reader is already on a file.
+    await user.click(screen.getByRole("link", { name: "Knowledge base" }));
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/knowledge"),
+    );
+  });
+
 });
