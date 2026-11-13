@@ -1,9 +1,16 @@
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MessageSquareIcon,
+  RectangleVerticalIcon,
+  Rows3Icon,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { DocChatPane } from "@/components/knowledge/doc-chat-pane";
-import { PdfCanvas } from "@/components/knowledge/pdf-canvas";
+import { PdfViewer } from "@/components/knowledge/pdf-viewer";
 import { readCollapsed, SidePane, writeCollapsed } from "@/components/layout/side-pane";
 import { PageError, PageLoading } from "@/components/layout/page-states";
 import { Button } from "@/components/ui/button";
@@ -19,9 +26,38 @@ import { apiFetchBinary } from "@/lib/api/client";
 import { knowledgeApi, type KnowledgeDocument } from "@/lib/api/knowledge";
 import { format, useT } from "@/lib/i18n";
 import { usePreview } from "@/lib/preview/context";
+import { cn } from "@/lib/utils";
 
 const PANE_WIDTH_KEY = "vt.knowledge.chat.width";
 const PANE_COLLAPSED_KEY = "vt.knowledge.chat.collapsed";
+const BROWSE_MODE_KEY = "vt.knowledge.preview.mode";
+
+type BrowseMode = "page" | "scroll";
+
+function readBrowseMode(): BrowseMode {
+  try {
+    return window.localStorage.getItem(BROWSE_MODE_KEY) === "scroll" ? "scroll" : "page";
+  } catch {
+    return "page";
+  }
+}
+
+function writeBrowseMode(mode: BrowseMode) {
+  try {
+    window.localStorage.setItem(BROWSE_MODE_KEY, mode);
+  } catch {
+    // A private window with storage disabled keeps the in-memory choice.
+  }
+}
+
+function modeButtonClass(active: boolean): string {
+  return cn(
+    "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none",
+    active
+      ? "bg-background text-foreground shadow-sm"
+      : "text-muted-foreground hover:text-foreground",
+  );
+}
 
 function previewDocument(docId: string): KnowledgeDocument {
   return {
@@ -58,7 +94,14 @@ export function DocumentPage() {
   );
   const [pdf, setPdf] = useState<ArrayBuffer | null>(null);
   const [failed, setFailed] = useState(false);
-  const [pageInput, setPageInput] = useState(String(requestedPage));
+  const [pageInput, setPageInput] = useState("");
+  const [browseMode, setBrowseMode] = useState<BrowseMode>(readBrowseMode);
+  const [scrollToken, setScrollToken] = useState(0);
+  // The scroll target is set from the click, not read back from the URL: the
+  // router applies the page change a render later than the token.
+  const [scrollTarget, setScrollTarget] = useState(
+    Number.isFinite(requestedPage) ? requestedPage : 1,
+  );
   const [paneCollapsed, setPaneCollapsed] = useState(() =>
     readCollapsed(PANE_COLLAPSED_KEY),
   );
@@ -70,10 +113,6 @@ export function DocumentPage() {
     () => Math.min(Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1), pageCount),
     [pageCount, requestedPage],
   );
-
-  useEffect(() => {
-    setPageInput(String(page));
-  }, [page]);
 
   useEffect(() => {
     if (isPreview) {
@@ -115,6 +154,47 @@ export function DocumentPage() {
     // instead of writing NaN into the URL.
     const target = Number.isFinite(next) ? next : page;
     const clamped = Math.min(Math.max(target, 1), pageCount);
+    const params = new URLSearchParams(search);
+    params.set("page", String(clamped));
+    setSearch(params, { replace: true });
+    setScrollTarget(clamped);
+    if (browseMode === "scroll") {
+      setScrollToken((token) => token + 1);
+    }
+  }
+
+  function chooseMode(next: BrowseMode) {
+    if (next === browseMode) {
+      return;
+    }
+    setBrowseMode(next);
+    writeBrowseMode(next);
+    if (next === "scroll") {
+      setScrollTarget(page);
+      setScrollToken((token) => token + 1);
+    }
+  }
+
+  function jumpToPage() {
+    const typed = pageInput.trim();
+    if (typed === "") {
+      return;
+    }
+    const target = Number(typed);
+    if (!Number.isFinite(target)) {
+      return;
+    }
+    goToPage(target);
+    setPageInput("");
+  }
+
+  // Scroll mode reports the page being read so the URL, the indicator, and the
+  // chat context stay on it without pushing history entries.
+  function recordVisiblePage(next: number) {
+    const clamped = Math.min(Math.max(next, 1), pageCount);
+    if (clamped === page) {
+      return;
+    }
     const params = new URLSearchParams(search);
     params.set("page", String(clamped));
     setSearch(params, { replace: true });
@@ -171,6 +251,34 @@ export function DocumentPage() {
             </Button>
           ) : null}
           <div className="ml-auto flex items-center gap-1">
+            <div
+              role="group"
+              aria-label={t.knowledge.browseMode}
+              className="mr-1 flex items-center rounded-lg border bg-muted/40 p-0.5"
+            >
+              <button
+                type="button"
+                aria-pressed={browseMode === "page"}
+                aria-label={t.knowledge.pageView}
+                title={t.knowledge.pageViewHint}
+                onClick={() => chooseMode("page")}
+                className={modeButtonClass(browseMode === "page")}
+              >
+                <RectangleVerticalIcon className="size-3.5" />
+                <span className="hidden sm:inline">{t.knowledge.pageView}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={browseMode === "scroll"}
+                aria-label={t.knowledge.scrollView}
+                title={t.knowledge.scrollViewHint}
+                onClick={() => chooseMode("scroll")}
+                className={modeButtonClass(browseMode === "scroll")}
+              >
+                <Rows3Icon className="size-3.5" />
+                <span className="hidden sm:inline">{t.knowledge.scrollView}</span>
+              </button>
+            </div>
             <Button
               type="button"
               variant="ghost"
@@ -182,7 +290,10 @@ export function DocumentPage() {
             >
               <ChevronLeftIcon />
             </Button>
-            <span className="text-sm tabular-nums" aria-live="polite">
+            <span
+              className="text-sm tabular-nums"
+              aria-live={browseMode === "page" ? "polite" : "off"}
+            >
               {format(t.knowledge.pageIndicator, { page, total: pageCount })}
             </span>
             <Button
@@ -200,13 +311,14 @@ export function DocumentPage() {
               className="ml-2 flex items-center gap-1"
               onSubmit={(event) => {
                 event.preventDefault();
-                goToPage(Number(pageInput));
+                jumpToPage();
               }}
             >
               <Input
                 aria-label={t.knowledge.goToPage}
                 className="h-8 w-16"
                 inputMode="numeric"
+                placeholder={t.knowledge.pagePlaceholder}
                 value={pageInput}
                 onChange={(event) => setPageInput(event.target.value)}
               />
@@ -217,22 +329,32 @@ export function DocumentPage() {
           </div>
         </div>
         <div
-          className="min-h-0 flex-1 overflow-auto bg-muted/40 p-4"
-          onKeyDown={(event) => {
-            if (event.key === "PageDown") {
-              event.preventDefault();
-              goToPage(page + 1);
-            } else if (event.key === "PageUp") {
-              event.preventDefault();
-              goToPage(page - 1);
-            }
-          }}
+          className="min-h-0 flex-1 bg-muted/40"
+          onKeyDown={
+            browseMode === "page"
+              ? (event) => {
+                  if (event.key === "PageDown") {
+                    event.preventDefault();
+                    goToPage(page + 1);
+                  } else if (event.key === "PageUp") {
+                    event.preventDefault();
+                    goToPage(page - 1);
+                  }
+                }
+              : undefined
+          }
           tabIndex={-1}
         >
-          <PdfCanvas
+          <PdfViewer
             data={pdf}
+            mode={browseMode}
             page={page}
-            label={format(t.knowledge.pageIndicator, { page, total: pageCount })}
+            scrollToken={scrollToken}
+            scrollTarget={scrollTarget}
+            onVisiblePage={recordVisiblePage}
+            labelFor={(nextPage) =>
+              format(t.knowledge.pageIndicator, { page: nextPage, total: pageCount })
+            }
           />
         </div>
       </section>

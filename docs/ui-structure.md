@@ -102,7 +102,9 @@ The right pane is the same width, position, and drag behavior as the chat page's
 
 ### Document preview
 
-The document route replaces the whole knowledge-base region, not a dialog. The left side is the PDF page rendered on a canvas; the header carries a back arrow that returns to the folder the reader came from, the file name, the page indicator, previous and next buttons, and a page input. PageUp and PageDown move one page. Only one page is rendered at a time; there is no continuous scroll.
+The document route replaces the whole knowledge-base region, not a dialog. The left side is the PDF reader; the header carries a back arrow that returns to the folder the reader came from, the file name, a two-state browse switch, the page indicator, previous and next buttons, and a page input. The switch offers page view and scroll view, defaults to page view, and remembers the choice in browser local storage (`vt.knowledge.preview.mode`).
+
+Page view renders one page at a time: PageUp and PageDown move one page, and previous, next, or a page jump renders that page on the same canvas. Scroll view stacks every page in one scrolling column, renders only the pages near the viewport, scrolls to the page in the URL when the reader switches modes or jumps, and reports the page being read back to the URL, the page indicator, and the document chat context. The page input starts empty and clears after a jump, so it never shows a stale page number.
 
 The right pane on this route is a conversation, not the file record: it has the message list, the same composer as the chat page (provider, tier, and thinking level persist through `vt.composer.selection`), and it sends `document_context` with `doc_id` and the current page so the answer knows what is open. Below 1024px a button in the header opens the same conversation as a sheet. The answer source capsule opens a local source sheet inside the document chat pane, so a course marker can leave the document for the cited page. Until the context-injection stage lands, the answers do not contain the document text and the pane says so at the top. The conversation is created on the first send and its id is remembered per document in browser local storage.
 
@@ -201,7 +203,7 @@ The UI follows the red, green, refactor loop at these seams. The tests live in `
 | Conversations | `conversations.test.tsx` | Sidebar list, empty state, error retry, expired-session redirect | Pagination (not implemented) |
 | Chat live | `chat-live.test.tsx`, `replay.test.tsx` | History load, history-rendered work chain/thinking/sources/tool calls, live `data-sources` handling, the answer capsule, request body, progressive stream, stop, error cleanup, new-conversation navigation, failed-turn retry keeping the conversation id, request-time model badge, replay without a chat POST, replay of a turn with no persisted assistant message, unauthorized replay clearing the session | Real model latency |
 | Page composition | `chat-page.test.tsx`, `auth-pages.test.tsx`, `knowledge-page.test.tsx`, `knowledge-organize.test.tsx`, `knowledge-search.test.tsx`, `knowledge-status.test.tsx`, `knowledge-preview.test.tsx`, `practice-page.test.tsx`, `builds-page.test.tsx`, `deadlines-page.test.tsx` | Missing regions, unlabeled controls, missing components, a menu item that should be disabled, a missing status style | Visual layout and CSS overflow |
-| Document preview | `knowledge-preview.test.tsx` | Back arrow target, page controls and their bounds, the chat options, the honest "content not injected" notice; the PDF renderer is mocked because jsdom has no canvas | Real PDF rendering, which the agent-browser pass covers |
+| Document preview | `knowledge-preview.test.tsx` | Back arrow target, page controls and their bounds, the empty page jump field, the page and scroll switch and its pressed state, the chat options, the honest "content not injected" notice; the PDF renderer is mocked because jsdom has no canvas | Real PDF rendering and scroll tracking, which the agent-browser pass covers |
 | App shell | `app-shell.test.tsx` | Nav that should not exist, collapsed logo, footer account menu and sign out, sidebar state restore, mobile sheet close, page title, focus move | Server rendering, visual transitions |
 | Source pane | `source-pane.test.tsx` | Row order and targets, X close, resize bounds and keyboard steps, width persistence, default closed at width zero, open state and staggered rows | Pointer feel and CSS cursor |
 | Source capsule | `source-capsule.test.tsx` | Counts, thumbnails, `+N`, aria state, toggle | Visual fit at long titles |
@@ -258,9 +260,9 @@ The pass walks these steps and asserts the visible result of each, taking a scre
 8. Dragging a file over the grid shows the overlay and issues no request.
 9. The ellipsis menu opens, does not select the tile, and is reachable by Tab; deleting a file asks for confirmation and the tile disappears.
 10. Double-clicking a file changes the URL to the document route, renders the first page on the canvas, and shows `1 / N`.
-11. Previous, next, PageDown, and the page input all change the page; the back arrow returns to the originating folder.
+11. Previous, next, PageDown, and the page input all change the page; the browse switch turns single-page view into a continuous column, a page jump scrolls to that page, scrolling updates the indicator and the URL, and the back arrow returns to the originating folder.
 12. The chat pane sends with `document_context`, the answer arrives, and the "document content not injected yet" notice is visible.
-13. A reload restores language, sidebar state, pane width and collapse, composer selection, and the document page.
+13. A reload restores language, sidebar state, pane width and collapse, composer selection, the document page, and the browse mode.
 14. A narrow viewport turns the right pane into a sheet and the grid into one column.
 15. A keyboard walk confirms focus order (each tile's open button, then its actions button), visible focus rings, and Esc closing menus and sheets.
 

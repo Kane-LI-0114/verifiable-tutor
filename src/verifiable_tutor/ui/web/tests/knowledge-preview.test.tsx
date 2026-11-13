@@ -139,6 +139,81 @@ describe("document preview", () => {
     expect(await screen.findByText("9 / 67")).toBeInTheDocument();
   });
 
+  it("keeps the page jump field empty until the reader types a page", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+    renderLiveRoute("/knowledge/docs/ACS_Lecture_1_2026F?page=3");
+
+    await screen.findByText("3 / 67");
+    const input = screen.getByLabelText("Go to page");
+    expect(input).toHaveValue("");
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    expect(await screen.findByText("4 / 67")).toBeInTheDocument();
+    expect(input).toHaveValue("");
+
+    await user.type(input, "9");
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    expect(await screen.findByText("9 / 67")).toBeInTheDocument();
+    expect(input).toHaveValue("");
+  });
+
+  it("switches between single-page and continuous browsing", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+    renderLiveRoute("/knowledge/docs/ACS_Lecture_1_2026F?page=3");
+
+    await screen.findByText("3 / 67");
+    expect(screen.queryByTestId("pdf-scroll")).toBeNull();
+    expect(screen.getByRole("button", { name: "Page view" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Scroll view" }));
+
+    expect(screen.getByTestId("pdf-scroll")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scroll view" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Page view" }));
+
+    expect(screen.queryByTestId("pdf-scroll")).toBeNull();
+    expect(screen.getByRole("button", { name: "Page view" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("jumps to the requested page in continuous browsing", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+    const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
+    renderLiveRoute("/knowledge/docs/ACS_Lecture_1_2026F?page=3");
+
+    await screen.findByText("3 / 67");
+    await user.click(screen.getByRole("button", { name: "Scroll view" }));
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    scrollIntoView.mockClear();
+
+    const input = screen.getByLabelText("Go to page");
+    await user.type(input, "9");
+    await user.click(screen.getByRole("button", { name: "Go" }));
+
+    expect(await screen.findByText("9 / 67")).toBeInTheDocument();
+    await waitFor(() => {
+      const targets = scrollIntoView.mock.instances
+        .map((element) =>
+          (element as Element).closest("[data-page]")?.getAttribute("data-page"),
+        )
+        .filter((target): target is string => target !== null);
+      expect(targets).toContain("9");
+    });
+    scrollIntoView.mockRestore();
+  });
+
   it("sends the open document and page with the next turn", async () => {
     const chat: StubRoute = {
       method: "POST",
