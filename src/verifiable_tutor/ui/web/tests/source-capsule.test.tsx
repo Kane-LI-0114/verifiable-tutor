@@ -54,7 +54,7 @@ describe("source capsule", () => {
     renderCapsule(SOURCES);
 
     const capsule = screen.getByRole("button", {
-      name: /Show this answer's citation sources/,
+      name: /Show the sources for this answer/,
     });
 
     expect(capsule).toHaveTextContent("2 course pages · 1 web page");
@@ -79,7 +79,7 @@ describe("source capsule", () => {
     expect(screen.getByText("+1")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: /Show this answer's citation sources/,
+        name: /Show the sources for this answer/,
       }),
     ).toHaveTextContent("2 course pages · 2 web pages");
   });
@@ -98,7 +98,7 @@ describe("source capsule", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: /Show this answer's citation sources/,
+        name: /Show the sources for this answer/,
       }),
     );
 

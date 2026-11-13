@@ -156,11 +156,11 @@ describe("replay", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("Hello")).toBeInTheDocument();
     // The recorded turn carries its own trace: work chain and reasoning.
-    expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "How this answer was built" })).toBeInTheDocument();
     const user = userEvent.setup();
 
     const capsule = screen.getByRole("button", {
-      name: /Show this answer's citation sources/,
+      name: /Show the sources for this answer/,
     });
     expect(capsule).toHaveTextContent("1 course page");
     await user.click(capsule);
@@ -170,7 +170,7 @@ describe("replay", () => {
       within(pane).getByRole("button", { name: "Close citation sources" }),
     );
 
-    await user.click(screen.getByRole("button", { name: /Work chain/ }));
+    await user.click(screen.getByRole("button", { name: /How this answer was built/ }));
     expect(await screen.findByText("Check the row maximum.")).toBeInTheDocument();
     // The stored answer text is not shown; only the replays frames fill the turn.
     expect(screen.queryByText(STORED_ANSWER)).not.toBeInTheDocument();
@@ -186,7 +186,7 @@ describe("replay", () => {
     expect(screen.queryByLabelText("Your question")).not.toBeInTheDocument();
   });
 
-  it("keeps the stored provider and tier on a replayed answer", async () => {
+  it("does not show the stored provider or tier on a replayed answer", async () => {
     stub = createFetchStub(
       routes([history(), replayRoute(() => sseResponse(REPLAY_FRAMES))]),
     );
@@ -194,9 +194,7 @@ describe("replay", () => {
     renderLiveRoute(`/chat/${SESSION_ID}?replay=1`);
 
     expect(await screen.findByText("Hello")).toBeInTheDocument();
-    // The persisted answer carries the model that produced it; the replay must
-    // not fall back to the literal placeholder badge.
-    expect(screen.getByText("deepseek · flash")).toBeInTheDocument();
+    expect(screen.queryByText("deepseek · flash")).not.toBeInTheDocument();
     expect(screen.queryByText("provider · tier")).not.toBeInTheDocument();
   });
 
@@ -249,7 +247,7 @@ describe("replay", () => {
 
     expect(await screen.findByText("Hello")).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Work chain" }),
+      screen.getByRole("group", { name: "How this answer was built" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("The replay did not load")).not.toBeInTheDocument();
   });
@@ -291,7 +289,7 @@ describe("replay", () => {
 
     expect(await screen.findByText("The answer stopped")).toBeInTheDocument();
     expect(
-      screen.getByText(/The model did not finish this answer/),
+      screen.getByText(/The model stopped before it finished/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Partial replay")).not.toBeInTheDocument();
   });

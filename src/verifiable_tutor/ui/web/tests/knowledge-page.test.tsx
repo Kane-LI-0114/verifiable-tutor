@@ -390,7 +390,7 @@ describe("knowledge browser", () => {
     expect(
       within(pane).getByText("A lecture on GPU architecture and CUDA execution."),
     ).toBeInTheDocument();
-    expect(within(pane).getByText("Written by qwen3.8-27b")).toBeInTheDocument();
+    expect(within(pane).getByText("Summary by qwen3.8-27b")).toBeInTheDocument();
     expect(within(pane).getByText("67")).toBeInTheDocument();
   });
 
@@ -434,8 +434,9 @@ describe("knowledge browser", () => {
     await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
 
     await user.click(screen.getByRole("button", { name: "New" }));
-    const upload = screen.getByRole("menuitem", { name: "Upload file" });
-    expect(upload).toHaveAttribute("aria-disabled", "true");
+    expect(
+      screen.queryByRole("menuitem", { name: "Upload file" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("menuitem", { name: "New folder" }));
     await user.type(screen.getByLabelText("Folder name"), "Week 1");

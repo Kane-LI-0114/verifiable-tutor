@@ -95,10 +95,7 @@ export function BuildsPage() {
           }
         />
 
-        <Alert>
-          <AlertTitle>{t.builds.previewNotice}</AlertTitle>
-          <AlertDescription>{t.builds.instructorOnly}</AlertDescription>
-        </Alert>
+        <p className="text-xs text-muted-foreground">{t.builds.readOnly}</p>
 
         {pageState === "loading" ? (
           <PageLoading />

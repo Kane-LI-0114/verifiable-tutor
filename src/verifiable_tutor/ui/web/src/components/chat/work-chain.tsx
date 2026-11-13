@@ -225,6 +225,10 @@ export function WorkChain({
       : format(t.chat.toolCallsSummary, { count: toolCallCount });
   const hasContent = steps.length > 0 || events.length > 0;
 
+  if (!hasContent) {
+    return null;
+  }
+
   return (
     <Trace role="group" aria-label={t.a11y.workChain}>
       <TraceCollapsible>
@@ -232,13 +236,7 @@ export function WorkChain({
           <WorkChainHeader summary={summary} policy={policy} />
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent>
-          {hasContent ? (
-            <WorkChainSections steps={steps} events={events} />
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {t.chat.noWorkChainEvents}
-            </p>
-          )}
+          <WorkChainSections steps={steps} events={events} />
         </TraceCollapsibleContent>
       </TraceCollapsible>
     </Trace>

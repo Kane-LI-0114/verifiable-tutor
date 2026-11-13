@@ -44,7 +44,7 @@ export function ResetPage() {
       const response = await authApi.requestReset(email.trim());
       setNotice(
         response.email_delivery === "log"
-          ? `${t.auth.sent} ${t.auth.checkLog}`
+          ? `${t.auth.sent} ${t.auth.checkLogLink}`
           : t.auth.sent,
       );
     } catch (error) {

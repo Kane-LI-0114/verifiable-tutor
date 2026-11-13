@@ -395,8 +395,10 @@ Chinese: 赋能、无缝、一站式、极致、打造、重新定义、颠覆�
 
 ## 8. Before and after
 
-The suggested strings are a proposal for the next copy pass. They are not applied in this
-change. Keys are in `src/verifiable_tutor/ui/web/src/lib/i18n/en.ts` and `zh.ts`.
+The strings below are the applied copy as of 2026-11-13. The "Now" column keeps the previous
+wording for comparison, and the "Suggested" column matches `en.ts` and `zh.ts` except where a
+row records a deviation. Keys are in `src/verifiable_tutor/ui/web/src/lib/i18n/en.ts` and
+`zh.ts`.
 
 ### 8.1 Brand and auth
 
@@ -412,7 +414,7 @@ change. Keys are in `src/verifiable_tutor/ui/web/src/lib/i18n/en.ts` and `zh.ts`
 | `auth.checks[1].body` | Reference answers compile and pass their tests before a question is shown.<br>参考答案先通过编译与测试，题目才会展示。 | A question appears only after its reference answer compiles and passes its tests.<br>参考答案编译并通过测试后，题目才会出现。 | The order is the promise. Put the condition first. |
 | `auth.checks[2].title` | Policy is code<br>策略由代码执行 | Deadlines decide what is revealed<br>截止日期决定披露范围 | "Policy is code" speaks to engineers. Students need the consequence. |
 | `auth.checks[2].body` | A dated deadline registry decides what the assistant may reveal, before the deadline and after it.<br>带日期的截止日期登记表在截止前后决定助手可以披露什么。 | Before a deadline the tutor gives hints, not full solutions. After it, it can explain the whole answer. The rule comes from the assignment registry.<br>截止前只给提示，不给完整解答；截止后可以完整讲解。规则来自作业登记表。 | State the behavior. The registry is the source, not the sentence. |
-| `auth.sent` | Check your inbox for the next step.<br>请查收邮箱中的下一步。 | We sent a 6-digit code to your email.<br>6 位验证码已发送到你的邮箱。 | Say what was sent and where. |
+| `auth.sent` | Check your inbox for the next step.<br>请查收邮箱中的下一步。 | We emailed a one-time link. Check your inbox.<br>一次性登录链接已发送，请查收邮箱。 | The reset flow sends a link, not a code. Say what was sent and where. |
 | `auth.resetSubtitle` | We send a one-time link that stays valid for 30 minutes.<br>我们会发送一次性链接，30 分钟内有效。 | We will email a one-time link. It expires in 30 minutes.<br>我们会发送一次性链接，30 分钟内有效。 | Same fact, two sentences, easier to scan. |
 | `auth.sixDigits` | Enter all six digits.<br>请输入全部六位数字。 | Enter all 6 digits.<br>请输入完整的 6 位验证码。 | Numerals match the rest of the UI. |
 
@@ -489,13 +491,26 @@ change. Keys are in `src/verifiable_tutor/ui/web/src/lib/i18n/en.ts` and `zh.ts`
 |---|---|---|---|
 | `builds.subtitle` | Start one Qwen job per document shard, watch the states, and inspect the downloaded records.<br>每个文档分片提交一个 Qwen 作业，观察状态并检查下载的记录。 | Run one Qwen job per document, watch its state, and inspect the records it returns.<br>每个文档运行一个 Qwen 作业，查看状态并检查返回的记录。 | "Shard" is internal. The UI takes one document. |
 | `builds.newBuildDescription` | Pick one document shard and the chunk limit. The build runs as one Qwen job.<br>选择一个文档分片和分片上限，构建会作为一个 Qwen 作业运行。 | Choose one document and a chunk limit. The build runs as one Qwen job.<br>选择一个文档和分块上限，构建会作为一个 Qwen 作业运行。 | Same reason. |
-| `builds.previewNotice` and `builds.instructorOnly` | The alert title is the preview notice and the body is the role rule.<br>提示条标题是预览说明，正文是角色规则。 | One line: "Builds are read-only in this preview." Keep the role rule only when a non-instructor opens the page.<br>一行："预览中构建为只读。"角色规则只在非教师访问时显示。 | The current pairing answers two different questions in one alert. |
+| `builds.previewNotice` and `builds.instructorOnly` | The alert title is the preview notice and the body is the role rule.<br>提示条标题是预览说明，正文是角色规则。 | One muted line: "Builds are read-only in this preview." The route already requires an instructor.<br>一行弱化文字："预览中构建为只读。"路由已限制教师访问。 | The current pairing answers two different questions in one alert. |
 | `builds.emptyBody` | Start a build for one document shard to fill the knowledge base.<br>为一个文档分片启动构建，填充知识库。 | Start a build for a document to fill the knowledge base.<br>为文档启动构建，填充知识库。 | Same reason. |
 | `builds.docId` | Document id<br>文档 id | Keep until a document picker exists. Then "Document".<br>保留到文档选择器出现，再改为"文档"。 | The field takes an id today. Do not label it as a picker before it is one. |
 | `deadlines.subtitle` | The injected clock and the versioned registry decide what the assistant may reveal.<br>注入的时钟与版本化登记表决定助手可以披露什么。 | The registry and the current time decide what the assistant may reveal.<br>登记表与当前时间共同决定助手可以披露什么。 | "Injected clock" is a test seam. |
 | `deadlines.readOnly` | Read-only view. The in-app editor is a P1 item.<br>只读视图，应用内编辑器属于 P1。 | Read-only. Editing the registry is not available yet.<br>只读。暂不支持在应用内编辑登记表。 | "P1" is backlog vocabulary. |
 | `deadlines.failClosedTitle` | Unknown state fails closed<br>未知状态按最严格处理 | An unknown assignment blocks disclosure<br>未登记的作业默认不披露 | "Fails closed" is engineering vocabulary. State the behavior. |
 | `deadlines.failClosedBody` | When an assignment is missing from the registry, the assistant abstains instead of guessing.<br>登记表中缺少某次作业时，助手会弃答而不是猜测。 | Keep. | "Abstains" is the glossary term, and the sentence explains it. |
+
+### 8.7 Deviations applied
+
+- `auth.sent` uses the one-time link wording above; the reset flow sends a link, not a code.
+- `auth.checkLogLink` was added for reset log delivery, while `auth.checkLog` stays for register and verify codes.
+- `chat.thinkingValue` was added so the selector reads "Thinking: Off" instead of a bare level.
+- `practice.generateDisabled`, `practice.emptyTitle`, and `practice.emptyBody` were added for the disabled generator and its empty state.
+- `builds.readOnly` replaced the two-line alert.
+- `knowledge.emptyFolderTitle` and `knowledge.emptyFolderBody` split the folder empty state from the root empty state.
+- The document pane passes `knowledge.chatPlaceholder` to the shared composer, so the page-scoped hint is visible.
+- The microphone control and its `chat.record` key were removed. The attach control renders only in preview.
+- The provider and tier badge on answers was removed; request metadata is not answer copy.
+- These keys were deleted: `common.emptyTitle`, `common.emptyBody`, `chat.noWorkChainEvents`, `knowledge.subtitle`, `knowledge.chatNotice`, `knowledge.uploadFile`, `practice.unavailableTitle`, `practice.unavailableBody`, `practice.previewNotice`, `builds.previewNotice`, `builds.instructorOnly`, `deadlines.previewNotice`.
 
 ## 9. Claims ledger
 
@@ -509,9 +524,9 @@ the sample data. Otherwise, soften the claim to what the code does, or remove it
 | Before a deadline the tutor gives hints; after it, full explanation. | Auth check 3 | Disclosure gate and deadline registry | Not implemented (PRD G2) |
 | A reference answer compiles and passes tests before the question appears. | Auth check 2, practice subtitle | Practice generator | Not implemented (PRD G3) |
 | A source opens the course page image. | Chat empty state, evidence panel | Corpus page image route | Implemented for corpus pages |
-| An answer can read the open knowledge page. | Knowledge chat notice | Page-scoped retrieval in the agent loop | Implemented |
+| An answer can read the open knowledge page. | Knowledge page chat empty state | Page-scoped retrieval in the agent loop | Implemented |
 | Code runs as a TACC job under the course account. | Practice confirmation | `tacc/exec` | Not implemented; the run route returns 503 |
-| Upload is closed until the parse and embedding chain is verified. | Knowledge upload item | Upload chain | Not implemented; hide the item |
+| Upload is closed until the parse and embedding chain is verified. | Knowledge new menu | Upload chain | Not implemented; the item is hidden |
 | The work chain records each step. | Work-chain header | Persisted turn metadata | Implemented |
 
 Where a status is "Not implemented", the suggested string in section 8 is the target for
@@ -541,13 +556,13 @@ the surface to preview.
 Run from `src/verifiable_tutor/ui/web`:
 
 ```bash
-npx vitest run tests/i18n.test.tsx
+npx vitest run
 npm run typecheck
 ```
 
 Expected result on 2026-11-13:
 
-- i18n parity: 2 tests passed.
+- full suite: 33 files, 260 tests passed.
 - typecheck: no errors.
 
 Manual checks:

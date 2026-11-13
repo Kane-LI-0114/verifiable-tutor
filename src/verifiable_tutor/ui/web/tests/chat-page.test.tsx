@@ -21,10 +21,10 @@ describe("chat page", () => {
     expect(pane).toHaveAttribute("data-open", "false");
     expect(pane).toHaveStyle({ width: "0px" });
     expect(
-      screen.getByRole("button", { name: /Show this answer's citation sources/ }),
+      screen.getByRole("button", { name: /Show the sources for this answer/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Work chain/ }),
+      screen.getByRole("button", { name: /How this answer was built/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("How does MPI_Allreduce work, and when should I use it in the GEMM assignment?"),
@@ -51,7 +51,7 @@ describe("chat page", () => {
     );
 
     const capsule = screen.getByRole("button", {
-      name: /Show this answer's citation sources/,
+      name: /Show the sources for this answer/,
     });
     expect(capsule).toHaveTextContent("3 course pages · 1 web page");
 
@@ -79,15 +79,15 @@ describe("chat page", () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
-    await user.click(screen.getByRole("button", { name: /Work chain/ }));
+    await user.click(screen.getByRole("button", { name: /How this answer was built/ }));
 
     for (const label of [
-      "Understand the question",
-      "Retrieve course pages",
-      "Verify quoted spans",
-      "Apply the disclosure policy",
+      "Read the question",
+      "Find course pages",
+      "Check the quoted text",
+      "Check the assignment rules",
       "Write the answer",
-      "Attach citations",
+      "Add the sources",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
@@ -243,10 +243,10 @@ describe("chat page", () => {
     renderRoute(SESSION);
 
     expect(
-      screen.getByRole("button", { name: /Show this answer's citation sources/ }),
+      screen.getByRole("button", { name: /Show the sources for this answer/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Work chain" }),
+      screen.getByRole("group", { name: "How this answer was built" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("group", { name: "Answer actions" }),

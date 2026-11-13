@@ -132,10 +132,7 @@ export function DocChatPane({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-start gap-2 border-b bg-muted/40 px-3 py-2">
-        <p className="min-w-0 flex-1 text-xs leading-5 text-muted-foreground">
-          {t.knowledge.chatNotice}
-        </p>
+      <div className="flex items-start justify-end gap-2 border-b bg-muted/40 px-3 py-2">
         <Button
           type="button"
           variant="ghost"
@@ -209,6 +206,7 @@ export function DocChatPane({
         onModelChange={chat.setModel}
         thinking={chat.thinking}
         onThinkingChange={chat.setThinking}
+        placeholder={t.knowledge.chatPlaceholder}
       />
     </div>
   );

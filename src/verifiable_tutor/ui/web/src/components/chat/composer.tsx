@@ -2,7 +2,6 @@ import {
   ArrowUpIcon,
   AudioLinesIcon,
   ChevronDownIcon,
-  MicIcon,
   PaperclipIcon,
   SquareIcon,
   XIcon,
@@ -34,7 +33,7 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@/components/ui/input-group";
-import { useT } from "@/lib/i18n";
+import { format, useT } from "@/lib/i18n";
 import {
   MODEL_OPTIONS,
   thinkingLevelsFor,
@@ -71,6 +70,7 @@ export function Composer({
   onRemoveAudio,
   capabilityError,
   preview = false,
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -86,6 +86,7 @@ export function Composer({
   onRemoveAudio?: () => void;
   capabilityError?: string | null;
   preview?: boolean;
+  placeholder?: string;
 }) {
   const t = useT();
   const thinkingLevels = thinkingLevelsFor(model);
@@ -130,7 +131,7 @@ export function Composer({
       <InputGroup>
         <InputGroupTextarea
           aria-label={t.chat.composerLabel}
-          placeholder={t.chat.composerPlaceholder}
+          placeholder={placeholder ?? t.chat.composerPlaceholder}
           value={value}
           rows={2}
           onChange={(event) => onChange(event.target.value)}
@@ -180,7 +181,7 @@ export function Composer({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <InputGroupButton size="sm">
-                {thinkingLabel(thinking)}
+                {format(t.chat.thinkingValue, { level: thinkingLabel(thinking) })}
                 <ChevronDownIcon />
               </InputGroupButton>
             </DropdownMenuTrigger>
@@ -201,28 +202,19 @@ export function Composer({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="ml-1"
-            aria-label={t.chat.attachAudio}
-            title={preview ? t.chat.audioHint : t.common.unavailable}
-            disabled={!preview}
-            onClick={onAttachAudio}
-          >
-            <PaperclipIcon />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t.chat.record}
-            title={t.common.unavailable}
-            disabled
-          >
-            <MicIcon />
-          </Button>
+          {preview ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="ml-1"
+              aria-label={t.chat.attachAudio}
+              title={t.chat.audioHint}
+              onClick={onAttachAudio}
+            >
+              <PaperclipIcon />
+            </Button>
+          ) : null}
 
           {streaming ? (
             <InputGroupButton
@@ -249,9 +241,9 @@ export function Composer({
           )}
         </InputGroupAddon>
       </InputGroup>
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        {audioAttached ? t.chat.audioHint : preview ? t.common.previewNotice : null}
-      </p>
+      {audioAttached ? (
+        <p className="mt-1.5 text-xs text-muted-foreground">{t.chat.audioHint}</p>
+      ) : null}
     </div>
   );
 }

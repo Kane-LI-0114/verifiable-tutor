@@ -14,25 +14,25 @@ describe("deadlines page", () => {
     expect(
       screen.getByText(/Assignment 2: CUDA attention/),
     ).toBeInTheDocument();
-    expect(screen.getByText("Pre-release")).toBeInTheDocument();
-    expect(screen.getByText("Extension window")).toBeInTheDocument();
-    expect(screen.getByText("Post-deadline")).toBeInTheDocument();
+    expect(screen.getByText("Not released")).toBeInTheDocument();
+    expect(screen.getByText("Extension")).toBeInTheDocument();
+    expect(screen.getByText("After the deadline")).toBeInTheDocument();
   });
 
   it("shows the fail-closed notice when a state is unknown", () => {
     renderRoute("/instructor/deadlines", { role: "instructor" });
 
     expect(
-      screen.getByText("Unknown state fails closed"),
+      screen.getByText("An unknown assignment blocks disclosure"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Unknown")).toBeInTheDocument();
+    expect(screen.getByText("Not in the registry")).toBeInTheDocument();
   });
 
   it("marks the view as read-only", () => {
     renderRoute("/instructor/deadlines", { role: "instructor" });
 
     expect(
-      screen.getByText("Read-only view. The in-app editor is a P1 item."),
+      screen.getByText("Read-only. Editing the registry is not available yet."),
     ).toBeInTheDocument();
   });
 

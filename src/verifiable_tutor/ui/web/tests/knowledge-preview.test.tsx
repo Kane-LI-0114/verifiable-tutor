@@ -303,7 +303,7 @@ describe("document preview", () => {
     await screen.findByText("7 / 67");
     const pane = screen.getByTestId("document-chat-pane");
     expect(
-      within(pane).getByText(/read the open page/i),
+      within(pane).getByText(/Ask about a term, a formula, or a line on this page/),
     ).toBeInTheDocument();
 
     await user.type(within(pane).getByLabelText("Your question"), "explain this page");

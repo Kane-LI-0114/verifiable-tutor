@@ -46,7 +46,7 @@ describe("knowledge-base builds page", () => {
     const dialog = screen.getByRole("dialog");
     expect(
       within(dialog).getByText(
-        "Pick one document shard and the chunk limit. The build runs as one Qwen job.",
+        "Choose one document and a chunk limit. The build runs as one Qwen job.",
       ),
     ).toBeInTheDocument();
   });

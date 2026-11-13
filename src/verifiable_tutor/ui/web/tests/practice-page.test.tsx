@@ -10,14 +10,14 @@ async function chooseType(user: ReturnType<typeof userEvent.setup>, name: string
 }
 
 describe("practice page", () => {
-  it("shows the unavailable notice, the settings, and a single-choice question", () => {
+  it("shows the disabled generation state, the settings, and a single-choice question", () => {
     renderRoute("/practice");
 
     expect(
       screen.getByRole("heading", { name: "Practice and self-test" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Practice execution is not available"),
+      screen.getByText("Question generation is not connected in this build."),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Which MPI collective leaves the reduced value on every rank?"),
@@ -33,7 +33,7 @@ describe("practice page", () => {
     await user.click(screen.getByRole("button", { name: "Submit the answer" }));
 
     expect(
-      screen.getByText("Add an answer before you submit this question."),
+      screen.getByText("Write an answer first."),
     ).toBeInTheDocument();
     expect(screen.queryByText("Partially correct")).not.toBeInTheDocument();
     expect(screen.queryByText("Test results")).not.toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("practice page", () => {
       screen.getByRole("heading", { name: "Explain my solution" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Line-anchored explanations arrive with the teaching package/),
+      screen.getByText(/Solution explanations are not available in this build/),
     ).toBeInTheDocument();
   });
 });

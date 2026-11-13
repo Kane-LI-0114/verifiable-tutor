@@ -490,9 +490,6 @@ export function KnowledgePage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled title={t.knowledge.uploadDisabled}>
-                {t.knowledge.uploadFile}
-              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setPending({ kind: "new-folder" })}>
                 {t.knowledge.newFolder}
               </DropdownMenuItem>
@@ -589,7 +586,12 @@ export function KnowledgePage() {
             <PageLoading label={t.knowledge.loading} />
           ) : failed || pageState === "error" ? (
             <PageError title={t.common.errorTitle} description={t.common.errorBody} />
-          ) : pageState === "empty" || showEmpty || showEmptyFolder ? (
+          ) : showEmptyFolder ? (
+            <PageEmpty
+              title={t.knowledge.emptyFolderTitle}
+              description={t.knowledge.emptyFolderBody}
+            />
+          ) : pageState === "empty" || showEmpty ? (
             <PageEmpty title={t.knowledge.emptyTitle} description={t.knowledge.emptyBody} />
           ) : searching ? (
             <SearchResults

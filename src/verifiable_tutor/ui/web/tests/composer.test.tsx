@@ -84,14 +84,11 @@ describe("composer", () => {
     ).toBeInTheDocument();
   });
 
-  it("explains the disabled microphone control", () => {
+  it("does not offer a microphone control", () => {
     renderComposer();
 
-    const microphone = screen.getByRole("button", {
-      name: "Record a question",
-    });
-
-    expect(microphone).toBeDisabled();
-    expect(microphone).toHaveAttribute("title", "Not available yet");
+    expect(
+      screen.queryByRole("button", { name: "Record a question" }),
+    ).not.toBeInTheDocument();
   });
 });

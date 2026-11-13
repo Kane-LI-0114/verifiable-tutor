@@ -1,7 +1,6 @@
 import { CheckIcon, CopyIcon, RotateCcwIcon, Volume2Icon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message";
@@ -245,9 +244,6 @@ export function ChatMessageView({
         )}
         <div className="flex items-center gap-2">
           <AnswerActions content={message.content} onRetry={onRetry} />
-          <Badge variant="outline">
-            {message.provider ?? "provider"} · {message.tier ?? "tier"}
-          </Badge>
         </div>
       </MessageContent>
     </Message>

@@ -122,8 +122,6 @@ export function DeadlinesPage() {
             </CardContent>
           </Card>
         )}
-
-        <p className="text-xs text-muted-foreground">{t.deadlines.previewNotice}</p>
       </div>
     </div>
   );
