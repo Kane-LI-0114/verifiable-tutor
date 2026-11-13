@@ -36,12 +36,12 @@ chat:
 # Agent loop budgets and tool limits (ADR-0016). The model call cap includes the
 # forced final answer; the last call receives no tools.
 agent:
-  max_model_calls: 5
-  max_tool_calls: 8
+  max_model_calls: 20
+  max_tool_calls: 50
   recursion_limit: 16
   max_tool_output_chars: 4000
-  retrieval_k: 5
-  web_search_count: 5
+  retrieval_k: 8
+  web_search_count: 10
   web_fetch_max_chars: 6000
   web_tools_enabled: true
 
