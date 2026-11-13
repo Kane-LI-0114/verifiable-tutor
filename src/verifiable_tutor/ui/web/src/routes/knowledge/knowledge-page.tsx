@@ -601,12 +601,13 @@ export function KnowledgePage() {
               }}
             />
           ) : (
-            // Columns come from the viewport only. The sidebar and pane
-            // widths animate, so tying columns to the container would
-            // re-arrange the tiles several times during every toggle.
+            // A standard card grid: fixed-size tracks with as many
+            // auto-fill columns as fit. The card size never depends on
+            // the animated pane widths, so a toggle can only change how
+            // many columns fit, never stretch the cards.
             <div
               data-testid="knowledge-grid"
-              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+              className="grid gap-3 grid-cols-[repeat(auto-fill,10rem)]"
             >
               {sortedFolders.map((folder) => (
                   <FolderTile

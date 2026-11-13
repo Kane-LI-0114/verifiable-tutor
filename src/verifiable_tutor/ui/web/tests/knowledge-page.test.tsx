@@ -529,18 +529,19 @@ describe("knowledge browser", () => {
     expect(folderTile).toHaveClass("aspect-[4/3]");
   });
 
-  it("keeps the tile columns on viewport breakpoints so pane toggles never rearrange the grid", async () => {
+  it("keeps fixed-size tile tracks so pane toggles never stretch the cards", async () => {
     stub = createFetchStub(routes());
 
     renderLiveRoute("/knowledge");
     await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
 
     const grid = screen.getByTestId("knowledge-grid");
-    // The column count comes from the viewport only, never from the
-    // animated pane widths, so expanding or collapsing a sidebar scales
-    // the tiles without re-arranging them.
-    expect(grid).toHaveClass("grid-cols-2", "sm:grid-cols-3", "lg:grid-cols-2", "xl:grid-cols-3", "2xl:grid-cols-4");
-    expect(grid.className).not.toContain("auto-fill");
+    // A standard card grid: every track keeps the same fixed size and
+    // as many columns as fit wrap onto each row. The card size never
+    // depends on the animated pane widths, so a sidebar toggle can only
+    // change how many columns fit, never how big the cards are.
+    expect(grid.className).toContain("grid-cols-[repeat(auto-fill,10rem)]");
+    expect(grid.className).not.toContain("1fr");
     expect(grid.className).not.toContain("minmax");
   });
 });
