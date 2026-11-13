@@ -539,9 +539,24 @@ describe("knowledge browser", () => {
     // A standard card grid: every track keeps the same fixed size and
     // as many columns as fit wrap onto each row. The card size never
     // depends on the animated pane widths, so a sidebar toggle can only
-    // change how many columns fit, never how big the cards are.
-    expect(grid.className).toContain("grid-cols-[repeat(auto-fill,10rem)]");
+    // change how many columns fit, never how big the cards are. Nine rem
+    // is the track size that keeps the leftover width small on the usual
+    // split views, so the row gaps do not have to grow much.
+    expect(grid.className).toContain("grid-cols-[repeat(auto-fill,9rem)]");
     expect(grid.className).not.toContain("1fr");
     expect(grid.className).not.toContain("minmax");
+  });
+
+  it("spreads the tile row across the pane so no dead column sits on the right", async () => {
+    stub = createFetchStub(routes());
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    const grid = screen.getByTestId("knowledge-grid");
+    // The tracks keep the card size fixed. Whatever width is left after
+    // the columns do not fit again goes into the gaps, so a row reaches
+    // both edges of the pane instead of trailing dead space.
+    expect(grid).toHaveClass("justify-between");
   });
 });

@@ -145,7 +145,7 @@ export function FileTile({
       >
         <span className="sr-only">{t.knowledge.openFile}</span>
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background/95 to-transparent" />
-        <span className="relative line-clamp-2 px-2 pb-2 text-[13px] font-medium leading-snug">
+        <span className="relative line-clamp-2 break-words px-2 pb-2 text-[13px] font-medium leading-snug">
           {document.title}
         </span>
       </button>
@@ -197,7 +197,7 @@ export function FolderTile({
       >
         <span className="sr-only">{t.knowledge.openFolder}</span>
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background/95 to-transparent" />
-        <span className="relative line-clamp-2 px-2 pb-2 text-[13px] font-medium leading-snug">
+        <span className="relative line-clamp-2 break-words px-2 pb-2 text-[13px] font-medium leading-snug">
           {folder.name}
         </span>
       </button>

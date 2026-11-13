@@ -604,10 +604,16 @@ export function KnowledgePage() {
             // A standard card grid: fixed-size tracks with as many
             // auto-fill columns as fit. The card size never depends on
             // the animated pane widths, so a toggle can only change how
-            // many columns fit, never stretch the cards.
+            // many columns fit, never stretch the cards. Whatever the
+            // columns leave over goes into the gaps, so a row always
+            // reaches both edges of the pane instead of trailing dead
+            // space on the right. Nine rem tracks are what keeps that
+            // leftover small: a 1280 split view takes four columns with
+            // the gaps at 12px, a 1440 one takes five, so the gutters
+            // stay near the row gap instead of opening up.
             <div
               data-testid="knowledge-grid"
-              className="grid gap-3 grid-cols-[repeat(auto-fill,10rem)]"
+              className="grid gap-3 grid-cols-[repeat(auto-fill,9rem)] justify-between"
             >
               {sortedFolders.map((folder) => (
                   <FolderTile
