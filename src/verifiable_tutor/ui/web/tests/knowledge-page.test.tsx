@@ -528,4 +528,19 @@ describe("knowledge browser", () => {
     const folderTile = screen.getByTestId("folder-tile-f-lectures");
     expect(folderTile).toHaveClass("aspect-[4/3]");
   });
+
+  it("keeps the tile columns on viewport breakpoints so pane toggles never rearrange the grid", async () => {
+    stub = createFetchStub(routes());
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    const grid = screen.getByTestId("knowledge-grid");
+    // The column count comes from the viewport only, never from the
+    // animated pane widths, so expanding or collapsing a sidebar scales
+    // the tiles without re-arranging them.
+    expect(grid).toHaveClass("grid-cols-2", "sm:grid-cols-3", "lg:grid-cols-2", "xl:grid-cols-3", "2xl:grid-cols-4");
+    expect(grid.className).not.toContain("auto-fill");
+    expect(grid.className).not.toContain("minmax");
+  });
 });

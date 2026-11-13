@@ -554,7 +554,9 @@ export function KnowledgePage() {
         </div>
 
         <div
-          className="relative min-h-0 flex-1 overflow-y-auto p-4"
+          // Stable gutter keeps the grid width steady when a scroll
+          // bar appears or hides during a sidebar animation.
+          className="relative min-h-0 flex-1 overflow-y-auto p-4 [scrollbar-gutter:stable]"
           onDragOver={(event) => {
             event.preventDefault();
             setDragging(true);
@@ -599,7 +601,13 @@ export function KnowledgePage() {
               }}
             />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            // Columns come from the viewport only. The sidebar and pane
+            // widths animate, so tying columns to the container would
+            // re-arrange the tiles several times during every toggle.
+            <div
+              data-testid="knowledge-grid"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+            >
               {sortedFolders.map((folder) => (
                   <FolderTile
                     key={folder.id}
