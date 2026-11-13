@@ -59,7 +59,7 @@ function TileActions({
         <button
           type="button"
           aria-label={label}
-          className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex size-6 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           onClick={(event) => event.stopPropagation()}
         >
           <EllipsisIcon className="size-4" />
@@ -81,7 +81,10 @@ function TileActions({
   );
 }
 
-/** One file: its real first page as the icon, its name, and its status. */
+/**
+ * One file: the real first page fills the whole card face, with the file name
+ * on a bottom scrim and the status chip over the face.
+ */
 export function FileTile({
   document,
   selected,
@@ -110,53 +113,60 @@ export function FileTile({
       data-testid={`file-tile-${document.id}`}
       aria-current={selected ? "true" : undefined}
       className={cn(
-        "group relative flex flex-col gap-2 rounded-md border p-2 text-left transition-colors",
-        selected ? "border-foreground/40 bg-muted" : "hover:bg-muted/60",
+        // Locked 4:3 so pane resizes scale the whole card, never just its width.
+        "group relative aspect-[4/3] overflow-hidden rounded-md border text-left transition-colors",
+        selected ? "border-foreground/50 ring-1 ring-foreground/25" : "hover:border-foreground/30",
       )}
     >
-      <button type="button" className="block w-full text-left" onClick={onSelect} onDoubleClick={onOpen}>
+      <span className="absolute inset-0 flex items-center justify-center overflow-hidden bg-muted">
+        {showThumbnail ? (
+          <img
+            src={document.thumbnail_url}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover object-top"
+            onError={() => setThumbnailFailed(true)}
+          />
+        ) : (
+          <FileTextIcon className="size-8 text-muted-foreground" />
+        )}
+        {document.status === "uploading" ? (
+          <span className="absolute inset-0 bg-background/60" />
+        ) : null}
+        {document.status === "uploaded" || document.status === "processing" ? (
+          <span className="absolute inset-0 animate-pulse bg-background/50" />
+        ) : null}
+      </span>
+      <button
+        type="button"
+        className="absolute inset-0 flex flex-col justify-end text-left"
+        onClick={onSelect}
+        onDoubleClick={onOpen}
+      >
         <span className="sr-only">{t.knowledge.openFile}</span>
-        <span className="relative flex h-28 w-full items-center justify-center overflow-hidden rounded-sm bg-muted">
-          {showThumbnail ? (
-            <img
-              src={document.thumbnail_url}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover object-top"
-              onError={() => setThumbnailFailed(true)}
-            />
-          ) : (
-            <FileTextIcon className="size-8 text-muted-foreground" />
-          )}
-          {document.status === "uploading" ? (
-            <span className="absolute inset-0 bg-background/60" />
-          ) : null}
-          {document.status === "uploaded" || document.status === "processing" ? (
-            <span className="absolute inset-0 animate-pulse bg-background/50" />
-          ) : null}
-        </span>
-        <span className="mt-2 line-clamp-2 block break-words text-[13px] font-medium leading-snug">
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background/95 to-transparent" />
+        <span className="relative line-clamp-2 px-2 pb-2 text-[13px] font-medium leading-snug">
           {document.title}
         </span>
       </button>
-      <span className="flex h-6 items-center gap-1">
+      <span className="pointer-events-none absolute left-2 top-2">
         <StatusBadge status={document.status} />
-        <span className="ml-auto">
-          <TileActions
-            label={t.knowledge.moreActions}
-            moveLabel={t.knowledge.moveFile}
-            deleteLabel={t.knowledge.deleteFile}
-            canDelete={canDelete}
-            onMove={onMove}
-            onDelete={onDelete}
-          />
-        </span>
+      </span>
+      <span className="absolute right-2 top-2">
+        <TileActions
+          label={t.knowledge.moreActions}
+          moveLabel={t.knowledge.moveFile}
+          deleteLabel={t.knowledge.deleteFile}
+          canDelete={canDelete}
+          onMove={onMove}
+          onDelete={onDelete}
+        />
       </span>
     </div>
   );
 }
 
-/** One folder: same tile box as a file so the two rows stay visually balanced. */
+/** One folder: same 4:3 card face as a file so the two kinds stay in step. */
 export function FolderTile({
   folder,
   canDelete,
@@ -172,28 +182,39 @@ export function FolderTile({
 }) {
   const t = useT();
   return (
-    <div className="group relative flex flex-col gap-2 rounded-md border p-2">
-      <button type="button" className="block w-full text-left" onClick={onOpen} onDoubleClick={onOpen}>
+    <div
+      data-testid={`folder-tile-${folder.id}`}
+      className="group relative aspect-[4/3] overflow-hidden rounded-md border text-left transition-colors hover:border-foreground/30"
+    >
+      <span className="absolute inset-0 flex items-center justify-center bg-muted/60 pb-8">
+        <FolderIcon className="size-10 text-muted-foreground" />
+      </span>
+      <button
+        type="button"
+        className="absolute inset-0 flex flex-col justify-end text-left"
+        onClick={onOpen}
+        onDoubleClick={onOpen}
+      >
         <span className="sr-only">{t.knowledge.openFolder}</span>
-        <span className="flex h-28 w-full items-center justify-center rounded-sm bg-muted">
-          <FolderIcon className="size-10 text-muted-foreground" />
-        </span>
-        <span className="mt-2 line-clamp-2 block break-words text-[13px] font-medium leading-snug">
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background/95 to-transparent" />
+        <span className="relative line-clamp-2 px-2 pb-2 text-[13px] font-medium leading-snug">
           {folder.name}
         </span>
       </button>
-      <span className="flex h-6 items-center text-xs text-muted-foreground">
-        {t.knowledge.total.replace("{{count}}", String(folder.file_count))}
-        <span className="ml-auto">
-          <TileActions
-            label={t.knowledge.folderActions}
-            moveLabel={t.knowledge.moveFolder}
-            deleteLabel={t.knowledge.deleteFolder}
-            canDelete={canDelete}
-            onMove={onMove}
-            onDelete={onDelete}
-          />
-        </span>
+      <span className="pointer-events-none absolute left-2 top-2">
+        <Badge variant="secondary">
+          {t.knowledge.total.replace("{{count}}", String(folder.file_count))}
+        </Badge>
+      </span>
+      <span className="absolute right-2 top-2">
+        <TileActions
+          label={t.knowledge.folderActions}
+          moveLabel={t.knowledge.moveFolder}
+          deleteLabel={t.knowledge.deleteFolder}
+          canDelete={canDelete}
+          onMove={onMove}
+          onDelete={onDelete}
+        />
       </span>
     </div>
   );

@@ -516,4 +516,16 @@ describe("knowledge browser", () => {
       screen.getByRole("menuitem", { name: "Move file" }),
     ).toBeInTheDocument();
   });
+
+  it("renders file and folder tiles with a locked 4:3 landscape face", async () => {
+    stub = createFetchStub(routes());
+
+    renderLiveRoute("/knowledge");
+
+    const fileTile = await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+    expect(fileTile).toHaveClass("aspect-[4/3]");
+
+    const folderTile = screen.getByTestId("folder-tile-f-lectures");
+    expect(folderTile).toHaveClass("aspect-[4/3]");
+  });
 });
