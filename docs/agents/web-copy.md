@@ -51,8 +51,8 @@ code, it does not exist.
 
 ## 3. Research base
 
-Captured on 2026-11-13 with the built-in `web_fetch`. Full quotes and failures are in
-`../../.agents/skills/web-copy/research/2026-11-13-web-copy-audit.md` in the course
+Captured on 2026-11-13 with `web_fetch` and `agent-browser`. Full quotes and failures are
+in `../../.agents/skills/web-copy/research/2026-11-13-web-copy-audit.md` in the course
 workspace.
 
 | Site | URL | What it is | Status |
@@ -63,46 +63,87 @@ workspace.
 | Yuanfudao | https://www.yuanfudao.com/ | Chinese online education company | captured, corporate homepage |
 | Zuoyebang | https://www.zuoyebang.com/ | Chinese homework help company | captured, corporate homepage |
 
-Failed and not used: Quizlet (403 captcha), Coursera (JS shell), XuetangX (JS shell),
-icourse163 (privacy modal only), Smart Education of China (JS shell).
+Failed on the marketing pass: Quizlet (403 captcha), Coursera homepage (JS shell), XuetangX
+(JS shell), icourse163 (privacy modal only), Smart Education of China (JS shell).
 
-### What the genre does
+### Marketing pages and product pages
 
-- It speaks to the reader as "you" and gives the product a role: "your always-available
+The five captures above are marketing pages: they explain the product before the reader
+uses it. They are the right evidence for the tagline and the auth panel, not for the
+surfaces inside the app. Product pages were captured separately, because navigation,
+practice, and progress use a different voice.
+
+| Product page | URL | What it shows | Captured |
+|---|---|---|---|
+| Khan Academy, Algebra I unit | https://www.khanacademy.org/math/algebra-2018/quadratics?e=quadratic_equation&t=practice | Unit navigation, 29 skills, five progress states, quiz and unit test | 2026-11-13, `agent-browser` |
+| Khan Academy, Parabolas intro | https://www.khanacademy.org/math/algebra-2018/quadratics/parabolas-intro-alg1/e/parabolas-intro | One problem, Skip and Check, Do 4 problems, Report a problem | 2026-11-13, `agent-browser` |
+| Brilliant, Quadratics | https://brilliant.org/courses/quadratics/completing-the-square/?lesson=squaring-binomials | Level list, 80 lessons, 1468 exercises, Level Check | 2026-11-13, `agent-browser` |
+| Coursera, asynchronous JavaScript | https://www.coursera.org/learn/packt-asynchronous-programming-in-javascript-complete-course-enzqd | 4 modules, "What you'll learn", "Skills you'll gain", Chinese product labels | 2026-11-13, `agent-browser` |
+
+The AI tutor conversation itself was not captured. Khanmigo, Koji, and Coursera Coach put
+the chat behind a sign-in on every public page; signing in is outside the research rules.
+The chat rules below therefore come from this app's own surfaces and from the product-page
+patterns, not from a captured tutor conversation.
+
+### What the marketing pages do
+
+- They speak to the reader as "you" and give the product a role: "your always-available
   teaching assistant" (Khanmigo), "Your personal tutor for math and coding" (Brilliant).
-- It explains the mechanism as a sequence of actions: "asks guiding questions, sketches on
+- They explain the mechanism as a sequence of actions: "asks guiding questions, sketches on
   your screen, and helps you work through each step" (Brilliant); "guides learners to find
   the answer themselves" (Khanmigo).
-- It names the failure mode of the category and says the product avoids it: "without giving
+- They name the failure mode of the category and say the product avoids it: "without giving
   you direct answers" (Khanmigo), "not a cheating machine" (Brilliant).
-- It proves with a unit and a method when it can: "4,000+ Expert Tutors in 250+ Subjects"
+- They prove with a unit and a method when they can: "4,000+ Expert Tutors in 250+ Subjects"
   (Tutor.com), "Data from 2025 post-session learner surveys" (Tutor.com).
 - Chinese sites state scope as school stage plus subject ("小初高全科", "全学科") and name
   the audience in the block ("专为家长", "专为小学家长老师"). Their proof is a named
   benchmark ("微软 MSMarco 机器阅读理解排行榜，荣获全球第一").
 
-### What the genre does not do
+### What the marketing pages do not do
 
-- It does not lead with "AI". The AI tutors in the set do not use it as the main claim; the
+- They do not lead with "AI". The AI tutors in the set do not use it as the main claim; the
   difference is what the product does with the course material.
-- It does not use an outcome with no mechanism: "Online Tutoring That Accelerates Student
+- They do not use an outcome with no mechanism: "Online Tutoring That Accelerates Student
   Achievement" is the weak hero in the set.
-- It does not stack superlatives: "Powerful insights, real results", "Unmatched tutor
+- They do not stack superlatives: "Powerful insights, real results", "Unmatched tutor
   quality".
-- It does not use exclamation marks or three-item feature lists in every block.
-- It does not write institutional noun stacks: "Real-time data and actionable analytics to
+- They do not use exclamation marks or three-item feature lists in every block.
+- They do not write institutional noun stacks: "Real-time data and actionable analytics to
   measure impact and continuously improve outcomes".
 
-The two Chinese captures are corporate homepages, not product pages. Use them for register
-and proof style, not for page structure. Their mission sentences are long and four-character
-heavy. Do not imitate them.
+### What product pages do
+
+- Labels carry the structure: "UNIT 16", "29 skills", "4 modules", "LEVEL 1". A label is
+  usually a noun and a count, not a sentence.
+- Progress is a legend of states, not a paragraph: "Mastered / Proficient / Familiar /
+  Attempted / Not started".
+- The action is an imperative: "Start Course challenge", "Do 4 problems", "Check", "Skip".
+- Headings name what the reader gets: "What you'll learn", "Skills you'll gain",
+  "Details to know", "Related content".
+- Hierarchy is a breadcrumb: "Math > Algebra I (2018 edition) > Quadratics > Parabolas
+  intro".
+- A next step is one sentence and a link: "Not feeling ready for this? Check out Get ready
+  for Algebra 1."
+- A subtitle earns its place only with a fact the controls do not show: "4 modules",
+  "5 hours to complete". It is not a restatement of the title.
+
+The tagline belongs to the auth panel and the browser title. Do not repeat it as an in-app
+page subtitle. Inside the app, a page title and a count do the work a tagline does on a
+marketing page.
+
+The two Chinese marketing captures are corporate homepages. Use them for register and proof
+style, not for page structure. Their mission sentences are long and four-character heavy.
+Do not imitate them. The Coursera product page, served in Chinese, is the better source for
+Chinese product labels: "您将学到什么", "您将获得的技能", "4个模块", "第 1 单元", "单元详情".
+Prefer those short labels to the corporate sentences.
 
 ## 4. Voice profile
 
 | Dimension | What the captures do | Rule for this product |
 |---|---|---|
 | Address | Second person; the product is a named role | Use "you". The product is "the tutor" or "the assistant", one term per page. |
-| Headline | Role plus scope, six to twelve words | Keep the tagline. Page titles are plain nouns: "Practice", "Knowledge base". |
+| Headline | Role plus scope, six to twelve words | Keep the tagline on the auth panel. Page titles are plain nouns: "Practice", "Knowledge base". |
 | Mechanism | A sequence of concrete actions | Say: find course pages, quote the text, check it against the page, show the source. |
 | Differentiation | Names the category failure | An answer without a page is not presented as verified. Say that once, plainly. |
 | Proof | A number with a unit and a method | Use the citation check and, when results exist, the evaluation. Name what was measured. No invented counts. |
@@ -114,8 +155,22 @@ heavy. Do not imitate them.
 | Punctuation | Periods, rare colon, no exclamation | Periods. No exclamation marks, no emoji. |
 | Section rhythm | Short heading, one to three sentences | One block, one idea. A section may be one line. |
 
-The existing tagline is the register to match: "Course-grounded answers with evidence you
-can check." and "以课程材料为依据、引用可核查的答疑。"
+Product pages add a second register. Use it for navigation, lists, and controls; use the
+marketing register only where the reader is deciding whether to use the product.
+
+| Dimension | Product pages | Rule for in-app surfaces |
+|---|---|---|
+| Structure | Label plus count | "29 skills", "4 modules", "80 lessons", "1468 exercises". |
+| Progress | A legend of states | Show the states once, next to the list. Do not write a sentence per item. |
+| Action | Imperative | "Start", "Check", "Skip", "Do 4 problems". One primary action per view. |
+| Heading | What the reader gets | "What you'll learn", "Related content", "Unit details". |
+| Hierarchy | Breadcrumb | "Math > Algebra I > Quadratics". Do not describe the path in prose. |
+| Next step | One sentence plus a link | "Not feeling ready for this? Check out Get ready for Algebra 1." |
+| Subtitle | A fact the controls do not show | "4 modules", "5 hours to complete". Otherwise omit. |
+
+The existing tagline is the register to match on the auth panel: "Course-grounded answers
+with evidence you can check." and "以课程材料为依据、引用可核查的答疑。" Do not use it as
+an in-app page subtitle.
 
 ## 5. Where copy belongs
 
@@ -348,7 +403,8 @@ change. Keys are in `src/verifiable_tutor/ui/web/src/lib/i18n/en.ts` and `zh.ts`
 
 | Key | Now (EN / ZH) | Suggested (EN / ZH) | Why |
 |---|---|---|---|
-| `app.tagline` | Course-grounded answers with evidence you can check.<br>以课程材料为依据、引用可核查的答疑。 | Keep. | It names the mechanism and the check. No change. |
+| `app.name` | Verifiable Tutor<br>可验证导师 | Keep for this release.<br>本次保留。 | The name is in the proposal, the page title, and every auth screen. A copy pass does not rename the product. If the name reopens, "可验证助教" names the role and "有据" is the short brand; see section 12. |
+| `app.tagline` | Course-grounded answers with evidence you can check.<br>以课程材料为依据、引用可核查的答疑。 | Keep. Use it on the auth panel and in the browser title only. | It names the mechanism and the check. Do not repeat it inside the app. |
 | `auth.loginSubtitle` | Use your course account to ask questions and review evidence.<br>使用课程账号提问并查看证据。 | Sign in with your course account to ask questions and check the sources.<br>用课程账号登录，提问并核对来源。 | "Review evidence" is vague. "Check the sources" is the action the UI supports. |
 | `auth.domainHint` | Registration is limited to connect.ust.hk and ust.hk addresses.<br>仅限 connect.ust.hk 与 ust.hk 邮箱注册。 | Register with a connect.ust.hk or ust.hk address.<br>请使用 connect.ust.hk 或 ust.hk 邮箱注册。 | Move it to the register page. On login it answers a question the user does not have. |
 | `auth.checks[0].title` | Every fact has a page<br>每个事实都有出处 | Answers name the page<br>答案标注页码 | "Every fact" is a guarantee the system cannot make. Name the behavior. |
@@ -423,8 +479,10 @@ change. Keys are in `src/verifiable_tutor/ui/web/src/lib/i18n/en.ts` and `zh.ts`
 | `knowledge.summaryMissing` | The summary has not been generated yet.<br>摘要尚未生成。 | No summary yet.<br>暂无摘要。 | Shorter. Same fact. |
 | `knowledge.summaryModel` | Written by {{model}}<br>由 {{model}} 生成 | Summary by {{model}}<br>摘要由 {{model}} 生成 | The model wrote a summary, not the document. |
 | `knowledge.deleteFileBody` | This removes the file, its chunks, and the local copy.<br>将删除该文件、它的分块以及本地副本。 | This removes the file, its index, and the local copy.<br>将删除文件、索引和本地副本。 | "Chunks" is an internal storage unit. |
-| `knowledge.chatNotice` | Answers read the open page when they need it.<br>回答需要时会读取当前页面的正文。 | Answers can read this page when the question needs it.<br>提问涉及本页时，回答会读取这一页。 | The subject of "they" is unclear. |
-| `knowledge.chatEmpty` | Ask about the open file or page.<br>可以就当前文件或当前页提问。 | Ask about this file or page.<br>问这个文件或这一页。 | "Open" is redundant in context. |
+| `knowledge.chatTitle` | About this page<br>关于这一页 | Page chat<br>本页问答 | The pane is a chat, not a page-info panel. A short label fits the collapsed rail and the mobile sheet. "关于" is translationese. |
+| `knowledge.chatNotice` | Answers read the open page when they need it.<br>回答需要时会读取当前页面的正文。 | Delete the line. | The empty state and the composer already say what the pane reads. A permanent line above the thread adds noise. |
+| `knowledge.chatEmpty` | Ask about the open file or page.<br>可以就当前文件或当前页提问。 | Ask about a term, a formula, or a line on this page.<br>可以问这一页上的术语、公式或某一行。 | Examples give the reader a first question; "file or page" repeats the title. |
+| `knowledge.chatPlaceholder` | Ask about this page<br>就这一页提问 | Keep.<br>保留。 | With the title shortened to "Page chat", the placeholder carries the action and no longer repeats the title. |
 
 ### 8.6 Builds and deadlines
 
@@ -505,8 +563,10 @@ Manual checks:
 These are product decisions, not copy fixes. Record the decision before changing the
 strings.
 
-- Chinese product name: "可验证导师" versus "可核验助教". "导师" suggests a mentor; "助教"
-  matches the teaching-assistant role. The tagline works with either.
+- Chinese product name: keep "可验证导师" for this release. It matches the English name and
+  the proposal; a copy pass should not rename the product. If the name reopens, "可验证助教"
+  names the role accurately and "有据" is the short brand. A rename touches the proposal,
+  PRD, README, and page titles, so decide it before changing `zh.ts`.
 - English role noun: "tutor" versus "assistant". The product name says Tutor. Pick one term
   per page and keep it.
 - TACC in student copy: keep it only in the code execution confirmation, where it explains
