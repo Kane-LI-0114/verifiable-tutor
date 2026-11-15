@@ -1,0 +1,4 @@
+{"question_id":"q1","variant":"correct","answer_text":"L1 cache","simulator":"mimo-v2.6-pro","simulator_date":"2026-11-15"}
+{"question_id":"q1","variant":"wrong","answer_text":"SSD","simulator":"mimo-v2.6-pro","simulator_date":"2026-11-15"}
+{"question_id":"q2","variant":"partial","answer_text":"cache helps sometimes","simulator":"mimo-v2.6-pro","simulator_date":"2026-11-15"}
+{"question_id":"q2","variant":"correct","answer_text":"locality of reference","simulator":"mimo-v2.6-pro","simulator_date":"2026-11-15"}

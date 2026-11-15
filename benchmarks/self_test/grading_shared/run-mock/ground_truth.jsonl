@@ -1,0 +1,4 @@
+{"question_id":"q1","variant":"correct","score":5,"matched_scoring_points":["identifies L1"]}
+{"question_id":"q1","variant":"wrong","score":0,"matched_scoring_points":[]}
+{"question_id":"q2","variant":"partial","score":2,"matched_scoring_points":["mentions locality"]}
+{"question_id":"q2","variant":"correct","score":3,"matched_scoring_points":["mentions locality"]}

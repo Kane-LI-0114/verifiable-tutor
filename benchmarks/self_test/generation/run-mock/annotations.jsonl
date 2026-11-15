@@ -1,0 +1,5 @@
+{"question_id":"a-001","knowledge_points":["cache hierarchy"],"valid":true,"validity_notes":[],"difficulty":"low","annotator":"dev-1","verified_max_score":1}
+{"question_id":"a-002","knowledge_points":["cache hierarchy"],"valid":true,"validity_notes":[],"difficulty":"medium","annotator":"dev-1","verified_max_score":2}
+{"question_id":"a-003","knowledge_points":["cache hierarchy","latency"],"valid":true,"validity_notes":[],"difficulty":"low","annotator":"dev-1","verified_max_score":1}
+{"question_id":"a-004","knowledge_points":["locality"],"valid":true,"validity_notes":[],"difficulty":"medium","annotator":"dev-1","verified_max_score":2}
+{"question_id":"a-005","knowledge_points":["gemm"],"valid":false,"validity_notes":["reference answer not runnable"],"difficulty":"high","annotator":"dev-1","verified_max_score":5}

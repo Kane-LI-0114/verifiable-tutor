@@ -1,0 +1,37 @@
+# Course knowledge-point list (draft, 2026-11-15).
+#
+# Purpose: the denominator source for knowledge_point_coverage. The number of
+# entries under a topic is that topic's --expected-points value.
+#
+# Status: DRAFT. "memory hierarchy" is grounded in the generated question set;
+# the other topics are based on public CS knowledge and the Assignment 1 brief,
+# and MUST be confirmed against the course slides before a real run.
+
+topics:
+  memory hierarchy:
+    - locality (temporal and spatial)
+    - cache organization (direct-mapped, set-associative, fully-associative)
+    - cache address division (offset, index, tag)
+    - average memory access time (AMAT)
+    - write policies (write-through, write-back)
+    - virtual memory and TLB
+    - multi-level cache hierarchy
+    - working set and thrashing
+
+  FlashAttention:
+    - attention computation (Q, K, V)
+    - memory bandwidth bottleneck
+    - tiling / blocking
+    - online softmax
+    - recomputation vs caching
+
+  MPI:
+    - process and rank
+    - point-to-point communication (send / recv)
+    - collective communication (broadcast, scatter, gather)
+    - 1D row partitioning for parallel GEMM
+
+  GEMM:
+    - matrix multiplication
+    - row-major memory layout
+    - loop ordering and data reuse
