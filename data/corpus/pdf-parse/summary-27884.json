@@ -1,0 +1,22 @@
+{
+  "schema": "vt-pdf-parse/1",
+  "job_id": "27884",
+  "host": "10-0-1-10",
+  "generated_at": "2026-10-29T12:24:41+00:00",
+  "pdf_name": "course_project.pdf",
+  "pdf_sha256": "1bf2e7a6dc194cce19cee998e0004860c2ca5dda71152ce2f0e7c353f0ebda2a",
+  "pages": 8,
+  "pages_ok": "8",
+  "blocks_total": "121",
+  "chars_total": "8430",
+  "median_page_seconds": "3.905",
+  "bootstrap_seconds": 0,
+  "vllm_startup_seconds": 284,
+  "vram_peak_mib": "22825",
+  "elapsed_seconds": 414,
+  "document_markdown": "document/course_project-ocr.md",
+  "pages_jsonl": "pages.jsonl",
+  "pass": 10,
+  "fail": 0,
+  "log": "pdf-parse-27884.log"
+}

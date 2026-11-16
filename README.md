@@ -88,7 +88,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
-| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots, knowledge-base records and build state | placeholder (`data/kb/` holds verified local records; all data contents are gitignored) |
+| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | Course PDFs, OCR output and page images, dense plus BM25 index, cached embeddings and retrieval snapshots, knowledge-base records and build state | `data/corpus/`, `data/index/`, and `data/kb/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
 | `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
 | `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, the live model smoke, the API documentation build and vendor scripts, and the physical data model build script | present: scripts |
@@ -159,7 +159,7 @@ The backend and the browser UI run on the developer laptop. TACC is reached only
    .venv/bin/python -m pytest
    ```
 
-TACC jobs use their own pinned layer, [scripts/tacc/requirements-tacc.txt](scripts/tacc/requirements-tacc.txt) (PaddleOCR, PaddlePaddle, `pypdfium2`), installed into `$HOME` by `scripts/tacc/bootstrap.sh`; the submit, poll, and download workflow is in [AGENTS.md](AGENTS.md#tacc-and-model-serving). Runtime state lives under `data/` and the local model weights under `models/`; both are gitignored.
+TACC jobs use their own pinned layer, [scripts/tacc/requirements-tacc.txt](scripts/tacc/requirements-tacc.txt) (PaddleOCR, PaddlePaddle, `pypdfium2`), installed into `$HOME` by `scripts/tacc/bootstrap.sh`; the submit, poll, and download workflow is in [AGENTS.md](AGENTS.md#tacc-and-model-serving). Runtime state under `data/app/` and `data/caches/`, and the local model weights under `models/`, are gitignored; the tracked corpus and TACC results live under `data/corpus/`, `data/index/`, and `data/kb/`.
 
 ## Evaluation plan
 

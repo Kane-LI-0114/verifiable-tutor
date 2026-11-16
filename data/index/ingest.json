@@ -1,0 +1,474 @@
+{
+  "schema": "vt-ingest-state/1",
+  "updated_at": "2026-11-06T08:53:57+00:00",
+  "documents": {
+    "course_project": {
+      "doc_id": "course_project",
+      "ocr": {
+        "status": "done",
+        "job_id": "27884",
+        "pages": 8,
+        "pages_ok": 8,
+        "seconds": null,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/course_project.jsonl",
+        "log_path": null,
+        "error": null,
+        "source": "data/corpus/pdf-parse/pages-27884.jsonl (job 27884, reused)",
+        "finished_at": "2026-11-06T08:44:46+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 11,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 11,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 8,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "already-parsed"
+    },
+    "ACS_Lecture_0_2026F": {
+      "doc_id": "ACS_Lecture_0_2026F",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 11,
+        "pages_ok": 11,
+        "seconds": 339.927,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/ACS_Lecture_0_2026F.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-lectures-20261105-064830/logs/ACS_Lecture_0_2026F-28201.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T07:36:54+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 11,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 11,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 11,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "lectures"
+    },
+    "ACS_Lecture_1_2026F": {
+      "doc_id": "ACS_Lecture_1_2026F",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 67,
+        "pages_ok": 67,
+        "seconds": 425.302,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/ACS_Lecture_1_2026F.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-lectures-20261105-064830/logs/ACS_Lecture_1_2026F-28201.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T07:36:54+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 73,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 73,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 67,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "lectures"
+    },
+    "ACS_lecture_2_2026F": {
+      "doc_id": "ACS_lecture_2_2026F",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 69,
+        "pages_ok": 69,
+        "seconds": 404.206,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/ACS_lecture_2_2026F.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-lectures-20261105-064830/logs/ACS_lecture_2_2026F-28201.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T07:36:54+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 69,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 69,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 69,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "lectures"
+    },
+    "Tutorial_1": {
+      "doc_id": "Tutorial_1",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 16,
+        "pages_ok": 16,
+        "seconds": 179.543,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Tutorial_1.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261105-074618/logs/Tutorial_1-28215.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:25:47+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 16,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 16,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 16,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "tutorials"
+    },
+    "Tutorial_2": {
+      "doc_id": "Tutorial_2",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 25,
+        "pages_ok": 25,
+        "seconds": 208.414,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Tutorial_2.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261105-074618/logs/Tutorial_2-28215.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:25:47+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 25,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 25,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 25,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "tutorials"
+    },
+    "Tutorial_3": {
+      "doc_id": "Tutorial_3",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 28,
+        "pages_ok": 28,
+        "seconds": 204.131,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Tutorial_3.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261105-074618/logs/Tutorial_3-28215.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:25:47+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 29,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 29,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 28,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "tutorials"
+    },
+    "Tutorial_4": {
+      "doc_id": "Tutorial_4",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 40,
+        "pages_ok": 40,
+        "seconds": 256.075,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Tutorial_4.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261105-074618/logs/Tutorial_4-28215.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:25:47+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 41,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 41,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 40,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "tutorials"
+    },
+    "Tutorial_5": {
+      "doc_id": "Tutorial_5",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 33,
+        "pages_ok": 33,
+        "seconds": 201.351,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Tutorial_5.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261105-074618/logs/Tutorial_5-28215.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:25:47+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 33,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 33,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 33,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "tutorials"
+    },
+    "TACC_Toturial": {
+      "doc_id": "TACC_Toturial",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 34,
+        "pages_ok": 34,
+        "seconds": 196.788,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/TACC_Toturial.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261105-074618/logs/TACC_Toturial-28215.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:25:47+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 34,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 34,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 34,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "tutorials"
+    },
+    "Assignment_1_final": {
+      "doc_id": "Assignment_1_final",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 6,
+        "pages_ok": 6,
+        "seconds": 130.923,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Assignment_1_final.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-misc-20261105-082547/logs/Assignment_1_final-28227.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:50:51+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 8,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 8,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 6,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "misc"
+    },
+    "Assignment_2": {
+      "doc_id": "Assignment_2",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 5,
+        "pages_ok": 5,
+        "seconds": 99.682,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Assignment_2.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-misc-20261105-082547/logs/Assignment_2-28227.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-05T08:50:51+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 9,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 9,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261105-090626",
+        "page_count": 5,
+        "finished_at": "2026-11-05T09:17:40+00:00"
+      },
+      "batch": "misc"
+    },
+    "Tutorial_6": {
+      "doc_id": "Tutorial_6",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 23,
+        "pages_ok": 23,
+        "seconds": 188.641,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/Tutorial_6.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-tutorials-20261106-081949/logs/Tutorial_6-28316.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-06T08:30:49+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 23,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-06T08:31:47+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 23,
+        "model": "BAAI/bge-m3",
+        "job_id": "28320",
+        "finished_at": "2026-11-06T08:34:26+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "sum-20261106-084446",
+        "page_count": 23,
+        "finished_at": "2026-11-06T08:53:57+00:00"
+      },
+      "batch": "tutorials"
+    }
+  }
+}
