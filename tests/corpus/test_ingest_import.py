@@ -167,6 +167,7 @@ def test_import_restores_chunks_vectors_and_summary_without_tacc(tmp_path: Path)
     assert report["documents"] == {DOC_ID: {"chunks": 2, "vectors": 2}}
     assert report["model"] == MODEL
     assert report["issues"] == []
+    assert report["state_changed"] is True
     stored = store.get_document(DOC_ID)
     assert stored["status"] == "ready"
     assert stored["summary"] == SUMMARY_TEXT
@@ -239,3 +240,42 @@ def test_the_summary_export_round_trips_into_a_second_store(tmp_path: Path) -> N
         summaries_path=export_path,
     )
     assert target.get_document(DOC_ID)["summary"] == SUMMARY_TEXT
+
+
+def test_import_keeps_the_finished_stage_records_of_the_tracked_state(
+    tmp_path: Path,
+) -> None:
+    ingest = load_ingest()
+    store = make_store(tmp_path)
+    pages_dir = tmp_path / "pages"
+    write_pages(pages_dir, [page(1, "Page one text."), page(2, "Page two text.")])
+    index_dir = write_index_dir(
+        tmp_path / "index", ["course_project:p001:c00", "course_project:p002:c00"]
+    )
+    state = ingest.empty_state()
+    ingest.record_ocr(
+        state,
+        DOC_ID,
+        {"status": "done", "job_id": "27884", "pages": 2, "pages_ok": 2},
+        batch="already-parsed",
+    )
+    ingest.record_chunks(state, DOC_ID, count=2, chunker_version="vt-chunker/1")
+    ingest.record_index(state, DOC_ID, vectors=2, model=MODEL, job_id="28320")
+    ingest.record_summary(
+        state, DOC_ID, model="qwen3.8-27b", build_id="summary-1", page_count=2
+    )
+
+    report = ingest.import_index(
+        store=store,
+        documents=[document()],
+        state=state,
+        index_dir=index_dir,
+        pages_dir=pages_dir,
+    )
+
+    assert report["ok"] is True
+    assert report["state_changed"] is False
+    record = state["documents"][DOC_ID]
+    assert record["ocr"]["job_id"] == "27884"
+    assert record["index"]["job_id"] == "28320"
+    assert record["summary"]["build_id"] == "summary-1"

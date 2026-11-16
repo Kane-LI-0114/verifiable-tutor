@@ -659,6 +659,7 @@ def import_index(
     summaries = _tracked_summaries(
         summaries_path if summaries_path is not None else index_dir / "summaries.json"
     )
+    before = json.dumps(state.get("documents") or {}, sort_keys=True, default=str)
     imported: dict[str, dict] = {}
     for document in documents:
         doc_id = str(document["doc_id"])
@@ -694,24 +695,29 @@ def import_index(
             built_at=built_at,
         )
         store.set_document_status(doc_id, "ready", detail=None, updated_at=now_iso())
-        record_ocr(
-            state,
-            doc_id,
-            {
-                "status": "done",
-                "job_id": None,
-                "pages": len(pages),
-                "pages_ok": len(pages),
-                "pages_path": str(pages_path),
-                "log_path": None,
-            },
-            batch=str(document.get("batch") or "unknown"),
-        )
-        record_chunks(
-            state, doc_id, count=len(chunks), chunker_version=CHUNKER_VERSION
-        )
-        record_index(state, doc_id, vectors=len(chunks), model=model, job_id=job_id)
-        if summary.get("summary"):
+        record = _document_state(state, doc_id)
+        if (record.get("ocr") or {}).get("status") != "done":
+            record_ocr(
+                state,
+                doc_id,
+                {
+                    "status": "done",
+                    "job_id": None,
+                    "pages": len(pages),
+                    "pages_ok": len(pages),
+                    "pages_path": str(pages_path),
+                    "log_path": None,
+                },
+                batch=str(document.get("batch") or "unknown"),
+            )
+        if (record.get("chunks") or {}).get("status") != "done":
+            record_chunks(
+                state, doc_id, count=len(chunks), chunker_version=CHUNKER_VERSION
+            )
+        if (record.get("index") or {}).get("status") != "done":
+            record_index(state, doc_id, vectors=len(chunks), model=model, job_id=job_id)
+        summary_done = (record.get("summary") or {}).get("status") == "done"
+        if summary.get("summary") and not summary_done:
             record_summary(
                 state,
                 doc_id,
@@ -724,12 +730,14 @@ def import_index(
             + (" with a summary" if summary.get("summary") else "")
         )
         imported[doc_id] = {"chunks": len(chunks), "vectors": len(chunks)}
+    after = json.dumps(state.get("documents") or {}, sort_keys=True, default=str)
     return {
         "ok": not issues and bool(imported),
         "documents": imported,
         "model": model,
         "built_at": built_at,
         "issues": issues,
+        "state_changed": before != after,
     }
 
 
@@ -746,7 +754,11 @@ def ingest_export(args) -> int:
     payload = export_summaries(store=store)
     print(
         json.dumps(
-            {"ok": True, "documents": len(payload["documents"]), "path": str(INDEX_DIR / "summaries.json")},
+            {
+                "ok": True,
+                "documents": len(payload["documents"]),
+                "path": str(INDEX_DIR / "summaries.json"),
+            },
             ensure_ascii=False,
             indent=2,
         )
@@ -776,7 +788,7 @@ def ingest_import(args) -> int:
         state=state,
         dry_run=args.dry_run,
     )
-    if not args.dry_run:
+    if not args.dry_run and report["state_changed"]:
         save_state(state, state_path)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report.get("ok") else 1
