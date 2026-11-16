@@ -45,6 +45,7 @@ data/index/*
 !data/index/ingest.json
 !data/index/row_map.jsonl
 !data/index/summary.json
+!data/index/summaries.json
 !data/index/vectors.npy
 data/kb/*
 !data/kb/.gitkeep
