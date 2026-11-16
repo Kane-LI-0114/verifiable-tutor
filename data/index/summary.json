@@ -1,0 +1,22 @@
+{
+  "schema": "vt-index-summary/1",
+  "batch_id": "index-20261106-083147",
+  "job_id": "28320",
+  "host": "10-0-1-11",
+  "model": "BAAI/bge-m3",
+  "model_path": "~/models/bge-m3",
+  "dimension": 1024,
+  "rows": 382,
+  "downloaded": false,
+  "download_seconds": 0.0,
+  "load_seconds": 9.806,
+  "embed_seconds": 8.49,
+  "elapsed_seconds": 83.767,
+  "device": "cuda",
+  "status": "done",
+  "error": null,
+  "generated_at": "2026-11-06T08:32:30+00:00",
+  "input_path": "/mnt/home/lijinchuan/USERDIR/index/requests/index-20261106-083147/input.jsonl",
+  "corpus_hash": "6392672385cffcb4b34e8008e125513b5e2459e16946279dfec489b84827c6ff",
+  "job_started_epoch": 1793953944.0
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ingest the course corpus into the local knowledge store through TACC jobs.
 
-Three stages, run in order:
+Four stages, run in order:
 
 ``ocr``
     Parse the corpus PDFs in three batched TACC GPU jobs (Lectures, Tutorials,
@@ -13,16 +13,23 @@ Three stages, run in order:
     job and store the vectors.
 ``summarize``
     Write one Qwen document summary per document in one TACC GPU job.
+``import``
+    Restore the local knowledge store from the tracked artifacts under
+    ``data/index/`` without calling TACC: rebuild the chunks from the tracked
+    page records, apply ``row_map.jsonl`` and ``vectors.npy``, and load the
+    document summaries from ``data/index/summaries.json``.
 
 Per-document progress lives in ``data/index/ingest.json``, so a rerun continues
 from the last finished stage; ``--force`` redoes a stage and ``--only`` limits a
-run to named documents.
+run to named documents. A fresh checkout runs ``import`` once and skips the
+three TACC stages.
 
 Usage:
   .venv/bin/python scripts/ingest_corpus.py status
   .venv/bin/python scripts/ingest_corpus.py ocr --batch lectures
   .venv/bin/python scripts/ingest_corpus.py index --resume
   .venv/bin/python scripts/ingest_corpus.py summarize --resume
+  .venv/bin/python scripts/ingest_corpus.py import
 """
 
 from __future__ import annotations
@@ -48,6 +55,7 @@ PAGES_DIR = REPO_ROOT / "data" / "corpus" / "pages"
 IMAGES_DIR = REPO_ROOT / "data" / "corpus" / "images"
 DOCUMENT_DIR = REPO_ROOT / "data" / "corpus" / "ocr"
 CORPUS_PDF_DIR = REPO_ROOT / "data" / "corpus" / "corpus-pdf"
+INDEX_DIR = REPO_ROOT / "data" / "index"
 SCRIPTS_TACC = REPO_ROOT / "scripts" / "tacc"
 STAGES = ("ocr", "chunks", "index", "summary")
 
@@ -565,6 +573,227 @@ def ingest_summarize(args) -> int:
     return 0 if report.get("ok") else 1
 
 
+# --------------------------------------------------------------------- import
+def _tracked_summaries(path: Path) -> dict[str, dict]:
+    """Read the tracked ``vt-doc-summaries/1`` export, or nothing if absent."""
+
+    if not path.is_file():
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema") != "vt-doc-summaries/1":
+        raise ValueError(f"{path}: expected vt-doc-summaries/1")
+    documents = payload.get("documents") or {}
+    if not isinstance(documents, dict):
+        raise ValueError(f"{path}: documents must be an object")
+    return {str(doc_id): dict(record or {}) for doc_id, record in documents.items()}
+
+
+def export_summaries(
+    *, store, path: Path = INDEX_DIR / "summaries.json"
+) -> dict:
+    """Write the per-document summaries as a tracked ``vt-doc-summaries/1`` snapshot."""
+
+    rows, _total = store.list_documents(limit=1000)
+    documents = {
+        str(row["id"]): {
+            "summary": row["summary"],
+            "model": row.get("summary_model"),
+            "created_at": row.get("summary_created_at"),
+        }
+        for row in rows
+        if row.get("summary")
+    }
+    payload = {"schema": "vt-doc-summaries/1", "documents": documents}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    return payload
+
+
+def import_index(
+    *,
+    store,
+    documents: list[dict],
+    state: dict,
+    index_dir: Path = INDEX_DIR,
+    pages_dir: Path = PAGES_DIR,
+    summaries_path: Path | None = None,
+    dry_run: bool = False,
+) -> dict:
+    """Restore the knowledge store from the tracked index artifacts.
+
+    The chunks are rebuilt from the tracked page records with the page-first
+    chunker, so their ids must match the tracked row map. A document with any
+    chunk that has no tracked vector is skipped whole instead of being stored
+    half embedded.
+    """
+
+    from verifiable_tutor.corpus.chunker import CHUNKER_VERSION, chunks_from_pages
+    from verifiable_tutor.corpus.pages import read_pages
+
+    index_driver = load_driver("run_index_job", "scripts/tacc/run_index_job.py")
+    issues: list[str] = []
+    row_map_path = index_dir / "row_map.jsonl"
+    vectors_path = index_dir / "vectors.npy"
+    for path in (row_map_path, vectors_path):
+        if not path.is_file():
+            issues.append(f"missing tracked artifact: {path}")
+    if issues:
+        return {
+            "ok": False,
+            "documents": {},
+            "model": None,
+            "built_at": None,
+            "issues": issues,
+        }
+
+    matrix = index_driver.read_npy(vectors_path)
+    row_map = index_driver.load_row_map(row_map_path)
+    vectors = index_driver.vectors_by_chunk(row_map, matrix)
+    meta_path = index_dir / "summary.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+    model = str(meta.get("model") or "BAAI/bge-m3")
+    built_at = str(meta.get("generated_at") or now_iso())
+    job_id = str(meta.get("job_id") or "imported")
+    summaries = _tracked_summaries(
+        summaries_path if summaries_path is not None else index_dir / "summaries.json"
+    )
+    before = json.dumps(state.get("documents") or {}, sort_keys=True, default=str)
+    imported: dict[str, dict] = {}
+    for document in documents:
+        doc_id = str(document["doc_id"])
+        pages_path = pages_dir / f"{doc_id}.jsonl"
+        if not pages_path.is_file():
+            issues.append(f"{doc_id}: missing page records at {pages_path}")
+            continue
+        pages = read_pages(pages_path)
+        chunks = chunks_from_pages(pages)
+        missing = [
+            chunk["chunk_id"] for chunk in chunks if chunk["chunk_id"] not in vectors
+        ]
+        if missing:
+            issues.append(
+                f"{doc_id}: {len(missing)} of {len(chunks)} chunks have no tracked"
+                f" vector (first {missing[0]})"
+            )
+            continue
+        summary = summaries.get(doc_id) or {}
+        row = _document_row(document, pages)
+        if summary.get("summary"):
+            row["summary"] = summary["summary"]
+            row["summary_model"] = summary.get("model")
+            row["summary_created_at"] = summary.get("created_at")
+        if dry_run:
+            imported[doc_id] = {"chunks": len(chunks), "vectors": len(chunks)}
+            continue
+        store.upsert_document(row, chunks)
+        store.set_embeddings(
+            doc_id,
+            {chunk["chunk_id"]: vectors[chunk["chunk_id"]] for chunk in chunks},
+            model=model,
+            built_at=built_at,
+        )
+        store.set_document_status(doc_id, "ready", detail=None, updated_at=now_iso())
+        record = _document_state(state, doc_id)
+        if (record.get("ocr") or {}).get("status") != "done":
+            record_ocr(
+                state,
+                doc_id,
+                {
+                    "status": "done",
+                    "job_id": None,
+                    "pages": len(pages),
+                    "pages_ok": len(pages),
+                    "pages_path": str(pages_path),
+                    "log_path": None,
+                },
+                batch=str(document.get("batch") or "unknown"),
+            )
+        if (record.get("chunks") or {}).get("status") != "done":
+            record_chunks(
+                state, doc_id, count=len(chunks), chunker_version=CHUNKER_VERSION
+            )
+        if (record.get("index") or {}).get("status") != "done":
+            record_index(state, doc_id, vectors=len(chunks), model=model, job_id=job_id)
+        summary_done = (record.get("summary") or {}).get("status") == "done"
+        if summary.get("summary") and not summary_done:
+            record_summary(
+                state,
+                doc_id,
+                model=str(summary.get("model") or ""),
+                build_id=str(meta.get("batch_id") or "imported"),
+                page_count=len(pages),
+            )
+        log(
+            f"[ingest] {doc_id}: imported {len(chunks)} chunks and vectors"
+            + (" with a summary" if summary.get("summary") else "")
+        )
+        imported[doc_id] = {"chunks": len(chunks), "vectors": len(chunks)}
+    after = json.dumps(state.get("documents") or {}, sort_keys=True, default=str)
+    return {
+        "ok": not issues and bool(imported),
+        "documents": imported,
+        "model": model,
+        "built_at": built_at,
+        "issues": issues,
+        "state_changed": before != after,
+    }
+
+
+def ingest_export(args) -> int:
+    from verifiable_tutor.corpus.store import KnowledgeStore
+    from verifiable_tutor.storage import Storage
+
+    db_path = Path(args.db) if args.db else DB_PATH
+    if not db_path.is_file():
+        log(f"[ingest] no knowledge store at {db_path}; run index or import first")
+        print(json.dumps({"ok": False, "reason": "no knowledge store"}, indent=2))
+        return 1
+    store = KnowledgeStore(Storage(db_path))
+    payload = export_summaries(store=store)
+    print(
+        json.dumps(
+            {
+                "ok": True,
+                "documents": len(payload["documents"]),
+                "path": str(INDEX_DIR / "summaries.json"),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0
+
+
+def ingest_import(args) -> int:
+    from verifiable_tutor.corpus.store import KnowledgeStore
+    from verifiable_tutor.storage import Storage
+
+    ocr_driver = load_driver("run_ocr_job", "scripts/tacc/run_ocr_job.py")
+    state_path = Path(args.state) if args.state else STATE_PATH
+    state = load_state(state_path)
+    only = _only(args.only)
+    documents = corpus_documents(ocr_driver)
+    if only:
+        documents = [document for document in documents if document["doc_id"] in only]
+    store = None
+    if not args.dry_run:
+        storage = Storage(Path(args.db) if args.db else DB_PATH)
+        storage.initialize()
+        store = KnowledgeStore(storage)
+    report = import_index(
+        store=store,
+        documents=documents,
+        state=state,
+        dry_run=args.dry_run,
+    )
+    if not args.dry_run and report["state_changed"]:
+        save_state(state, state_path)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report.get("ok") else 1
+
+
 # --------------------------------------------------------------------- status
 def print_status(rows: list[dict], totals: dict, *, as_json: bool) -> int:
     if as_json:
@@ -641,6 +870,20 @@ def build_parser() -> argparse.ArgumentParser:
     summarize.add_argument("--build-id", default=None)
     add_common(summarize)
 
+    restore = subparsers.add_parser(
+        "import",
+        help="restore the knowledge store from the tracked index artifacts, without TACC",
+    )
+    restore.add_argument("--only", default="", help="comma separated document ids")
+    restore.add_argument("--dry-run", action="store_true", help="report without writing")
+    restore.add_argument("--state", default=None, help="alternate ingest state path")
+    restore.add_argument("--db", default=None, help="alternate knowledge-store path")
+
+    export = subparsers.add_parser(
+        "export", help="write the tracked document-summary snapshot from the store"
+    )
+    export.add_argument("--db", default=None, help="alternate knowledge-store path")
+
     status = subparsers.add_parser("status", help="per-document page, chunk, vector and summary counts")
     status.add_argument("--json", action="store_true")
     status.add_argument("--state", default=None)
@@ -664,6 +907,10 @@ def main(argv: list[str] | None = None) -> int:
         return ingest_index(args)
     if args.command == "summarize":
         return ingest_summarize(args)
+    if args.command == "import":
+        return ingest_import(args)
+    if args.command == "export":
+        return ingest_export(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 

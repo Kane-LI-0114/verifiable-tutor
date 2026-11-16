@@ -1,0 +1,87 @@
+{
+  "schema": "vt-kb-build/1",
+  "build_id": "kb-20261102-01",
+  "job_id": "28067",
+  "request": {
+    "schema": "vt-kb-request/1",
+    "build_id": "kb-20261102-01",
+    "shard_id": "course_project-p001-p008",
+    "doc_ids": [
+      "course_project"
+    ],
+    "input_path": "/mnt/home/lijinchuan/USERDIR/kb/requests/kb-20261102-01/input.jsonl",
+    "record_path": "/mnt/home/lijinchuan/USERDIR/kb/results/kb-20261102-01/records.jsonl",
+    "progress_path": "/mnt/home/lijinchuan/USERDIR/kb/results/kb-20261102-01/progress.json",
+    "prompt_version": "kb-v1",
+    "model": "qwen3.8-27b",
+    "params": {
+      "temperature": 0.0,
+      "max_output_tokens": 1024,
+      "chunk_count": 8,
+      "max_repair_attempts": 1
+    },
+    "corpus_hash": "c1a9be7f16062defdcf8af74e1030273925fa4093f616c3d48b048e31cff3171",
+    "created_at": "2026-11-02T02:54:06+00:00"
+  },
+  "upload_mode": "userdir_root",
+  "revalidated": true,
+  "job_summary": {
+    "schema": "vt-kb-summary/1",
+    "build_id": "kb-20261102-01",
+    "job_id": "28067",
+    "host": "10-0-3-10",
+    "model": "qwen3.8-27b",
+    "prompt_version": "kb-v1",
+    "launcher": "serve.sh",
+    "job_started_epoch": 1793588093.0,
+    "vllm_ready_epoch": 1793588527.0,
+    "vllm_startup_seconds": 434.0,
+    "records_written": 8,
+    "record_errors": 0,
+    "repair_attempts": 0,
+    "deadline_hit": false,
+    "exit_code": 0,
+    "chunks_total": 8,
+    "worker_started_epoch": 1793588528.508,
+    "worker_finished_epoch": 1793588572.408,
+    "build_seconds": 43.901,
+    "total_seconds": 479.408
+  },
+  "queue_seconds": 2.0,
+  "wall_seconds": 479.408,
+  "validation": {
+    "chunks": 8,
+    "records_downloaded": 8,
+    "records_valid": 8,
+    "invalid_records": [],
+    "progress": {
+      "schema": "vt-kb-progress/1",
+      "build_id": "kb-20261102-01",
+      "job_id": "28067",
+      "status": "done",
+      "done_chunks": 8,
+      "total_chunks": 8,
+      "error": null,
+      "updated_at": "2026-11-02T03:02:52+00:00"
+    },
+    "progress_issues": [],
+    "artifact_hashes": {
+      "request": "1d0bbbb1bb37757713b41894b04f78653098a9cb3ca356de4bb9670be608bc3c",
+      "input": "93dd801eeb9ba1c48c78b8791728489698f22669f25cb7b431f9a3f8a5913d66",
+      "records.jsonl": "d04a23012990ab685abbf3847575550ba26570b858b4c3b67744ee11068a45e4",
+      "progress.json": "f13b24d54eb9b8fcd84af90ea67da1d856dcf0bfc9f594747da9efc4b02e7b83",
+      "summary.json": "c6e71e1615f83a4a577599b95a5074152dd869b1d3afd379232b00c37227f53b"
+    },
+    "pass": true
+  },
+  "remote": {
+    "request_dir": "/mnt/home/lijinchuan/USERDIR/kb/requests/kb-20261102-01",
+    "result_dir": "/mnt/home/lijinchuan/USERDIR/kb/results/kb-20261102-01",
+    "log": "slurm_log/vt-kb-28067.log"
+  },
+  "local": {
+    "records": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/kb/records/kb-20261102-01.jsonl",
+    "task_dir": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/kb-requests/kb-20261102-01/task",
+    "downloads": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/kb-results/kb-20261102-01"
+  }
+}

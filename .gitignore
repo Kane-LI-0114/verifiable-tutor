@@ -22,17 +22,35 @@ htmlcov/
 build/
 dist/
 
-# --- Generated / runtime artifacts (keep the directories, ignore their contents) ---
-data/corpus/*
-!data/corpus/.gitkeep
-data/index/*
-!data/index/.gitkeep
-data/caches/*
-!data/caches/.gitkeep
-data/kb/*
-!data/kb/.gitkeep
+# --- Data: tracked corpus and TACC results, ignored runtime state ---
+# The course PDFs, their OCR output, the BGE-M3 index, and the Qwen knowledge
+# records are tracked so a new checkout can rebuild the local knowledge store
+# without re-running the TACC jobs. They are course material: keep the
+# repository private and do not redistribute the PDFs or OCR text. The SQLite
+# store, traces, model caches, and request/result scratch stay local.
 data/app/*
 !data/app/.gitkeep
+data/caches/*
+!data/caches/.gitkeep
+data/corpus/*
+!data/corpus/.gitkeep
+!data/corpus/pdf/
+!data/corpus/corpus-pdf/
+!data/corpus/images/
+!data/corpus/pages/
+!data/corpus/ocr/
+!data/corpus/pdf-parse/
+data/index/*
+!data/index/.gitkeep
+!data/index/ingest.json
+!data/index/row_map.jsonl
+!data/index/summary.json
+!data/index/summaries.json
+!data/index/vectors.npy
+data/kb/*
+!data/kb/.gitkeep
+!data/kb/builds/
+!data/kb/records/
 logs/
 slurm_log/
 *.log

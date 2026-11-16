@@ -1,0 +1,117 @@
+{
+  "schema": "vt-ocr-smoke/1",
+  "generated_at": "2026-10-29T12:24:34+0000",
+  "server_url": "http://127.0.0.1:8000/v1",
+  "api_model_name": "PaddleOCR-VL-1.6-0.9B",
+  "pipeline_version": "v1.6",
+  "layout_model": "PP-DocLayoutV2",
+  "device": "cpu",
+  "max_concurrency": 8,
+  "cpu_threads": 8,
+  "pipeline_init_seconds": 3.82,
+  "pages_total": 8,
+  "pages_ok": 8,
+  "pages_failed": 0,
+  "blocks_total": 121,
+  "label_totals": {
+    "paragraph_title": 41,
+    "text": 61,
+    "footer_image": 1,
+    "footer": 3,
+    "header_image": 7,
+    "image": 8
+  },
+  "page_seconds": {
+    "min": 3.225,
+    "median": 3.905,
+    "max": 24.728
+  },
+  "ocr_to_pdf_text_ratio": {
+    "min": 0.94,
+    "median": 0.98,
+    "max": 15.55
+  },
+  "validation_problems": {},
+  "per_page": [
+    {
+      "doc_id": "course_project",
+      "page_no": 1,
+      "tags": [],
+      "status": "ok",
+      "blocks": 5,
+      "chars": 129,
+      "seconds": 24.728,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 2,
+      "tags": [],
+      "status": "ok",
+      "blocks": 22,
+      "chars": 537,
+      "seconds": 4.342,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 3,
+      "tags": [],
+      "status": "ok",
+      "blocks": 25,
+      "chars": 920,
+      "seconds": 4.417,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 4,
+      "tags": [],
+      "status": "ok",
+      "blocks": 10,
+      "chars": 356,
+      "seconds": 3.225,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 5,
+      "tags": [],
+      "status": "ok",
+      "blocks": 15,
+      "chars": 1029,
+      "seconds": 3.526,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 6,
+      "tags": [],
+      "status": "ok",
+      "blocks": 29,
+      "chars": 4821,
+      "seconds": 4.283,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 7,
+      "tags": [],
+      "status": "ok",
+      "blocks": 3,
+      "chars": 31,
+      "seconds": 3.265,
+      "problems": []
+    },
+    {
+      "doc_id": "course_project",
+      "page_no": 8,
+      "tags": [],
+      "status": "ok",
+      "blocks": 12,
+      "chars": 607,
+      "seconds": 3.325,
+      "problems": []
+    }
+  ]
+}
