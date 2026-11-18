@@ -64,9 +64,17 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", default="dual-granularity-01")
     parser.add_argument("--ks", default="3,5,10")
+    parser.add_argument(
+        "--weights",
+        default="1:1",
+        help="dense:lexical page-level RRF weights, for example 2:1",
+    )
     args = parser.parse_args()
     ks = tuple(int(part) for part in args.ks.split(",") if part.strip())
     max_k = max(ks)
+    dense_weight, lexical_weight = (float(part) for part in args.weights.split(":"))
+    weights = (lexical_weight, dense_weight)
+    label = f"dual_page450_sub128_dense{dense_weight:g}_lex{lexical_weight:g}"
 
     from verifiable_tutor.evidence.embedding import LocalEmbedder
 
@@ -109,7 +117,7 @@ def main() -> int:
         lexical_pages = page_ranking_from_chunks(lexical_chunks)
         dense_pages = page_ranking_from_chunks(dense_chunks)
         fused_pages = fuse_page_rankings(
-            lexical_pages, dense_pages, k=60, weights=(1.0, 1.0)
+            lexical_pages, dense_pages, k=60, weights=weights
         )[:max_k]
         virtual_chunks, virtual_map = page_chunks(fused_pages, page_tokens)
         metrics = evaluate_rankings(
@@ -122,7 +130,7 @@ def main() -> int:
                 "category": question["category"],
                 "stratum": question["stratum"],
                 "mode": "dual",
-                "cell": "dual_page450_sub128",
+                "cell": label,
                 **metrics,
                 "top_pages": [[doc, page] for doc, page in fused_pages],
             }
@@ -152,15 +160,28 @@ def main() -> int:
     dense_baseline = [
         row for row in dense_baseline if row["mode"] == "dense" and row["split"] == "T"
     ]
+    one_to_one = []
+    one_to_one_path = (
+        ROOT / "results" / "dual-granularity-01" / "raw" / "dual.jsonl"
+    )
+    if one_to_one_path.is_file() and args.run_id != "dual-granularity-01":
+        one_to_one = [
+            json.loads(line)
+            for line in one_to_one_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
 
     qids = list(questions)
     summary = {
         "run_id": args.run_id,
-        "system": "dual_page450_sub128",
+        "system": label,
         "configuration": {
             "lexical": "page_first_450, top 30",
             "dense": "page_first_128 subchunks, top 30",
-            "fusion": "page-level RRF, k=60, weights 1:1",
+            "fusion": (
+                f"page-level RRF, k=60, weights dense:lexical "
+                f"{dense_weight:g}:{lexical_weight:g}"
+            ),
             "injection": "full page text for the top pages",
         },
         "dual": {
@@ -222,6 +243,27 @@ def main() -> int:
         ),
         6,
     )
+    if one_to_one:
+        one_to_one_by_qid = {row["qid"]: row for row in one_to_one}
+        rows_by_qid = {row["qid"]: row for row in rows}
+        baseline_only = sum(
+            1
+            for qid in qids
+            if one_to_one_by_qid[qid]["hit@3"] and not rows_by_qid[qid]["hit@3"]
+        )
+        cell_only = sum(
+            1
+            for qid in qids
+            if rows_by_qid[qid]["hit@3"] and not one_to_one_by_qid[qid]["hit@3"]
+        )
+        summary["vs_dual_1to1"] = {
+            "ndcg@5": paired(one_to_one, rows, qids, "ndcg@5"),
+            "hit@3": {
+                "baseline_only": baseline_only,
+                "cell_only": cell_only,
+                "mcnemar_p": round(mcnemar_p(baseline_only, cell_only), 6),
+            },
+        }
 
     out = out_dir / "summary.json"
     out.write_text(json.dumps(summary, indent=2), encoding="utf-8")

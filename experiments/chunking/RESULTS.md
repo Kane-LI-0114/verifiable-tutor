@@ -42,10 +42,12 @@ The primary metric is page-level nDCG@5 on hybrid retrieval.
    these cells are page-level, so the sweep does not test the 128-token dense
    signal.
 8. **The minimal dual-granularity index is promising but not significant.** Page
-   BM25 plus 128-subchunk dense, fused at the page level with 1:1, scores
-   0.8567 against 0.8487 for `page_first_450`; the CI crosses zero and the
-   dense-only 128 score is still much higher at 0.8941. The neutral fusion does
-   not transfer the dense gain; a dense-heavy page fusion is the next knob.
+   BM25 plus 128-subchunk dense, fused at the page level, scores 0.8567 at 1:1
+   and 0.8596 at dense 2:1, against 0.8487 for `page_first_450`. The 2:1 variant
+   also raises hit@3 from 0.882 to 0.902 and hit@5 from 0.882 to 0.941, but the
+   nDCG confidence interval still crosses zero and dense-only 128 remains much
+   higher at 0.8941. The direction is worth one more check, not a production
+   change.
 
 ## What was held fixed
 
@@ -367,21 +369,28 @@ text of each selected page, so the cost is measured per page.
 |---|---:|---:|---:|---:|
 | `page_first_450` hybrid | 0.8487 [0.7532, 0.9314] | 0.882 | 0.882 | 1147.9 |
 | `page_first_128` dense only | 0.8941 [0.8280, 0.9525] | 0.941 | 0.980 | 1141.5 |
-| dual page450 + sub128 | 0.8567 [0.7652, 0.9340] | 0.863 | 0.902 | 1144.8 |
+| dual page450 + sub128, 1:1 | 0.8567 [0.7652, 0.9340] | 0.863 | 0.902 | 1144.8 |
+| dual page450 + sub128, dense 2:1 | 0.8596 [0.7819, 0.9293] | 0.902 | 0.941 | 1136.5 |
 
-The dual index improves nDCG@5 by 0.0081 over `page_first_450`, with a 95% CI
-of [-0.0059, 0.0305], 2 wins, 48 ties, and 1 loss. The difference is not
-significant. It also moves one top-three hit to a deeper rank: hit@3 falls from
-0.882 to 0.863, while hit@5 rises from 0.882 to 0.902. The full-page token cost
-is essentially the same, because the model still receives whole pages; the
-extra cost is the offline 128-subchunk embedding pass, not the online context.
+The 1:1 dual index improves nDCG@5 by 0.0081 over `page_first_450`, with a 95%
+CI of [-0.0059, 0.0305], 2 wins, 48 ties, and 1 loss. The dense-heavy 2:1
+variant improves nDCG@5 by 0.0110 over `page_first_450`, with a CI of
+[-0.0333, 0.0595], 5 wins, 42 ties, and 4 losses. Relative to the 1:1 dual
+setting, 2:1 is +0.0029 with a CI of [-0.0374, 0.0447], 5 wins, 43 ties, and 3
+losses. None of these intervals excludes zero.
 
-The interesting part is that dense-only `page_first_128` remains much stronger
-at 0.8941. The page-level 1:1 fusion does not transfer that gain, which suggests
-the lexical page ranking is still adding noise at equal weight. The obvious next
-knob is a dense-heavy page-level fusion weight, not another chunk size. The
-minimal 1:1 experiment therefore does not prove dual granularity is useless; it
-shows that the first, neutral setting is not enough.
+The more visible change is in the hit rates. Dense 2:1 raises hit@3 from 0.863
+to 0.902 and hit@5 from 0.902 to 0.941, while page tokens fall slightly to
+1136.5. That is the first setting that moves the page ranking toward the dense
+arm without a clear loss. It is still well below dense-only `page_first_128` at
+0.8941, however, so the page-level fusion has not transferred the full dense
+gain. The result is a signal worth one more check, not a proven improvement.
+
+The full-page token cost stays around 1140 in every row because the model still
+receives whole pages; the extra cost of dual granularity is the offline
+128-subchunk embedding pass, not the online context. If the next step is
+subchunk-only injection, the cost will drop, but the context will also become
+less complete.
 
 ## Threats to validity
 

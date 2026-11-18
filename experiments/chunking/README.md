@@ -141,6 +141,8 @@ experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/rrf_weigh
 # follow-up: minimal dual-granularity index
 experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/dual_granularity.py `
   --run-id dual-granularity-01
+experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/dual_granularity.py `
+  --run-id dual-dense2-01 --weights 2:1
 
 # Markdown tables from a summary
 python experiments/chunking/scripts/report.py `
