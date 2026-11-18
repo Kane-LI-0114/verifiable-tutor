@@ -55,13 +55,6 @@ on this corpus is 0.51, so this grid spans roughly 380 to 630 chunks; higher
 thresholds fragment the slides into very small pieces. The test split is then
 run once with the selected threshold.
 
-A follow-up run `long-pages-01` adds three cells that keep pages up to a
-threshold whole and split only the longer pages to 128 tokens:
-`keep200_split128`, `keep256_split128`, and `keep450_split128`. The naive "split
-only long pages with the same budget" rule is exactly `recursive`, so it is not
-a separate cell. The follow-up is run with `--cells long` and reported in
-[RESULTS.md](RESULTS.md).
-
 ## Question set
 
 `questions/retrieval_v1.jsonl` contains 65 English questions written from the
@@ -131,12 +124,6 @@ experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_exper
 # full matrix with semantic calibration
 experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_experiment.py run `
   --cells full --calibrate-semantic --run-id full-01
-
-# follow-up: protect medium pages, split only long ones
-experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_experiment.py run `
-  --cells long --run-id long-pages-01
-python experiments/chunking/scripts/long_page_subset.py `
-  experiments/chunking/results/long-pages-01
 
 # Markdown tables from a summary
 python experiments/chunking/scripts/report.py `

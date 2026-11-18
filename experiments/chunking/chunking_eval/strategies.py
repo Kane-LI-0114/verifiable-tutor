@@ -456,38 +456,6 @@ def recursive(pages: Iterable[Mapping], *, max_tokens: int = 450) -> list[dict]:
     return chunks
 
 
-# --------------------------------------------------------- long page hybrid
-def long_page_hybrid(
-    pages: Iterable[Mapping], *, keep_tokens: int = 256, split_tokens: int = 128
-) -> list[dict]:
-    """Keep pages up to a threshold whole and split only the longer ones.
-
-    A naive ``recursive`` run already keeps a page whole when it fits the
-    budget, so "split only long pages" is only a distinct strategy when the
-    split budget is smaller than the keep threshold. This rule protects medium
-    pages from fragmentation and applies the fine-grained split only where the
-    512-token embedding window would otherwise truncate content.
-    """
-
-    chunks: list[dict] = []
-    for page in pages:
-        blocks = usable_blocks(page)
-        total = sum(
-            estimate_tokens(str(block.get("content") or "")) for block in blocks
-        )
-        if total <= keep_tokens:
-            produced = page_only([page])
-        else:
-            produced = recursive([page], max_tokens=split_tokens)
-        version = f"eval/long_hybrid/{keep_tokens}_{split_tokens}"
-        for chunk in produced:
-            chunk["strategy"] = "long_hybrid"
-            chunk["chunker_version"] = version
-            chunk["budget"] = split_tokens
-            chunks.append(chunk)
-    return chunks
-
-
 # ------------------------------------------------------------------ semantic
 def _dot(left: Sequence[float], right: Sequence[float]) -> float:
     return float(sum(float(a) * float(b) for a, b in zip(left, right)))
@@ -661,7 +629,6 @@ def chunk_pages(
     *,
     max_tokens: int | None = None,
     threshold: float = 0.6,
-    split_tokens: int = 128,
     vector_lookup: EmbeddingLookup | None = None,
 ) -> list[dict]:
     page_list = list(pages)
@@ -671,12 +638,6 @@ def chunk_pages(
         return page_first(page_list, max_tokens=max_tokens or 450)
     if strategy == "recursive":
         return recursive(page_list, max_tokens=max_tokens or 450)
-    if strategy == "long_hybrid":
-        return long_page_hybrid(
-            page_list,
-            keep_tokens=max_tokens or 256,
-            split_tokens=split_tokens,
-        )
     if strategy == "semantic":
         if vector_lookup is None:
             raise ValueError("semantic chunking needs a vector_lookup")

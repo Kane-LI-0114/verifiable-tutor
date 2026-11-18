@@ -24,7 +24,6 @@ sys.path.insert(0, str(ROOT))
 
 from chunking_eval.runner import (  # noqa: E402
     FULL_CELLS,
-    LONG_PAGE_CELLS,
     PILOT_CELLS,
     VectorCache,
     build_cell,
@@ -69,8 +68,6 @@ def resolve_cells(value: str) -> tuple[str, ...]:
         return PILOT_CELLS
     if value == "full":
         return FULL_CELLS
-    if value == "long":
-        return LONG_PAGE_CELLS
     return tuple(part.strip() for part in value.split(",") if part.strip())
 
 
