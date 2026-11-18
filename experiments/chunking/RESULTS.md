@@ -35,6 +35,12 @@ The primary metric is page-level nDCG@5 on hybrid retrieval.
 6. **The remaining failures are mostly query and OCR problems, not chunk
    boundaries.** Formula-heavy pages, near-duplicate pages, and overview pages
    that outrank the detail page fail under every strategy.
+7. **Splitting only long pages does not help hybrid retrieval.** The naive
+   version of that rule is exactly `recursive`; a genuine "keep medium pages,
+   split only pages above 200 or 256 tokens" rule reduces truncation and helps
+   dense retrieval, but lowers hybrid nDCG@5 and loses on the affected long-page
+   questions. `page_first_450` and `recursive_256` already handle those pages
+   best.
 
 ## What was held fixed
 
@@ -291,6 +297,12 @@ chunks and a more variable per-question result.
 **Do not adopt `cross_page_450`.** It is the worst cell on truncation and does
 not improve nDCG. The page boundary is not the limiting constraint.
 
+**Do not adopt a long-page-only split as a hybrid change.** The follow-up in
+`long-pages-01` shows that protecting medium pages and splitting only long ones
+does not help the hybrid path; `page_first_450` and `recursive_256` are already
+better on the affected pages. The dense gain from fine splits is a fusion
+opportunity, not a chunking rule.
+
 **Do not adopt `semantic_450` as configured.** At the dev-selected threshold it
 converges to page-level chunks; at 0.30 it matches `recursive_450` while using
 34 fewer tokens. Neither is a gain.
@@ -307,6 +319,50 @@ configuration that consumes the chunks:
    content is there, but the text layer is weak.
 4. Add a span-level check for the long pages, because page-level nDCG cannot
    see that the retrieved page's answer was in the truncated tail.
+
+## Follow-up: splitting only long pages
+
+The first follow-up idea was to keep short pages whole and apply the recursive
+split only to long pages. A naive version of that rule is not a separate
+strategy: `recursive` already keeps a page whole when it fits the budget, so a
+cell that keeps pages up to the budget and splits the rest is exactly
+`recursive`. The chunk counts confirm it: 604, 427, and 380 for the naive
+"long recursive" cells, identical to `recursive_128`, `recursive_256`, and
+`recursive_450`.
+
+A genuine version of the idea protects medium pages from splitting and applies
+a finer split only to pages above a keep threshold. The run `long-pages-01`
+tested three such cells: `keep200_split128`, `keep256_split128`, and
+`keep450_split128`. A page at or below the keep threshold stays whole; a longer
+page is recursively split to 128 tokens. The affected page counts are 63, 45,
+and 11, with 30, 19, and 5 test questions on those pages.
+
+| Cell | Chunks | Affected pages | Test questions | Hybrid nDCG@5 | Dense nDCG@5 | tokens@5 | Over 512 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `page_first_450` | 382 | 11 | 5 | 0.8487 | 0.8319 | 937 | 10.99% |
+| `recursive_256` | 427 | 45 | 19 | 0.8488 | 0.8560 | 811 | 5.62% |
+| `keep200_split128` | 536 | 63 | 30 | 0.8251 | 0.8881 | 654 | 2.24% |
+| `keep256_split128` | 508 | 45 | 19 | 0.8070 | 0.8745 | 694 | 3.15% |
+| `keep450_split128` | 416 | 11 | 5 | 0.8316 | 0.8323 | 876 | 8.89% |
+
+The hybrid result is worse than `page_first_450` in all three cells. On the
+subset of questions whose gold page is actually above the keep threshold, the
+same pattern holds: `keep200_split128` scores 0.761 against 0.793 for
+`page_first_450` and 0.801 for `recursive_256`; `keep256_split128` scores 0.724
+against 0.824 and 0.837; `keep450_split128` scores 0.800 against 1.000, but that
+subset has only five questions. The paired difference against `page_first_450`
+on the affected-page subset is -0.032 [-0.133, 0.054] for keep200, -0.099
+[-0.249, 0.016] for keep256, and -0.200 [-0.600, 0.000] for keep450. None is a
+gain.
+
+The dense arm tells the opposite story: `keep200_split128` reaches 0.8881
+against 0.8319 for `page_first_450`, and `keep256_split128` reaches 0.8745.
+Fine splitting helps the embedding arm on long pages, but the lexical arm and
+the hybrid fusion lose more than the dense arm gains. `page_first_450` and
+`recursive_256` are already the best hybrid choices on the affected long pages,
+so the "split only long pages" idea does not improve the production retrieval
+path. It remains a possible part of a dense-first or multi-resolution index,
+not a standalone chunking change.
 
 ## Threats to validity
 

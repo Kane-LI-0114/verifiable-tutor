@@ -1,0 +1,240 @@
+{
+  "split": "T",
+  "mode": "hybrid",
+  "cells": {
+    "keep200_split128": {
+      "threshold": 200,
+      "affected_pages": 63,
+      "subset_questions": [
+        "q008",
+        "q010",
+        "q011",
+        "q012",
+        "q014",
+        "q018",
+        "q019",
+        "q021",
+        "q022",
+        "q023",
+        "q025",
+        "q027",
+        "q029",
+        "q030",
+        "q032",
+        "q043",
+        "q045",
+        "q049",
+        "q054",
+        "q055",
+        "q056",
+        "q057",
+        "q058",
+        "q059",
+        "q060",
+        "q061",
+        "q062",
+        "q063",
+        "q064",
+        "q065"
+      ],
+      "subset": {
+        "ndcg@5": 0.760581,
+        "hit@3": 0.766667,
+        "tokens@5": 689.3
+      },
+      "overall": {
+        "ndcg@5": 0.825084,
+        "hit@3": 0.843137,
+        "tokens@5": 654.5
+      },
+      "comparators_subset": {
+        "page_first_450": {
+          "ndcg@5": 0.792728,
+          "hit@3": 0.833333,
+          "tokens@5": 1096.3
+        },
+        "recursive_128": {
+          "ndcg@5": 0.744479,
+          "hit@3": 0.733333,
+          "tokens@5": 643.4
+        },
+        "recursive_256": {
+          "ndcg@5": 0.800864,
+          "hit@3": 0.833333,
+          "tokens@5": 937.8
+        }
+      },
+      "vs_page_first_450_subset": {
+        "questions": 30,
+        "mean_delta": -0.032148,
+        "ci": [
+          -0.132741,
+          0.053772
+        ],
+        "wins": 4,
+        "ties": 21,
+        "losses": 5
+      },
+      "vs_page_first_450_overall": {
+        "questions": 51,
+        "mean_delta": -0.02358,
+        "ci": [
+          -0.080766,
+          0.028831
+        ],
+        "wins": 5,
+        "ties": 40,
+        "losses": 6
+      },
+      "mcnemar_hit3_subset": {
+        "baseline_only": 2,
+        "cell_only": 0,
+        "p": 0.5
+      }
+    },
+    "keep256_split128": {
+      "threshold": 256,
+      "affected_pages": 45,
+      "subset_questions": [
+        "q018",
+        "q019",
+        "q021",
+        "q022",
+        "q023",
+        "q025",
+        "q027",
+        "q029",
+        "q030",
+        "q032",
+        "q049",
+        "q054",
+        "q055",
+        "q056",
+        "q057",
+        "q059",
+        "q060",
+        "q061",
+        "q063"
+      ],
+      "subset": {
+        "ndcg@5": 0.724308,
+        "hit@3": 0.789474,
+        "tokens@5": 720.4
+      },
+      "overall": {
+        "ndcg@5": 0.806954,
+        "hit@3": 0.862745,
+        "tokens@5": 693.9
+      },
+      "comparators_subset": {
+        "page_first_450": {
+          "ndcg@5": 0.823733,
+          "hit@3": 0.842105,
+          "tokens@5": 1152.4
+        },
+        "recursive_128": {
+          "ndcg@5": 0.733144,
+          "hit@3": 0.736842,
+          "tokens@5": 684.5
+        },
+        "recursive_256": {
+          "ndcg@5": 0.836579,
+          "hit@3": 0.842105,
+          "tokens@5": 959.2
+        }
+      },
+      "vs_page_first_450_subset": {
+        "questions": 19,
+        "mean_delta": -0.099424,
+        "ci": [
+          -0.249376,
+          0.016384
+        ],
+        "wins": 1,
+        "ties": 13,
+        "losses": 5
+      },
+      "vs_page_first_450_overall": {
+        "questions": 51,
+        "mean_delta": -0.04171,
+        "ci": [
+          -0.099055,
+          0.004351
+        ],
+        "wins": 2,
+        "ties": 43,
+        "losses": 6
+      },
+      "mcnemar_hit3_subset": {
+        "baseline_only": 1,
+        "cell_only": 0,
+        "p": 1.0
+      }
+    },
+    "keep450_split128": {
+      "threshold": 450,
+      "affected_pages": 11,
+      "subset_questions": [
+        "q018",
+        "q029",
+        "q030",
+        "q061",
+        "q063"
+      ],
+      "subset": {
+        "ndcg@5": 0.8,
+        "hit@3": 0.8,
+        "tokens@5": 1011.2
+      },
+      "overall": {
+        "ndcg@5": 0.831623,
+        "hit@3": 0.862745,
+        "tokens@5": 875.6
+      },
+      "comparators_subset": {
+        "page_first_450": {
+          "ndcg@5": 1.0,
+          "hit@3": 1,
+          "tokens@5": 1136.2
+        },
+        "recursive_128": {
+          "ndcg@5": 0.726186,
+          "hit@3": 0.8,
+          "tokens@5": 756.8
+        },
+        "recursive_256": {
+          "ndcg@5": 1.0,
+          "hit@3": 1,
+          "tokens@5": 1120
+        }
+      },
+      "vs_page_first_450_subset": {
+        "questions": 5,
+        "mean_delta": -0.2,
+        "ci": [
+          -0.6,
+          0.0
+        ],
+        "wins": 0,
+        "ties": 4,
+        "losses": 1
+      },
+      "vs_page_first_450_overall": {
+        "questions": 51,
+        "mean_delta": -0.017041,
+        "ci": [
+          -0.058824,
+          0.007702
+        ],
+        "wins": 1,
+        "ties": 49,
+        "losses": 1
+      },
+      "mcnemar_hit3_subset": {
+        "baseline_only": 1,
+        "cell_only": 0,
+        "p": 1.0
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@ from verifiable_tutor.corpus.chunker import chunks_from_page
 from chunking_eval.strategies import (
     chunk_pages,
     cross_page,
+    long_page_hybrid,
     page_first,
     page_only,
     recursive,
@@ -172,3 +173,34 @@ def test_page_bounded_strategies_never_cross_pages() -> None:
         pages, "semantic", max_tokens=100, threshold=0.5, vector_lookup=lookup
     )
     assert all(len(chunk["page_nos"]) == 1 for chunk in chunks)
+
+
+def test_long_page_hybrid_keeps_a_page_between_split_and_keep_whole() -> None:
+    record = page("doc", 1, [block(1, "text", "A" * 300, 0)])
+
+    chunks = long_page_hybrid([record], keep_tokens=100, split_tokens=50)
+
+    assert len(chunks) == 1
+    assert chunks[0]["page_nos"] == [1]
+    assert chunks[0]["strategy"] == "long_hybrid"
+    assert chunks[0]["chunker_version"] == "eval/long_hybrid/100_50"
+
+
+def test_long_page_hybrid_splits_only_above_the_keep_threshold() -> None:
+    short = page("doc", 1, [block(1, "text", "A" * 300, 0)])
+    long = page(
+        "doc",
+        2,
+        [block(2, "text", "B" * 800, 1), block(3, "text", "C" * 800, 2)],
+    )
+
+    chunks = long_page_hybrid([short, long], keep_tokens=100, split_tokens=50)
+
+    short_chunks = [chunk for chunk in chunks if chunk["page_no"] == 1]
+    long_chunks = [chunk for chunk in chunks if chunk["page_no"] == 2]
+    assert len(short_chunks) == 1
+    assert len(long_chunks) >= 4
+    assert all(chunk["page_nos"] == [chunk["page_no"]] for chunk in chunks)
+    assert all(
+        chunk["token_estimate"] <= 50 or chunk["oversize"] for chunk in long_chunks
+    )

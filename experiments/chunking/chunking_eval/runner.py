@@ -35,6 +35,21 @@ CELLS: dict[str, dict[str, Any]] = {
     "recursive_450": {"strategy": "recursive", "max_tokens": 450},
     "semantic_450": {"strategy": "semantic", "max_tokens": 450, "threshold": 0.6},
     "cross_page_450": {"strategy": "cross_page", "max_tokens": 450},
+    "keep200_split128": {
+        "strategy": "long_hybrid",
+        "max_tokens": 200,
+        "split_tokens": 128,
+    },
+    "keep256_split128": {
+        "strategy": "long_hybrid",
+        "max_tokens": 256,
+        "split_tokens": 128,
+    },
+    "keep450_split128": {
+        "strategy": "long_hybrid",
+        "max_tokens": 450,
+        "split_tokens": 128,
+    },
 }
 
 PILOT_CELLS = (
@@ -43,6 +58,16 @@ PILOT_CELLS = (
     "page_first_450",
     "recursive_256",
     "semantic_450",
+)
+
+LONG_PAGE_CELLS = (
+    "page_only",
+    "page_first_450",
+    "recursive_128",
+    "recursive_256",
+    "keep200_split128",
+    "keep256_split128",
+    "keep450_split128",
 )
 
 FULL_CELLS = tuple(CELLS)
@@ -224,6 +249,7 @@ def build_cell(
             pages,
             strategy,
             max_tokens=config.get("max_tokens"),
+            split_tokens=int(config.get("split_tokens", 128)),
         )
 
     db_path = Path(index_dir) / f"{name}.db"
