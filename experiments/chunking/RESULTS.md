@@ -142,7 +142,9 @@ sensitivity, not for selection.
 The dev split selected 0.25. At that threshold semantic grouping is almost the
 same as page-level chunking: only 2.3% of adjacent block pairs fall below 0.25,
 so most pages stay whole. The test result is correspondingly identical to
-`recursive_450`. The 0.30 threshold is the more interesting semantic setting:
+`recursive_450`: the two chunk sets differ by one chunk (381 versus 380), and
+that chunk never enters the top five, so every reported metric is the same. The
+0.30 threshold is the more interesting semantic setting:
 it produces 452 chunks, the same test nDCG@5, and 34 fewer tokens. The 0.35
 setting loses 0.017 nDCG. Semantic chunking is stable in the 0.25 to 0.30
 range and does not produce a gain.
