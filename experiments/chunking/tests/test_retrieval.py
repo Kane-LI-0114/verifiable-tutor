@@ -67,3 +67,28 @@ def test_hybrid_uses_both_arms(tmp_path) -> None:
 
     assert len(hits) == 2
     assert hits[0]["chunk_id"] == "c1"
+
+
+def test_hybrid_weights_choose_the_preferred_arm(tmp_path) -> None:
+    embedder = FakeEmbedder()
+    store = EvalStore(tmp_path / "weights.db")
+    store.add_chunks([chunk("c1", "alpha", 1), chunk("c2", "beta", 2)])
+    store.set_embeddings(
+        "doc",
+        {
+            "c1": np.asarray([0.0, 1.0], dtype=np.float32).tobytes(),
+            "c2": np.asarray([1.0, 0.0], dtype=np.float32).tobytes(),
+        },
+        model="fake",
+        built_at="2026-11-18T00:00:00",
+    )
+
+    dense_heavy = search(
+        store, embedder, "alpha", mode="hybrid", k=2, weights=(1.0, 1000.0)
+    )
+    lexical_heavy = search(
+        store, embedder, "alpha", mode="hybrid", k=2, weights=(1000.0, 1.0)
+    )
+
+    assert dense_heavy[0]["chunk_id"] == "c2"
+    assert lexical_heavy[0]["chunk_id"] == "c1"

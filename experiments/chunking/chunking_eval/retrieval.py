@@ -58,8 +58,13 @@ class DenseSearcher:
         return self.store.get_chunks(ordered_ids)
 
 
-def make_hybrid(store: EvalStore, embedder: Any) -> HybridRetriever:
-    return HybridRetriever(store=store, embedder=embedder)
+def make_hybrid(
+    store: EvalStore,
+    embedder: Any,
+    *,
+    weights: tuple[float, float] = (1.0, 1.0),
+) -> HybridRetriever:
+    return HybridRetriever(store=store, embedder=embedder, weights=weights)
 
 
 def search_lexical(store: EvalStore, query: str, *, k: int) -> list[dict[str, Any]]:
@@ -76,6 +81,7 @@ def search(
     doc_id: str | None = None,
     dense: DenseSearcher | None = None,
     hybrid: HybridRetriever | None = None,
+    weights: tuple[float, float] = (1.0, 1.0),
 ) -> list[dict[str, Any]]:
     if mode == "lexical":
         return search_lexical(store, query, k=k)
@@ -83,7 +89,7 @@ def search(
         searcher = dense or DenseSearcher(store, embedder)
         return searcher.search(query, k=k, doc_id=doc_id)
     if mode == "hybrid":
-        retriever = hybrid or make_hybrid(store, embedder)
+        retriever = hybrid or make_hybrid(store, embedder, weights=weights)
         result = retriever.search(fallback_plan(query), k=k, doc_id=doc_id)
         return list(result.chunks)
     raise ValueError(f"unknown retrieval mode: {mode!r}")

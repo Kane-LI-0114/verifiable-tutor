@@ -55,6 +55,10 @@ on this corpus is 0.51, so this grid spans roughly 380 to 630 chunks; higher
 thresholds fragment the slides into very small pieces. The test split is then
 run once with the selected threshold.
 
+A follow-up sweep changes only the RRF weights on the three strongest distinct
+cells (`recursive_450`, `page_only`, `page_first_450`). It compares dense:lexical
+weights 1:1, 2:1, and 1:2 and is reported in [RESULTS.md](RESULTS.md).
+
 ## Question set
 
 `questions/retrieval_v1.jsonl` contains 65 English questions written from the
@@ -124,6 +128,10 @@ experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_exper
 # full matrix with semantic calibration
 experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_experiment.py run `
   --cells full --calibrate-semantic --run-id full-01
+
+# follow-up: RRF weights on the three strongest distinct cells
+experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/rrf_weights.py `
+  --run-id rrf-weights-01
 
 # Markdown tables from a summary
 python experiments/chunking/scripts/report.py `

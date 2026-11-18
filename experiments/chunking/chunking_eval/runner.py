@@ -255,11 +255,14 @@ def evaluate_cell(
     cell: str,
     modes: Sequence[str],
     ks: Sequence[int],
+    weights: tuple[float, float] = (1.0, 1.0),
 ) -> list[dict]:
     page_map = store.page_map()
     max_k = max(ks)
     dense = DenseSearcher(store, embedder) if "dense" in modes else None
-    hybrid = make_hybrid(store, embedder) if "hybrid" in modes else None
+    hybrid = (
+        make_hybrid(store, embedder, weights=weights) if "hybrid" in modes else None
+    )
     rows: list[dict] = []
     for question in questions:
         gold = question["gold_pages"]
@@ -272,6 +275,7 @@ def evaluate_cell(
                 k=max_k,
                 dense=dense,
                 hybrid=hybrid,
+                weights=weights,
             )
             metadata = {
                 item["chunk_id"]: item

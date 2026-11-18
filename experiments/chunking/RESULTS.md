@@ -35,6 +35,12 @@ The primary metric is page-level nDCG@5 on hybrid retrieval.
 6. **The remaining failures are mostly query and OCR problems, not chunk
    boundaries.** Formula-heavy pages, near-duplicate pages, and overview pages
    that outrank the detail page fail under every strategy.
+7. **Changing the RRF weights on the best cells does not help.** Dense-heavy
+   2:1 and lexical-heavy 1:2 both score below 1:1 on `recursive_450`,
+   `page_only`, and `page_first_450`; the only interval that excludes zero is a
+   loss. The dense-heavy variant converges to the dense-only ranking because
+   these cells are page-level, so the sweep does not test the 128-token dense
+   signal.
 
 ## What was held fixed
 
@@ -307,6 +313,43 @@ configuration that consumes the chunks:
    content is there, but the text layer is weak.
 4. Add a span-level check for the long pages, because page-level nDCG cannot
    see that the retrieved page's answer was in the truncated tail.
+
+## Follow-up: RRF weight sweep
+
+The three strongest distinct cells on hybrid nDCG@5 were `recursive_450`
+(0.8562), `page_only` (0.8512), and `page_first_450` (0.8487). `semantic_450`
+is excluded because it produces the same ranking as `recursive_450`. We swept
+the fusion weights on these three cells only, with the lexical weight first and
+the dense weight second. The labels below are written as dense:lexical, so 2:1
+means twice the dense weight and 1:2 means twice the lexical weight.
+
+| Cell | dense:lex | nDCG@5 | hit@3 | tokens@5 | ΔnDCG@5 vs 1:1 | W/T/L |
+|---|---|---:|---:|---:|---:|---:|
+| `recursive_450` | 1:1 | 0.8562 | 0.882 | 1008 | - | - |
+| `recursive_450` | 2:1 | 0.8302 | 0.863 | 1018 | -0.0260 [-0.0603, 0.0005] | 2/45/4 |
+| `recursive_450` | 1:2 | 0.8412 | 0.882 | 994 | -0.0150 [-0.0367, 0.0000] | 0/48/3 |
+| `page_only` | 1:1 | 0.8512 | 0.882 | 1059 | - | - |
+| `page_only` | 2:1 | 0.8302 | 0.863 | 1076 | -0.0210 [-0.0518, 0.0026] | 1/47/3 |
+| `page_only` | 1:2 | 0.8218 | 0.882 | 1042 | -0.0295 [-0.0584, -0.0072] | 0/46/5 |
+| `page_first_450` | 1:1 | 0.8487 | 0.882 | 937 | - | - |
+| `page_first_450` | 2:1 | 0.8302 | 0.863 | 965 | -0.0184 [-0.0498, 0.0051] | 2/46/3 |
+| `page_first_450` | 1:2 | 0.8337 | 0.882 | 923 | -0.0150 [-0.0367, 0.0000] | 0/48/3 |
+
+Every weight change lowers the score. The only interval that excludes zero is
+`page_only` at 1:2, and it is a loss of 0.0295, not a gain. The other intervals
+cross zero, but the point estimates are negative and the win/tie/loss counts are
+dominated by ties and losses. The 1:1 fusion remains the best setting for these
+three cells.
+
+There is an important caveat. All three selected cells are page-level, and their
+dense-only scores are almost identical (`page_only` 0.8323, `page_first_450`
+0.8319, `recursive_450` 0.8323). When the dense weight dominates, the fused
+result converges to the same dense ranking, which is why all three 2:1 rows are
+0.8302. The sweep therefore does not test the hypothesis that dense-heavy fusion
+helps 128-token chunks. To test that, the sweep must include `page_first_128` or
+a multi-resolution index, not only the page-level winners. The negative result
+here rules out a cheap weight fix on the current best cells; it does not rule
+out the dense-small-chunk direction.
 
 ## Threats to validity
 
