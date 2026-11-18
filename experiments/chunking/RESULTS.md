@@ -1,7 +1,8 @@
 # Results
 
-Data and conclusions for the chunking experiments. The Chinese task report is
-[REPORT.zh.md](REPORT.zh.md); the runbook is [README.md](README.md).
+Data and conclusions for the chunking experiments. The task report is
+[REPORT.md](REPORT.md) (English) or [REPORT.zh.md](REPORT.zh.md) (Chinese); the
+runbook is [README.md](README.md).
 
 ## Setup
 
@@ -154,6 +155,16 @@ page for citation, and adds no extra model or tuning cost. `page_first_256` is
 the cost-first alternative: 760 tokens, 4.66% truncation, and a non-significant
 nDCG loss. `page_first_128` is the cheapest and has the strongest dense-only
 score, but its hybrid result is not better and it has 48 oversize chunks.
+
+The corpus explains why page-level chunking is enough. The course material is a
+set of lecture slides exported to PDF. A slide is usually organized around one
+topic, with its title, bullets, and figures on the same page, so the page is
+already a concentrated semantic unit. In this corpus 354 of 365 pages are one
+chunk at 450 tokens, and only 11 pages are split. Adjacent blocks within a page
+have a median cosine similarity of 0.509, against 0.387 across a page boundary.
+Splitting further usually destroys a complete slide context rather than adding
+semantic information. This is why the production rule, keep the page whole and
+split only when it exceeds the budget, matches the corpus.
 
 `recursive_450` and `semantic_450` are nominally highest at 0.8562, but the gain
 over `page_only` is 1 win, 49 ties, and 1 loss. `semantic` also costs an extra

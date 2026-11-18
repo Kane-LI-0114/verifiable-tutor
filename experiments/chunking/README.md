@@ -2,9 +2,9 @@
 
 Self-contained experiment for the course RAG chunking question. It imports
 `verifiable_tutor` read only and writes its environment, model, data, indexes,
-caches, and results under this folder. The task report is
-[REPORT.zh.md](REPORT.zh.md); the data and conclusions are
-[RESULTS.md](RESULTS.md).
+caches, and results under this folder. The task report is [REPORT.md](REPORT.md)
+(English) or [REPORT.zh.md](REPORT.zh.md) (Chinese); the data and conclusions
+are [RESULTS.md](RESULTS.md).
 
 ## Layout
 
