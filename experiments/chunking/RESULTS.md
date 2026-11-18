@@ -171,10 +171,11 @@ over `page_only` is 1 win, 49 ties, and 1 loss. `semantic` also costs an extra
 3469 block embeddings and threshold tuning. `cross_page_450` is not a production
 candidate: 0.8368 and 16.26% truncation.
 
-RRF weight tuning does not help: 1:1 is best. Dual granularity is the only
-promising direction: dense 2:1 reaches 0.8596 and improves hit@3/hit@5, but the
-nDCG interval still crosses zero and the score is below dense-only 0.8941. It
-needs more questions before adoption.
+RRF weight tuning does not help: 1:1 is best. Dual granularity can improve the
+score slightly: dense 2:1 reaches 0.8596 and improves hit@3/hit@5, but the nDCG
+interval still crosses zero, the score is below dense-only 0.8941, and the index
+costs about 2.7 times as many chunk vectors plus a page-level fusion layer. The
+cost-benefit ratio is too low to adopt it now.
 
 Raw per-question rows are under `results/<run>/raw/` and are ignored by Git.
 Curated summaries are under `results/full-01/`, `results/rrf-weights-01/`,

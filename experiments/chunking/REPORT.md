@@ -10,6 +10,8 @@ The current production rule is `page_first_450`: a page at or below 450 estimate
 
 We ran three experiments. The first compares nine chunking cells and answers "which strategy is best". The second changes only the RRF lexical/dense weights and asks whether fusion tuning can add what chunking cannot. The third builds a dual-granularity index, with page chunks for BM25 and 128-token subchunks for dense retrieval, and asks whether each arm can use its preferred granularity. All three use the same 65 questions (14 dev, 51 test), the same BGE-M3 + BM25 + RRF stack, and the same page-level metrics.
 
+The conclusion comes first: **the current production rule `page_first_450` is the best overall choice.** It is statistically tied with `page_only` on hybrid quality, but it uses 122 fewer tokens for the first five pages, reduces the BGE truncation rate from 12.33% to 10.99%, keeps one chunk per page for citation, and needs no extra model or tuning. The reason is the corpus: the course material is a set of lecture slides exported to PDF, and a slide usually stays on one topic. Of 365 pages, 354 are already one chunk at 450 tokens; the median cosine similarity between adjacent blocks inside a page is 0.509, against 0.387 across a page boundary. The page itself is the natural semantic unit. Splitting it further usually destroys a complete slide context rather than adding useful information, so the gain is small. Dual granularity can improve the score slightly, but the gain is not significant and the cost is clearly higher, so it is not worth adopting now.
+
 ## Experiment 1: nine chunking cells
 
 Purpose: compare `page_only`, `page_first` at 128/256/450, `recursive` at 128/256/450, `semantic_450`, and `cross_page_450`, and find which one puts the correct page first at the lowest cost.
@@ -73,7 +75,7 @@ Dual 1:1 is +0.0081 over baseline, interval [-0.0059, 0.0305], 2 wins and 1 loss
 
 It is still below dense-only 0.8941, which means page-level fusion still loses part of the dense signal. The extra cost is offline: 1020 chunks (382 page + 638 subchunk) need vectors, about 2.7 times `page_first_450`; online tokens are slightly higher because the model receives the full page.
 
-Conclusion of Experiment 3: **dual granularity is the only direction worth confirming further, but it has not significantly won and cannot replace production.**
+Conclusion of Experiment 3: **dual granularity can improve the score slightly, especially hit@3 and hit@5, but the nDCG gain is not significant and the cost is clearly higher. It may be an optimization direction, but the cost-benefit ratio is too low to adopt now.**
 
 ## Conclusion: the best strategy
 
@@ -91,8 +93,8 @@ Cost comparison:
 | `recursive_450` | 380 chunk vectors | 1008 | low | high score, not significant |
 | `semantic_450` | 381 chunks + 3469 block vectors | 1008 | high | not recommended |
 | `cross_page_450` | 289 chunk vectors | 944 | medium, multi-page mapping | not recommended |
-| dual dense 2:1 | 1020 chunk vectors | 1136.5 | medium-high, two indexes | confirm further |
+| dual dense 2:1 | 1020 chunk vectors | 1136.5 | medium-high, two indexes | small, non-significant gain; not adopted |
 
-If there is a next step, first expand the question set to about 100 questions and confirm whether the 0.011 gap of dual dense 2:1 is real. If it is, then build a multi-resolution index, add a reranker, or improve query rewriting. More budget sweeps over a single chunking rule have very low expected return.
+If higher quality is needed later, the question set could be expanded to about 100 questions and dual granularity re-evaluated; at the current cost-benefit ratio it is not worth investing in now. More budget sweeps over a single chunking rule have very low expected return.
 
-In one sentence: **the page is the natural retrieval unit on this corpus, chunking is not the bottleneck, `page_first_450` is the best current choice, `page_first_256` is the cost-first alternative, and dual granularity is the only direction worth confirming further.**
+In one sentence: **the page is the natural retrieval unit on this corpus, chunking is not the bottleneck, `page_first_450` is the best current choice, `page_first_256` is the cost-first alternative, and dual granularity may improve slightly but does not justify its cost.**

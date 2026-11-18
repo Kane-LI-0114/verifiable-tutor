@@ -30,31 +30,31 @@ are [RESULTS.md](RESULTS.md).
 
 ## Environment
 
-All commands are PowerShell from the repository root.
+All commands run from the repository root, so `$PWD` is the checkout root on
+any machine. The examples are PowerShell; on macOS or Linux replace
+`.venv/Scripts/python` with `.venv/bin/python`, `hf.exe` with `hf`, `;` in
+`PYTHONPATH` with `:`, and `$env:NAME = "value"` with `export NAME="value"`.
 
 ```powershell
 python -m venv experiments/chunking/.venv
 experiments/chunking/.venv/Scripts/python -m pip install -r requirements.txt
 
-$env:HF_HOME = "D:\6000U\verifiable-tutor\experiments\chunking\models\.hf-cache"
+$env:HF_HOME = "$PWD/experiments/chunking/models/.hf-cache"
 experiments/chunking/.venv/Scripts/hf.exe download BAAI/bge-m3 `
   --local-dir experiments/chunking/models/bge-m3
 ```
 
-The page snapshot is already copied into `data/pages/`. The model weights are
-about 2.3 GB and are ignored by Git.
+The page snapshot is already copied into `experiments/chunking/data/pages/`.
+The model weights are about 2.3 GB and are ignored by Git.
 
 ## Run
 
 ```powershell
-# tests
-cd experiments/chunking
-$env:PYTHONPATH = "D:\6000U\verifiable-tutor\src"
-.venv/Scripts/python -m pytest tests -q
-cd ../..
+# both the project source and this folder are needed
+$env:PYTHONPATH = "$PWD/src;$PWD/experiments/chunking"
 
-# commands below use both the project source and this folder
-$env:PYTHONPATH = "D:\6000U\verifiable-tutor\src;D:\6000U\verifiable-tutor\experiments\chunking"
+# tests
+experiments/chunking/.venv/Scripts/python -m pytest experiments/chunking/tests -q
 
 # validate the question set
 experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_experiment.py validate
@@ -74,16 +74,16 @@ experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/dual_gran
   --run-id dual-dense2-01 --weights 2:1
 ```
 
-The vector cache at `data/cache/vectors.db` is content addressed, so a rerun
-only embeds texts that have not been seen before. Delete that file or change the
-model to invalidate the cache.
+The vector cache at `experiments/chunking/data/cache/vectors.db` is content
+addressed, so a rerun only embeds texts that have not been seen before. Delete
+that file or change the model to invalidate the cache.
 
 ## Outputs
 
-Each run writes `results/<run-id>/summary.json` and, for the main matrix,
-`results/<run-id>/raw/<cell>.jsonl`. The raw rows are ignored by Git; the
-summaries and the BGE token statistics are tracked. `scripts/report.py` renders
-the Markdown tables from a summary:
+Each run writes `experiments/chunking/results/<run-id>/summary.json` and, for the
+main matrix, `experiments/chunking/results/<run-id>/raw/<cell>.jsonl`. The raw
+rows are ignored by Git; the summaries and the BGE token statistics are tracked.
+`scripts/report.py` renders the Markdown tables from a summary:
 
 ```powershell
 python experiments/chunking/scripts/report.py `
