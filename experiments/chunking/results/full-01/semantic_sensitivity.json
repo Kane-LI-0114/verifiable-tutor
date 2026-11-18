@@ -1,0 +1,23 @@
+[
+  {
+    "threshold": 0.25,
+    "chunks": 381,
+    "ndcg@5": 0.8562,
+    "hit@5": 0.902,
+    "tokens@5": 1008.0
+  },
+  {
+    "threshold": 0.3,
+    "chunks": 452,
+    "ndcg@5": 0.8562,
+    "hit@5": 0.902,
+    "tokens@5": 974.0
+  },
+  {
+    "threshold": 0.35,
+    "chunks": 630,
+    "ndcg@5": 0.8393,
+    "hit@5": 0.8824,
+    "tokens@5": 903.0
+  }
+]

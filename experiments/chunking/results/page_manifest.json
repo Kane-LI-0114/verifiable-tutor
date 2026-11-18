@@ -1,0 +1,71 @@
+{
+  "source": "data/corpus/pages",
+  "files": {
+    "ACS_Lecture_0_2026F.jsonl": {
+      "sha256": "4724ad32d0878b23dfe7cbb30216bf90ea746052c29bd57b781f138d3aa259fa",
+      "bytes": 67081,
+      "pages": 11
+    },
+    "ACS_Lecture_1_2026F.jsonl": {
+      "sha256": "d5977b96c2bddeb061699c81db40f92bd204350fbb8feea655685690deb51867",
+      "bytes": 440949,
+      "pages": 67
+    },
+    "ACS_lecture_2_2026F.jsonl": {
+      "sha256": "ed322f43bbbc9cc210b6d3da58995ef2d8bea29032bd1a9cf567dfd22774da82",
+      "bytes": 447371,
+      "pages": 69
+    },
+    "Assignment_1_final.jsonl": {
+      "sha256": "ab03994384606ba905a9ac2cd640ec976d0948cadfb13c2648e6c773657f7a29",
+      "bytes": 74922,
+      "pages": 6
+    },
+    "Assignment_2.jsonl": {
+      "sha256": "8f3ee2199d3af8f69b8fc45c3de9884aabec5cd6b56db8da3f145913f153545f",
+      "bytes": 57597,
+      "pages": 5
+    },
+    "course_project.jsonl": {
+      "sha256": "8e487c3d5bb2e8b2bd1b97ba57bdd750d56abf5e203b12bfbc516f4c61c4f5b0",
+      "bytes": 66079,
+      "pages": 8
+    },
+    "TACC_Toturial.jsonl": {
+      "sha256": "3ac58094e92971f1e80df6a3fa849cc6056ea552fa9d6fd532b8df111c4a3e92",
+      "bytes": 142838,
+      "pages": 34
+    },
+    "Tutorial_1.jsonl": {
+      "sha256": "b1a3d149481272f1a0bec62205f47e162e80d8ed6b71dabd4f73f9d46e72c796",
+      "bytes": 92736,
+      "pages": 16
+    },
+    "Tutorial_2.jsonl": {
+      "sha256": "b23639008236e88028b7e90cdd68cc44683d1377bfba7da5802f656cf4909c01",
+      "bytes": 205578,
+      "pages": 25
+    },
+    "Tutorial_3.jsonl": {
+      "sha256": "7650b57b4ddeca4e629b92254e0a58193e224808898d2a5d6d57f2335d25efc2",
+      "bytes": 221663,
+      "pages": 28
+    },
+    "Tutorial_4.jsonl": {
+      "sha256": "e5c18b087f2f6571d93b30412d39ff282dab1c5f3801e72fb4af7279efd670bd",
+      "bytes": 304138,
+      "pages": 40
+    },
+    "Tutorial_5.jsonl": {
+      "sha256": "a5caf71008aef6034acbd5189237f563215d54c6597283da420681ca44466b86",
+      "bytes": 190273,
+      "pages": 33
+    },
+    "Tutorial_6.jsonl": {
+      "sha256": "cf47cbc9930439a64a0ae7c8142e0bd81dfc5a4a4e43fcaf74392779597772c1",
+      "bytes": 136728,
+      "pages": 23
+    }
+  },
+  "pages": 365
+}
