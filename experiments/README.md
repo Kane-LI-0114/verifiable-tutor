@@ -5,7 +5,7 @@ keep all of their own environments, models, data, results, and tests.
 
 | Directory | Topic | Report |
 |---|---|---|
-| `chunking/` | Chunking strategies and hybrid retrieval on the course corpus | [REPORT.zh.md](chunking/REPORT.zh.md) (Chinese academic report), [RESULTS.md](chunking/RESULTS.md) (English detailed results) |
+| `chunking/` | Chunking strategies and hybrid retrieval on the course corpus | [REPORT.zh.md](chunking/REPORT.zh.md) (Chinese task report), [RESULTS.md](chunking/RESULTS.md) (data and conclusions), [README.md](chunking/README.md) (runbook) |
 
 The experiments do not modify `src/`, `tests/`, `benchmarks/`, `scripts/`, or
 `config/`. Each experiment lives in its own folder with a local `.gitignore`;
