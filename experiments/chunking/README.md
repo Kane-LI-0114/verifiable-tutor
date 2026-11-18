@@ -172,11 +172,11 @@ only embeds chunk texts that have not been seen before.
 
 ## Results
 
-The full report is in [RESULTS.md](RESULTS.md): configuration, chunk statistics,
-BGE token truncation, semantic calibration, hybrid and ablation tables, paired
-confidence intervals, category and page-length breakdowns, error analysis, and
-the decision. A Chinese cross-experiment summary with the full raw tables is in
-[SUMMARY.zh.md](SUMMARY.zh.md).
+The Chinese academic report is [REPORT.zh.md](REPORT.zh.md): motivation,
+corpus, main configuration, the three experiments, cost comparison, discussion,
+and conclusions. The English detailed results are in [RESULTS.md](RESULTS.md):
+configuration, chunk statistics, BGE token truncation, semantic calibration,
+hybrid and ablation tables, paired confidence intervals, and error analysis.
 
 Run `scripts/report.py` on a new `summary.json` to regenerate the tables. Raw
 per-question rows are written under `results/<run>/raw/` and are ignored by Git;
