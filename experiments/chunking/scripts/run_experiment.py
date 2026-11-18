@@ -42,6 +42,14 @@ DEFAULT_CACHE = ROOT / "data" / "cache" / "vectors.db"
 DEFAULT_INDEX = ROOT / "data" / "index"
 
 
+def display_path(value: str) -> str:
+    path = Path(value)
+    try:
+        return path.resolve().relative_to(REPO).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def build_embedder(model_path: Path):
     import torch
 
@@ -206,8 +214,8 @@ def command_run(args) -> int:
     summary = summarise(all_rows, cell_stats, ks=args.ks, modes=args.modes)
     summary["run"] = {
         "run_id": run_id,
-        "questions": str(Path(args.questions)),
-        "pages": str(Path(args.pages)),
+        "questions": display_path(args.questions),
+        "pages": display_path(args.pages),
         "cells": list(cells),
         "modes": list(args.modes),
         "ks": list(args.ks),

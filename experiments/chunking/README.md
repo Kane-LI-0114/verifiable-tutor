@@ -42,10 +42,14 @@ experiments/chunking/.venv/Scripts/python -m pip install -r requirements.txt
 $env:HF_HOME = "$PWD/experiments/chunking/models/.hf-cache"
 experiments/chunking/.venv/Scripts/hf.exe download BAAI/bge-m3 `
   --local-dir experiments/chunking/models/bge-m3
+
+# copy the tracked page records into the experiment snapshot
+New-Item -ItemType Directory -Force experiments/chunking/data/pages | Out-Null
+Copy-Item data/corpus/pages/*.jsonl experiments/chunking/data/pages/
 ```
 
-The page snapshot is already copied into `experiments/chunking/data/pages/`.
-The model weights are about 2.3 GB and are ignored by Git.
+The page snapshot is not committed separately; it is copied from the tracked
+`data/corpus/pages/`. The model weights are about 2.3 GB and are ignored by Git.
 
 ## Run
 

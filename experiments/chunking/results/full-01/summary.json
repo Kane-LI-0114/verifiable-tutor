@@ -7813,8 +7813,8 @@
   ],
   "run": {
     "run_id": "full-01",
-    "questions": "D:\\6000U\\verifiable-tutor\\experiments\\chunking\\questions\\retrieval_v1.jsonl",
-    "pages": "D:\\6000U\\verifiable-tutor\\experiments\\chunking\\data\\pages",
+    "questions": "experiments/chunking/questions/retrieval_v1.jsonl",
+    "pages": "experiments/chunking/data/pages",
     "cells": [
       "page_only",
       "page_first_128",

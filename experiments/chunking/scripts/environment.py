@@ -8,6 +8,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO = ROOT.parents[1]
+
+
+def display_path(value: str) -> str:
+    path = Path(value)
+    try:
+        return path.resolve().relative_to(REPO).as_posix()
+    except ValueError:
+        return path.name
 
 
 def main() -> int:
@@ -24,7 +33,7 @@ def main() -> int:
                 files[name] = path.stat().st_size
     payload = {
         "python": sys.version,
-        "executable": sys.executable,
+        "executable": display_path(sys.executable),
         "platform": platform.platform(),
         "torch": torch.__version__,
         "transformers": transformers.__version__,
