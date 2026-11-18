@@ -131,6 +131,7 @@ What is traced today: each chat turn runs the LangGraph loop with the Langfuse L
 ## Operations
 
 - Start: `docker compose up -d`. Stop: `docker compose down` (volumes and data are kept). Reset all trace data: `docker compose down -v`.
+- `./start.sh` starts this stack before the backend when Docker is running. A missing Docker daemon, a missing stack directory, or a failed `docker compose up` prints a warning and the project continues without tracing. Set `LANGFUSE_DIR` when the clone is not at `~/tools/langfuse`; `--preview` skips the stack.
 - Logs: `docker compose logs -f langfuse-web` and `docker compose logs -f langfuse-worker`.
 - Update: `docker pull` via `docker compose pull`, then `docker compose up -d`. Minor and patch releases apply migrations on start; read the upgrade guide before a major server upgrade.
 - Disk: `docker system df`. Docker's default json-file logging does not rotate; set a `max-size` in the Docker daemon logging configuration instead of truncating files by hand.
