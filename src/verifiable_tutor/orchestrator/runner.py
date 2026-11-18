@@ -98,6 +98,8 @@ class AgentRunner:
         provider: str | None = None,
         tier: str | None = None,
         thinking: str | None = None,
+        callbacks: Sequence[Any] | None = None,
+        trace_metadata: Mapping[str, str] | None = None,
     ) -> Iterator[AgentEvent]:
         """Yield turn events; the final event is ``turn_end``."""
 
@@ -120,7 +122,9 @@ class AgentRunner:
         for payload in graph.stream(
             state,
             stream_mode="custom",
-            config={"recursion_limit": int(self._settings.agent_recursion_limit)},
+            config=self._graph_config(
+                callbacks=callbacks, trace_metadata=trace_metadata
+            ),
         ):
             kind = payload.get("kind") if isinstance(payload, dict) else None
             data = payload.get("data") if isinstance(payload, dict) else None
@@ -137,6 +141,23 @@ class AgentRunner:
                 "sources": sources.snapshot(),
             },
         )
+
+    def _graph_config(
+        self,
+        *,
+        callbacks: Sequence[Any] | None,
+        trace_metadata: Mapping[str, str] | None,
+    ) -> dict[str, Any]:
+        """Build the LangGraph config from the budgets and the tracing seam."""
+
+        config: dict[str, Any] = {
+            "recursion_limit": int(self._settings.agent_recursion_limit)
+        }
+        if callbacks:
+            config["callbacks"] = list(callbacks)
+        if trace_metadata:
+            config["metadata"] = dict(trace_metadata)
+        return config
 
     # -- graph -------------------------------------------------------------
     def _compile(
