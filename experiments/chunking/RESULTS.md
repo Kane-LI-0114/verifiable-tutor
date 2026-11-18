@@ -41,6 +41,11 @@ The primary metric is page-level nDCG@5 on hybrid retrieval.
    loss. The dense-heavy variant converges to the dense-only ranking because
    these cells are page-level, so the sweep does not test the 128-token dense
    signal.
+8. **The minimal dual-granularity index is promising but not significant.** Page
+   BM25 plus 128-subchunk dense, fused at the page level with 1:1, scores
+   0.8567 against 0.8487 for `page_first_450`; the CI crosses zero and the
+   dense-only 128 score is still much higher at 0.8941. The neutral fusion does
+   not transfer the dense gain; a dense-heavy page fusion is the next knob.
 
 ## What was held fixed
 
@@ -350,6 +355,33 @@ helps 128-token chunks. To test that, the sweep must include `page_first_128` or
 a multi-resolution index, not only the page-level winners. The negative result
 here rules out a cheap weight fix on the current best cells; it does not rule
 out the dense-small-chunk direction.
+
+## Follow-up: minimal dual-granularity index
+
+The dual-granularity experiment gives the lexical arm the 450-token page chunks
+and the dense arm the 128-token subchunks. Both rankings are converted to pages,
+deduplicated, and fused with page-level RRF at 1:1. The model receives the full
+text of each selected page, so the cost is measured per page.
+
+| System | nDCG@5 (95% CI) | hit@3 | hit@5 | page tokens@5 |
+|---|---:|---:|---:|---:|
+| `page_first_450` hybrid | 0.8487 [0.7532, 0.9314] | 0.882 | 0.882 | 1147.9 |
+| `page_first_128` dense only | 0.8941 [0.8280, 0.9525] | 0.941 | 0.980 | 1141.5 |
+| dual page450 + sub128 | 0.8567 [0.7652, 0.9340] | 0.863 | 0.902 | 1144.8 |
+
+The dual index improves nDCG@5 by 0.0081 over `page_first_450`, with a 95% CI
+of [-0.0059, 0.0305], 2 wins, 48 ties, and 1 loss. The difference is not
+significant. It also moves one top-three hit to a deeper rank: hit@3 falls from
+0.882 to 0.863, while hit@5 rises from 0.882 to 0.902. The full-page token cost
+is essentially the same, because the model still receives whole pages; the
+extra cost is the offline 128-subchunk embedding pass, not the online context.
+
+The interesting part is that dense-only `page_first_128` remains much stronger
+at 0.8941. The page-level 1:1 fusion does not transfer that gain, which suggests
+the lexical page ranking is still adding noise at equal weight. The obvious next
+knob is a dense-heavy page-level fusion weight, not another chunk size. The
+minimal 1:1 experiment therefore does not prove dual granularity is useless; it
+shows that the first, neutral setting is not enough.
 
 ## Threats to validity
 

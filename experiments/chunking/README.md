@@ -59,6 +59,11 @@ A follow-up sweep changes only the RRF weights on the three strongest distinct
 cells (`recursive_450`, `page_only`, `page_first_450`). It compares dense:lexical
 weights 1:1, 2:1, and 1:2 and is reported in [RESULTS.md](RESULTS.md).
 
+The minimal dual-granularity experiment uses the 450-token page chunks for BM25
+and the 128-token subchunks for the dense arm, then fuses the two page rankings
+with page-level RRF. It is reported in [RESULTS.md](RESULTS.md) and run with
+`scripts/dual_granularity.py`.
+
 ## Question set
 
 `questions/retrieval_v1.jsonl` contains 65 English questions written from the
@@ -132,6 +137,10 @@ experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/run_exper
 # follow-up: RRF weights on the three strongest distinct cells
 experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/rrf_weights.py `
   --run-id rrf-weights-01
+
+# follow-up: minimal dual-granularity index
+experiments/chunking/.venv/Scripts/python experiments/chunking/scripts/dual_granularity.py `
+  --run-id dual-granularity-01
 
 # Markdown tables from a summary
 python experiments/chunking/scripts/report.py `
