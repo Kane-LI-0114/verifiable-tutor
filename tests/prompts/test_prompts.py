@@ -15,7 +15,7 @@ def test_practice_generation_prompt_comes_from_the_prompts_package():
 
     assert "self-test generator for the CSIT6000V course" in text
     assert "verify_span" in text
-    assert "single choice, multiple choice, true or false, short answer" in text
+    assert "single-choice, multiple-choice, true-false, short-answer" in text
     assert "code." in text
 
 
