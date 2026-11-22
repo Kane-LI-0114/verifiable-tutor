@@ -1949,6 +1949,20 @@
             "title": "Content",
             "type": "string"
           },
+          "max_score": {
+            "default": 0,
+            "description": "The accumulated maximum score.",
+            "minimum": 0.0,
+            "title": "Max Score",
+            "type": "number"
+          },
+          "score": {
+            "default": 0,
+            "description": "The accumulated score.",
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          },
           "sources": {
             "description": "The numbered course sources.",
             "items": {
@@ -2572,6 +2586,7 @@
             {
               "created_at": "2026-11-02T12:00:00+00:00",
               "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+              "kind": "chat",
               "message_count": 2,
               "title": "What is MPI_Allreduce?",
               "updated_at": "2026-11-02T12:00:00+00:00"
@@ -2585,6 +2600,7 @@
               {
                 "created_at": "2026-11-02T12:00:00+00:00",
                 "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+                "kind": "chat",
                 "message_count": 2,
                 "title": "What is MPI_Allreduce?",
                 "updated_at": "2026-11-02T12:00:00+00:00"
@@ -2734,6 +2750,7 @@
         "example": {
           "created_at": "2026-11-02T12:00:00+00:00",
           "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
+          "kind": "chat",
           "message_count": 2,
           "title": "What is MPI_Allreduce?",
           "updated_at": "2026-11-02T12:00:00+00:00"
@@ -2749,6 +2766,12 @@
             "description": "Conversation id, used as session_id in the API.",
             "example": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
             "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "description": "Conversation kind: chat or practice.",
+            "example": "chat",
+            "title": "Kind",
             "type": "string"
           },
           "message_count": {
@@ -2779,6 +2802,7 @@
         },
         "required": [
           "id",
+          "kind",
           "created_at",
           "updated_at",
           "message_count"
@@ -4572,6 +4596,29 @@
         "summary": "Save a practice session so it appears in the conversation list",
         "tags": [
           "practice"
+        ]
+      }
+    },
+    "/api/profile/mastery": {
+      "get": {
+        "description": "Return each practiced topic with its accumulated score and maximum.",
+        "operationId": "mastery_api_profile_mastery_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "summary": "The signed-in user's per-topic mastery",
+        "tags": [
+          "profile"
         ]
       }
     },

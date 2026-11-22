@@ -67,6 +67,7 @@ _EMAIL = "student@ust.hk"
 SESSION_EXAMPLE: dict[str, Any] = {
     "id": _SESSION_ID,
     "title": "What is MPI_Allreduce?",
+    "kind": "chat",
     "created_at": _CREATED_AT,
     "updated_at": _CREATED_AT,
     "message_count": 2,
@@ -300,6 +301,7 @@ class SessionSummary(BaseModel):
     title: str | None = _opt(
         "What is MPI_Allreduce?", "First-message title; null when untitled."
     )
+    kind: str = _ex("chat", "Conversation kind: chat or practice.")
     created_at: str = _ex(_CREATED_AT, "ISO-8601 UTC creation time.")
     updated_at: str = _ex(_CREATED_AT, "ISO-8601 UTC last update time.")
     message_count: int = _ex(2, "Number of stored messages.")

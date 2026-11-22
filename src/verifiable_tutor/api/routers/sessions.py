@@ -48,6 +48,7 @@ def list_sessions(user: CurrentUser, storage: StorageDep):
         {
             "id": row["id"],
             "title": row["title"],
+            "kind": row["kind"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
             "message_count": row["message_count"],
