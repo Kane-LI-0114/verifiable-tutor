@@ -248,6 +248,7 @@ export const zh: Messages = {
     solutionTab: "我的解答",
     settingsTitle: "题目设置",
     topic: "主题",
+    allTopics: "全部主题",
     others: "其他",
     topicPlaceholder: "MPI 集合通信、attention softmax、TACC 作业",
     type: "题型",

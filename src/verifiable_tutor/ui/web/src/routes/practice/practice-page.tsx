@@ -29,6 +29,7 @@ import { useConversations } from "@/lib/session/conversations";
 import type { CitationSource, QuestionType } from "@/lib/types";
 
 const TOPICS = [
+  "all topics",
   "memory hierarchy",
   "FlashAttention",
   "MPI",
@@ -45,43 +46,63 @@ const QUESTION_TYPES: QuestionType[] = [
   "code",
 ];
 
+function dateStamp(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}${month}${day}`;
+}
+
+function scoreColor(ratio: number): string {
+  if (ratio >= 0.85) return "#22c55e";
+  if (ratio >= 0.6) return "#eab308";
+  if (ratio >= 0.4) return "#f97316";
+  return "#b91c1c";
+}
+
 function ScoreRing({ score, max }: { score: number; max: number }) {
   const ratio = max > 0 ? Math.min(Math.max(score / max, 0), 1) : 0;
+  const percent = Math.round(ratio * 100);
+  const color = scoreColor(ratio);
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
   return (
-    <svg width="120" height="120" viewBox="0 0 120 120" role="img">
-      <circle
-        cx="60"
-        cy="60"
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.15"
-        strokeWidth="10"
-      />
-      <circle
-        cx="60"
-        cy="60"
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="10"
-        strokeLinecap="round"
-        strokeDasharray={`${circumference * ratio} ${circumference * (1 - ratio)}`}
-        transform="rotate(-90 60 60)"
-        className="text-primary"
-      />
-      <text
-        x="60"
-        y="60"
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="fill-foreground text-xl font-semibold"
-      >
+    <div className="flex flex-col items-center gap-2">
+      <svg width="120" height="120" viewBox="0 0 120 120" role="img">
+        <circle
+          cx="60"
+          cy="60"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.15"
+          strokeWidth="10"
+        />
+        <circle
+          cx="60"
+          cy="60"
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * ratio} ${circumference * (1 - ratio)}`}
+          transform="rotate(-90 60 60)"
+        />
+        <text
+          x="60"
+          y="60"
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="fill-foreground text-xl font-semibold"
+        >
+          {percent}%
+        </text>
+      </svg>
+      <p className="text-sm text-muted-foreground">
         {Math.round(score)}/{Math.round(max)}
-      </text>
-    </svg>
+      </p>
+    </div>
   );
 }
 
@@ -183,7 +204,8 @@ export function PracticePage() {
       lines.push("");
     });
     try {
-      await savePracticeSession(effectiveTopic, lines.join("\n"), sources);
+      const title = `${effectiveTopic} ${dateStamp()}`;
+      await savePracticeSession(title, lines.join("\n"), sources);
       refreshConversations();
     } catch {
       // Saving the session is best effort; the result stays on screen.
@@ -215,7 +237,11 @@ export function PracticePage() {
                   <SelectContent>
                     {TOPICS.map((item) => (
                       <SelectItem key={item} value={item}>
-                        {item === "others" ? t.practice.others : item}
+                        {item === "all topics"
+                          ? t.practice.allTopics
+                          : item === "others"
+                            ? t.practice.others
+                            : item}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -255,6 +255,7 @@ export const en = {
     solutionTab: "My solution",
     settingsTitle: "Question settings",
     topic: "Topic",
+    allTopics: "All topics",
     others: "Others",
     topicPlaceholder: "MPI collectives, attention softmax, TACC jobs",
     type: "Question type",
