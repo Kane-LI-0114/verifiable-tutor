@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
+import { Loader2Icon } from "lucide-react";
 
 import { Markdown } from "@/components/ai/markdown";
 import { PageEmpty, PageHeader } from "@/components/layout/page-states";
@@ -369,7 +370,10 @@ export function PracticePage() {
                   disabled={generating || !effectiveTopic}
                   onClick={handleGenerate}
                 >
-                  {t.practice.generate}
+                  {generating ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : null}
+                  {generating ? t.practice.generating : t.practice.generate}
                 </Button>
                 {generateError ? (
                   <p className="text-xs text-muted-foreground">{generateError}</p>
@@ -379,7 +383,12 @@ export function PracticePage() {
           </CardContent>
         </Card>
 
-        {questions.length === 0 && !generating ? (
+        {generating ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground">
+            <Loader2Icon className="size-8 animate-spin" />
+            <p className="text-sm">{t.practice.generating}</p>
+          </div>
+        ) : questions.length === 0 ? (
           <PageEmpty title={t.practice.emptyTitle} description={t.practice.emptyBody} />
         ) : phase === "result" ? (
           <>

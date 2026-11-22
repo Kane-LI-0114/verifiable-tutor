@@ -269,6 +269,7 @@ export const en = {
     difficulty: "Difficulty",
     difficulties: { easy: "Easy", medium: "Medium", hard: "Hard" },
     generate: "Generate a question",
+    generating: "Generating questions...",
     question: "Question",
     points: "{{count}} points",
     pointsOne: "{{count}} point",

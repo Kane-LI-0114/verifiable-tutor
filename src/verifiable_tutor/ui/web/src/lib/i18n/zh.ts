@@ -262,6 +262,7 @@ export const zh: Messages = {
     difficulty: "难度",
     difficulties: { easy: "简单", medium: "中等", hard: "困难" },
     generate: "生成题目",
+    generating: "正在生成题目...",
     question: "题目",
     points: "{{count}} 分",
     pointsOne: "{{count}} 分",
