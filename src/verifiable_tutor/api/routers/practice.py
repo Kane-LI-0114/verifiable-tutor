@@ -12,10 +12,12 @@ import re
 import uuid
 from dataclasses import asdict
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import ChatDep, ClockDep, CurrentUser, ModelDep, StorageDep
+from ...policy.deadline import load_deadlines
+from ...policy.guard import guard
 from ...practice.grading import grade_answer
 from ...prompts import load_prompt
 
@@ -172,8 +174,19 @@ class ParsePracticeBody(BaseModel):
     summary="Decide whether a message asks to practice and extract topic and types",
     responses={401: {"description": "Not signed in."}},
 )
-def parse_practice_request(user: CurrentUser, body: ParsePracticeBody, model: ModelDep):
+def parse_practice_request(
+    user: CurrentUser,
+    body: ParsePracticeBody,
+    model: ModelDep,
+    clock: ClockDep,
+    request: Request,
+):
     """Parse a chat message into a practice request, if it is one."""
+
+    settings = request.app.state.settings
+    deadlines = load_deadlines(settings.repo_root / "config" / "deadlines.yaml")
+    if guard(body.message, now=clock(), deadlines=deadlines).blocked:
+        return {"practice": False, "blocked": True}
 
     prompt = load_prompt("practice_parse").replace("%%MESSAGE%%", body.message)
     result = model.chat(

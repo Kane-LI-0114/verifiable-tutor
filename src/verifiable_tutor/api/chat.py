@@ -110,6 +110,50 @@ class ChatService:
             retriever=retriever,
             store=knowledge_store,
         )
+        self._deadlines = self._load_deadlines()
+
+    def _load_deadlines(self) -> list[Any]:
+        from ..policy.deadline import load_deadlines
+
+        path = self._settings.repo_root / "config" / "deadlines.yaml"
+        try:
+            return load_deadlines(path)
+        except Exception:  # a missing or malformed registry fails open
+            return []
+
+    def _guard(self, message: str, now: datetime) -> str | None:
+        from ..policy.guard import guard
+
+        decision = guard(message, now=now, deadlines=self._deadlines)
+        if decision.blocked:
+            return load_prompt("disclosure_refusal")
+        return None
+
+    def _refusal_turn(
+        self,
+        user: dict[str, Any],
+        conversation: dict[str, Any],
+        refusal_text: str,
+    ) -> ChatTurn:
+        message_id = uuid.uuid4().hex
+        now = self._clock()
+        self._storage.add_assistant_turn(
+            message_id=message_id,
+            conversation_id=conversation["id"],
+            sequence=self._storage.next_message_sequence(conversation["id"]),
+            content=refusal_text,
+            created_at=now,
+        )
+
+        def frames() -> Iterator[dict[str, Any]]:
+            yield streaming.start(message_id)
+            part = uuid.uuid4().hex
+            yield streaming.text_start(part)
+            yield streaming.text_delta(part, refusal_text)
+            yield streaming.text_end(part)
+            yield streaming.finish()
+
+        return ChatTurn(conversation_id=conversation["id"], frames=frames())
 
     # -- conversation helpers ---------------------------------------------
     def _conversation(
@@ -190,6 +234,18 @@ class ChatService:
             raise ChatError(400, "message must not be empty")
         conversation = self._conversation(user, session_id, message)
         now = self._clock()
+        refusal = self._guard(message, now)
+        if refusal is not None:
+            self._storage.add_message(
+                message_id=uuid.uuid4().hex,
+                conversation_id=conversation["id"],
+                sequence=self._storage.next_message_sequence(conversation["id"]),
+                role="user",
+                content=message,
+                created_at=now,
+            )
+            self._storage.touch_conversation(conversation["id"], updated_at=now)
+            return self._refusal_turn(user, conversation, refusal)
         self._storage.add_message(
             message_id=uuid.uuid4().hex,
             conversation_id=conversation["id"],

@@ -314,6 +314,9 @@ def make_settings(tmp_path: Path, **overrides: Any) -> AppSettings:
     knowledge_points = REPO_ROOT / "config" / "knowledge_points.yaml"
     if knowledge_points.is_file():
         shutil.copy(knowledge_points, config_dir / "knowledge_points.yaml")
+    deadlines = REPO_ROOT / "config" / "deadlines.yaml"
+    if deadlines.is_file():
+        shutil.copy(deadlines, config_dir / "deadlines.yaml")
     values: dict[str, Any] = {
         "repo_root": tmp_path,
         "base_url": "http://testserver",
