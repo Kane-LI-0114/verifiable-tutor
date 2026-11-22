@@ -7,6 +7,7 @@ the future; after every deadline has passed the gate opens for full teaching.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,3 +44,29 @@ def is_before_deadline(now: datetime, deadlines: list[AssignmentDeadline]) -> bo
     """True while ``now`` is before at least one assignment's deadline."""
 
     return any(now < item.deadline for item in deadlines)
+
+
+def identify_assignment_number(message: str) -> str | None:
+    """Return the assignment number ("1", "2", "3") named in a message."""
+
+    normalized = message.lower()
+    match = re.search(r"assignment\s*#?\s*([123])", normalized)
+    if match:
+        return match.group(1)
+    match = re.search(r"作业\s*([123一二三])", message)
+    if match:
+        token = match.group(1)
+        return {"一": "1", "二": "2", "三": "3"}.get(token, token)
+    return None
+
+
+def find_deadline(
+    number: str, deadlines: list[AssignmentDeadline]
+) -> AssignmentDeadline | None:
+    """Return the deadline entry for the numbered assignment, if present."""
+
+    suffix = f"assignment {number}"
+    for item in deadlines:
+        if suffix in item.name.lower():
+            return item
+    return None
