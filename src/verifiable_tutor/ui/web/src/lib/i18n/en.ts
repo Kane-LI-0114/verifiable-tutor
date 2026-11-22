@@ -276,6 +276,7 @@ export const en = {
     answerPlaceholder: "Write your answer here",
     codePlaceholder: "Write the code you would compile",
     submit: "Submit the answer",
+    submitAll: "Submit all answers",
     running: "Running the answer",
     pending: "Waiting for a TACC job",
     scored: "Scored",

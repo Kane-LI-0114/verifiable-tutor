@@ -43,3 +43,14 @@ export function gradePractice(body: {
     body,
   });
 }
+
+export function savePracticeSession(
+  topic: string,
+  content: string,
+  sources: CitationSource[],
+): Promise<{ session_id: string }> {
+  return apiFetch<{ session_id: string }>("/api/practice/sessions", {
+    method: "POST",
+    body: { topic, content, sources },
+  });
+}

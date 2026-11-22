@@ -269,6 +269,7 @@ export const zh: Messages = {
     answerPlaceholder: "在这里写下答案",
     codePlaceholder: "写下你要编译的代码",
     submit: "提交答案",
+    submitAll: "提交全部答案",
     running: "正在运行答案",
     pending: "等待 TACC 作业",
     scored: "已评分",
