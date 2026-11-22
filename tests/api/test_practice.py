@@ -72,3 +72,36 @@ def test_practice_session_saves_a_conversation(api):
     session_id = response.json()["session_id"]
     sessions = api.client.get("/api/sessions").json()["sessions"]
     assert any(session["id"] == session_id for session in sessions)
+
+
+def test_practice_session_records_knowledge_progress(api):
+    api.create_active_account("alice@ust.hk")
+
+    api.client.post(
+        "/api/practice/sessions",
+        json={
+            "topic": "MPI",
+            "content": "# practice",
+            "sources": [],
+            "progress": [
+                {"topic": "MPI", "covered_points": ["p1", "p2"], "mastered_points": ["p1"]}
+            ],
+        },
+    )
+    api.client.post(
+        "/api/practice/sessions",
+        json={
+            "topic": "MPI",
+            "content": "# practice",
+            "sources": [],
+            "progress": [
+                {"topic": "MPI", "covered_points": ["p2", "p3"], "mastered_points": ["p3"]}
+            ],
+        },
+    )
+
+    topics = api.client.get("/api/profile/mastery").json()["topics"]
+    mpi = next(topic for topic in topics if topic["topic"] == "MPI")
+    assert mpi["total"] == 4
+    assert mpi["covered_count"] == 3  # p1, p2, p3
+    assert mpi["mastered_count"] == 2  # p1, p3

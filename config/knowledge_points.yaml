@@ -1,0 +1,40 @@
+# Course knowledge points per topic (application configuration).
+#
+# The profile progress and practice generation read this list: each topic has a
+# fixed set of knowledge points, and a student's progress is how many of them
+# have been covered by quizzes versus mastered with full marks.
+
+topics:
+  memory hierarchy:
+    - memory wall (capacity, bandwidth, latency gap)
+    - locality (temporal and spatial)
+    - cache hit and miss (benefit vs penalty)
+    - multi-level cache and AMAT
+    - TLB and address resolution
+    - DRAM organization (SRAM vs DRAM, banks, channels)
+    - GPU memory hierarchy (registers, shared memory, bank conflicts)
+    - HBM / GDDR and CXL memory extension
+
+  FlashAttention:
+    - tiled GEMM with shared memory
+    - stable softmax (overflow prevention)
+    - online softmax (single pass)
+    - attention operator (QK^T / sqrt(d_k))
+    - FlashAttention core idea (tiling + online softmax to avoid materializing the attention matrix)
+
+  MPI:
+    - processes and ranks
+    - point-to-point communication (send / recv)
+    - collective communication (broadcast, scatter, all-reduce)
+    - row-partitioned parallel GEMM
+
+  GEMM:
+    - matrix multiplication
+    - row-major memory layout and loop ordering
+    - shared-memory tiling
+
+  CUDA:
+    - thread hierarchy (thread, block, grid)
+    - memory spaces (global, shared, registers)
+    - kernel launch and host-device data transfer
+    - scaled dot-product attention in CUDA

@@ -92,6 +92,19 @@ def generate_practice_questions(
     }
 
 
+class TopicProgressBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str = Field(min_length=1, description="The topic.")
+    covered_points: list[str] = Field(
+        default_factory=list, description="Knowledge points the quiz covered."
+    )
+    mastered_points: list[str] = Field(
+        default_factory=list,
+        description="Knowledge points answered with full marks.",
+    )
+
+
 class PracticeSessionBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -99,6 +112,9 @@ class PracticeSessionBody(BaseModel):
     content: str = Field(min_length=1, description="The rendered result, markdown.")
     sources: list[dict] = Field(
         default_factory=list, description="The numbered course sources."
+    )
+    progress: list[TopicProgressBody] = Field(
+        default_factory=list, description="Per-topic knowledge-point progress."
     )
 
 
@@ -122,6 +138,7 @@ def save_practice_session(
         user_id=user["id"],
         title=body.topic,
         created_at=clock(),
+        kind="practice",
     )
     storage.add_assistant_turn(
         message_id=uuid.uuid4().hex,
@@ -131,4 +148,11 @@ def save_practice_session(
         created_at=clock(),
         sources=body.sources,
     )
+    for entry in body.progress:
+        storage.record_progress(
+            user_id=user["id"],
+            topic=entry.topic,
+            covered_points=entry.covered_points,
+            mastered_points=entry.mastered_points,
+        )
     return {"session_id": conversation_id}

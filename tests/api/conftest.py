@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+import shutil
 import sys
 from contextlib import contextmanager
 from pathlib import Path
@@ -308,6 +309,11 @@ def make_settings(tmp_path: Path, **overrides: Any) -> AppSettings:
     """Build explicit settings rooted in a temporary directory."""
 
     data = tmp_path / "data"
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(exist_ok=True)
+    knowledge_points = REPO_ROOT / "config" / "knowledge_points.yaml"
+    if knowledge_points.is_file():
+        shutil.copy(knowledge_points, config_dir / "knowledge_points.yaml")
     values: dict[str, Any] = {
         "repo_root": tmp_path,
         "base_url": "http://testserver",

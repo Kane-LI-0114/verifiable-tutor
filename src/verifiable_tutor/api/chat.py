@@ -156,13 +156,18 @@ class ChatService:
     ) -> tuple[list[Any], list[dict[str, Any]]]:
         """Generate self-test questions for a topic through the agent loop."""
 
-        from ..practice.generate import generate_practice as _generate
+        from ..practice.generate import (
+            generate_practice as _generate,
+            load_knowledge_points,
+        )
 
+        points = load_knowledge_points(self._settings.repo_root)
         return _generate(
             topic,
             self._runner,
             adapter,
             types=types,
+            knowledge_points=points,
             provider=provider or "deepseek",
             tier=tier or "flash",
         )
