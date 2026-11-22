@@ -63,6 +63,9 @@ BATCHES: dict[str, list[dict]] = {
         {"doc_id": "ACS_Lecture_0_2026F", "pdf": "ACS_Lecture_0_2026F.pdf", "expected_pages": 11},
         {"doc_id": "ACS_Lecture_1_2026F", "pdf": "ACS_Lecture_1_2026F.pdf", "expected_pages": 67},
         {"doc_id": "ACS_lecture_2_2026F", "pdf": "ACS_lecture_2_2026F.pdf", "expected_pages": 69},
+        {"doc_id": "ACS_Lecture_3_2026F", "pdf": "ACS_Lecture_3_2026F.pdf", "expected_pages": 89},
+        {"doc_id": "ACS_Lecture_4_2026F", "pdf": "ACS_Lecture_4_2026F.pdf", "expected_pages": 71},
+        {"doc_id": "ACS_Lecture_5_2026F", "pdf": "ACS_Lecture_5_2026F.pdf", "expected_pages": 68},
     ],
     "tutorials": [
         {"doc_id": "Tutorial_1", "pdf": "Tutorial_1.pdf", "expected_pages": 16},
