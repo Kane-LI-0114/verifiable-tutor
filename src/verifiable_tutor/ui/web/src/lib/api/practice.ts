@@ -3,11 +3,19 @@ import type { CitationSource, QuestionType } from "@/lib/types";
 
 export interface GeneratedQuestion {
   type: QuestionType;
+  topic: string;
   question: string;
   choices: string[];
   reference_answer: string;
   scoring_points: string[];
   max_score: number;
+  knowledge_points: string[];
+}
+
+export interface TopicProgress {
+  topic: string;
+  covered_points: string[];
+  mastered_points: string[];
 }
 
 export interface PracticeGenerateResponse {
@@ -48,9 +56,10 @@ export function savePracticeSession(
   topic: string,
   content: string,
   sources: CitationSource[],
+  progress: TopicProgress[],
 ): Promise<{ session_id: string }> {
   return apiFetch<{ session_id: string }>("/api/practice/sessions", {
     method: "POST",
-    body: { topic, content, sources },
+    body: { topic, content, sources, progress },
   });
 }

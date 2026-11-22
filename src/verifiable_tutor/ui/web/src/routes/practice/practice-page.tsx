@@ -205,7 +205,26 @@ export function PracticePage() {
     });
     try {
       const title = `${effectiveTopic} ${dateStamp()}`;
-      await savePracticeSession(title, lines.join("\n"), sources);
+      const byTopic: Record<
+        string,
+        { covered: Set<string>; mastered: Set<string> }
+      > = {};
+      questions.forEach((question, index) => {
+        const topicName = question.topic || effectiveTopic;
+        const entry =
+          byTopic[topicName] ??
+          (byTopic[topicName] = { covered: new Set(), mastered: new Set() });
+        question.knowledge_points.forEach((point) => entry.covered.add(point));
+        if (next[index] && next[index].score === question.max_score) {
+          question.knowledge_points.forEach((point) => entry.mastered.add(point));
+        }
+      });
+      const progress = Object.entries(byTopic).map(([topicName, entry]) => ({
+        topic: topicName,
+        covered_points: Array.from(entry.covered),
+        mastered_points: Array.from(entry.mastered),
+      }));
+      await savePracticeSession(title, lines.join("\n"), sources, progress);
       refreshConversations();
     } catch {
       // Saving the session is best effort; the result stays on screen.

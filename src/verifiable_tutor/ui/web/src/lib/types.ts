@@ -16,6 +16,7 @@ export interface Me {
 export interface Conversation {
   id: string;
   title: string | null;
+  kind?: "chat" | "practice";
   created_at: string;
   updated_at: string;
   message_count: number;

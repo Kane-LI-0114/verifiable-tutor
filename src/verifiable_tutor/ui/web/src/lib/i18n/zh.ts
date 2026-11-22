@@ -296,6 +296,14 @@ export const zh: Messages = {
     solutionSubmit: "讲解解答",
     solutionDisabled: "此版本暂不支持讲解自己的解答。",
   },
+  profile: {
+    title: "我的档案",
+    subtitle: "各主题的掌握程度，来自你的练习记录。",
+    emptyTitle: "还没有练习",
+    emptyBody: "完成一组练习后，你的主题掌握度会显示在这里。",
+    coveredLegend: "练习已覆盖",
+    masteredLegend: "已掌握（满分）",
+  },
   knowledge: {
     title: "知识库",
     searchTitle: "搜索知识库",

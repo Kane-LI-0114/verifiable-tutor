@@ -306,6 +306,14 @@ export const en = {
     solutionDisabled:
       "Solution explanations are not available in this build.",
   },
+  profile: {
+    title: "My profile",
+    subtitle: "Topic mastery across your practice sessions.",
+    emptyTitle: "No practice yet",
+    emptyBody: "Complete a practice set and your topic mastery appears here.",
+    coveredLegend: "Covered by quizzes",
+    masteredLegend: "Mastered (full marks)",
+  },
   knowledge: {
     title: "Knowledge base",
     searchTitle: "Search the knowledge base",
