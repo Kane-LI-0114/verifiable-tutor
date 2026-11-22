@@ -7,12 +7,13 @@ logic, not executed on TACC, so no ``tacc/exec`` job is required.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import asdict
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..deps import ChatDep, CurrentUser, ModelDep
+from ..deps import ChatDep, ClockDep, CurrentUser, ModelDep, StorageDep
 from ...practice.grading import grade_answer
 
 router = APIRouter(tags=["practice"])
@@ -89,3 +90,45 @@ def generate_practice_questions(
         "questions": [asdict(question) for question in questions],
         "sources": sources,
     }
+
+
+class PracticeSessionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str = Field(min_length=1, max_length=200, description="The topic.")
+    content: str = Field(min_length=1, description="The rendered result, markdown.")
+    sources: list[dict] = Field(
+        default_factory=list, description="The numbered course sources."
+    )
+
+
+@router.post(
+    "/api/practice/sessions",
+    status_code=201,
+    summary="Save a practice session so it appears in the conversation list",
+    responses={401: {"description": "Not signed in."}},
+)
+def save_practice_session(
+    user: CurrentUser,
+    body: PracticeSessionBody,
+    storage: StorageDep,
+    clock: ClockDep,
+):
+    """Persist a finished practice result as a conversation."""
+
+    conversation_id = uuid.uuid4().hex
+    storage.create_conversation(
+        conversation_id=conversation_id,
+        user_id=user["id"],
+        title=body.topic,
+        created_at=clock(),
+    )
+    storage.add_assistant_turn(
+        message_id=uuid.uuid4().hex,
+        conversation_id=conversation_id,
+        sequence=1,
+        content=body.content,
+        created_at=clock(),
+        sources=body.sources,
+    )
+    return {"session_id": conversation_id}

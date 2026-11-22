@@ -58,3 +58,17 @@ def test_practice_generate_returns_questions_and_sources(agent_api):
     body = response.json()
     assert body["questions"] == []
     assert body["sources"] == []
+
+
+def test_practice_session_saves_a_conversation(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post(
+        "/api/practice/sessions",
+        json={"topic": "MPI", "content": "# practice\n\nscore 1/1", "sources": []},
+    )
+
+    assert response.status_code == 201
+    session_id = response.json()["session_id"]
+    sessions = api.client.get("/api/sessions").json()["sessions"]
+    assert any(session["id"] == session_id for session in sessions)

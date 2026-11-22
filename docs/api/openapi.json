@@ -1940,6 +1940,39 @@
         "title": "PracticeRunBody",
         "type": "object"
       },
+      "PracticeSessionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "description": "The rendered result, markdown.",
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "sources": {
+            "description": "The numbered course sources.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "topic": {
+            "description": "The topic.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "content"
+        ],
+        "title": "PracticeSessionBody",
+        "type": "object"
+      },
       "RegisterBody": {
         "additionalProperties": false,
         "properties": {
@@ -4494,6 +4527,49 @@
           }
         },
         "summary": "Grade a practice answer with the online model",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions": {
+      "post": {
+        "description": "Persist a finished practice result as a conversation.",
+        "operationId": "save_practice_session_api_practice_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeSessionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save a practice session so it appears in the conversation list",
         "tags": [
           "practice"
         ]
