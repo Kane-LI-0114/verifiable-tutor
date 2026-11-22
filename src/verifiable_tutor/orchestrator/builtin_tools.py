@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..evidence.query import fallback_plan
+from ..evidence.verify import verify_span
 from .tools import ToolContext, ToolError, ToolRegistry, ToolResult, ToolSpec
 
 _SEARCH_SUMMARY_LIMIT = 800
@@ -42,6 +43,14 @@ class WebFetchArgs(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     url: str = Field(min_length=1, max_length=2048)
+
+
+class VerifySpanArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    doc_id: str = Field(min_length=1, max_length=64)
+    page_no: int = Field(ge=1)
+    span: str = Field(min_length=1, max_length=2000)
 
 
 def _json(payload: dict[str, Any]) -> str:
@@ -179,6 +188,26 @@ def _web_fetch(context: ToolContext, args: WebFetchArgs) -> ToolResult:
     )
 
 
+def _verify_span(context: ToolContext, args: VerifySpanArgs) -> ToolResult:
+    chunks = context.store.page_chunks(args.doc_id, args.page_no)
+    if not chunks:
+        raise ToolError(f"no text for {args.doc_id} page {args.page_no}")
+    page_text = "\n\n".join(str(chunk.get("text") or "") for chunk in chunks)
+    verified = verify_span(args.span, page_text)
+    payload = {
+        "source": "course",
+        "doc_id": args.doc_id,
+        "page_no": args.page_no,
+        "span": args.span,
+        "verified": verified,
+    }
+    return ToolResult(
+        content=_json(payload),
+        output="span verified" if verified else "span not found on page",
+        result=payload,
+    )
+
+
 def build_tool_registry(*, settings: Any) -> ToolRegistry:
     """Build the closed tool set; web tools follow the configuration switch."""
 
@@ -203,6 +232,17 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
             args_model=ReadCoursePageArgs,
             executor=_read_course_page,
             work_chain_step="retrieve",
+        ),
+        ToolSpec(
+            name="verify_span",
+            description=(
+                "Verify that a quoted span literally occurs on the cited course "
+                "page after whitespace and case normalization. Use it before "
+                "citing a page; a span that does not match must not be cited."
+            ),
+            args_model=VerifySpanArgs,
+            executor=_verify_span,
+            work_chain_step="verify",
         ),
     ]
     if getattr(settings, "agent_web_tools_enabled", True):

@@ -85,6 +85,7 @@ def test_registry_lists_the_closed_tool_set_with_json_schemas():
     assert tool_registry.names() == [
         "search_course",
         "read_course_page",
+        "verify_span",
         "web_search",
         "web_fetch",
     ]
@@ -103,7 +104,7 @@ def test_web_tools_can_be_disabled():
 
     tool_registry = build_tool_registry(settings=NoWeb())
 
-    assert tool_registry.names() == ["search_course", "read_course_page"]
+    assert tool_registry.names() == ["search_course", "read_course_page", "verify_span"]
 
 
 def test_unknown_tool_is_a_failed_result_not_an_exception():
@@ -185,6 +186,76 @@ def test_read_course_page_reports_a_missing_page():
     result = registry().execute(
         "read_course_page",
         {"doc_id": "missing", "page_no": 1},
+        context=context(store=FakeStore()),
+    )
+
+    assert result.status == "failed"
+    assert "no text" in result.output
+
+
+def test_verify_span_confirms_a_matching_span():
+    store = FakeStore(
+        {
+            ("Tutorial_2", 8): [
+                {"id": "Tutorial_2:p008:c00", "text": "MPI_Allreduce reduces a value across all ranks."},
+            ]
+        }
+    )
+
+    result = registry().execute(
+        "verify_span",
+        {"doc_id": "Tutorial_2", "page_no": 8, "span": "reduces a value"},
+        context=context(store=store),
+    )
+
+    assert result.status == "done"
+    payload = json.loads(result.content)
+    assert payload["verified"] is True
+    assert result.output == "span verified"
+
+
+def test_verify_span_rejects_a_missing_span():
+    store = FakeStore(
+        {
+            ("Tutorial_2", 8): [
+                {"id": "Tutorial_2:p008:c00", "text": "MPI_Allreduce reduces a value across all ranks."},
+            ]
+        }
+    )
+
+    result = registry().execute(
+        "verify_span",
+        {"doc_id": "Tutorial_2", "page_no": 8, "span": "CUDA kernels"},
+        context=context(store=store),
+    )
+
+    assert result.status == "done"
+    assert json.loads(result.content)["verified"] is False
+    assert result.output == "span not found on page"
+
+
+def test_verify_span_normalizes_whitespace_and_case():
+    store = FakeStore(
+        {
+            ("Tutorial_2", 8): [
+                {"id": "Tutorial_2:p008:c00", "text": "MPI_Allreduce reduces a value across all ranks."},
+            ]
+        }
+    )
+
+    result = registry().execute(
+        "verify_span",
+        {"doc_id": "Tutorial_2", "page_no": 8, "span": "  REDUCES   A VALUE  "},
+        context=context(store=store),
+    )
+
+    assert json.loads(result.content)["verified"] is True
+
+
+def test_verify_span_reports_a_missing_page():
+    result = registry().execute(
+        "verify_span",
+        {"doc_id": "missing", "page_no": 1, "span": "anything"},
         context=context(store=FakeStore()),
     )
 
