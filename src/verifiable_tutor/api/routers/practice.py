@@ -7,6 +7,8 @@ logic, not executed on TACC, so no ``tacc/exec`` job is required.
 
 from __future__ import annotations
 
+import json
+import re
 import uuid
 from dataclasses import asdict
 
@@ -15,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import ChatDep, ClockDep, CurrentUser, ModelDep, StorageDep
 from ...practice.grading import grade_answer
+from ...prompts import load_prompt
 
 router = APIRouter(tags=["practice"])
 
@@ -156,3 +159,39 @@ def save_practice_session(
             mastered_points=entry.mastered_points,
         )
     return {"session_id": conversation_id}
+
+
+class ParsePracticeBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=1000, description="The user message.")
+
+
+@router.post(
+    "/api/practice/parse",
+    summary="Decide whether a message asks to practice and extract topic and types",
+    responses={401: {"description": "Not signed in."}},
+)
+def parse_practice_request(user: CurrentUser, body: ParsePracticeBody, model: ModelDep):
+    """Parse a chat message into a practice request, if it is one."""
+
+    prompt = load_prompt("practice_parse").replace("%%MESSAGE%%", body.message)
+    result = model.chat(
+        [{"role": "user", "content": prompt}], role="chat", temperature=0.0
+    )
+    text = (result.text or "").strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    data: dict = {}
+    if start != -1 and end > start:
+        try:
+            parsed = json.loads(text[start : end + 1])
+            if isinstance(parsed, dict):
+                data = parsed
+        except json.JSONDecodeError:
+            data = {}
+    return {
+        "practice": bool(data.get("practice")),
+        "topic": str(data.get("topic", "")),
+        "types": [str(item) for item in (data.get("types") or [])],
+    }

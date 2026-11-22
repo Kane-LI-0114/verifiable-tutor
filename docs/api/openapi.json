@@ -1863,6 +1863,23 @@
         "title": "MessageSourceRecord",
         "type": "object"
       },
+      "ParsePracticeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "description": "The user message.",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ParsePracticeBody",
+        "type": "object"
+      },
       "PracticeGenerateBody": {
         "additionalProperties": false,
         "properties": {
@@ -1949,19 +1966,13 @@
             "title": "Content",
             "type": "string"
           },
-          "max_score": {
-            "default": 0,
-            "description": "The accumulated maximum score.",
-            "minimum": 0.0,
-            "title": "Max Score",
-            "type": "number"
-          },
-          "score": {
-            "default": 0,
-            "description": "The accumulated score.",
-            "minimum": 0.0,
-            "title": "Score",
-            "type": "number"
+          "progress": {
+            "description": "Per-topic knowledge-point progress.",
+            "items": {
+              "$ref": "#/components/schemas/TopicProgressBody"
+            },
+            "title": "Progress",
+            "type": "array"
           },
           "sources": {
             "description": "The numbered course sources.",
@@ -3018,6 +3029,38 @@
           "status"
         ],
         "title": "ToolCallRecord",
+        "type": "object"
+      },
+      "TopicProgressBody": {
+        "additionalProperties": false,
+        "properties": {
+          "covered_points": {
+            "description": "Knowledge points the quiz covered.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Covered Points",
+            "type": "array"
+          },
+          "mastered_points": {
+            "description": "Knowledge points answered with full marks.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Mastered Points",
+            "type": "array"
+          },
+          "topic": {
+            "description": "The topic.",
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "title": "TopicProgressBody",
         "type": "object"
       },
       "TranscriptionResponse": {
@@ -4513,6 +4556,49 @@
         ]
       }
     },
+    "/api/practice/parse": {
+      "post": {
+        "description": "Parse a chat message into a practice request, if it is one.",
+        "operationId": "parse_practice_request_api_practice_parse_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParsePracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide whether a message asks to practice and extract topic and types",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
     "/api/practice/runs": {
       "post": {
         "description": "Grade the student answer against the reference answer and scoring points.",
@@ -4601,7 +4687,7 @@
     },
     "/api/profile/mastery": {
       "get": {
-        "description": "Return each practiced topic with its accumulated score and maximum.",
+        "description": "Return each topic's total, covered, and mastered knowledge points.",
         "operationId": "mastery_api_profile_mastery_get",
         "responses": {
           "200": {
@@ -4616,7 +4702,7 @@
             "description": "Not signed in."
           }
         },
-        "summary": "The signed-in user's per-topic mastery",
+        "summary": "The signed-in user's per-topic knowledge-point progress",
         "tags": [
           "profile"
         ]
