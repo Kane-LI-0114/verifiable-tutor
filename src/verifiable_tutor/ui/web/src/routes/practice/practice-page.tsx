@@ -53,6 +53,35 @@ function dateStamp(): string {
   return `${now.getFullYear()}${month}${day}`;
 }
 
+function deterministicGrade(
+  question: GeneratedQuestion,
+  answer: string,
+  correctLabel: string,
+  incorrectLabel: string,
+): PracticeGradingResponse | null {
+  if (
+    question.type !== "single-choice" &&
+    question.type !== "multiple-choice" &&
+    question.type !== "true-false"
+  ) {
+    return null;
+  }
+  const keyOf = (value: string) => value.trim()[0]?.toUpperCase() ?? "";
+  const refKeys = new Set(
+    question.reference_answer.split(",").map(keyOf).filter(Boolean),
+  );
+  const ansKeys = new Set(answer.split(",").map(keyOf).filter(Boolean));
+  const correct =
+    refKeys.size > 0 &&
+    refKeys.size === ansKeys.size &&
+    [...refKeys].every((key) => ansKeys.has(key));
+  return {
+    score: correct ? question.max_score : 0,
+    max_score: question.max_score,
+    explanation: correct ? correctLabel : incorrectLabel,
+  };
+}
+
 function scoreColor(ratio: number): string {
   if (ratio >= 0.85) return "#22c55e";
   if (ratio >= 0.6) return "#eab308";
@@ -164,6 +193,16 @@ export function PracticePage() {
       const question = questions[index];
       const answer = answerFor(index, question);
       if (!answer.trim()) continue;
+      const deterministic = deterministicGrade(
+        question,
+        answer,
+        t.practice.verdicts.correct,
+        t.practice.verdicts.incorrect,
+      );
+      if (deterministic) {
+        next[index] = deterministic;
+        continue;
+      }
       try {
         next[index] = await gradePractice({
           question: question.question,
