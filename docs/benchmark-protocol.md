@@ -18,15 +18,15 @@ The comparison is deliberately a small-sample, course-project benchmark. It repo
 | Code | System | Prompt and settings |
 |---|---|---|
 | A | Our agent (course corpus, retrieval, verification, LangGraph workflow) | Project system prompt and tools; model `deepseek-flash` by default; thinking off; temperature 0; the task prompt is identical to the one given to B |
-| B | DeepSeek web version (external chatbot) | DeepSeek web UI with the **DeepSeek Flash model selected**. The model is held constant with A and was confirmed for this evaluation on 2026-10-29. Record the access date, the model selector screenshot, and any visible model label. The web product still applies its own system prompt and may use search; the task prompt is identical to the one given to A |
+| B | DeepSeek web version (external chatbot) | DeepSeek web UI with the **DeepSeek Flash model selected**. The model is held constant with A and was confirmed for this evaluation on 2026-10-29. Record the access date, the model selector screenshot, and any visible model label. The web product still applies its own system prompt and may use search; the task prompt is identical to the one given to A, and B additionally receives the topic's course PDF as an uploaded attachment so both systems see the course material |
 
-Both systems receive the same user task prompt. The agent's system prompt, retrieval, tools, and verification are part of system A and must not be copied into the prompt given to B. Record every raw prompt and output, and take screenshots for the web session.
+Both systems receive the same user task prompt. System B additionally receives the topic's course PDF as an uploaded attachment, so both systems see the course material and the comparison isolates system design rather than material access. The agent's system prompt, retrieval, tools, and verification are part of system A and must not be copied into the prompt given to B. Record every raw prompt and output, and take screenshots for the web session.
 
 The model is held constant: A runs `deepseek-flash` and B runs the DeepSeek web UI with the DeepSeek Flash model selected, confirmed on 2026-10-29. The comparison therefore isolates system design (system prompt, retrieval, tools, verification) rather than model capability. It is still a product-level baseline, because the web product applies its own system prompt, may use search, and does not expose the same knobs. The report states this limitation and keeps the raw transcripts and model-selector screenshots so the comparison can be re-read. If the web UI cannot prove the Flash selection on the run day, the run is recorded as a different-model baseline and is not used for the RQ2b target.
 
 ## 3. RQ2a: generation protocol
 
-1. **Topics.** Choose two course topics from the knowledge point list, for example memory hierarchy and FlashAttention. Use the same topic brief for A and B.
+1. **Topics.** Choose two course topics from the knowledge point list, for example memory hierarchy and FlashAttention. Use the same topic brief for A and B, and give B the topic's course PDF as an uploaded attachment (for example the memory lecture for memory hierarchy, the FlashAttention tutorial for FlashAttention).
 2. **Task prompt.** One prompt template, used verbatim for both systems:
 
    > Generate 10 self-test questions for CSIT6000V on the topic "<topic>". Cover the topic's key knowledge points. Use a mix of single choice, multiple choice, true or false, short answer, and code questions. For every question, give the reference answer, the scoring points, and the course source (lecture, tutorial, or assignment) it comes from. Do not reveal a complete solution to a current assignment.
