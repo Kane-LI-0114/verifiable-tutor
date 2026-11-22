@@ -8,11 +8,12 @@ operational companion to [product-differentiation.md](product-differentiation.md
 
 | Group | Material |
 |---|---|
-| Control | DeepSeek web + the chapter's course PDF uploaded (one PDF at a time) |
+| Control | DeepSeek web + the relevant course PDFs uploaded to one chat (one or more, as the question requires) |
 | Treatment | The verifiable tutor (pre-vectorized corpus, all 13 documents) |
 
 Both groups can answer from material and cite, so the comparison measures
-citation correctness, verifiability, and cross-document reach.
+citation correctness, verifiability, and how much material each side can reach
+without the user knowing in advance which documents are relevant.
 
 ---
 
@@ -33,8 +34,9 @@ five per topic, about 20 in total. Two kinds are included:
 
 1. Treatment: answer each question with the verifiable tutor and record the
    `[ref_N]` citations.
-2. Control: upload the chapter PDF to DeepSeek web, ask the same question, and
-   ask it to cite the specific PDF location (page or passage).
+2. Control: upload the relevant PDFs to DeepSeek web (one PDF for a
+   single-document question, both PDFs for a cross-document question), ask the
+   same question, and ask it to cite the specific PDF location (page or passage).
 3. Split both answers into per-claim statements.
 
 **Metrics** (judged by a human or an independent LLM, applied to both groups):
@@ -45,13 +47,15 @@ five per topic, about 20 in total. Two kinds are included:
 | Citation recall | share of claims covered by a `[ref_N]` | share of claims covered by its self-reported citation |
 | Support | whether the citation supports the claim (span verifier) | whether the cited text supports the claim (human) |
 | Hallucination rate | share of citations pointing at a nonexistent chunk | share pointing at a nonexistent page or passage |
-| Cross-document recall | whether cross-document claims are all located | whether cross-document questions are answerable and citable from one PDF |
+| Cross-document recall | whether cross-document claims are all located | whether cross-document questions are answerable and citable from the uploaded PDFs |
 
 **Expected result**: the two groups are close on single-document questions, but
 the control's page citations are generated and can point at the wrong page or
 hallucinate, while the treatment's `[ref_N]` come from retrieval and are
-programmatically checkable. Cross-document questions are the decisive gap: the
-treatment cites across 13 documents, while the control has only one PDF uploaded.
+programmatically checkable. The remaining gap is material reach: the treatment
+automatically retrieves from all 13 documents, while the control can only cite
+the PDFs the user knew to upload, and cannot follow a claim to a document the
+user did not provide.
 
 ### 2.2 Practice experiment
 
