@@ -1,53 +1,80 @@
-"""Practice-run scaffold.
+"""Practice question generation and model grading.
 
-The route is part of the known interface surface, but execution needs the
-``tacc/exec`` job (FR-E4), which does not exist yet. The documented 503 keeps
-the contract stable until the job lands.
+Generation runs through the agent loop (``generate_practice``). Grading runs
+through the online model (``grade_answer``): code answers are judged on their
+logic, not executed on TACC, so no ``tacc/exec`` job is required.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..deps import CurrentUser
+from ..deps import ChatDep, CurrentUser, ModelDep
+from ...practice.grading import grade_answer
 
 router = APIRouter(tags=["practice"])
 
-PRACTICE_UNAVAILABLE = (
-    "practice execution is not available: the tacc/exec job is pending (FR-E4)"
-)
-
 
 class PracticeRunBody(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="forbid")
 
-    pack_id: str | None = Field(
-        default=None,
-        description="Practice pack id. Example: mpi-gemm.",
+    question: str = Field(min_length=1, description="The question text.")
+    answer: str = Field(min_length=1, description="The student's answer.")
+    reference_answer: str = Field(
+        min_length=1, description="The reference answer to grade against."
     )
-    question_id: str | None = Field(
-        default=None,
-        description="Question id inside the pack. Example: q1.",
+    scoring_points: list[str] = Field(
+        default_factory=list, description="Itemized scoring points."
     )
-    answer: str | None = Field(
-        default=None,
-        description=(
-            "Student answer to run against the reference tests. "
-            "Example: int x = 1;"
-        ),
-    )
+    max_score: float = Field(gt=0, description="Maximum score.")
 
 
 @router.post(
     "/api/practice/runs",
-    summary="Submit a practice run",
-    responses={
-        401: {"description": "Not signed in."},
-        503: {"description": PRACTICE_UNAVAILABLE},
-    },
+    summary="Grade a practice answer with the online model",
+    responses={401: {"description": "Not signed in."}},
 )
-def submit_practice_run(user: CurrentUser, body: PracticeRunBody | None = None):
-    """Scaffold: report that TACC execution is not available yet."""
+def submit_practice_run(user: CurrentUser, body: PracticeRunBody, model: ModelDep):
+    """Grade the student answer against the reference answer and scoring points."""
 
-    raise HTTPException(status_code=503, detail=PRACTICE_UNAVAILABLE)
+    result = grade_answer(
+        question=body.question,
+        student_answer=body.answer,
+        reference_answer=body.reference_answer,
+        scoring_points=body.scoring_points,
+        max_score=body.max_score,
+        adapter=model,
+    )
+    return {
+        "score": result.score,
+        "max_score": result.max_score,
+        "explanation": result.explanation,
+    }
+
+
+class PracticeGenerateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str = Field(
+        min_length=1,
+        max_length=200,
+        description="Course topic to generate self-test questions for.",
+    )
+
+
+@router.post(
+    "/api/practice/generate",
+    summary="Generate self-test questions for a topic",
+    responses={401: {"description": "Not signed in."}},
+)
+def generate_practice_questions(
+    user: CurrentUser,
+    body: PracticeGenerateBody,
+    chat: ChatDep,
+    model: ModelDep,
+):
+    """Generate self-test questions through the agent loop."""
+
+    text, sources = chat.generate_practice(body.topic, adapter=model)
+    return {"questions": text, "sources": sources}

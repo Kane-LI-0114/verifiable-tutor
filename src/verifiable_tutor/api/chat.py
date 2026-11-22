@@ -144,6 +144,27 @@ class ChatService:
             history.append(item)
         return history
 
+    # -- practice generation -----------------------------------------------
+    def generate_practice(
+        self,
+        topic: str,
+        *,
+        adapter: Any,
+        provider: str | None = None,
+        tier: str | None = None,
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Generate self-test questions for a topic through the agent loop."""
+
+        from ..practice.generate import generate_practice as _generate
+
+        return _generate(
+            topic,
+            self._runner,
+            adapter,
+            provider=provider or "deepseek",
+            tier=tier or "flash",
+        )
+
     # -- public entry point ------------------------------------------------
     def begin_turn(
         self,

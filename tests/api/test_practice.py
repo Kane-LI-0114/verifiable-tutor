@@ -1,25 +1,60 @@
-"""Practice-run scaffold: the interface exists but execution is pending."""
+"""Practice generation and model grading HTTP contracts."""
 
 from __future__ import annotations
 
-PRACTICE_UNAVAILABLE = (
-    "practice execution is not available: the tacc/exec job is pending (FR-E4)"
-)
-
 
 def test_practice_run_requires_sign_in(api):
-    response = api.client.post("/api/practice/runs", json={})
+    response = api.client.post(
+        "/api/practice/runs",
+        json={
+            "question": "q",
+            "answer": "a",
+            "reference_answer": "r",
+            "scoring_points": ["p"],
+            "max_score": 1,
+        },
+    )
 
     assert response.status_code == 401
 
 
-def test_practice_run_reports_the_documented_unavailability(api):
+def test_practice_run_grades_with_the_model(api):
     api.create_active_account("alice@ust.hk")
 
     response = api.client.post(
         "/api/practice/runs",
-        json={"pack_id": "mpi-gemm", "question_id": "q1", "answer": "int x = 1;"},
+        json={
+            "question": "What is MPI?",
+            "answer": "Message passing",
+            "reference_answer": "Message passing interface",
+            "scoring_points": ["defines MPI"],
+            "max_score": 3,
+        },
     )
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": PRACTICE_UNAVAILABLE}
+    assert response.status_code == 200
+    body = response.json()
+    assert body["score"] == 2.0
+    assert body["max_score"] == 3.0
+    assert body["explanation"] == "ok"
+
+
+def test_practice_generate_requires_sign_in(api):
+    response = api.client.post(
+        "/api/practice/generate", json={"topic": "FlashAttention"}
+    )
+
+    assert response.status_code == 401
+
+
+def test_practice_generate_returns_questions_and_sources(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+
+    response = agent_api.client.post(
+        "/api/practice/generate", json={"topic": "FlashAttention"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["questions"] == "Hello"
+    assert body["sources"] == []

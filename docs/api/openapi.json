@@ -1863,46 +1863,65 @@
         "title": "MessageSourceRecord",
         "type": "object"
       },
-      "PracticeRunBody": {
-        "additionalProperties": true,
+      "PracticeGenerateBody": {
+        "additionalProperties": false,
         "properties": {
-          "answer": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Student answer to run against the reference tests. Example: int x = 1;",
-            "title": "Answer"
-          },
-          "pack_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Practice pack id. Example: mpi-gemm.",
-            "title": "Pack Id"
-          },
-          "question_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Question id inside the pack. Example: q1.",
-            "title": "Question Id"
+          "topic": {
+            "description": "Course topic to generate self-test questions for.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
           }
         },
+        "required": [
+          "topic"
+        ],
+        "title": "PracticeGenerateBody",
+        "type": "object"
+      },
+      "PracticeRunBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "description": "The student's answer.",
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "max_score": {
+            "description": "Maximum score.",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Score",
+            "type": "number"
+          },
+          "question": {
+            "description": "The question text.",
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "reference_answer": {
+            "description": "The reference answer to grade against.",
+            "minLength": 1,
+            "title": "Reference Answer",
+            "type": "string"
+          },
+          "scoring_points": {
+            "description": "Itemized scoring points.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Scoring Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "question",
+          "answer",
+          "reference_answer",
+          "max_score"
+        ],
         "title": "PracticeRunBody",
         "type": "object"
       },
@@ -4379,26 +4398,19 @@
         ]
       }
     },
-    "/api/practice/runs": {
+    "/api/practice/generate": {
       "post": {
-        "description": "Scaffold: report that TACC execution is not available yet.",
-        "operationId": "submit_practice_run_api_practice_runs_post",
+        "description": "Generate self-test questions through the agent loop.",
+        "operationId": "generate_practice_questions_api_practice_generate_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/PracticeRunBody"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Body"
+                "$ref": "#/components/schemas/PracticeGenerateBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -4421,12 +4433,52 @@
               }
             },
             "description": "Validation Error"
-          },
-          "503": {
-            "description": "practice execution is not available: the tacc/exec job is pending (FR-E4)"
           }
         },
-        "summary": "Submit a practice run",
+        "summary": "Generate self-test questions for a topic",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/runs": {
+      "post": {
+        "description": "Grade the student answer against the reference answer and scoring points.",
+        "operationId": "submit_practice_run_api_practice_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeRunBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Grade a practice answer with the online model",
         "tags": [
           "practice"
         ]
