@@ -1,0 +1,12 @@
+# Assignment deadlines for the disclosure gate.
+#
+# Each assignment has a name and an ISO-8601 deadline. While at least one
+# deadline is in the future, the gate refuses complete homework solutions.
+#
+# Deadlines are read from the course materials:
+#   - Assignment 1 (MPI programming): 2026-10-22 23:59
+#   - Assignment 2 (CUDA programming): to be announced on Canvas (not listed)
+
+assignments:
+  - name: Assignment 1 (MPI programming)
+    deadline: "2026-10-22T23:59:59+08:00"
