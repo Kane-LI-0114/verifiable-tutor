@@ -94,7 +94,7 @@ See [ADR-0004](adr/0004-hybrid-retrieval-with-bge-m3.md) for the argument. Opera
 
 The stack and the alternatives are in [ADR-0003](adr/0003-react-spa-with-ai-elements.md). The page structure, routes, component map, preview data, and TDD seams are in [ui-structure.md](ui-structure.md). Implementation points:
 
-- The FastAPI adapter emits the AI SDK UI message stream protocol. Events used by this project: `start`, `text-start`, `text-delta`, `text-end`, `data-step` for the progress timeline, `source-document` for citations, `finish`, and `error`.
+- The FastAPI adapter emits the AI SDK UI message stream protocol. Events used by this project: `start`, `text-start`, `text-delta`, `text-end`, `data-step` for the progress timeline, `data-sources` for numbered turn sources, `data-tool` for typed tool calls, `finish`, and `error`.
 - The same event stream is recorded to JSONL per session. Replay re-emits recorded events at a speed factor, so the offline demo runs the production frontend path with no model.
 - The build runs locally. `npm ci && npm run build` writes to `src/verifiable_tutor/ui/static/`, which is generated and ignored by Git and has no `.gitkeep`; `package-lock.json` is committed. The local backend serves the build, and no TACC job serves the UI ([ADR-0010](adr/0010-tacc-as-offline-compute.md)). The UI source lives in `src/verifiable_tutor/ui/web/` and uses `npm run dev`, `npm run typecheck`, and `npm run test` besides the build; `npm run dev` proxies `/api` to `127.0.0.1:8000`.
 - Evidence panel: page WebP plus highlight rectangles from the OCR block boxes, no PDF viewer, no CDN, self-hosted KaTeX fonts, system CJK font stack.

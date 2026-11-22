@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
+from verifiable_tutor.evidence.sources import SourceRegistry
 from verifiable_tutor.llm.adapter import FetchResult, SearchResult
 from verifiable_tutor.orchestrator.builtin_tools import build_tool_registry
 from verifiable_tutor.orchestrator.tools import ToolContext
@@ -24,11 +25,15 @@ class FakeRetriever:
 
 
 class FakeStore:
-    def __init__(self, pages=None):
+    def __init__(self, pages=None, documents=None):
         self.pages = pages or {}
+        self.documents = documents or {}
 
     def page_chunks(self, doc_id: str, page_no: int):
         return self.pages.get((doc_id, page_no), [])
+
+    def get_document(self, doc_id: str):
+        return self.documents.get(doc_id)
 
 
 class FakeAdapter:
@@ -55,12 +60,13 @@ class FakeAdapter:
         return self.page
 
 
-def context(*, retriever=None, store=None, adapter=None, settings=None):
+def context(*, retriever=None, store=None, adapter=None, settings=None, sources=None):
     return ToolContext(
         adapter=adapter,
         retriever=retriever or FakeRetriever(),
         store=store or FakeStore(),
         settings=settings or FakeSettings(),
+        sources=sources or SourceRegistry(),
     )
 
 
@@ -148,6 +154,43 @@ def test_search_course_returns_page_anchored_chunks():
     assert result.output == "1 course chunks"
 
 
+def test_search_course_returns_numbered_sources():
+    tool_registry = registry()
+    retriever = FakeRetriever([chunk()])
+    store = FakeStore(
+        documents={
+            "Tutorial_2": {
+                "id": "Tutorial_2",
+                "title": "Tutorial 2: Collectives",
+                "filename": "Tutorial_2.pdf",
+            }
+        }
+    )
+
+    result = tool_registry.execute(
+        "search_course",
+        {"query": "MPI_Allreduce", "k": 3},
+        context=context(retriever=retriever, store=store),
+    )
+
+    assert result.status == "done"
+    payload = json.loads(result.content)
+    assert payload["chunks"][0]["marker"] == 1
+    assert payload["chunks"][0]["citation"] == "[ref_1]"
+    assert payload["sources"] == [
+        {
+            "marker": 1,
+            "kind": "course",
+            "title": "Tutorial 2: Collectives",
+            "summary": "MPI_Allreduce reduces a value across all ranks.",
+            "doc_id": "Tutorial_2",
+            "page_no": 8,
+            "url": None,
+            "chunk_id": "Tutorial_2:p008:c00",
+        }
+    ]
+
+
 def test_search_course_reports_an_empty_result_without_failing():
     result = registry().execute(
         "search_course", {"query": "nothing"}, context=context()
@@ -180,6 +223,37 @@ def test_read_course_page_joins_the_page_chunks():
     assert payload["page_no"] == 8
     assert payload["chunk_ids"] == ["Tutorial_2:p008:c00", "Tutorial_2:p008:c01"]
     assert payload["text"] == "first part\n\nsecond part"
+
+
+def test_read_course_page_returns_the_page_marker():
+    store = FakeStore(
+        pages={
+            ("Tutorial_2", 8): [
+                {"id": "Tutorial_2:p008:c00", "text": "MPI_Allreduce reduces a value."}
+            ]
+        },
+        documents={
+            "Tutorial_2": {
+                "id": "Tutorial_2",
+                "title": "Tutorial 2: Collectives",
+                "filename": "Tutorial_2.pdf",
+            }
+        },
+    )
+
+    result = registry().execute(
+        "read_course_page",
+        {"doc_id": "Tutorial_2", "page_no": 8},
+        context=context(store=store),
+    )
+
+    assert result.status == "done"
+    payload = json.loads(result.content)
+    assert payload["marker"] == 1
+    assert payload["citation"] == "[ref_1]"
+    assert payload["sources"][0]["title"] == "Tutorial 2: Collectives"
+    assert payload["sources"][0]["doc_id"] == "Tutorial_2"
+    assert payload["sources"][0]["page_no"] == 8
 
 
 def test_read_course_page_reports_a_missing_page():
@@ -296,6 +370,33 @@ def test_web_search_returns_external_results_and_marks_them_untrusted():
     ]
 
 
+def test_web_search_returns_numbered_web_sources():
+    adapter = FakeAdapter(search_results=[_search_result()])
+
+    result = registry().execute(
+        "web_search",
+        {"query": "DeepSeek V4", "count": 3},
+        context=context(adapter=adapter),
+    )
+
+    assert result.status == "done"
+    payload = json.loads(result.content)
+    assert payload["results"][0]["marker"] == 1
+    assert payload["results"][0]["citation"] == "[ref_1]"
+    assert payload["sources"] == [
+        {
+            "marker": 1,
+            "kind": "web",
+            "title": "DeepSeek V4 released",
+            "summary": "A long summary about the release.",
+            "doc_id": None,
+            "page_no": None,
+            "url": "https://example.com/deepseek",
+            "chunk_id": None,
+        }
+    ]
+
+
 def test_web_search_failure_is_safe_and_does_not_leak_the_key():
     adapter = FakeAdapter(fail_search=True)
 
@@ -340,6 +441,23 @@ def test_web_fetch_returns_page_content_and_truncates_it():
     assert payload["untrusted"] is True
     assert len(payload["content"]) <= 6000
     assert adapter.fetch_calls == ["https://example.com"]
+
+
+def test_web_fetch_returns_a_numbered_source():
+    adapter = FakeAdapter(page=FetchResult("https://example.com", "Example", "x" * 7000))
+
+    result = registry().execute(
+        "web_fetch", {"url": "https://example.com"}, context=context(adapter=adapter)
+    )
+
+    assert result.status == "done"
+    payload = json.loads(result.content)
+    assert payload["marker"] == 1
+    assert payload["citation"] == "[ref_1]"
+    assert payload["sources"][0]["marker"] == 1
+    assert payload["sources"][0]["title"] == "Example"
+    assert payload["sources"][0]["url"] == "https://example.com"
+    assert payload["sources"][0]["summary"] == "x" * 197 + "..."
 
 
 def test_tool_output_respects_the_configured_cap():

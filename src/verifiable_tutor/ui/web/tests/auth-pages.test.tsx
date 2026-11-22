@@ -5,15 +5,15 @@ import { describe, expect, it } from "vitest";
 import { renderRoute } from "./render-route";
 
 describe("authentication pages", () => {
-  it("renders the sign-in form with the course domain hint and account links", () => {
+  it("renders the sign-in form and account links", () => {
     renderRoute("/login");
 
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(
-      screen.getByText(/Registration is limited to connect\.ust\.hk/),
-    ).toBeInTheDocument();
+      screen.queryByText(/Register with a connect\.ust\.hk/),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create one" })).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Forgot your password?" }),
@@ -62,7 +62,7 @@ describe("authentication pages", () => {
       screen.getByRole("heading", { name: "Create a student account" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Registration is limited to connect\.ust\.hk/),
+      screen.getByText(/Register with a connect\.ust\.hk or ust\.hk address/),
     ).toBeInTheDocument();
   });
 
@@ -78,7 +78,7 @@ describe("authentication pages", () => {
       screen.getByText("Enter a valid course email address."),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText("Development mode: the code is in the backend log."),
+      screen.queryByText("Development mode: the code is in the server log."),
     ).not.toBeInTheDocument();
   });
 
@@ -91,7 +91,7 @@ describe("authentication pages", () => {
     await user.click(screen.getByRole("button", { name: "Register" }));
 
     expect(
-      screen.getByText("Development mode: the code is in the backend log."),
+      screen.getByText("Development mode: the code is in the server log."),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("Enter a valid course email address."),
@@ -109,7 +109,7 @@ describe("authentication pages", () => {
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(screen.getByText("Enter all six digits.")).toBeInTheDocument();
+    expect(screen.getByText("Enter all 6 digits.")).toBeInTheDocument();
   });
 
   it("explains why the verification resend control is unavailable", () => {
@@ -118,7 +118,7 @@ describe("authentication pages", () => {
     const resend = screen.getByRole("button", { name: "Send the code again" });
 
     expect(resend).toBeDisabled();
-    expect(resend).toHaveAttribute("title", "Not available yet");
+    expect(resend).toHaveAttribute("title", "Not available in this build.");
   });
 
   it("renders the reset request form", () => {

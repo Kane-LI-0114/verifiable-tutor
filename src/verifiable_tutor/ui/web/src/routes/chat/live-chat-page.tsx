@@ -243,6 +243,16 @@ function LiveChatSession({
   const chat = useTutorChat({ sessionId, initialMessages, storedMessages, t });
   const [composer, setComposer] = useState("");
   const title = conversationTitle(sessions, sessionId, t.chat.title);
+  // The assistant message only exists once the stream starts; while the request
+  // is in flight the last turn is the question, and the thread holds the
+  // answer's place open at the end instead of going blank.
+  const lastTurn = chat.turns[chat.turns.length - 1];
+  const awaitingAnswer =
+    chat.streaming && lastTurn?.message.role !== "assistant";
+  const generatingMessageId =
+    chat.streaming && lastTurn?.message.role === "assistant"
+      ? lastTurn.message.id
+      : null;
 
   function retryFailure() {
     const question = chat.retryComposerText();
@@ -251,13 +261,13 @@ function LiveChatSession({
     }
   }
 
-  async function submit(clearCitation: () => void) {
+  async function submit(clearSources: () => void) {
     const text = composer.trim();
     if (text.length === 0 || chat.streaming) {
       return;
     }
     setComposer("");
-    clearCitation();
+    clearSources();
     await chat.send(text);
   }
 
@@ -266,6 +276,9 @@ function LiveChatSession({
       title={title}
       scrollKey={sessionId ?? undefined}
       turns={chat.turns}
+      generatingMessageId={generatingMessageId}
+      awaitingAnswer={awaitingAnswer}
+      handoffOnFinish
       placeholder={
         chat.turns.length === 0 && !chat.streaming ? (
           <ChatEmpty onPick={setComposer} />
@@ -282,12 +295,12 @@ function LiveChatSession({
           </div>
         ) : undefined
       }
-      composer={({ clearCitation }) => (
+      composer={({ clearSources }) => (
         <Composer
           value={composer}
           onChange={setComposer}
           onSubmit={() => {
-            void submit(clearCitation);
+            void submit(clearSources);
           }}
           onStop={chat.stop}
           streaming={chat.streaming}
@@ -331,12 +344,17 @@ function ReplaySession({
   );
 
   const replayFailed = replay.status === "error" && replay.errorDescription === null;
+  const lastVisible = visibleTurns[visibleTurns.length - 1];
+  const generatingMessageId =
+    replay.status === "streaming" && lastVisible?.message.role === "assistant"
+      ? lastVisible.message.id
+      : null;
 
   return (
     <ChatSessionShell
       title={title}
       turns={visibleTurns}
-      showEvidence={false}
+      generatingMessageId={generatingMessageId}
       banner={<ReplayBanner speed={speed} onSpeedChange={setSpeed} />}
       placeholder={
         replay.status === "error" && replay.errorDescription !== null ? (

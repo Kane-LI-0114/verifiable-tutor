@@ -117,6 +117,7 @@ tts:
     voicedesign: mimo-v2.5-tts-voicedesign
   default_voice: mimo_default
   default_format: wav
+  stream_format: pcm16
   voices: [mimo_default, 冰糖, 茉莉, 苏打, 白桦, Mia, Chloe, Milo, Dean]
   formats: [wav, mp3, pcm, pcm16]
   default_instructions: "Speak clearly with a warm, steady teaching pace."

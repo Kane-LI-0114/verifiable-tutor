@@ -18,7 +18,11 @@ import {
 } from "./composer-selection";
 import { forgetCachedHistory } from "./history-cache";
 import { ChatApiError, TutorChatTransport, type TutorSelection } from "./tutor-transport";
-import { toConversationTurns, type TutorUIMessage } from "./ui-message";
+import {
+  toConversationTurns,
+  toTutorMessages,
+  type TutorUIMessage,
+} from "./ui-message";
 
 export interface ChatFailure {
   /** Localized failure copy rendered under the thread. */
@@ -38,6 +42,8 @@ export interface TutorChat {
   send: (text: string) => Promise<void>;
   stop: () => void;
   retryComposerText: () => string | null;
+  /** Replace the thread with stored rows, e.g. an earlier document visit. */
+  loadHistory: (messages: ChatMessage[]) => void;
 }
 
 function errorDescription(error: unknown, t: Messages): string {
@@ -132,6 +138,8 @@ export function useTutorChat({
   const questioned = useRef("");
   const chatRef = useRef<ReturnType<typeof useChat<TutorUIMessage>> | null>(null);
   const [failure, setFailure] = useState<ChatFailure | null>(null);
+  const [storedHistory, setStoredHistory] =
+    useState<ChatMessage[]>(storedMessages);
 
   // Follow the route when it opens another conversation; a request in flight
   // reads the ref, so a conversation id assigned by the backend is not lost.
@@ -235,9 +243,16 @@ export function useTutorChat({
     return question;
   }, [failure]);
 
+  const loadHistory = useCallback((messages: ChatMessage[]) => {
+    failed.current = false;
+    setFailure(null);
+    setStoredHistory(messages);
+    chatRef.current?.setMessages(toTutorMessages(messages));
+  }, []);
+
   const turns = useMemo(
-    () => toConversationTurns(chat.messages, storedMessages),
-    [chat.messages, storedMessages],
+    () => toConversationTurns(chat.messages, storedHistory),
+    [chat.messages, storedHistory],
   );
   const streaming = chat.status === "submitted" || chat.status === "streaming";
 
@@ -252,5 +267,6 @@ export function useTutorChat({
     send,
     stop,
     retryComposerText,
+    loadHistory,
   };
 }

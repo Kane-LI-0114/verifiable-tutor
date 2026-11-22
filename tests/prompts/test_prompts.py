@@ -18,3 +18,14 @@ def test_practice_generation_prompt_comes_from_the_prompts_package():
     assert "single choice, multiple choice, true or false, short answer" in text
     assert "code." in text
 
+
+def test_chat_system_prompt_requires_numbered_markers_at_paragraph_end():
+    text = load_prompt("chat_system")
+
+    assert "Cite with the source marker" in text
+    assert "example [ref_3]" in text
+    assert "end of that paragraph" in text
+    assert "ascending numeric order" in text
+    assert "Never write a marker that no tool result showed" in text
+    assert "Do not write a bare [1]" in text
+    assert "Do not use [doc_id p.N]" in text

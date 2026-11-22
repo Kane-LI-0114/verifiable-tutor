@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authApi } from "@/lib/api/auth";
 import { apiErrorMessage } from "@/lib/api/errors";
@@ -95,7 +95,6 @@ export function LoginPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />
-              <FieldDescription>{t.auth.domainHint}</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="password">{t.auth.password}</FieldLabel>

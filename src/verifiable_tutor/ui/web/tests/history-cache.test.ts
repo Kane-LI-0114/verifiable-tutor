@@ -22,6 +22,7 @@ function message(id: string): ChatMessage {
     thinking: "off",
     work_steps: [],
     citations: [],
+    sources: [],
     tool_calls: [],
   };
 }

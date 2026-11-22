@@ -100,6 +100,8 @@ export interface SseOptions {
   headers?: Record<string, string>;
   /** Await this promise after each frame; lets a test hold a stream open. */
   gate?: Promise<void>;
+  /** Defaults to the chat protocol; plain omits the AI SDK version header. */
+  protocol?: "ai-sdk" | "plain";
 }
 
 /** Encode protocol frames as the AI SDK UI message stream the backend emits. */
@@ -110,20 +112,31 @@ export function sseResponse(frames: unknown[], options: SseOptions = {}): Respon
       for (const frame of frames) {
         const line =
           frame === "[DONE]" ? "data: [DONE]\n\n" : `data: ${JSON.stringify(frame)}\n\n`;
-        controller.enqueue(encoder.encode(line));
+        try {
+          controller.enqueue(encoder.encode(line));
+        } catch {
+          // The reader cancelled the stream before the remaining frames arrived.
+          return;
+        }
         if (options.gate) {
           await options.gate;
         }
       }
-      controller.close();
+      try {
+        controller.close();
+      } catch {
+        // Already closed by a cancelled reader.
+      }
     },
   });
+  const headers: Record<string, string> = {
+    "content-type": "text/event-stream",
+  };
+  if (options.protocol !== "plain") {
+    headers["x-vercel-ai-ui-message-stream"] = "v1";
+  }
   return new Response(stream, {
     status: 200,
-    headers: {
-      "content-type": "text/event-stream",
-      "x-vercel-ai-ui-message-stream": "v1",
-      ...options.headers,
-    },
+    headers: { ...headers, ...options.headers },
   });
 }

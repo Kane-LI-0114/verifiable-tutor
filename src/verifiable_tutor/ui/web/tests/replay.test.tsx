@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -38,6 +38,7 @@ const HISTORY: ChatMessage[] = [
     thinking: null,
     work_steps: [],
     citations: [],
+    sources: [],
     tool_calls: [],
   },
   {
@@ -53,6 +54,7 @@ const HISTORY: ChatMessage[] = [
     thinking: null,
     work_steps: [],
     citations: [],
+    sources: [],
     tool_calls: [],
   },
 ];
@@ -77,6 +79,23 @@ const REPLAY_FRAMES = [
   { type: "text-delta", id: "t1", delta: "Hel" },
   { type: "text-delta", id: "t1", delta: "lo" },
   { type: "text-end", id: "t1" },
+  {
+    type: "data-sources",
+    data: {
+      sources: [
+        {
+          marker: 1,
+          kind: "course",
+          title: "Lecture 3: Attention",
+          summary: "Subtracting the row maximum keeps the computation stable.",
+          doc_id: "ACS_lecture_3_2026F",
+          page_no: 9,
+          url: null,
+          chunk_id: "ACS_lecture_3_2026F:p009:c00",
+        },
+      ],
+    },
+  },
   { type: "data-step", data: { step: "generate", status: "done" } },
   { type: "finish" },
   "[DONE]",
@@ -137,9 +156,21 @@ describe("replay", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("Hello")).toBeInTheDocument();
     // The recorded turn carries its own trace: work chain and reasoning.
-    expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "How this answer was built" })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /Work chain/ }));
+
+    const capsule = screen.getByRole("button", {
+      name: /Show the sources for this answer/,
+    });
+    expect(capsule).toHaveTextContent("1 course page");
+    await user.click(capsule);
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Lecture 3: Attention")).toBeInTheDocument();
+    await user.click(
+      within(pane).getByRole("button", { name: "Close citation sources" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /How this answer was built/ }));
     expect(await screen.findByText("Check the row maximum.")).toBeInTheDocument();
     // The stored answer text is not shown; only the replays frames fill the turn.
     expect(screen.queryByText(STORED_ANSWER)).not.toBeInTheDocument();
@@ -155,7 +186,7 @@ describe("replay", () => {
     expect(screen.queryByLabelText("Your question")).not.toBeInTheDocument();
   });
 
-  it("keeps the stored provider and tier on a replayed answer", async () => {
+  it("does not show the stored provider or tier on a replayed answer", async () => {
     stub = createFetchStub(
       routes([history(), replayRoute(() => sseResponse(REPLAY_FRAMES))]),
     );
@@ -163,9 +194,7 @@ describe("replay", () => {
     renderLiveRoute(`/chat/${SESSION_ID}?replay=1`);
 
     expect(await screen.findByText("Hello")).toBeInTheDocument();
-    // The persisted answer carries the model that produced it; the replay must
-    // not fall back to the literal placeholder badge.
-    expect(screen.getByText("deepseek · flash")).toBeInTheDocument();
+    expect(screen.queryByText("deepseek · flash")).not.toBeInTheDocument();
     expect(screen.queryByText("provider · tier")).not.toBeInTheDocument();
   });
 
@@ -218,7 +247,7 @@ describe("replay", () => {
 
     expect(await screen.findByText("Hello")).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Work chain" }),
+      screen.getByRole("group", { name: "How this answer was built" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("The replay did not load")).not.toBeInTheDocument();
   });
@@ -260,7 +289,7 @@ describe("replay", () => {
 
     expect(await screen.findByText("The answer stopped")).toBeInTheDocument();
     expect(
-      screen.getByText(/The model did not finish this answer/),
+      screen.getByText(/The model stopped before it finished/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Partial replay")).not.toBeInTheDocument();
   });

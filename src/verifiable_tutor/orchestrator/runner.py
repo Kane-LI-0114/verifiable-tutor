@@ -17,6 +17,7 @@ from typing import Any, Iterator, Mapping, Sequence, TypedDict
 from langgraph.config import get_stream_writer
 from langgraph.graph import END, START, StateGraph
 
+from ..evidence.sources import SourceRegistry
 from ..llm.adapter import StreamEvent
 from .tools import ToolContext, ToolRegistry
 
@@ -101,12 +102,14 @@ class AgentRunner:
         """Yield turn events; the final event is ``turn_end``."""
 
         accumulator = _Accumulator()
+        sources = SourceRegistry()
         graph = self._compile(
             adapter=adapter,
             provider=provider,
             tier=tier,
             thinking=thinking,
             accumulator=accumulator,
+            sources=sources,
         )
         state: AgentState = {
             "messages": [dict(message) for message in messages],
@@ -131,6 +134,7 @@ class AgentRunner:
                 "tool_calls": accumulator.tool_calls,
                 "usage": accumulator.usage,
                 "model_calls": accumulator.model_calls,
+                "sources": sources.snapshot(),
             },
         )
 
@@ -143,6 +147,7 @@ class AgentRunner:
         tier: str | None,
         thinking: str | None,
         accumulator: _Accumulator,
+        sources: SourceRegistry,
     ):
         def agent_node(state: AgentState) -> dict[str, Any]:
             return self._agent(
@@ -155,7 +160,12 @@ class AgentRunner:
             )
 
         def tools_node(state: AgentState) -> dict[str, Any]:
-            return self._tools(state, adapter=adapter, accumulator=accumulator)
+            return self._tools(
+                state,
+                adapter=adapter,
+                accumulator=accumulator,
+                sources=sources,
+            )
 
         def route(state: AgentState) -> str:
             if state.get("pending_tool_calls"):
@@ -314,6 +324,7 @@ class AgentRunner:
         *,
         adapter: Any,
         accumulator: _Accumulator,
+        sources: SourceRegistry,
     ) -> dict[str, Any]:
         writer = get_stream_writer()
         messages = list(state.get("messages") or [])
@@ -325,6 +336,7 @@ class AgentRunner:
             retriever=self._retriever,
             store=self._store,
             settings=self._settings,
+            sources=sources,
         )
 
         appended: list[dict[str, Any]] = []
@@ -344,6 +356,7 @@ class AgentRunner:
                 }
             )
             started = time.perf_counter()
+            before_sources = sources.snapshot()
             if tool_count >= max_tools:
                 from .tools import ToolResult
 
@@ -373,6 +386,9 @@ class AgentRunner:
             }
             accumulator.tool_calls.append(record)
             writer({"kind": "tool_end", "data": dict(record)})
+            after_sources = sources.snapshot()
+            if after_sources != before_sources:
+                writer({"kind": "sources", "data": {"sources": after_sources}})
             appended.append(
                 {
                     "role": "tool",

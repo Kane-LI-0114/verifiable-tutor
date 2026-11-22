@@ -1,17 +1,27 @@
 import { CheckIcon, CopyIcon, RotateCcwIcon, Volume2Icon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageFooter } from "@/components/ui/message";
 import { Markdown } from "@/components/ai/markdown";
-import { CitationRow } from "@/components/chat/citation-row";
+import { AnswerPending } from "@/components/chat/answer-pending";
+import { SourceCapsule } from "@/components/chat/source-capsule";
+import { SourceDisclosure } from "@/components/chat/source-disclosure";
 import { PageError } from "@/components/layout/page-states";
-import { SourcesList } from "@/components/chat/sources";
 import { WorkChain } from "@/components/chat/work-chain";
+import { createPcmPlayer, type PcmPlayer } from "@/lib/audio/pcm-player";
+import { isAbortError } from "@/lib/api/http";
 import { useT } from "@/lib/i18n";
-import type { Citation, ConversationTurn } from "@/lib/types";
+import { streamSpeech } from "@/lib/api/voice";
+import type { ConversationTurn } from "@/lib/types";
+
+interface ActivePlayback {
+  stop: () => void;
+}
+
+/** Only one answer may play at a time, across every rendered message. */
+let activePlayback: ActivePlayback | null = null;
 
 function AnswerActions({
   content,
@@ -22,13 +32,26 @@ function AnswerActions({
 }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
+  const [speechState, setSpeechState] = useState<
+    "idle" | "loading" | "playing" | "error"
+  >("idle");
   const copyTimer = useRef<number | null>(null);
+  const playerRef = useRef<PcmPlayer | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const cancelledRef = useRef(false);
+  const playbackRef = useRef<ActivePlayback>({ stop: () => {} });
 
-  // The feedback timer must not outlive the answer it belongs to.
+  // The feedback timer and the audio must not outlive the answer it belongs to.
   useEffect(() => {
     return () => {
       if (copyTimer.current !== null) {
         window.clearTimeout(copyTimer.current);
+      }
+      cancelledRef.current = true;
+      controllerRef.current?.abort();
+      playerRef.current?.stop();
+      if (activePlayback === playbackRef.current) {
+        activePlayback = null;
       }
     };
   }, []);
@@ -49,6 +72,57 @@ function AnswerActions({
     }
   }
 
+  async function speak() {
+    if (speechState === "loading") {
+      return;
+    }
+    setSpeechState("loading");
+    activePlayback?.stop();
+    playbackRef.current.stop = stopSpeech;
+    activePlayback = playbackRef.current;
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    try {
+      const player = createPcmPlayer(() => stopSpeech());
+      playerRef.current = player;
+      await player.resume();
+      let started = false;
+      for await (const chunk of streamSpeech(content, controller.signal)) {
+        if (cancelledRef.current) {
+          return;
+        }
+        player.enqueue(chunk);
+        if (!started) {
+          started = true;
+          setSpeechState("playing");
+        }
+      }
+      player.complete();
+    } catch (error) {
+      playerRef.current?.stop();
+      if (isAbortError(error) || cancelledRef.current) {
+        return;
+      }
+      setSpeechState("error");
+    }
+  }
+
+  function stopSpeech() {
+    controllerRef.current?.abort();
+    playerRef.current?.stop();
+    if (activePlayback === playbackRef.current) {
+      activePlayback = null;
+    }
+    setSpeechState("idle");
+  }
+
+  const speechLabel =
+    speechState === "playing"
+      ? t.common.stop
+      : speechState === "error"
+        ? t.common.retry
+        : t.common.speak;
+
   return (
     <MessageFooter
       role="group"
@@ -68,9 +142,10 @@ function AnswerActions({
         type="button"
         variant="ghost"
         size="icon-xs"
-        aria-label={t.common.speak}
-        disabled
-        title={t.common.unavailable}
+        aria-label={speechLabel}
+        aria-busy={speechState === "loading"}
+        disabled={speechState === "loading"}
+        onClick={speechState === "playing" ? stopSpeech : speak}
       >
         <Volume2Icon />
       </Button>
@@ -85,25 +160,36 @@ function AnswerActions({
           <RotateCcwIcon />
         </Button>
       ) : null}
+      {speechState === "error" ? (
+        <span role="alert">{t.chat.speakError}</span>
+      ) : null}
     </MessageFooter>
   );
 }
 
 export function ChatMessageView({
   turn,
-  onOpenCitation,
   failed = false,
   streaming = false,
   onRetry,
+  sourcesOpen = false,
+  onToggleSources,
+  sourceStyle = "capsule",
 }: {
   turn: ConversationTurn;
-  onOpenCitation: (citation: Citation) => void;
   failed?: boolean;
   streaming?: boolean;
   onRetry?: () => void;
+  sourcesOpen?: boolean;
+  onToggleSources?: (turnId: string) => void;
+  /** How citations close the answer: the pane-opening capsule, or an inline fold. */
+  sourceStyle?: "capsule" | "disclosure";
 }) {
   const t = useT();
   const { message, meta } = turn;
+  const toggleSources = useCallback(() => {
+    onToggleSources?.(message.id);
+  }, [message.id, onToggleSources]);
 
   if (message.role === "user") {
     return (
@@ -135,31 +221,29 @@ export function ChatMessageView({
             onRetry={onRetry}
           />
         ) : message.content === "" && streaming ? (
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {t.chat.generating}
-          </p>
+          <AnswerPending />
         ) : (
           <>
-            <Markdown>{message.content}</Markdown>
-            {meta ? (
-              <CitationRow
-                citations={meta.citations}
-                onOpen={onOpenCitation}
-              />
-            ) : null}
-            {meta ? (
-              <SourcesList
-                citations={meta.citations}
-                onOpen={onOpenCitation}
-              />
+            <Markdown sources={meta?.sources ?? []}>
+              {message.content}
+            </Markdown>
+            {meta !== undefined && (meta.sources ?? []).length > 0 ? (
+              <div className="mt-3">
+                {sourceStyle === "disclosure" ? (
+                  <SourceDisclosure sources={meta.sources} />
+                ) : onToggleSources !== undefined ? (
+                  <SourceCapsule
+                    sources={meta.sources}
+                    open={sourcesOpen}
+                    onToggle={toggleSources}
+                  />
+                ) : null}
+              </div>
             ) : null}
           </>
         )}
         <div className="flex items-center gap-2">
           <AnswerActions content={message.content} onRetry={onRetry} />
-          <Badge variant="outline">
-            {message.provider ?? "provider"} · {message.tier ?? "tier"}
-          </Badge>
         </div>
       </MessageContent>
     </Message>

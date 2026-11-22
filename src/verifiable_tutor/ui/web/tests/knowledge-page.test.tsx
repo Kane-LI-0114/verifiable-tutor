@@ -121,6 +121,103 @@ describe("knowledge browser", () => {
     );
   });
 
+  it("sorts files by created time ascending by default and selects that menu item", async () => {
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const newestFirst: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [newer, older], total: 2 }),
+    };
+    stub = createFetchStub(routes([newestFirst]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    expect(tileIds()).toEqual([
+      "file-tile-ACS_Lecture_1_2026F",
+      "file-tile-Tutorial_2",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    const created = screen.getByRole("menuitem", { name: "Sort by created time" });
+    const name = screen.getByRole("menuitem", { name: "Sort by name" });
+    expect(created).toHaveAttribute("title", "Ascending");
+    expect(name).not.toHaveAttribute("title");
+    expect(created.querySelectorAll("svg").length).toBeGreaterThan(0);
+    expect(name.querySelectorAll("svg")).toHaveLength(0);
+  });
+
+  it("falls back to created time ascending when the stored sort is invalid", async () => {
+    window.localStorage.setItem("vt.knowledge.sort", "created:sideways");
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const newestFirst: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [newer, older], total: 2 }),
+    };
+    stub = createFetchStub(routes([newestFirst]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    expect(tileIds()).toEqual([
+      "file-tile-ACS_Lecture_1_2026F",
+      "file-tile-Tutorial_2",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Sort by created time" }),
+    ).toHaveAttribute("title", "Ascending");
+  });
+
+  it("restores the sort key and direction from browser storage on the next visit", async () => {
+    const older = { ...DOC_A, created_at: "2026-10-01T00:00:00+00:00" };
+    const newer = { ...DOC_B, created_at: "2026-11-01T00:00:00+00:00" };
+    const newestFirst: StubRoute = {
+      method: "GET",
+      path: "/api/knowledge/documents",
+      handler: () => jsonResponse({ documents: [newer, older], total: 2 }),
+    };
+    stub = createFetchStub(routes([newestFirst]));
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sort by name" }));
+    await waitFor(() => {
+      expect(tileIds()).toEqual([
+        "file-tile-Tutorial_2",
+        "file-tile-ACS_Lecture_1_2026F",
+      ]);
+    });
+    expect(window.localStorage.getItem("vt.knowledge.sort")).toBe("name:desc");
+
+    cleanup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-Tutorial_2");
+    expect(tileIds()).toEqual([
+      "file-tile-Tutorial_2",
+      "file-tile-ACS_Lecture_1_2026F",
+    ]);
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(
+      screen.getByRole("menuitem", { name: "Sort by name" }),
+    ).toHaveAttribute("title", "Descending");
+    expect(
+      screen.getByRole("menuitem", { name: "Sort by created time" }),
+    ).not.toHaveAttribute("title");
+  });
+
   it("sorts the file tiles by name after choosing the name sort item", async () => {
     const unsorted: StubRoute = {
       method: "GET",
@@ -148,6 +245,20 @@ describe("knowledge browser", () => {
         "file-tile-Tutorial_2",
       ]);
     });
+  });
+
+  it("keeps the sort menu as wide as its longest label", async () => {
+    stub = createFetchStub(routes());
+    const user = userEvent.setup();
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+
+    const menu = document.querySelector('[data-slot="dropdown-menu-content"]');
+    expect(menu).toHaveClass("w-max", "whitespace-nowrap");
+    expect(menu).not.toHaveClass("w-(--radix-dropdown-menu-trigger-width)");
   });
 
   it("toggles the name direction when the same sort item is clicked twice", async () => {
@@ -279,7 +390,7 @@ describe("knowledge browser", () => {
     expect(
       within(pane).getByText("A lecture on GPU architecture and CUDA execution."),
     ).toBeInTheDocument();
-    expect(within(pane).getByText("Written by qwen3.8-27b")).toBeInTheDocument();
+    expect(within(pane).getByText("Summary by qwen3.8-27b")).toBeInTheDocument();
     expect(within(pane).getByText("67")).toBeInTheDocument();
   });
 
@@ -323,8 +434,9 @@ describe("knowledge browser", () => {
     await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
 
     await user.click(screen.getByRole("button", { name: "New" }));
-    const upload = screen.getByRole("menuitem", { name: "Upload file" });
-    expect(upload).toHaveAttribute("aria-disabled", "true");
+    expect(
+      screen.queryByRole("menuitem", { name: "Upload file" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("menuitem", { name: "New folder" }));
     await user.type(screen.getByLabelText("Folder name"), "Week 1");
@@ -404,5 +516,48 @@ describe("knowledge browser", () => {
     expect(
       screen.getByRole("menuitem", { name: "Move file" }),
     ).toBeInTheDocument();
+  });
+
+  it("renders file and folder tiles with a locked 4:3 landscape face", async () => {
+    stub = createFetchStub(routes());
+
+    renderLiveRoute("/knowledge");
+
+    const fileTile = await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+    expect(fileTile).toHaveClass("aspect-[4/3]");
+
+    const folderTile = screen.getByTestId("folder-tile-f-lectures");
+    expect(folderTile).toHaveClass("aspect-[4/3]");
+  });
+
+  it("keeps fixed-size tile tracks so pane toggles never stretch the cards", async () => {
+    stub = createFetchStub(routes());
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    const grid = screen.getByTestId("knowledge-grid");
+    // A standard card grid: every track keeps the same fixed size and
+    // as many columns as fit wrap onto each row. The card size never
+    // depends on the animated pane widths, so a sidebar toggle can only
+    // change how many columns fit, never how big the cards are. Nine rem
+    // is the track size that keeps the leftover width small on the usual
+    // split views, so the row gaps do not have to grow much.
+    expect(grid.className).toContain("grid-cols-[repeat(auto-fill,9rem)]");
+    expect(grid.className).not.toContain("1fr");
+    expect(grid.className).not.toContain("minmax");
+  });
+
+  it("spreads the tile row across the pane so no dead column sits on the right", async () => {
+    stub = createFetchStub(routes());
+
+    renderLiveRoute("/knowledge");
+    await screen.findByTestId("file-tile-ACS_Lecture_1_2026F");
+
+    const grid = screen.getByTestId("knowledge-grid");
+    // The tracks keep the card size fixed. Whatever width is left after
+    // the columns do not fit again goes into the gaps, so a row reaches
+    // both edges of the pane instead of trailing dead space.
+    expect(grid).toHaveClass("justify-between");
   });
 });

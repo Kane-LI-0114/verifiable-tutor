@@ -1,0 +1,70 @@
+{
+  "schema": "vt-doc-summaries/1",
+  "documents": {
+    "Tutorial_6": {
+      "summary": "This tutorial explains DeepEP, a communication library for expert-parallel Mixture-of-Experts (MoE) models that optimizes token dispatch and combine operations. It details the underlying GPU communication infrastructure, including NVLink and RDMA domains, as well as GPU-Initiated RDMA (IBGDA) for high-performance data transfer. The document contrasts two distinct dispatch paths: a low-latency approach using fixed receive slots and atomic reservations, and a high-throughput approach that pipelines RDMA and NVLink transfers. It further breaks down the high-throughput pipeline into specific roles such as senders, coordinators, and forwarders to manage buffer ownership and token counts. Finally, the tutorial provides a source map linking the Python APIs to the underlying GPU kernels.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-06T08:53:29+00:00"
+    },
+    "Assignment_2": {
+      "summary": "This document outlines Assignment 2 for CSIT6000V, which requires students to implement scaled dot-product attention using CUDA. The task involves computing the output matrix from query, key, and value matrices while ensuring numerical stability through techniques like subtracting the row maximum before exponentiation. Students must complete the `attention_forward` function in a provided C++ file, utilizing GPU memory for all operations and releasing temporary allocations. The assignment is graded on correctness and stability, with performance metrics not contributing to the final score, and includes specific guidelines for compilation, testing on local or TACC servers, and submission via Canvas.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:17:04+00:00"
+    },
+    "TACC_Toturial": {
+      "summary": "This tutorial guide for CSIT6000V Fall 2026 introduces the TACC platform, which provides shared CPU and GPU compute nodes with a scheduler for job allocation. It outlines the quick start process, including applying for course access, receiving login credentials, and installing the local SDK. The document details the steps for Assignment 1, which involves using a shared MPI environment to submit code and check results. It also covers the course project, focusing on serving the Qwen model by configuring GPU resources, submitting service and client jobs, and analyzing performance metrics.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:56+00:00"
+    },
+    "Tutorial_1": {
+      "summary": "This tutorial introduces the fundamentals of Message Passing Interface (MPI) for parallel computing, focusing on processes, ranks, and program launch. It contrasts shared-memory threading with MPI processes to explain why MPI is useful for distributed systems. The document covers the MPI program lifecycle, including compilation and launching a single program as multiple processes. It also details point-to-point communication using MPI_Send and MPI_Recv, including message matching and rank-specific code branches. The material concludes with hands-on tasks for Hello MPI and Send/Recv, noting that collective communication is reserved for the next tutorial.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:38+00:00"
+    },
+    "ACS_Lecture_0_2026F": {
+      "summary": "This document serves as the introductory lecture for the CSE 5000-level graduate course ACS: Advanced AI Computing and Systems, taught by Prof. Kai Chen. It outlines the course logistics, including grading policies that exclude exams, and details the required project where students must build an Agent System on TACC. The material also covers academic integrity expectations, homework submission procedures, and the high-level learning goals for the semester.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:24+00:00"
+    },
+    "ACS_Lecture_1_2026F": {
+      "summary": "This lecture introduces the evolution of processor architectures, focusing on the transition from CPU-centric to GPU-centric systems for AI computing. It reviews the transformation hierarchy of computing and host architecture components, including the roles of CPUs, GPUs, and NICs. The document details CPU microarchitecture optimizations such as pipelining, out-of-order execution, and speculative execution, contrasting them with the GPU's throughput-oriented design using Streaming Multiprocessors and SIMD execution. It further covers parallel programming models like pThread and CUDA, explaining synchronization mechanisms and the impact of control divergence on GPU performance. Finally, it presents performance models, including Amdahl's Law and the Roofline model, to analyze compute and memory bottlenecks in AI workloads.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:30+00:00"
+    },
+    "ACS_lecture_2_2026F": {
+      "summary": "This lecture explores the evolution of memory systems, focusing on the 'memory wall' that limits modern CPU and GPU performance. It details the CPU memory hierarchy, including cache levels, locality principles, and the technical differences between SRAM and DRAM. The document also examines GPU memory architectures, covering CUDA memory spaces, coalescing, and the transition from GDDR to High Bandwidth Memory (HBM). Finally, it addresses state-of-the-art technologies such as CXL for memory expansion and the capacity challenges faced by LLM inference.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:34+00:00"
+    },
+    "Assignment_1_final": {
+      "summary": "This document outlines Assignment 1 for CSIT6000V, which requires students to implement a parallel General Matrix-Matrix Multiplication (GEMM) algorithm using MPI. The task involves partitioning matrix A by rows across MPI processes, broadcasting matrix B, and gathering the local results to assemble the final output matrix. The assignment provides a code skeleton, specifies the use of standard MPI communication functions like MPI_Scatter and MPI_Gather, and details the compilation and testing procedures on the TACC cluster. Students must submit their individual implementation via Canvas by the specified deadline, with grading based on correctness and adherence to the provided rubric.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:17:00+00:00"
+    },
+    "Tutorial_2": {
+      "summary": "This tutorial introduces MPI collective communication, progressing from basic operations like Bcast and Scatter to advanced AllReduce algorithms. It details the mechanics of recursive doubling and ring AllReduce, comparing their data volume and latency characteristics using the T ≈ a × rounds + β × bytes model. The material includes an interactive MiniMPI demo to visualize these processes and maps them to native C MPI APIs. Finally, the document previews Assignment 1, which applies these concepts to parallel GEMM for deep learning and scientific computing.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:41+00:00"
+    },
+    "Tutorial_3": {
+      "summary": "This tutorial introduces CUDA programming by defining the Compute Unified Device Architecture as a parallel computing platform that leverages GPU hardware for high-performance data processing. It explains the hierarchical organization of CUDA threads into blocks and grids, contrasting this structure with traditional CPU processes and threads. The document covers the host-device execution model, including data movement and kernel launch syntax in CUDA C++. Practical examples demonstrate how to map threads to 1D vector and 2D matrix operations for addition and multiplication. Finally, it discusses advanced matrix computation techniques and provides a learning path for thinking in CUDA.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:45+00:00"
+    },
+    "Tutorial_4": {
+      "summary": "This tutorial document for CSIT6000V covers the progression from basic GPU matrix multiplication to the Flash Attention algorithm. It begins by reviewing GEMM operations and detailing the implementation of shared-memory tiling to optimize data access patterns. The material then transitions to the Softmax operator, explaining the derivation of stable and online variants to handle numerical stability and parallel computation. Finally, it synthesizes these concepts to demonstrate how Flash Attention combines tiled GEMM and online softmax to achieve efficient attention computation.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:48+00:00"
+    },
+    "Tutorial_5": {
+      "summary": "This tutorial for Advanced AI Computing and Systems introduces CXL memory expansion as a solution for TB-scale memory demands in databases and AI workloads. It establishes the foundational role of PCIe, including MMIO and DMA, before detailing the CXL architecture, device types, and HDM decoding mechanisms. The document explores CXL fabrics and multilevel topologies, analyzing performance metrics such as link budget, latency, and CPU prefetching. It also presents the Beluga system for CXL memory pooling, covering access paths, KVCache placement, and gather/scatter transfers. An appendix provides additional context on real hardware, NUMA emulation, and specific CXL 3.0 features like back-invalidation.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:16:52+00:00"
+    },
+    "course_project": {
+      "summary": "This document outlines the requirements for a course project in Advanced AI Computing and Systems, where students must build an end-to-end agent system on the TACC infrastructure. The project mandates the development of a student-built application featuring a frontend, a backend with state management, and an agent workflow that utilizes tools and data sources. Students are required to select a specific task or scenario, implement logging and evaluation mechanisms, and prepare a final presentation. The material also provides recommended exploration directions such as task learning and system efficiency, along with possible project topics like trip planning or literature research agents. A sample project using the STORM system is included to illustrate the research workflow and expected output structure.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-05T09:17:07+00:00"
+    }
+  }
+}

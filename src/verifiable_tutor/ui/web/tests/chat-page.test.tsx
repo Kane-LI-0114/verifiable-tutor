@@ -10,56 +10,84 @@ const SESSION_ATTENTION = `/chat/${PREVIEW_SESSIONS[1].id}`;
 const SESSION_KERNEL = `/chat/${PREVIEW_SESSIONS[2].id}`;
 
 describe("chat page", () => {
-  it("renders the conversation, the composer, the work chain, and the evidence panel", () => {
+  it("renders the conversation, the composer, the work chain, and a closed source pane", () => {
     renderRoute(SESSION);
 
     expect(
       screen.getByRole("region", { name: "Conversation messages" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Your question")).toBeInTheDocument();
+    const pane = screen.getByTestId("source-pane");
+    expect(pane).toHaveAttribute("data-open", "false");
+    expect(pane).toHaveStyle({ width: "0px" });
     expect(
-      screen.getByRole("complementary", { name: "Evidence panel" }),
+      screen.getByRole("button", { name: /Show the sources for this answer/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Work chain/ }),
+      screen.getByRole("button", { name: /How this answer was built/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("How does MPI_Allreduce work, and when should I use it in the GEMM assignment?"),
     ).toBeInTheDocument();
   });
 
-  it("opens the cited page in the evidence panel from a citation chip", async () => {
+  it("opens one turn's sources from the answer capsule and starts closed", async () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
-    const evidence = screen.getByRole("complementary", { name: "Evidence panel" });
-    expect(within(evidence).getByText("Open a citation")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Open page 12" }));
+    expect(screen.getByTestId("source-pane")).toHaveAttribute(
+      "data-open",
+      "false",
+    );
+    expect(screen.queryByRole("button", { name: "Open page 12" })).toBeNull();
 
     expect(
-      within(evidence).getByText("Page 12 of ACS_lecture_2_2026F"),
+      screen.getByRole("link", {
+        name: "Citation 1: Lecture 2: Collectives",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "/knowledge/docs/ACS_lecture_2_2026F?page=12",
+    );
+
+    const capsule = screen.getByRole("button", {
+      name: /Show the sources for this answer/,
+    });
+    expect(capsule).toHaveTextContent("3 course pages · 1 web page");
+
+    await user.click(capsule);
+
+    const pane = await screen.findByTestId("source-pane");
+    expect(pane).toHaveAttribute("data-open", "true");
+    expect(within(pane).getByText("Lecture 2: Collectives")).toBeInTheDocument();
+    expect(
+      within(pane).getByText("DeepSeek API documentation"),
     ).toBeInTheDocument();
     expect(
-      within(evidence).getAllByText(
-        "MPI_Allreduce combines values from all ranks and distributes the result to all ranks.",
-      ).length,
-    ).toBeGreaterThan(0);
+      within(pane).getByRole("link", { name: /Lecture 2: Collectives/ }),
+    ).toHaveAttribute("href", "/knowledge/docs/ACS_lecture_2_2026F?page=12");
+
+    await user.click(
+      within(pane).getByRole("button", { name: "Close citation sources" }),
+    );
+
+    expect(pane).toHaveAttribute("data-open", "false");
+    expect(pane).toHaveStyle({ width: "0px" });
   });
 
   it("shows every existing stage even when it has no events", async () => {
     const user = userEvent.setup();
     renderRoute(SESSION);
 
-    await user.click(screen.getByRole("button", { name: /Work chain/ }));
+    await user.click(screen.getByRole("button", { name: /How this answer was built/ }));
 
     for (const label of [
-      "Understand the question",
-      "Retrieve course pages",
-      "Verify quoted spans",
-      "Apply the disclosure policy",
+      "Read the question",
+      "Find course pages",
+      "Check the quoted text",
+      "Check the assignment rules",
       "Write the answer",
-      "Attach citations",
+      "Add the sources",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
@@ -86,6 +114,17 @@ describe("chat page", () => {
     expect(
       screen.getByRole("menuitemradio", { name: "MiMo Pro" }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps the model menu as wide as its longest label", async () => {
+    const user = userEvent.setup();
+    renderRoute(SESSION);
+
+    await user.click(screen.getByRole("button", { name: "Model selection" }));
+
+    const menu = document.querySelector('[data-slot="dropdown-menu-content"]');
+    expect(menu).toHaveClass("w-max", "whitespace-nowrap");
+    expect(menu).not.toHaveClass("w-(--radix-dropdown-menu-trigger-width)");
   });
 
   it("shows the failure copy and a retry action when the answer fails", () => {
@@ -204,10 +243,10 @@ describe("chat page", () => {
     renderRoute(SESSION);
 
     expect(
-      screen.getByRole("group", { name: "Citations" }),
+      screen.getByRole("button", { name: /Show the sources for this answer/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Work chain" }),
+      screen.getByRole("group", { name: "How this answer was built" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("group", { name: "Answer actions" }),

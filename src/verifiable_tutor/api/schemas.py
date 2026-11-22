@@ -76,6 +76,16 @@ CITATION_EXAMPLE: dict[str, Any] = {
     "page_no": 1,
     "quote": "Building an End-to-End Agent System",
 }
+SOURCE_EXAMPLE: dict[str, Any] = {
+    "marker": 1,
+    "kind": "course",
+    "title": "Course Project",
+    "summary": "Building an End-to-End Agent System",
+    "doc_id": "course_project",
+    "page_no": 1,
+    "url": None,
+    "chunk_id": "course_project:p001:c00",
+}
 WORK_STEP_EXAMPLE: dict[str, Any] = {
     "id": "step-1",
     "position": 0,
@@ -114,6 +124,7 @@ MESSAGE_EXAMPLE: dict[str, Any] = {
     "model": "deepseek-flash",
     "thinking": "high",
     "work_steps": [WORK_STEP_EXAMPLE],
+    "sources": [SOURCE_EXAMPLE],
     "citations": [CITATION_EXAMPLE],
     "tool_calls": [],
     "events": [MESSAGE_EVENT_EXAMPLE],
@@ -381,6 +392,24 @@ class MessageEventRecord(BaseModel):
     )
 
 
+class MessageSourceRecord(BaseModel):
+    model_config = _example(SOURCE_EXAMPLE)
+
+    marker: int = _ex(1, "1-based citation number the answer uses as [n].")
+    kind: Literal["course", "web"] = _ex("course", "Course page or web page.")
+    title: str = _ex("Course Project", "Course document title or web page title.")
+    summary: str = _ex(
+        "Building an End-to-End Agent System",
+        "Fixed-length excerpt of the retrieved page or web result.",
+    )
+    doc_id: str | None = _opt("course_project", "Course document id; null for web.")
+    page_no: int | None = _opt(1, "Course page number; null for web.")
+    url: str | None = _opt(None, "Web source URL; null for a course source.")
+    chunk_id: str | None = _opt(
+        "course_project:p001:c00", "Chunk id that introduced the source, when known."
+    )
+
+
 class MessageRecord(BaseModel):
     model_config = _example(MESSAGE_EXAMPLE)
 
@@ -418,9 +447,13 @@ class MessageRecord(BaseModel):
         "Ordered work-chain steps for assistant messages; empty for user "
         "messages and legacy answers.",
     )
+    sources: list[MessageSourceRecord] = _ex(
+        [SOURCE_EXAMPLE],
+        "Numbered sources the answer retrieved, in marker order.",
+    )
     citations: list[MessageCitationRecord] = _ex(
         [{**CITATION_EXAMPLE, "bbox_norm": None}],
-        "Page citations carried by the answer, in display order.",
+        "Verified page citations carried by the answer, in display order.",
     )
     tool_calls: list[ToolCallRecord] = _ex(
         [TOOL_CALL_EXAMPLE],

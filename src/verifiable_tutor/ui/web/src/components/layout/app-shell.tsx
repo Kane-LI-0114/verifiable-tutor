@@ -9,8 +9,19 @@ import {
   UserIcon,
   WaypointsIcon,
 } from "lucide-react";
-import { useEffect, useRef, type ComponentType } from "react";
-import { NavLink, Outlet, useLocation, useParams } from "react-router";
+import {
+  useEffect,
+  useRef,
+  type ComponentType,
+  type MouseEvent,
+} from "react";
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -45,6 +56,10 @@ import {
 import { useSession } from "@/lib/auth/session";
 import { useConversations } from "@/lib/session/conversations";
 import { useT } from "@/lib/i18n";
+import {
+  clearDocumentPath,
+  useDocumentReturnPath,
+} from "@/lib/knowledge/return-path";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { LanguageToggle } from "@/components/layout/language-toggle";
 import { PreviewControls } from "@/components/layout/preview-controls";
@@ -54,6 +69,9 @@ interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
   end?: boolean;
+  /** The section that lights the item up, when `to` points at a leaf page. */
+  matchTo?: string;
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 // The sidebar component stores its state in a cookie. A single-page shell has no
@@ -87,14 +105,15 @@ function currentTitle(pathname: string, t: ReturnType<typeof useT>): string {
 
 function SidebarNavItem({ item }: { item: NavItem }) {
   const { pathname } = useLocation();
+  const base = item.matchTo ?? item.to;
   const active = item.end
-    ? pathname === item.to
-    : pathname === item.to || pathname.startsWith(`${item.to}/`);
+    ? pathname === base
+    : pathname === base || pathname.startsWith(`${base}/`);
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-        <NavLink to={item.to}>
+        <NavLink to={item.to} onClick={item.onClick}>
           <item.icon />
           <span>{item.label}</span>
         </NavLink>
@@ -163,6 +182,8 @@ function AppSidebar() {
   const { sessionId } = useParams();
   const { pathname } = useLocation();
   const { state, setOpenMobile } = useSidebar();
+  const navigate = useNavigate();
+  const documentReturnPath = useDocumentReturnPath();
   const {
     sessions,
     status: conversationsStatus,
@@ -177,9 +198,31 @@ function AppSidebar() {
     setOpenMobile(false);
   }, [pathname, setOpenMobile]);
 
+  // The knowledge item points back at the file the reader last had open, so a
+  // detour through the conversation view does not cost their place. A click
+  // while already inside the knowledge section means "show me the grid".
+  function leaveKnowledge(event: MouseEvent<HTMLAnchorElement>) {
+    if (documentReturnPath === null) {
+      return;
+    }
+    if (pathname === "/knowledge" || pathname.startsWith("/knowledge/docs")) {
+      event.preventDefault();
+      clearDocumentPath();
+      if (pathname.startsWith("/knowledge/docs")) {
+        navigate("/knowledge");
+      }
+    }
+  }
+
   const primary: NavItem[] = [
     { to: "/practice", label: t.nav.practice, icon: WaypointsIcon },
-    { to: "/knowledge", label: t.nav.knowledge, icon: BookOpenIcon },
+    {
+      to: documentReturnPath ?? "/knowledge",
+      label: t.nav.knowledge,
+      icon: BookOpenIcon,
+      matchTo: "/knowledge",
+      onClick: leaveKnowledge,
+    },
   ];
 
   const instructor: NavItem[] =

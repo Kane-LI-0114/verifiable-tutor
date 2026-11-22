@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 
-import { CitationRow } from "@/components/chat/citation-row";
-import { EvidencePanel } from "@/components/chat/evidence-panel";
+import { CitationRow } from "@/components/practice/citation-row";
+import { EvidencePanel } from "@/components/practice/evidence-panel";
 import { PageEmpty, PageError, PageHeader, PageLoading } from "@/components/layout/page-states";
 import { TestResults } from "@/components/practice/test-results";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,11 +107,6 @@ export function PracticePage() {
       <div className="mx-auto w-full max-w-4xl space-y-4 p-6">
         <PageHeader title={t.practice.title} description={t.practice.subtitle} />
 
-        <Alert>
-          <AlertTitle>{t.practice.unavailableTitle}</AlertTitle>
-          <AlertDescription>{t.practice.unavailableBody}</AlertDescription>
-        </Alert>
-
         <Tabs defaultValue="questions">
           <TabsList>
             <TabsTrigger value="questions">{t.practice.questionsTab}</TabsTrigger>
@@ -187,14 +182,17 @@ export function PracticePage() {
                       </SelectContent>
                     </Select>
                   </Field>
-                  <div className="flex items-end">
+                  <div className="flex flex-col items-start gap-1">
                     <Button
                       type="button"
                       disabled
-                      title={t.common.unavailable}
+                      title={t.practice.generateDisabled}
                     >
                       {t.practice.generate}
                     </Button>
+                    <p className="text-xs text-muted-foreground">
+                      {t.practice.generateDisabled}
+                    </p>
                   </div>
                 </FieldGroup>
               </CardContent>
@@ -209,8 +207,8 @@ export function PracticePage() {
               />
             ) : pageState === "empty" ? (
               <PageEmpty
-                title={t.common.emptyTitle}
-                description={t.common.emptyBody}
+                title={t.practice.emptyTitle}
+                description={t.practice.emptyBody}
               />
             ) : (
               <Card>
@@ -366,8 +364,6 @@ export function PracticePage() {
                 </CardContent>
               </Card>
             )}
-
-            <p className="text-xs text-muted-foreground">{t.practice.previewNotice}</p>
           </TabsContent>
 
           <TabsContent value="solution" className="space-y-3 pt-3">

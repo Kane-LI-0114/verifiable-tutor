@@ -402,9 +402,9 @@ describe("live reset request page", () => {
     await user.click(screen.getByRole("button", { name: "Send the link" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Check your inbox for the next step.");
+    expect(alert).toHaveTextContent("We emailed a one-time link. Check your inbox.");
     expect(alert).toHaveTextContent(
-      "Development mode: the code is in the backend log.",
+      "Development mode: the link is in the server log.",
     );
     expect(callsTo("/api/auth/reset/request")[0]?.body).toEqual({
       email: "student@ust.hk",
@@ -426,9 +426,9 @@ describe("live reset request page", () => {
     await user.click(screen.getByRole("button", { name: "Send the link" }));
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Check your inbox for the next step.");
+    expect(alert).toHaveTextContent("We emailed a one-time link. Check your inbox.");
     expect(alert).not.toHaveTextContent(
-      "Development mode: the code is in the backend log.",
+      "Development mode: the link is in the server log.",
     );
   });
 });
@@ -536,7 +536,7 @@ describe("offline preview demo", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(
-      screen.getByText("Preview build: this page uses sample data."),
+      screen.getByText("Preview: sample data."),
     ).toBeInTheDocument();
   });
 });

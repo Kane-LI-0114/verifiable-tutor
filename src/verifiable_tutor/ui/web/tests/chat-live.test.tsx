@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type {
   ChatMessage,
   Citation,
+  CitationSource,
   Conversation,
   Me,
   ToolCall,
@@ -45,6 +46,18 @@ const STORED_CITATION: Citation = {
     "MPI_Allreduce combines values from all ranks and distributes the result to all ranks.",
   bbox_norm: [0.08, 0.22, 0.9, 0.3],
 };
+
+const STORED_SOURCES: CitationSource[] = [
+  {
+    marker: 1,
+    kind: "course",
+    title: "Lecture 2: Collectives",
+    summary: "MPI_Allreduce combines values from all ranks.",
+    doc_id: "ACS_lecture_2_2026F",
+    page_no: 12,
+    url: null,
+  },
+];
 const STORED_TOOL_CALL: ToolCall = {
   name: "course_search",
   command: ["course_search", "--query", "halo exchange", "--top-k", "5"],
@@ -80,6 +93,7 @@ function noTurnMeta() {
     thinking: null,
     work_steps: [] as WorkStep[],
     citations: [] as Citation[],
+    sources: [] as CitationSource[],
     tool_calls: [] as ToolCall[],
   };
 }
@@ -108,6 +122,7 @@ const HISTORY: ChatMessage[] = [
     thinking: "high",
     work_steps: STORED_STEPS,
     citations: [STORED_CITATION],
+    sources: STORED_SOURCES,
     tool_calls: [STORED_TOOL_CALL],
     events: [
       { kind: "reasoning", reasoning: STORED_REASONING, step_id: "retrieve" },
@@ -148,6 +163,7 @@ const NEW_HISTORY: ChatMessage[] = [
     thinking: "off",
     work_steps: [{ id: "generate", step: "generate", status: "done", duration_ms: 120 }],
     citations: [],
+    sources: [],
     tool_calls: [],
   },
 ];
@@ -230,6 +246,23 @@ const TOOL_STREAM_FRAMES = [
       duration_ms: 42,
     },
   },
+  {
+    type: "data-sources",
+    data: {
+      sources: [
+        {
+          marker: 1,
+          kind: "course",
+          title: "Tutorial 2: Collectives",
+          summary: "MPI_Allreduce reduces a value across all ranks.",
+          doc_id: "Tutorial_2",
+          page_no: 8,
+          url: null,
+          chunk_id: "Tutorial_2:p008:c00",
+        },
+      ],
+    },
+  },
   { type: "data-step", data: { step: "retrieve", status: "done" } },
   { type: "finish-step" },
   { type: "start-step" },
@@ -281,7 +314,7 @@ function history(messages: ChatMessage[] = HISTORY): StubRoute {
   });
 }
 
-function chatRoute(handler: () => Response): StubRoute {
+function chatRoute(handler: () => Response | Promise<Response>): StubRoute {
   return { method: "POST", path: "/api/chat", handler };
 }
 
@@ -454,7 +487,7 @@ describe("live chat", () => {
     await user.click(
       await screen.findByRole("menuitemradio", { name: "MiMo Pro" }),
     );
-    await user.click(screen.getByRole("button", { name: "Off" }));
+    await user.click(screen.getByRole("button", { name: "Thinking: Off" }));
     // MiMo exposes on and off only; it has no effort levels.
     expect(
       await screen.findByRole("menuitemradio", { name: "On" }),
@@ -512,13 +545,13 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("DeepSeek Flash");
-    expect(screen.getByRole("button", { name: "Off" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Thinking: Off" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Model selection" }));
     await user.click(
       await screen.findByRole("menuitemradio", { name: "MiMo Pro" }),
     );
-    await user.click(screen.getByRole("button", { name: "Off" }));
+    await user.click(screen.getByRole("button", { name: "Thinking: Off" }));
     await user.click(await screen.findByRole("menuitemradio", { name: "On" }));
 
     // A refresh remounts the route; the last selection comes back.
@@ -528,7 +561,7 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
-    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Thinking: On" })).toBeInTheDocument();
 
     // Switching to another conversation keeps the same last selection.
     cleanup();
@@ -537,7 +570,7 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
-    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Thinking: On" })).toBeInTheDocument();
 
     // A new conversation keeps the last choice too.
     cleanup();
@@ -546,7 +579,44 @@ describe("live chat", () => {
     expect(
       screen.getByRole("button", { name: "Model selection" }),
     ).toHaveTextContent("MiMo Pro");
-    expect(screen.getByRole("button", { name: "On" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Thinking: On" })).toBeInTheDocument();
+  });
+
+  it("shows a pending answer from the moment the question is sent", async () => {
+    const answering = deferred();
+    stub = createFetchStub(
+      routes([
+        chatRoute(async () => {
+          await answering.promise;
+          return sseResponse(STREAM_FRAMES, {
+            headers: { "x-conversation-id": NEW_SESSION_ID },
+          });
+        }),
+        history(),
+      ]),
+    );
+    const user = userEvent.setup();
+    renderLiveRoute("/chat");
+
+    const composer = await screen.findByLabelText("Your question");
+    await user.type(composer, QUESTION);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    // The request is in flight and no frame has arrived, so the thread holds a
+    // place for the answer instead of staying blank until the first token.
+    expect(await screen.findByText("Generating the answer")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-slot="answer-pending"]'),
+    ).not.toBeNull();
+    expect(screen.getByText(QUESTION)).toBeInTheDocument();
+    expect(screen.queryByText("Hello")).not.toBeInTheDocument();
+
+    answering.resolve();
+
+    expect(await screen.findByText("Hello")).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-slot="answer-pending"]'),
+    ).toBeNull();
   });
 
   it("streams the answer progressively and then opens the new conversation", async () => {
@@ -583,7 +653,7 @@ describe("live chat", () => {
 
     expect(await screen.findByText("Hello")).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Work chain" }),
+      screen.getByRole("group", { name: "How this answer was built" }),
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(router.state.location.pathname).toBe(`/chat/${NEW_SESSION_ID}`),
@@ -629,7 +699,7 @@ describe("live chat", () => {
     // the finished stream. While the history is pending there is no work chain.
     await waitFor(() => expect(messageCalls(NEW_SESSION_ID)).toBe(1));
     expect(
-      screen.queryByRole("group", { name: "Work chain" }),
+      screen.queryByRole("group", { name: "How this answer was built" }),
     ).not.toBeInTheDocument();
 
     gate.resolve();
@@ -637,7 +707,7 @@ describe("live chat", () => {
     // The stored row carries the streamed answer and the generate step, so the
     // work chain renders from persisted metadata, not from data-step parts.
     expect(await screen.findByText("Hello")).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "How this answer was built" })).toBeInTheDocument();
     expect(screen.getByText("1 of 1 steps complete")).toBeInTheDocument();
   });
 
@@ -649,31 +719,37 @@ describe("live chat", () => {
 
     // The answer text and the turn trace both come from the stored message.
     expect(await screen.findByText(ANSWER)).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Work chain" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "How this answer was built" })).toBeInTheDocument();
     expect(screen.getByText("4 of 4 steps complete")).toBeInTheDocument();
     // The policy state of the persisted decide step labels the work chain.
-    expect(screen.getAllByText("Post-deadline").length).toBeGreaterThan(0);
-    expect(screen.getByRole("group", { name: "Citations" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Open page 12" }),
-    ).toBeInTheDocument();
+    expect(screen.getAllByText("After the deadline").length).toBeGreaterThan(0);
+    const capsules = screen.getAllByRole("button", {
+      name: /Show the sources for this answer/,
+    });
+    const capsule = capsules[capsules.length - 1];
+    expect(capsule).toHaveTextContent("1 course page");
+
+    await user.click(capsule);
+
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Lecture 2: Collectives")).toBeInTheDocument();
 
     // The work chain expands to one section per persisted step. Understand
     // and decide have no events, but their sections still render.
-    await user.click(screen.getByRole("button", { name: /Work chain/ }));
-    expect(screen.getByText("Understand the question")).toBeInTheDocument();
-    expect(screen.getByText("Retrieve course pages")).toBeInTheDocument();
-    expect(screen.getByText("Apply the disclosure policy")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /How this answer was built/ }));
+    expect(screen.getByText("Read the question")).toBeInTheDocument();
+    expect(screen.getByText("Find course pages")).toBeInTheDocument();
+    expect(screen.getByText("Check the assignment rules")).toBeInTheDocument();
     expect(screen.getByText("Write the answer")).toBeInTheDocument();
-    expect(screen.queryByText("Verify quoted spans")).not.toBeInTheDocument();
-    expect(screen.queryByText("Attach citations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Check the quoted text")).not.toBeInTheDocument();
+    expect(screen.queryByText("Add the sources")).not.toBeInTheDocument();
     expect(screen.getByText(STORED_STEP_DETAIL)).toBeInTheDocument();
     expect(
       screen.getByTitle(/post-deadline\.hint-only/),
     ).toBeInTheDocument();
 
     const retrieve = screen.getByRole("region", {
-      name: /Retrieve course pages/,
+      name: /Find course pages/,
     });
     expect(within(retrieve).getByText("Tool call: course_search")).toBeInTheDocument();
     expect(within(retrieve).getByText(STORED_REASONING)).toBeInTheDocument();
@@ -688,7 +764,7 @@ describe("live chat", () => {
     // to show, so no empty work chain or thinking region is rendered for it.
     expect(await screen.findByText(LEGACY_ANSWER)).toBeInTheDocument();
     expect(
-      screen.queryByRole("group", { name: "Work chain" }),
+      screen.queryByRole("group", { name: "How this answer was built" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Reasoning" }),
@@ -892,7 +968,7 @@ describe("live chat", () => {
     expect(postCalls()[0].body).toMatchObject({ session_id: SESSION_ID });
   });
 
-  it("keeps the request-time model on a streamed answer when the selector changes", async () => {
+  it("does not show the provider or tier on a streamed answer", async () => {
     stub = createFetchStub(
       routes([
         history(),
@@ -916,16 +992,16 @@ describe("live chat", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
 
     expect(await screen.findByText("Hello")).toBeInTheDocument();
-    expect(screen.getByText("mimo · pro")).toBeInTheDocument();
+    expect(screen.queryByText("mimo · pro")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Model selection" }));
     await user.click(
       await screen.findByRole("menuitemradio", { name: "DeepSeek Flash" }),
     );
 
-    // The streamed answer keeps the provider and tier of the request that
-    // produced it, not the selector choice made afterwards.
-    expect(screen.getByText("mimo · pro")).toBeInTheDocument();
+    // Provider and tier are request metadata, not answer copy.
+    expect(screen.queryByText("mimo · pro")).not.toBeInTheDocument();
+    expect(screen.queryByText("deepseek · flash")).not.toBeInTheDocument();
   });
 
   it("drops the partial answer and returns the question when the stream fails", async () => {
@@ -955,7 +1031,7 @@ describe("live chat", () => {
 
     expect(await screen.findByText("The answer stopped")).toBeInTheDocument();
     expect(
-      screen.getByText(/The model did not finish this answer/),
+      screen.getByText(/The model stopped before it finished/),
     ).toBeInTheDocument();
     expect(screen.queryByText("Partial answer")).not.toBeInTheDocument();
     expect(postCalls()).toHaveLength(1);
@@ -1024,7 +1100,7 @@ describe("live chat", () => {
     );
     expect(await screen.findByText("Hello")).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Work chain" }),
+      screen.getByRole("group", { name: "How this answer was built" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("The answer stopped")).not.toBeInTheDocument();
   });
@@ -1113,13 +1189,27 @@ describe("live chat", () => {
 
     expect(await screen.findByText("Allreduce sums a value.")).toBeInTheDocument();
 
+    const capsules = screen.getAllByRole("button", {
+      name: /Show the sources for this answer/,
+    });
+    const capsule = capsules[capsules.length - 1];
+    expect(capsule).toHaveTextContent("1 course page");
+
+    await user.click(capsule);
+
+    const pane = await screen.findByTestId("source-pane");
+    expect(within(pane).getByText("Tutorial 2: Collectives")).toBeInTheDocument();
+    await user.click(
+      within(pane).getByRole("button", { name: "Close citation sources" }),
+    );
+
     // The live tool call is inside the live work chain; the stored turn has its own.
-    const workChains = screen.getAllByRole("button", { name: /Work chain/ });
+    const workChains = screen.getAllByRole("button", { name: /How this answer was built/ });
     await user.click(workChains[workChains.length - 1]);
     const toolCall = await screen.findByText("Tool call: search_course");
     // The reasoning and the tool call live under their own step sections.
     const retrieve = screen.getByRole("region", {
-      name: /Retrieve course pages/,
+      name: /Find course pages/,
     });
     expect(within(retrieve).getByText("Tool call: search_course")).toBeInTheDocument();
     expect(within(retrieve).getByText("First, search the course.")).toBeInTheDocument();

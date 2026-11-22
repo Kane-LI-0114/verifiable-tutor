@@ -416,6 +416,12 @@ class ChatService:
                         }
                     )
                     tool_positions += 1
+                elif event.kind == "sources":
+                    yield emit(
+                        streaming.data_sources(
+                            list(event.data.get("sources") or [])
+                        )
+                    )
                 elif event.kind == "turn_end":
                     if pending_reasoning is not None:
                         chain_events.append(
@@ -466,6 +472,7 @@ class ChatService:
                 thinking=selection.thinking,
                 reasoning=str(turn_result.get("reasoning") or "") or None,
                 steps=steps,
+                sources=turn_result.get("sources") or (),
                 tool_calls=turn_result.get("tool_calls") or (),
                 events=chain_events,
             )

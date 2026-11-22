@@ -135,7 +135,7 @@ Indexes:
 
 ### messages
 
-Ordered conversation messages. Assistant rows carry the answer text and the turn scalars; list-shaped turn metadata lives in the three child tables below.
+Ordered conversation messages. Assistant rows carry the answer text and the turn scalars; list-shaped turn metadata lives in the four child tables below.
 
 | Column | Type | Null | Key | Notes |
 |---|---|---|---|---|
@@ -196,7 +196,7 @@ Indexes:
 
 ### citations
 
-Quoted page spans cited by one assistant answer. The table is ready but empty until the evidence layer emits citations.
+Quoted page spans cited by one assistant answer. The table is ready but empty until the span verifier emits verified citations.
 
 | Column | Type | Null | Key | Notes |
 |---|---|---|---|---|
@@ -216,6 +216,38 @@ Foreign keys:
 Indexes:
 
 - UNIQUE (`message_id`, `position`)
+
+### message_sources
+
+Numbered sources one assistant answer retrieved, in citation-marker order. A course source points at one document page and a web source at one URL. The row is the unverified source a marker refers to, not a verified citation.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Source row id (uuid hex). |
+| `message_id` | TEXT | no | FK | Assistant message whose answer cites the source. |
+| `position` | INTEGER | no | - | 0-based display order inside the turn. |
+| `marker` | INTEGER | no | - | 1-based citation number the answer uses as [ref_n]. |
+| `kind` | TEXT | no | - | course or web. |
+| `title` | TEXT | no | - | Course document title or web page title. |
+| `summary` | TEXT | no | - | Fixed-length excerpt of the retrieved page or web result. |
+| `doc_id` | TEXT | yes | - | Course document id; null for a web source. |
+| `page_no` | INTEGER | yes | - | 1-based course page number; null for a web source. |
+| `url` | TEXT | yes | - | Web source URL without the fragment; null for a course source. |
+| `chunk_id` | TEXT | yes | - | Retrieved chunk id that introduced the source, when known. |
+
+Checks:
+
+- `CHECK (kind IN ('course', 'web'))`
+- `CHECK ((kind = 'course' AND doc_id IS NOT NULL AND page_no IS NOT NULL AND url IS NULL) OR (kind = 'web' AND url IS NOT NULL AND doc_id IS NULL AND page_no IS NULL))`
+
+Foreign keys:
+
+- `message_id` -> `messages.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- UNIQUE (`message_id`, `position`)
+- UNIQUE (`message_id`, `marker`)
 
 ### tool_calls
 
@@ -425,7 +457,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 6`.
+- Schema version: `PRAGMA user_version = 7`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

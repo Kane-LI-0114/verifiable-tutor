@@ -97,16 +97,23 @@ class FakeToolRegistry:
                 status="failed",
             )
         if name == "web_search":
+            source = context.sources.add_web(
+                url="https://example.com/deepseek",
+                title="DeepSeek V4 released",
+                summary="A summary.",
+            )
+            result = {
+                "title": "DeepSeek V4 released",
+                "url": "https://example.com/deepseek",
+                "summary": "A summary.",
+                "marker": source.marker,
+                "citation": f"[ref_{source.marker}]",
+            }
             payload = {
                 "source": "web",
                 "untrusted": True,
-                "results": [
-                    {
-                        "title": "DeepSeek V4 released",
-                        "url": "https://example.com/deepseek",
-                        "summary": "A summary.",
-                    }
-                ],
+                "results": [result],
+                "sources": [source.as_dict()],
             }
             return ToolResult(
                 content=json.dumps(payload),
@@ -114,6 +121,13 @@ class FakeToolRegistry:
                 result=payload,
                 status="done",
             )
+        source = context.sources.add_course(
+            doc_id="Tutorial_2",
+            page_no=8,
+            title="Tutorial 2: Collectives",
+            text="MPI_Allreduce reduces a value across all ranks.",
+            chunk_id="Tutorial_2:p008:c00",
+        )
         payload = {
             "source": "course",
             "chunks": [
@@ -123,8 +137,11 @@ class FakeToolRegistry:
                     "chunk_id": "Tutorial_2:p008:c00",
                     "section": "Collectives",
                     "text": "MPI_Allreduce reduces a value across all ranks.",
+                    "marker": source.marker,
+                    "citation": f"[ref_{source.marker}]",
                 }
             ],
+            "sources": [source.as_dict()],
         }
         return ToolResult(
             content=json.dumps(payload),
@@ -171,6 +188,9 @@ class FakeAdapter:
         )
         self.transcribe_error: Exception | None = None
         self.speak_error: Exception | None = None
+        self.speech_stream_frames: list[str] = ["AAABAA==", "AgADAA=="]
+        self.speak_stream_fail_before_first: Exception | None = None
+        self.speak_stream_fail_after: int | None = None
 
     def resolve_selection(
         self,
@@ -243,6 +263,18 @@ class FakeAdapter:
         if self.speak_error is not None:
             raise self.speak_error
         return self.speech
+
+    def speak_stream(self, text: str, **kwargs: Any):
+        self.calls.append({"text": text, "kwargs": dict(kwargs)})
+        if self.speak_stream_fail_before_first is not None:
+            raise self.speak_stream_fail_before_first
+        for index, frame in enumerate(self.speech_stream_frames):
+            if (
+                self.speak_stream_fail_after is not None
+                and index == self.speak_stream_fail_after
+            ):
+                raise ModelResponseError("unavailable", 3, "fake mid-stream failure")
+            yield frame
 
 
 class FakeBuildRunner:

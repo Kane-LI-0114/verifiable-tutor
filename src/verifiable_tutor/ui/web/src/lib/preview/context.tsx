@@ -44,3 +44,8 @@ export function usePreview(): PreviewValue {
   }
   return value;
 }
+
+/** For components that also render outside the app shell, such as tests. */
+export function useOptionalPreview(): PreviewValue | null {
+  return useContext(PreviewContext);
+}

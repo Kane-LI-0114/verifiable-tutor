@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * Resizable, collapsible right-hand pane.
  *
- * The chat page shows citations in it and the knowledge page shows file details
+ * The chat page shows one answer's source list in it and the knowledge page shows file details
  * or a conversation, so the resize, collapse, persistence, and keyboard
  * mechanics live here once. The caller supplies the labels, the storage keys,
  * and the header content.
@@ -20,9 +20,13 @@ export interface SidePaneProps {
   collapseLabel: string;
   expandLabel: string;
   resizeLabel: string;
-  /** localStorage keys so each page remembers its own width and state. */
+  /** localStorage key so each page remembers its own width. */
   widthKey: string;
-  collapsedKey: string;
+  /**
+   * Whether the pane is revealed. The chat source pane drives this prop so the
+   * first open and every close can animate; other pages leave it true.
+   */
+  open?: boolean;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   /** Header content, shown when the pane is open. */
@@ -30,6 +34,9 @@ export interface SidePaneProps {
   children: ReactNode;
   className?: string;
   testId?: string;
+  id?: string;
+  /** Close affordance; the source pane replaces it with an X. */
+  closeIcon?: ReactNode;
   defaultWidth?: number;
   minWidth?: number;
   maxWidth?: number;
@@ -98,13 +105,15 @@ export function SidePane({
   expandLabel,
   resizeLabel,
   widthKey,
-  collapsedKey: _collapsedKey,
   collapsed,
   onCollapsedChange,
   header,
   children,
   className,
   testId,
+  id,
+  open = true,
+  closeIcon = <PanelRightCloseIcon />,
   defaultWidth = 380,
   minWidth = 280,
   maxWidth = 640,
@@ -185,69 +194,82 @@ export function SidePane({
     }
   }
 
+  const contentWidth = collapsed ? railWidth : width;
+
   return (
     <aside
+      id={id}
       data-testid={testId}
+      data-open={open ? "true" : "false"}
       data-collapsed={collapsed ? "true" : "false"}
       aria-label={collapsed ? collapsedLabel : label}
+      aria-hidden={open ? undefined : true}
+      inert={open ? undefined : true}
       className={cn(
-        "relative hidden h-full shrink-0 flex-col border-l bg-background lg:flex",
+        "relative hidden h-full shrink-0 overflow-hidden lg:flex",
+        "transition-[width] duration-300 ease-out motion-reduce:transition-none",
+        !open && "pointer-events-none",
         className,
       )}
-      style={{ width: collapsed ? railWidth : width }}
+      style={{ width: open ? contentWidth : 0 }}
     >
-      {collapsed ? (
-        <div className="flex h-full flex-col items-center gap-1 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={expandLabel}
-            title={expandLabel}
-            onClick={() => onCollapsedChange(false)}
-          >
-            <PanelRightOpenIcon />
-          </Button>
-          <span className="mt-1 text-[0.65rem] font-medium tracking-wide text-muted-foreground [writing-mode:vertical-rl]">
-            {label}
-          </span>
-        </div>
-      ) : (
-        <>
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label={resizeLabel}
-            aria-valuenow={width}
-            aria-valuemin={minWidth}
-            aria-valuemax={limit}
-            tabIndex={0}
-            className={cn(
-              "absolute top-0 left-0 z-10 h-full w-1.5 -translate-x-1/2 cursor-col-resize touch-none outline-none select-none",
-              "hover:bg-primary/20 focus-visible:bg-primary/30",
-              dragging && "bg-primary/40",
-            )}
-            onDoubleClick={() => applyWidth(defaultWidth)}
-            onKeyDown={onKeyDown}
-            onPointerDown={startDrag}
-          />
-          <div className="flex items-center gap-2 border-b px-3 py-2">
-            <span className="truncate text-sm font-medium">{header}</span>
+      <div
+        className="relative flex h-full flex-col border-l bg-background"
+        style={{ width: contentWidth }}
+      >
+        {collapsed ? (
+          <div className="flex h-full flex-col items-center gap-1 py-2">
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="ml-auto"
-              aria-label={collapseLabel}
-              title={collapseLabel}
-              onClick={() => onCollapsedChange(true)}
+              aria-label={expandLabel}
+              title={expandLabel}
+              onClick={() => onCollapsedChange(false)}
             >
-              <PanelRightCloseIcon />
+              <PanelRightOpenIcon />
             </Button>
+            <span className="mt-1 text-[0.65rem] font-medium tracking-wide text-muted-foreground [writing-mode:vertical-rl]">
+              {label}
+            </span>
           </div>
-          {children}
-        </>
-      )}
+        ) : (
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={resizeLabel}
+              aria-valuenow={width}
+              aria-valuemin={minWidth}
+              aria-valuemax={limit}
+              tabIndex={0}
+              className={cn(
+                "absolute top-0 left-0 z-10 h-full w-1.5 cursor-col-resize touch-none outline-none select-none",
+                "hover:bg-primary/20 focus-visible:bg-primary/30",
+                dragging && "bg-primary/40",
+              )}
+              onDoubleClick={() => applyWidth(defaultWidth)}
+              onKeyDown={onKeyDown}
+              onPointerDown={startDrag}
+            />
+            <div className="flex items-center gap-2 border-b px-3 py-2">
+              <span className="truncate text-sm font-medium">{header}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="ml-auto"
+                aria-label={collapseLabel}
+                title={collapseLabel}
+                onClick={() => onCollapsedChange(true)}
+              >
+                {closeIcon}
+              </Button>
+            </div>
+            {children}
+          </>
+        )}
+      </div>
     </aside>
   );
 }

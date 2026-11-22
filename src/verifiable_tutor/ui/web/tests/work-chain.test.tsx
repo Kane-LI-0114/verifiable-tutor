@@ -27,7 +27,9 @@ function renderChain(steps: WorkStep[], events: WorkChainEvent[]) {
 }
 
 async function expand() {
-  await userEvent.click(screen.getByRole("button", { name: /Work chain/ }));
+  await userEvent.click(
+    screen.getByRole("button", { name: /How this answer was built/ }),
+  );
 }
 
 describe("work chain", () => {
@@ -48,9 +50,9 @@ describe("work chain", () => {
     );
     await expand();
 
-    const understand = screen.getByText("Understand the question");
-    const retrieve = screen.getByText("Retrieve course pages");
-    const decide = screen.getByText("Apply the disclosure policy");
+    const understand = screen.getByText("Read the question");
+    const retrieve = screen.getByText("Find course pages");
+    const decide = screen.getByText("Check the assignment rules");
     const generate = screen.getByText("Write the answer");
 
     expect(
@@ -65,7 +67,7 @@ describe("work chain", () => {
       decide.compareDocumentPosition(generate) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(screen.queryByText("Attach citations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Add the sources")).not.toBeInTheDocument();
   });
 
   it("keeps a step with no events and shows its detail", async () => {
@@ -75,7 +77,7 @@ describe("work chain", () => {
     );
     await expand();
 
-    expect(screen.getByText("Understand the question")).toBeInTheDocument();
+    expect(screen.getByText("Read the question")).toBeInTheDocument();
     expect(screen.getByText("Parsed the question.")).toBeInTheDocument();
     expect(screen.getByText("Write the answer")).toBeInTheDocument();
   });
@@ -91,7 +93,7 @@ describe("work chain", () => {
     await expand();
 
     const retrieve = screen.getByRole("region", {
-      name: /Retrieve course pages/,
+      name: /Find course pages/,
     });
     const generate = screen.getByRole("region", {
       name: /Write the answer/,
@@ -109,7 +111,7 @@ describe("work chain", () => {
     await expand();
 
     expect(screen.getByText("Tool call: search_course")).toBeInTheDocument();
-    expect(screen.queryByText("Verify quoted spans")).not.toBeInTheDocument();
+    expect(screen.queryByText("Check the quoted text")).not.toBeInTheDocument();
   });
 
   it("renders two same-name step instances as separate sections", async () => {
@@ -126,7 +128,7 @@ describe("work chain", () => {
     await expand();
 
     const sections = screen.getAllByRole("region", {
-      name: /Retrieve course pages/,
+      name: /Find course pages/,
     });
     expect(sections).toHaveLength(2);
     for (const section of sections) {
@@ -144,6 +146,6 @@ describe("work chain", () => {
     await expand();
 
     expect(screen.getByText("Legacy thought.")).toBeInTheDocument();
-    expect(screen.queryByText("Verify quoted spans")).not.toBeInTheDocument();
+    expect(screen.queryByText("Check the quoted text")).not.toBeInTheDocument();
   });
 });

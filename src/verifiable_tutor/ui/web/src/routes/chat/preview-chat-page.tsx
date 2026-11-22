@@ -30,7 +30,7 @@ export function PreviewChatPage() {
   // /chat and /chat/:sessionId render this page from one element, so React
   // keeps the component mounted across a conversation switch. The key forces
   // a fresh state tree per conversation, which is what makes a switch reset
-  // the turns, the composer, and the evidence selection.
+  // the turns, the composer, and the source pane.
   return (
     <ChatSession key={sessionId ?? "new"} sessionId={sessionId} draft={draft} />
   );
@@ -64,7 +64,7 @@ function ChatSession({
   const capabilityError =
     audioAttached && model === "deepseek-flash" ? t.chat.capabilityErrorBody : null;
 
-  function send(clearCitation: () => void) {
+  function send(clearSources: () => void) {
     const text = composer.trim();
     if (!text || capabilityError) {
       return;
@@ -85,13 +85,14 @@ function ChatSession({
         thinking: null,
         work_steps: [],
         citations: [],
+        sources: [],
         tool_calls: [],
       },
     };
     const assistant = turnWithId(PREVIEW_TURNS[1], `preview-assistant-${id}`);
     setTurns((current) => [...current, userTurn, assistant]);
     setComposer("");
-    clearCitation();
+    clearSources();
   }
 
   function retry() {
@@ -116,11 +117,11 @@ function ChatSession({
           <ChatEmpty onPick={setComposer} />
         ) : undefined
       }
-      composer={({ clearCitation }) => (
+      composer={({ clearSources }) => (
         <Composer
           value={composer}
           onChange={setComposer}
-          onSubmit={() => send(clearCitation)}
+          onSubmit={() => send(clearSources)}
           model={model}
           onModelChange={setModel}
           thinking={thinking}

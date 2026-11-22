@@ -725,6 +725,89 @@ class ModelAdapter:
             self._cache.set("tts", cache_key, _speech_to_dict(result))
         return result
 
+    def speak_stream(
+        self,
+        text: str,
+        *,
+        voice: str | None = None,
+        use_cache: bool = True,
+    ) -> Iterator[str]:
+        """Synthesize an answer as a stream of base64 PCM16 audio chunks."""
+        tts = self._config.tts
+        resolved_voice = voice or tts.default_voice
+        model_id = tts.models["default"]
+        request: dict[str, Any] = {
+            "model": model_id,
+            "messages": [
+                {"role": "user", "content": tts.default_instructions},
+                {"role": "assistant", "content": text},
+            ],
+            "extra_body": {
+                "audio": {"format": tts.stream_format, "voice": resolved_voice}
+            },
+            "stream": True,
+        }
+        cache_key = {
+            "stream": True,
+            "format": tts.stream_format,
+            "model": model_id,
+            "messages": request["messages"],
+            "voice": resolved_voice,
+        }
+        if use_cache:
+            cached = self._cache.get("tts_stream", cache_key)
+            if isinstance(cached, list) and all(
+                isinstance(frame, str) for frame in cached
+            ):
+                yield from cached
+                return
+        attempts = self._config.defaults.max_retries + 1
+        last_error: ProviderAPIError | None = None
+        stream = None
+        for attempt in range(attempts):
+            try:
+                stream = self._client(tts.provider).chat.completions.create(**request)
+                break
+            except openai.APIStatusError as exc:
+                last_error = ProviderAPIError(exc.status_code, _error_message(exc))
+            except openai.APITimeoutError as exc:
+                last_error = ProviderAPIError(None, str(exc), timed_out=True)
+            except openai.APIConnectionError as exc:
+                last_error = ProviderAPIError(None, str(exc))
+            if not last_error.retryable:
+                raise last_error
+            if attempt + 1 >= attempts:
+                raise _model_response_error(last_error, attempts) from last_error
+
+        if stream is None:  # pragma: no cover - the loop either returns or raises
+            raise _model_response_error(ProviderAPIError(None, "no stream"), attempts)
+
+        frames: list[str] = []
+        try:
+            for chunk in stream:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                audio_payload = _extra_field(delta, "audio")
+                if isinstance(audio_payload, Mapping):
+                    audio_data = audio_payload.get("data")
+                else:
+                    audio_data = getattr(audio_payload, "data", None)
+                if isinstance(audio_data, str) and audio_data:
+                    frames.append(audio_data)
+                    yield audio_data
+        except (openai.APIError, httpx.HTTPError) as exc:
+            raise _model_response_error(
+                ProviderAPIError(
+                    None,
+                    str(exc),
+                    timed_out=isinstance(exc, openai.APITimeoutError),
+                ),
+                attempts,
+            ) from exc
+        if use_cache:
+            self._cache.set("tts_stream", cache_key, frames)
+
     # -- DeepSeek REST search and fetch -----------------------------------
     def _rest_http_client(self) -> httpx.Client:
         client = getattr(self, "_rest_client", None)

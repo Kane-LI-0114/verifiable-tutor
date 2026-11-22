@@ -91,8 +91,12 @@ def test_streaming_routes_document_text_event_stream(api):
     replay = schema["paths"]["/api/sessions/{session_id}/replay"]["get"]["responses"][
         "200"
     ]["content"]
+    tts = schema["paths"]["/api/voice/speech/stream"]["post"]["responses"]["200"][
+        "content"
+    ]
     assert "text/event-stream" in chat
     assert "text/event-stream" in replay
+    assert "text/event-stream" in tts
 
 
 def test_key_error_responses_are_documented(api):
@@ -155,6 +159,7 @@ REQUEST_BODY_MODELS = {
     "ChatBody",
     "BuildBody",
     "SpeechBody",
+    "SpeechStreamBody",
     "PracticeRunBody",
 }
 

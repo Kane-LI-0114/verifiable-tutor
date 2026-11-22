@@ -3,6 +3,7 @@ import type { UIMessage } from "ai";
 import type {
   AssistantMeta,
   ChatMessage,
+  CitationSource,
   ConversationTurn,
   PolicyState,
   ToolCall,
@@ -44,9 +45,14 @@ export interface ToolCallData {
   step_id?: string;
 }
 
+export interface SourcesData {
+  sources: CitationSource[];
+}
+
 export type TutorDataParts = {
   step: WorkStepData;
   tool: ToolCallData;
+  sources: SourcesData;
 } & Record<string, unknown>;
 
 export type TutorUIMessage = UIMessage<MessageMetadata, TutorDataParts>;
@@ -234,6 +240,21 @@ function reasoningText(parts: TutorPart[]): string {
     .join("");
 }
 
+/** The latest full source snapshot the backend streamed for this turn. */
+function sourcesFromParts(parts: TutorPart[]): CitationSource[] {
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+    if (part.type !== "data-sources") {
+      continue;
+    }
+    const data = part.data as SourcesData;
+    if (Array.isArray(data.sources)) {
+      return data.sources;
+    }
+  }
+  return [];
+}
+
 /**
  * The turn metadata a stored assistant row carries. The first step that holds a
  * policy labels the work chain. A row with no metadata at all is a legacy
@@ -250,6 +271,7 @@ function storedMeta(stored: ChatMessage): AssistantMeta | undefined {
     stored.work_steps.length === 0 &&
     reasoning.length === 0 &&
     stored.citations.length === 0 &&
+    (stored.sources ?? []).length === 0 &&
     stored.tool_calls.length === 0 &&
     events.length === 0
   ) {
@@ -259,6 +281,7 @@ function storedMeta(stored: ChatMessage): AssistantMeta | undefined {
     work_steps: stored.work_steps,
     reasoning,
     citations: stored.citations,
+    sources: stored.sources ?? [],
     tool_calls: stored.tool_calls,
     events,
     policy_state:
@@ -296,6 +319,7 @@ export function toConversationTurn(
       thinking: stored?.thinking ?? null,
       work_steps: stored?.work_steps ?? [],
       citations: stored?.citations ?? [],
+      sources: stored?.sources ?? [],
       tool_calls: stored?.tool_calls ?? [],
       events: stored?.events ?? [],
     },
@@ -311,11 +335,13 @@ export function toConversationTurn(
       const reasoning = reasoningText(message.parts);
       const calls = toolCalls(message.parts);
       const events = workChainEvents(message.parts);
-      if (steps.length > 0 || events.length > 0) {
+      const sources = sourcesFromParts(message.parts);
+      if (steps.length > 0 || events.length > 0 || sources.length > 0) {
         turn.meta = {
           work_steps: steps,
           reasoning,
           citations: [],
+          sources,
           tool_calls: calls,
           events,
           policy_state: steps.find((step) => step.policy)?.policy ?? "active",

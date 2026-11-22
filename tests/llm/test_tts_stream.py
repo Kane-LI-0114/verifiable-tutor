@@ -1,0 +1,166 @@
+import base64
+import json
+from pathlib import Path
+
+import httpx
+import pytest
+
+from verifiable_tutor.llm.adapter import ModelAdapter, ModelResponseError
+from verifiable_tutor.llm.config import load_model_config
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REAL_CONFIG = REPO_ROOT / "config" / "models.yaml"
+ENV = {"DEEPSEEK_API_KEY": "sk-deepseek-test", "MIMO_API_KEY": "sk-mimo-test"}
+
+ANSWER = "MPI_Allreduce combines values from all ranks."
+
+# Known-good base64 literals for 2-sample PCM16 chunks (little endian).
+FRAMES = ["AAABAA==", "AgADAA==", "BAAFAA=="]
+AUDIO_BYTES = b"RIFFfake"
+
+
+def make_adapter(
+    handler, cache_root: Path | None = None, *, enabled: bool = False
+) -> ModelAdapter:
+    resolved = load_model_config(REAL_CONFIG, env=ENV)
+    resolved.config.cache.enabled = enabled
+    return ModelAdapter(
+        resolved, transport=httpx.MockTransport(handler), cache_root=cache_root
+    )
+
+
+def sse_response(frames: list[str]) -> httpx.Response:
+    chunks = []
+    for index, frame in enumerate(frames):
+        chunks.append(
+            {
+                "id": "tts-stream",
+                "object": "chat.completion.chunk",
+                "created": 1,
+                "model": "mimo-v2.5-tts",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {
+                            "audio": {
+                                "id": "audio-1",
+                                "data": frame,
+                                "expires_at": None,
+                                "transcript": None,
+                            }
+                        },
+                        "finish_reason": "stop" if index == len(frames) - 1 else None,
+                    }
+                ],
+            }
+        )
+    body = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks)
+    return httpx.Response(
+        200,
+        headers={"content-type": "text/event-stream"},
+        text=body + "data: [DONE]\n\n",
+    )
+
+
+def test_speak_stream_decodes_pcm16_chunks_from_the_mimo_stream() -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return sse_response(FRAMES)
+
+    result = list(make_adapter(handler).speak_stream(ANSWER))
+
+    assert result == FRAMES
+    body = json.loads(captured[0].content)
+    assert body["stream"] is True
+    assert body["model"] == "mimo-v2.5-tts"
+    assert body["audio"] == {"format": "pcm16", "voice": "mimo_default"}
+    assert body["messages"][1] == {"role": "assistant", "content": ANSWER}
+
+
+def test_speak_stream_reports_mid_stream_upstream_failures() -> None:
+    class DroppingStream(httpx.SyncByteStream):
+        def __iter__(self):
+            first = {
+                "id": "tts-stream",
+                "object": "chat.completion.chunk",
+                "created": 1,
+                "model": "mimo-v2.5-tts",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"audio": {"id": "audio-1", "data": FRAMES[0]}},
+                        "finish_reason": None,
+                    }
+                ],
+            }
+            yield f"data: {json.dumps(first)}\n\n".encode("utf-8")
+            raise httpx.ReadError("upstream dropped the stream")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/event-stream"},
+            stream=DroppingStream(),
+        )
+
+    frames = make_adapter(handler).speak_stream(ANSWER)
+    assert next(frames) == FRAMES[0]
+
+    with pytest.raises(Exception) as raised:
+        next(frames)
+    assert isinstance(raised.value, ModelResponseError), (
+        f"mid-stream failure surfaced as {type(raised.value).__name__}"
+    )
+
+
+def speech_response() -> dict:
+    return {
+        "id": "tts-test",
+        "object": "chat.completion",
+        "created": 1,
+        "model": "mimo-v2.5-tts",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "audio": {
+                        "data": base64.b64encode(AUDIO_BYTES).decode("ascii"),
+                        "transcript": None,
+                        "expires_at": None,
+                    },
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 0, "total_tokens": 10},
+    }
+
+
+def test_speak_stream_replays_cached_frames_without_a_second_upstream_request(
+    tmp_path: Path,
+) -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        body = json.loads(request.content)
+        if body.get("stream") is True:
+            return sse_response(FRAMES)
+        return httpx.Response(200, json=speech_response())
+
+    adapter = make_adapter(handler, tmp_path, enabled=True)
+
+    assert list(adapter.speak_stream(ANSWER)) == FRAMES
+    assert list(adapter.speak_stream(ANSWER)) == FRAMES
+    assert len(captured) == 1
+
+    # The whole-audio cache and the frame cache stay separate.
+    assert adapter.speak(ANSWER).audio == AUDIO_BYTES
+    assert adapter.speak(ANSWER).audio == AUDIO_BYTES
+    assert len(captured) == 2
+    assert list(adapter.speak_stream(ANSWER)) == FRAMES
+    assert len(captured) == 2

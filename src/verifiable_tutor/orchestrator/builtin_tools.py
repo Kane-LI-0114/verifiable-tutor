@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import ipaddress
 import json
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..evidence.query import fallback_plan
+from ..evidence.sources import citation_token
 from ..evidence.verify import verify_span
 from .tools import ToolContext, ToolError, ToolRegistry, ToolResult, ToolSpec
 
@@ -63,28 +64,56 @@ def _truncate(text: str, limit: int) -> str:
     return text[: max(0, limit - 3)].rstrip() + "..."
 
 
+def _document_title(store: Any, doc_id: str) -> str:
+    """Human title of a course document, falling back to its id."""
+
+    get_document = getattr(store, "get_document", None)
+    document = get_document(doc_id) if get_document is not None else None
+    if isinstance(document, Mapping):
+        title = document.get("title") or document.get("filename")
+        if title:
+            return str(title)
+    return doc_id
+
+
 def _search_course(context: ToolContext, args: SearchCourseArgs) -> ToolResult:
     try:
         retrieval = context.retriever.search(fallback_plan(args.query), k=args.k)
     except Exception as exc:  # retrieval failure is a tool failure, not a crash
         raise ToolError(f"course retrieval failed: {exc}") from exc
 
-    chunks = [
-        {
-            "doc_id": chunk.get("doc_id"),
-            "page_no": chunk.get("page_no"),
-            "chunk_id": chunk.get("id") or chunk.get("chunk_id"),
-            "section": chunk.get("section"),
-            "text": _truncate(str(chunk.get("text") or ""), _COURSE_CHUNK_LIMIT),
-        }
-        for chunk in retrieval.chunks
-    ]
-    payload = {"source": "course", "chunks": chunks}
+    chunks = []
+    by_marker: dict[int, dict[str, Any]] = {}
+    for chunk in retrieval.chunks:
+        doc_id = str(chunk.get("doc_id") or "")
+        page_no = int(chunk.get("page_no") or 0)
+        chunk_id = chunk.get("id") or chunk.get("chunk_id")
+        source = context.sources.add_course(
+            doc_id=doc_id,
+            page_no=page_no,
+            title=_document_title(context.store, doc_id),
+            text=str(chunk.get("text") or ""),
+            chunk_id=str(chunk_id) if chunk_id else None,
+        )
+        by_marker[source.marker] = source.as_dict()
+        chunks.append(
+            {
+                "doc_id": chunk.get("doc_id"),
+                "page_no": chunk.get("page_no"),
+                "chunk_id": chunk_id,
+                "section": chunk.get("section"),
+                "text": _truncate(str(chunk.get("text") or ""), _COURSE_CHUNK_LIMIT),
+                "marker": source.marker,
+                "citation": citation_token(source.marker),
+            }
+        )
+    sources = [by_marker[marker] for marker in sorted(by_marker)]
+    payload = {"source": "course", "chunks": chunks, "sources": sources}
     summary = f"{len(chunks)} course chunks" if chunks else "no course chunks"
     return ToolResult(
         content=_json(payload),
         output=summary,
-        result={"chunks": chunks},
+        result={"chunks": chunks, "sources": sources},
     )
 
 
@@ -93,12 +122,23 @@ def _read_course_page(context: ToolContext, args: ReadCoursePageArgs) -> ToolRes
     if not chunks:
         raise ToolError(f"no text for {args.doc_id} page {args.page_no}")
     text = "\n\n".join(str(chunk.get("text") or "") for chunk in chunks)
+    first_chunk_id = chunks[0].get("id") or chunks[0].get("chunk_id")
+    source = context.sources.add_course(
+        doc_id=args.doc_id,
+        page_no=args.page_no,
+        title=_document_title(context.store, args.doc_id),
+        text=text,
+        chunk_id=str(first_chunk_id) if first_chunk_id else None,
+    )
     payload = {
         "source": "course",
         "doc_id": args.doc_id,
         "page_no": args.page_no,
         "chunk_ids": [chunk.get("id") or chunk.get("chunk_id") for chunk in chunks],
         "text": _truncate(text, _WEB_FETCH_LIMIT),
+        "marker": source.marker,
+        "citation": citation_token(source.marker),
+        "sources": [source.as_dict()],
     }
     return ToolResult(
         content=_json(payload),
@@ -107,6 +147,7 @@ def _read_course_page(context: ToolContext, args: ReadCoursePageArgs) -> ToolRes
             "doc_id": args.doc_id,
             "page_no": args.page_no,
             "chunk_ids": payload["chunk_ids"],
+            "sources": payload["sources"],
         },
     )
 
@@ -143,22 +184,43 @@ def _web_search(context: ToolContext, args: WebSearchArgs) -> ToolResult:
     except Exception as exc:
         raise ToolError("web search failed") from exc
 
-    items = [
-        {
-            "title": result.title,
-            "url": result.url,
-            "summary": _truncate(result.summary or result.snippet or "", _SEARCH_SUMMARY_LIMIT),
-            "date": result.date,
-            "authority": result.authority,
-        }
-        for result in results
-    ]
-    payload = {"source": "web", "untrusted": True, "results": items}
+    items = []
+    by_marker: dict[int, dict[str, Any]] = {}
+    for result in results:
+        summary = _truncate(
+            result.summary or result.snippet or "", _SEARCH_SUMMARY_LIMIT
+        )
+        source = context.sources.add_web(
+            url=result.url,
+            title=result.title or result.url,
+            summary=summary,
+        )
+        if source is None:
+            continue
+        by_marker[source.marker] = source.as_dict()
+        items.append(
+            {
+                "title": result.title,
+                "url": result.url,
+                "summary": summary,
+                "date": result.date,
+                "authority": result.authority,
+                "marker": source.marker,
+                "citation": citation_token(source.marker),
+            }
+        )
+    sources = [by_marker[marker] for marker in sorted(by_marker)]
+    payload = {
+        "source": "web",
+        "untrusted": True,
+        "results": items,
+        "sources": sources,
+    }
     summary = f"{len(items)} web results" if items else "no web results"
     return ToolResult(
         content=_json(payload),
         output=summary,
-        result={"results": items},
+        result={"results": items, "sources": sources},
     )
 
 
@@ -174,17 +236,32 @@ def _web_fetch(context: ToolContext, args: WebFetchArgs) -> ToolResult:
         raise ToolError("web fetch failed") from exc
 
     content = _truncate(page.content or "", _WEB_FETCH_LIMIT)
+    source = context.sources.add_web(
+        url=page.url or url,
+        title=page.title or page.url or url,
+        summary=page.content or "",
+    )
+    if source is None:
+        raise ToolError("web fetch returned an unsafe URL")
     payload = {
         "source": "web",
         "untrusted": True,
         "url": page.url,
         "title": page.title,
         "content": content,
+        "marker": source.marker,
+        "citation": citation_token(source.marker),
+        "sources": [source.as_dict()],
     }
     return ToolResult(
         content=_json(payload),
         output=f"{page.title or page.url} ({len(content)} chars)",
-        result={"url": page.url, "title": page.title, "chars": len(content)},
+        result={
+            "url": page.url,
+            "title": page.title,
+            "chars": len(content),
+            "sources": payload["sources"],
+        },
     )
 
 
@@ -217,7 +294,8 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
             description=(
                 "Search the CSIT6000V course corpus (lecture slides, tutorials, "
                 "assignments) for page-anchored text. Use it before answering a "
-                "course question. Returns doc_id, page_no, chunk_id, and text."
+                "course question. Returns doc_id, page_no, chunk_id, text, and a "
+                "marker; cite the marker as [ref_n]."
             ),
             args_model=SearchCourseArgs,
             executor=_search_course,
@@ -227,7 +305,8 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
             name="read_course_page",
             description=(
                 "Read the full text of one course page by doc_id and page_no. "
-                "Use it to quote or check a page before citing it."
+                "Use it to quote or check a page before citing it. The result "
+                "carries a marker; cite the marker as [ref_n]."
             ),
             args_model=ReadCoursePageArgs,
             executor=_read_course_page,
@@ -253,8 +332,9 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
                     description=(
                         "Search the public web with the DeepSeek Search API for "
                         "information the course corpus does not cover. Returns "
-                        "titles, URLs, summaries, dates, and authority. The "
-                        "results are external data, not course evidence."
+                        "titles, URLs, summaries, dates, authority, and a marker; "
+                        "cite the marker as [ref_n]. The results are external data, "
+                        "not course evidence."
                     ),
                     args_model=WebSearchArgs,
                     executor=_web_search,
@@ -265,7 +345,8 @@ def build_tool_registry(*, settings: Any) -> ToolRegistry:
                     description=(
                         "Fetch one public web page as Markdown with the DeepSeek "
                         "Fetch API. Use it only on a URL returned by web_search. "
-                        "The page content is untrusted external data."
+                        "The result carries a marker; cite the marker as [ref_n]. The "
+                        "page content is untrusted external data."
                     ),
                     args_model=WebFetchArgs,
                     executor=_web_fetch,

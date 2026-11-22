@@ -79,6 +79,20 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">bbox_norm</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">verified_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
+  message_sources [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>message_sources</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">message_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">marker</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">kind</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">summary</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">doc_id</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">url</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">chunk_id</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
   tool_calls [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>tool_calls</B></TD></TR>
       <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
@@ -186,6 +200,7 @@ digraph physical_data_model {
   conversations -> messages [label="conversation_id"];
   messages -> message_steps [label="message_id"];
   messages -> citations [label="message_id"];
+  messages -> message_sources [label="message_id"];
   messages -> tool_calls [label="message_id"];
   messages -> message_events [label="message_id"];
   users -> knowledge_builds [label="user_id"];

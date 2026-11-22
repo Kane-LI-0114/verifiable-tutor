@@ -29,6 +29,7 @@ SCHEMA_TABLE_ORDER = (
     "messages",
     "message_steps",
     "citations",
+    "message_sources",
     "tool_calls",
     "message_events",
     "knowledge_builds",
@@ -98,7 +99,7 @@ TABLE_NOTES = {
     ),
     "messages": (
         "Ordered conversation messages. Assistant rows carry the answer text and "
-        "the turn scalars; list-shaped turn metadata lives in the three child "
+        "the turn scalars; list-shaped turn metadata lives in the four child "
         "tables below."
     ),
     "message_steps": (
@@ -107,7 +108,13 @@ TABLE_NOTES = {
     ),
     "citations": (
         "Quoted page spans cited by one assistant answer. The table is ready but "
-        "empty until the evidence layer emits citations."
+        "empty until the span verifier emits verified citations."
+    ),
+    "message_sources": (
+        "Numbered sources one assistant answer retrieved, in citation-marker "
+        "order. A course source points at one document page and a web source at "
+        "one URL. The row is the unverified source a marker refers to, not a "
+        "verified citation."
     ),
     "tool_calls": (
         "Typed tool calls of one assistant answer with the provider call id, "
@@ -212,6 +219,19 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "quoted_span": "Exact text from the page; a citation without a span is invalid.",
         "bbox_norm": "JSON [x1, y1, x2, y2] normalized page box for the evidence panel.",
         "verified_at": "Deterministic span-verifier pass time; null until verified.",
+    },
+    "message_sources": {
+        "id": "Source row id (uuid hex).",
+        "message_id": "Assistant message whose answer cites the source.",
+        "position": "0-based display order inside the turn.",
+        "marker": "1-based citation number the answer uses as [ref_n].",
+        "kind": "course or web.",
+        "title": "Course document title or web page title.",
+        "summary": "Fixed-length excerpt of the retrieved page or web result.",
+        "doc_id": "Course document id; null for a web source.",
+        "page_no": "1-based course page number; null for a web source.",
+        "url": "Web source URL without the fragment; null for a course source.",
+        "chunk_id": "Retrieved chunk id that introduced the source, when known.",
     },
     "tool_calls": {
         "id": "Tool-call row id (uuid hex).",
