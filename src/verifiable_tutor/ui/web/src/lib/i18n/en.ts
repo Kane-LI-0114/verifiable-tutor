@@ -250,12 +250,12 @@ export const en = {
   },
   practice: {
     title: "Practice and self-test",
-    subtitle:
-      "Each question comes with a reference answer and its sources. Code answers run as a TACC job.",
+    subtitle: "Each question comes with a reference answer and its sources.",
     questionsTab: "Questions",
     solutionTab: "My solution",
     settingsTitle: "Question settings",
     topic: "Topic",
+    others: "Others",
     topicPlaceholder: "MPI collectives, attention softmax, TACC jobs",
     type: "Question type",
     types: {

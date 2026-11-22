@@ -243,11 +243,12 @@ export const zh: Messages = {
   },
   practice: {
     title: "练习与自测",
-    subtitle: "每道题附参考答案与出处；代码答案在 TACC 作业中运行。",
+    subtitle: "每道题附参考答案与出处。",
     questionsTab: "题目",
     solutionTab: "我的解答",
     settingsTitle: "题目设置",
     topic: "主题",
+    others: "其他",
     topicPlaceholder: "MPI 集合通信、attention softmax、TACC 作业",
     type: "题型",
     types: {

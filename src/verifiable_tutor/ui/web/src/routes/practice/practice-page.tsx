@@ -1,23 +1,11 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { CitationRow } from "@/components/practice/citation-row";
-import { EvidencePanel } from "@/components/practice/evidence-panel";
-import { PageEmpty, PageError, PageHeader, PageLoading } from "@/components/layout/page-states";
-import { TestResults } from "@/components/practice/test-results";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Markdown } from "@/components/ai/markdown";
+import { PageEmpty, PageHeader } from "@/components/layout/page-states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CodeBlock, CodeBlockContent } from "@/components/ui/code-block";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -28,22 +16,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { format, useT } from "@/lib/i18n";
-import { usePreview } from "@/lib/preview/context";
 import {
-  PREVIEW_GRADING,
-  PREVIEW_GRADING_PARTIAL,
-  PREVIEW_QUESTIONS,
-} from "@/lib/preview/fixtures";
-import type { Citation, QuestionType } from "@/lib/types";
+  generatePractice,
+  gradePractice,
+  type GeneratedQuestion,
+  type PracticeGradingResponse,
+} from "@/lib/api/practice";
+import { format, useT } from "@/lib/i18n";
+import type { CitationSource, QuestionType } from "@/lib/types";
+
+const TOPICS = [
+  "memory hierarchy",
+  "FlashAttention",
+  "MPI",
+  "GEMM",
+  "CUDA",
+  "others",
+];
 
 const QUESTION_TYPES: QuestionType[] = [
   "single-choice",
@@ -55,51 +45,73 @@ const QUESTION_TYPES: QuestionType[] = [
 
 export function PracticePage() {
   const t = useT();
-  const { pageState } = usePreview();
-  const [type, setType] = useState<QuestionType>("single-choice");
-  const [difficulty, setDifficulty] = useState("medium");
   const [topic, setTopic] = useState("");
-  const [choice, setChoice] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [answer, setAnswer] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [graded, setGraded] = useState(false);
-  const [missingAnswer, setMissingAnswer] = useState(false);
-  const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
+  const [customTopic, setCustomTopic] = useState("");
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
+  const [sources, setSources] = useState<CitationSource[]>([]);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [selected, setSelected] = useState<Record<number, string[]>>({});
+  const [results, setResults] = useState<Record<number, PracticeGradingResponse>>({});
+  const [grading, setGrading] = useState<Record<number, boolean>>({});
 
-  const question = useMemo(
-    () => PREVIEW_QUESTIONS.find((item) => item.type === type) ?? PREVIEW_QUESTIONS[0],
-    [type],
-  );
-  const result = type === "code" ? PREVIEW_GRADING : PREVIEW_GRADING_PARTIAL;
-  const activeIndex =
-    activeCitation === null
-      ? null
-      : Math.max(result.citations.indexOf(activeCitation), 0);
+  const effectiveTopic = topic === "others" ? customTopic.trim() : topic.trim();
 
-  const answered =
-    type === "single-choice" || type === "true-false"
-      ? choice !== ""
-      : type === "multiple-choice"
-        ? selected.length > 0
-        : answer.trim() !== "";
-
-  function submit() {
-    if (!answered) {
-      setMissingAnswer(true);
-      return;
+  async function handleGenerate() {
+    if (!effectiveTopic || generating) return;
+    setGenerating(true);
+    setGenerateError(null);
+    setQuestions([]);
+    setResults({});
+    setAnswers({});
+    setSelected({});
+    try {
+      const result = await generatePractice(effectiveTopic, selectedTypes);
+      setQuestions(result.questions);
+      setSources(result.sources);
+      if (result.questions.length === 0) {
+        setGenerateError(t.practice.emptyBody);
+      }
+    } catch (error) {
+      setGenerateError(
+        error instanceof Error ? error.message : "question generation failed",
+      );
+    } finally {
+      setGenerating(false);
     }
-    setMissingAnswer(false);
-    if (type === "code") {
-      setConfirmOpen(true);
-      return;
-    }
-    setGraded(true);
   }
 
-  function confirmRun() {
-    setConfirmOpen(false);
-    setGraded(true);
+  function answerFor(index: number, question: GeneratedQuestion): string {
+    if (question.type === "multiple-choice") {
+      return (selected[index] ?? []).join(", ");
+    }
+    return answers[index] ?? "";
+  }
+
+  async function handleSubmit(index: number) {
+    const question = questions[index];
+    const answer = answerFor(index, question);
+    if (!answer.trim()) return;
+    setGrading((current) => ({ ...current, [index]: true }));
+    try {
+      const result = await gradePractice({
+        question: question.question,
+        answer,
+        reference_answer: question.reference_answer,
+        scoring_points: question.scoring_points,
+        max_score: question.max_score,
+      });
+      setResults((current) => ({ ...current, [index]: result }));
+    } catch {
+      setResults((current) => ({
+        ...current,
+        [index]: { score: 0, max_score: question.max_score, explanation: t.common.errorBody },
+      }));
+    } finally {
+      setGrading((current) => ({ ...current, [index]: false }));
+    }
   }
 
   return (
@@ -107,142 +119,108 @@ export function PracticePage() {
       <div className="mx-auto w-full max-w-4xl space-y-4 p-6">
         <PageHeader title={t.practice.title} description={t.practice.subtitle} />
 
-        <Tabs defaultValue="questions">
-          <TabsList>
-            <TabsTrigger value="questions">{t.practice.questionsTab}</TabsTrigger>
-            <TabsTrigger value="solution">{t.practice.solutionTab}</TabsTrigger>
-          </TabsList>
+        <Card>
+          <CardContent className="pt-6">
+            <FieldGroup>
+              <Field>
+                <FieldLabel>{t.practice.topic}</FieldLabel>
+                <Select value={topic} onValueChange={setTopic}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.practice.topicPlaceholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TOPICS.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item === "others" ? t.practice.others : item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              {topic === "others" ? (
+                <Field>
+                  <FieldLabel>{t.practice.topic}</FieldLabel>
+                  <Input
+                    value={customTopic}
+                    placeholder={t.practice.topicPlaceholder}
+                    onChange={(event) => setCustomTopic(event.target.value)}
+                  />
+                </Field>
+              ) : null}
+              <Field>
+                <FieldLabel>{t.practice.type}</FieldLabel>
+                <div className="space-y-2">
+                  {QUESTION_TYPES.map((type) => (
+                    <label key={type} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={selectedTypes.includes(type)}
+                        onCheckedChange={(checked) =>
+                          setSelectedTypes((current) =>
+                            checked
+                              ? [...current, type]
+                              : current.filter((value) => value !== type),
+                          )
+                        }
+                      />
+                      {t.practice.types[type]}
+                    </label>
+                  ))}
+                </div>
+              </Field>
+              <div className="flex flex-col items-start gap-1">
+                <Button
+                  type="button"
+                  disabled={generating || !effectiveTopic}
+                  onClick={handleGenerate}
+                >
+                  {t.practice.generate}
+                </Button>
+                {generateError ? (
+                  <p className="text-xs text-muted-foreground">{generateError}</p>
+                ) : null}
+              </div>
+            </FieldGroup>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="questions" className="space-y-4 pt-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <h2 className="text-sm font-semibold">
-                    {t.practice.settingsTitle}
-                  </h2>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FieldGroup className="md:grid md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="practice-topic">
-                      {t.practice.topic}
-                    </FieldLabel>
-                    <Input
-                      id="practice-topic"
-                      placeholder={t.practice.topicPlaceholder}
-                      value={topic}
-                      onChange={(event) => setTopic(event.target.value)}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="practice-type">
-                      {t.practice.type}
-                    </FieldLabel>
-                    <Select
-                      value={type}
-                      onValueChange={(value) => {
-                        setType(value as QuestionType);
-                        setGraded(false);
-                        setMissingAnswer(false);
-                        setChoice("");
-                        setSelected([]);
-                      }}
-                    >
-                      <SelectTrigger id="practice-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {QUESTION_TYPES.map((item) => (
-                          <SelectItem key={item} value={item}>
-                            {t.practice.types[item]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="practice-difficulty">
-                      {t.practice.difficulty}
-                    </FieldLabel>
-                    <Select value={difficulty} onValueChange={setDifficulty}>
-                      <SelectTrigger id="practice-difficulty">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="easy">
-                          {t.practice.difficulties.easy}
-                        </SelectItem>
-                        <SelectItem value="medium">
-                          {t.practice.difficulties.medium}
-                        </SelectItem>
-                        <SelectItem value="hard">
-                          {t.practice.difficulties.hard}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <div className="flex flex-col items-start gap-1">
-                    <Button
-                      type="button"
-                      disabled
-                      title={t.practice.generateDisabled}
-                    >
-                      {t.practice.generate}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      {t.practice.generateDisabled}
-                    </p>
-                  </div>
-                </FieldGroup>
-              </CardContent>
-            </Card>
-
-            {pageState === "loading" ? (
-              <PageLoading />
-            ) : pageState === "error" ? (
-              <PageError
-                title={t.common.errorTitle}
-                description={t.common.errorBody}
-              />
-            ) : pageState === "empty" ? (
-              <PageEmpty
-                title={t.practice.emptyTitle}
-                description={t.practice.emptyBody}
-              />
-            ) : (
-              <Card>
+        {questions.length === 0 && !generating ? (
+          <PageEmpty title={t.practice.emptyTitle} description={t.practice.emptyBody} />
+        ) : (
+          questions.map((question, index) => {
+            const result = results[index];
+            const isGrading = grading[index] === true;
+            return (
+              <Card key={index}>
                 <CardHeader>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{t.practice.types[question.type]}</Badge>
                     <Badge variant="outline">
                       {format(
-                        question.points === 1
+                        question.max_score === 1
                           ? t.practice.pointsOne
                           : t.practice.points,
-                        { count: question.points },
+                        { count: question.max_score },
                       )}
                     </Badge>
-                    {question.citations.map((citation) => (
-                      <Badge key={citation.doc_id + citation.page_no} variant="outline">
-                        {citation.doc_id} p.{citation.page_no}
-                      </Badge>
-                    ))}
                   </div>
                   <CardTitle>
-                    <h2 className="text-base font-semibold">{question.prompt}</h2>
+                    <Markdown sources={sources} className="text-base font-semibold">
+                      {question.question}
+                    </Markdown>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {question.type === "single-choice" ? (
-                    <RadioGroup value={choice} onValueChange={setChoice}>
-                      {question.choices.map((option) => (
-                        <label
-                          key={option.value}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <RadioGroupItem value={option.value} />
-                          {option.label}
+                  {question.type === "single-choice" || question.type === "true-false" ? (
+                    <RadioGroup
+                      value={answers[index] ?? ""}
+                      onValueChange={(value) =>
+                        setAnswers((current) => ({ ...current, [index]: value }))
+                      }
+                    >
+                      {question.choices.map((choice) => (
+                        <label key={choice} className="flex items-center gap-2 text-sm">
+                          <RadioGroupItem value={choice} />
+                          {choice}
                         </label>
                       ))}
                     </RadioGroup>
@@ -250,100 +228,53 @@ export function PracticePage() {
 
                   {question.type === "multiple-choice" ? (
                     <div className="space-y-2">
-                      {question.choices.map((option) => (
-                        <label
-                          key={option.value}
-                          className="flex items-center gap-2 text-sm"
-                        >
+                      {question.choices.map((choice) => (
+                        <label key={choice} className="flex items-center gap-2 text-sm">
                           <Checkbox
-                            checked={selected.includes(option.value)}
+                            checked={(selected[index] ?? []).includes(choice)}
                             onCheckedChange={(checked) =>
-                              setSelected((current) =>
-                                checked
-                                  ? [...current, option.value]
-                                  : current.filter((value) => value !== option.value),
-                              )
+                              setSelected((current) => ({
+                                ...current,
+                                [index]: checked
+                                  ? [...(current[index] ?? []), choice]
+                                  : (current[index] ?? []).filter((value) => value !== choice),
+                              }))
                             }
                           />
-                          {option.label}
+                          {choice}
                         </label>
                       ))}
                     </div>
                   ) : null}
 
-                  {question.type === "true-false" ? (
-                    <RadioGroup value={choice} onValueChange={setChoice}>
-                      {question.choices.map((option) => (
-                        <label
-                          key={option.value}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <RadioGroupItem value={option.value} />
-                          {option.label}
-                        </label>
-                      ))}
-                    </RadioGroup>
-                  ) : null}
-
-                  {question.type === "short-answer" ? (
+                  {question.type === "short-answer" || question.type === "code" ? (
                     <Field>
-                      <FieldLabel htmlFor="practice-answer">
-                        {t.practice.answer}
-                      </FieldLabel>
+                      <FieldLabel>{t.practice.answer}</FieldLabel>
                       <Textarea
-                        id="practice-answer"
+                        className={
+                          question.type === "code" ? "min-h-32 font-mono text-xs" : ""
+                        }
                         placeholder={t.practice.answerPlaceholder}
-                        value={answer}
-                        onChange={(event) => setAnswer(event.target.value)}
+                        value={answers[index] ?? ""}
+                        onChange={(event) =>
+                          setAnswers((current) => ({ ...current, [index]: event.target.value }))
+                        }
                       />
                     </Field>
                   ) : null}
 
-                  {question.type === "code" ? (
-                    <div className="space-y-2">
-                      <CodeBlock size="sm">
-                        <CodeBlockContent>
-                          {question.code_template ?? ""}
-                        </CodeBlockContent>
-                      </CodeBlock>
-                      <Field>
-                        <FieldLabel htmlFor="practice-code">
-                          {t.practice.answer}
-                        </FieldLabel>
-                        <Textarea
-                          id="practice-code"
-                          className="min-h-32 font-mono text-xs"
-                          placeholder={t.practice.codePlaceholder}
-                          value={answer}
-                          onChange={(event) => setAnswer(event.target.value)}
-                        />
-                      </Field>
-                    </div>
-                  ) : null}
-
-                  <Button type="button" onClick={submit}>
-                    {t.practice.submit}
+                  <Button
+                    type="button"
+                    disabled={isGrading || !answerFor(index, question).trim()}
+                    onClick={() => handleSubmit(index)}
+                  >
+                    {isGrading ? t.practice.running : t.practice.submit}
                   </Button>
 
-                  {missingAnswer && !graded ? (
-                    <Alert>
-                      <AlertDescription>{t.practice.answerRequired}</AlertDescription>
-                    </Alert>
-                  ) : null}
-
-                  {graded ? (
+                  {result ? (
                     <div className="space-y-3 rounded-lg border p-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-semibold">
-                          {t.practice.gradingTitle}
-                        </h3>
-                        <Badge
-                          variant={
-                            result.verdict === "correct" ? "secondary" : "outline"
-                          }
-                        >
-                          {t.practice.verdicts[result.verdict]}
-                        </Badge>
+                        <h3 className="text-sm font-semibold">{t.practice.gradingTitle}</h3>
                         <span className="text-sm text-muted-foreground">
                           {format(t.practice.score, {
                             score: result.score,
@@ -352,89 +283,14 @@ export function PracticePage() {
                         </span>
                       </div>
                       <p className="text-sm">{result.explanation}</p>
-                      <CitationRow
-                        citations={result.citations}
-                        onOpen={setActiveCitation}
-                      />
-                      {result.test_suites && question.type === "code" ? (
-                        <TestResults suites={result.test_suites} />
-                      ) : null}
                     </div>
                   ) : null}
                 </CardContent>
               </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="solution" className="space-y-3 pt-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  <h2 className="text-sm font-semibold">{t.practice.solutionTitle}</h2>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  {t.practice.solutionBody}
-                </p>
-                <Textarea
-                  className="min-h-40 font-mono text-xs"
-                  aria-label={t.practice.solutionTitle}
-                  placeholder={t.practice.solutionPlaceholder}
-                />
-                <Button type="button" disabled title={t.common.unavailable}>
-                  {t.practice.solutionSubmit}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  {t.practice.solutionDisabled}
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            );
+          })
+        )}
       </div>
-
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t.practice.confirmationTitle}</DialogTitle>
-            <DialogDescription>{t.practice.confirmationBody}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmOpen(false)}
-            >
-              {t.practice.cancelRun}
-            </Button>
-            <Button type="button" onClick={confirmRun}>
-              {t.practice.confirmRun}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Sheet
-        open={activeCitation !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setActiveCitation(null);
-          }
-        }}
-      >
-        <SheetContent side="right" className="w-full p-0 sm:max-w-lg">
-          <SheetHeader className="border-b">
-            <SheetTitle>{t.chat.evidenceTitle}</SheetTitle>
-          </SheetHeader>
-          <EvidencePanel
-            citations={result.citations}
-            activeIndex={activeIndex}
-            onSelect={(index) => setActiveCitation(result.citations[index] ?? null)}
-            className="min-h-0 flex-1"
-          />
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
