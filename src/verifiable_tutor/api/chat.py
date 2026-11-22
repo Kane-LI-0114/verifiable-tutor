@@ -150,9 +150,10 @@ class ChatService:
         topic: str,
         *,
         adapter: Any,
+        types: list[str] | None = None,
         provider: str | None = None,
         tier: str | None = None,
-    ) -> tuple[str, list[dict[str, Any]]]:
+    ) -> tuple[list[Any], list[dict[str, Any]]]:
         """Generate self-test questions for a topic through the agent loop."""
 
         from ..practice.generate import generate_practice as _generate
@@ -161,6 +162,7 @@ class ChatService:
             topic,
             self._runner,
             adapter,
+            types=types,
             provider=provider or "deepseek",
             tier=tier or "flash",
         )

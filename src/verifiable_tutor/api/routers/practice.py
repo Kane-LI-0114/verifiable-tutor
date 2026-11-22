@@ -7,6 +7,8 @@ logic, not executed on TACC, so no ``tacc/exec`` job is required.
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -61,6 +63,10 @@ class PracticeGenerateBody(BaseModel):
         max_length=200,
         description="Course topic to generate self-test questions for.",
     )
+    types: list[str] | None = Field(
+        default=None,
+        description="Question types to generate, for example [\"single-choice\", \"code\"].",
+    )
 
 
 @router.post(
@@ -76,5 +82,10 @@ def generate_practice_questions(
 ):
     """Generate self-test questions through the agent loop."""
 
-    text, sources = chat.generate_practice(body.topic, adapter=model)
-    return {"questions": text, "sources": sources}
+    questions, sources = chat.generate_practice(
+        body.topic, adapter=model, types=body.types
+    )
+    return {
+        "questions": [asdict(question) for question in questions],
+        "sources": sources,
+    }

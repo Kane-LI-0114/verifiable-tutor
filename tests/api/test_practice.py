@@ -56,5 +56,5 @@ def test_practice_generate_returns_questions_and_sources(agent_api):
 
     assert response.status_code == 200
     body = response.json()
-    assert body["questions"] == "Hello"
+    assert body["questions"] == []
     assert body["sources"] == []

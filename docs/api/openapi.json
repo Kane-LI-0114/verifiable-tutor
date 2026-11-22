@@ -1872,6 +1872,21 @@
             "minLength": 1,
             "title": "Topic",
             "type": "string"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Question types to generate, for example [\"single-choice\", \"code\"].",
+            "title": "Types"
           }
         },
         "required": [
