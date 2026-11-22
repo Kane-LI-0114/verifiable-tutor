@@ -4,7 +4,7 @@ Status: draft, version 0.3, 2026-10-29. Owner: LI Jinchuan. This protocol implem
 
 ## 1. Purpose
 
-This benchmark asks one question for a student: does using our agent produce a measurably better self-test loop than using the external chatbot? It is not a test of whether a chatbot can write questions, because a current chatbot can. It tests whether the agent's design (course retrieval, citation and span verification, reference-answer verification, TACC execution of code answers, and rubric-grounded grading) turns the same task into material a student can use without correction.
+This benchmark asks one question for a student: does using our agent produce a measurably better self-test loop than using the external chatbot? It is not a test of whether a chatbot can write questions, because a current chatbot can. It tests whether the agent's design (course retrieval, citation and span verification, reference-answer verification, model grading of code answers, and rubric-grounded grading) turns the same task into material a student can use without correction.
 
 RQ2 is split into:
 
@@ -58,7 +58,7 @@ Grading is compared under condition B from the design discussion: one fixed ques
 3. **Graders.** Both systems grade the same frozen items:
    - Grading prompt: the question, the answer, the rubric or scoring points, and the maximum score, identical for A and B. Ask for a score per item, a short explanation, and, for A, a citation. B receives the same user grading prompt; its product system prompt is its own.
    - Run each grader once, record raw outputs and timestamps. Do not show either grader the developer scores first.
-   - For code questions, system A may use the `tacc/exec` path; if execution is unavailable, grade from the stated answer and record the fallback.
+   - For code questions, both systems grade from the stated answer with the online model against the scoring points; no TACC execution is used.
 4. **Developer ground truth.** Before grading outputs are joined, two team members score every frozen item against the scoring points. Disagreements are resolved by discussion and the final score is stored as the ground truth. Ground truth is hidden from both graders and from the answer simulator.
 5. **RQ2b metrics.**
    - exact score match rate with the ground truth;
@@ -84,7 +84,7 @@ Beyond the per-system scores, report what each system can actually deliver to a 
 
 - **Verified reference answers.** Developers verify every generated question's reference answer, running tests where applicable. Report the share that passes for both systems.
 - **Grounding.** Share of generated questions with a course source that passes the citation check. If the chatbot does not cite course pages, record the capability as absent and report the measured share for the agent; do not score the absence as zero quality.
-- **Execution evidence.** Share of code questions whose reference answer or student answer actually ran on a test harness. The agent can use `tacc/exec`; the chatbot has no execution path, and that is recorded as absent.
+- **Code grading.** Share of code questions graded with the online model against the scoring points. Both systems grade with the model; the agent additionally grounds its grade in a course citation.
 - **Grounded grading.** Share of grading explanations with a course citation that passes the span verifier, and share of code grades backed by a recorded execution result. Report the agent's share and record the chatbot's absence.
 - **Student usability.** Developers rate a sample of generated questions and graded items as usable as-is or requiring correction, looking for factual errors, ambiguity, missing answers, and feedback a student cannot act on.
 - **Capability table.** A side-by-side table marks each capability for A and B as supported, partial, or absent, with the measured evidence beside it.
