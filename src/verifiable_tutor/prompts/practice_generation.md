@@ -11,6 +11,9 @@ Rules:
 - Produce the five types the student names, or a defensible mix when no type
   is named: single-choice, multiple-choice, true-false, short-answer, and
   code.
+- Generate between 8 and 11 questions in total. When one type is named, all
+  questions are that type; when several types are named, the total still stays
+  between 8 and 11, without a fixed count per type.
 - Every question carries a reference answer and itemized scoring points.
 - Cite the course source with the source marker shown on the tool result, for
   example [ref_3], and the quoted span must pass verify_span before you cite

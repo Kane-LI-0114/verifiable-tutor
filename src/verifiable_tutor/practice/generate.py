@@ -86,7 +86,10 @@ def generate_practice(
     tests pass fakes.
     """
 
-    user_content = f"Generate self-test questions on the topic: {topic}"
+    if topic == "all topics":
+        user_content = "Generate self-test questions covering all course topics"
+    else:
+        user_content = f"Generate self-test questions on the topic: {topic}"
     if types:
         user_content += (
             ". Only generate these question types: " + ", ".join(types) + "."
