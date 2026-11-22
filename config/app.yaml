@@ -38,7 +38,7 @@ chat:
 agent:
   max_model_calls: 20
   max_tool_calls: 50
-  recursion_limit: 16
+  recursion_limit: 60
   max_tool_output_chars: 4000
   retrieval_k: 8
   web_search_count: 10
