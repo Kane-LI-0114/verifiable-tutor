@@ -63,3 +63,16 @@ export function savePracticeSession(
     body: { topic, content, sources, progress },
   });
 }
+
+export interface ParsePracticeResponse {
+  practice: boolean;
+  topic: string;
+  types: string[];
+}
+
+export function parsePractice(message: string): Promise<ParsePracticeResponse> {
+  return apiFetch<ParsePracticeResponse>("/api/practice/parse", {
+    method: "POST",
+    body: { message },
+  });
+}

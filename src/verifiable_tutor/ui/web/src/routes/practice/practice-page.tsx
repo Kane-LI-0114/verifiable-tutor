@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 
 import { Markdown } from "@/components/ai/markdown";
 import { PageEmpty, PageHeader } from "@/components/layout/page-states";
@@ -150,8 +151,35 @@ export function PracticePage() {
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const effectiveTopic = topic === "others" ? customTopic.trim() : topic.trim();
+
+  useEffect(() => {
+    const topicParam = searchParams.get("topic");
+    if (!topicParam) return;
+    setTopic(topicParam);
+    const types = (searchParams.get("types") ?? "").split(",").filter(Boolean);
+    setSelectedTypes(types);
+    setSearchParams({}, { replace: true });
+    setGenerating(true);
+    setQuestions([]);
+    setResults({});
+    setAnswers({});
+    setSelected({});
+    setPhase("answer");
+    generatePractice(topicParam, types)
+      .then((result) => {
+        setQuestions(result.questions);
+        setSources(result.sources);
+        if (result.questions.length === 0) {
+          setGenerateError(t.practice.emptyBody);
+        }
+      })
+      .catch(() => setGenerateError("question generation failed"))
+      .finally(() => setGenerating(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleGenerate() {
     if (!effectiveTopic || generating) return;
