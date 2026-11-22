@@ -1,0 +1,468 @@
+{
+  "questions": [
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "According to the course, what is the core algorithmic idea behind FlashAttention? [ref_2]",
+      "choices": [
+        "Tiled GEMM + Online Softmax",
+        "Low-rank approximation of the attention matrix",
+        "Sparse attention with a fixed random sparsity pattern",
+        "Quantizing Q, K and V to FP8 before the softmax"
+      ],
+      "reference_answer": "Tiled GEMM + Online Softmax. The course states the core algorithmic idea is \"Tiled GEMM + Online Softmax\" [ref_2].",
+      "scoring_points": [
+        "Selects 'Tiled GEMM + Online Softmax'.",
+        "Recognizes that both components (tiling and online softmax) are required, not just one.",
+        "Does not confuse FlashAttention with an approximation or quantization technique."
+      ],
+      "max_score": 2.0,
+      "knowledge_points": [
+        "FlashAttention core idea (tiling + online softmax to avoid materializing the attention matrix)",
+        "tiled GEMM with shared memory",
+        "online softmax (single pass)"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "Why is naive attention slow, according to the course? [ref_1]",
+      "choices": [
+        "It materializes the full score matrix S = QK^T and probability matrix P = softmax(S), causing high HBM traffic",
+        "It uses too few CUDA threads per block, so the GPU is under-occupied",
+        "It recomputes the softmax denominator once per output element",
+        "It cannot use Tensor Cores because the softmax is non-linear"
+      ],
+      "reference_answer": "Naive attention \"Materializes the full score matrix $S = QK^{T}$ and probability matrix $P = \\text{softmax}(S)$\", which leads to \"High HBM traffic: write S, read S, write P, read P\" [ref_1].",
+      "scoring_points": [
+        "Selects the option about materializing S and P.",
+        "Identifies HBM traffic (writing/reading S and P) as the bottleneck.",
+        "Does not attribute the slowness to thread occupancy or Tensor Core limitations."
+      ],
+      "max_score": 2.0,
+      "knowledge_points": [
+        "FlashAttention core idea (tiling + online softmax to avoid materializing the attention matrix)",
+        "attention operator (QK^T / sqrt(d_k))"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "In the course's description of FlashAttention, how are QK^T and PV computed? [ref_1]",
+      "choices": [
+        "Block by block, instead of materializing the full N x N matrix",
+        "By first writing the full N x N score matrix to HBM and then reading it back",
+        "By approximating the softmax with a linear kernel",
+        "By computing only the diagonal blocks of the attention matrix"
+      ],
+      "reference_answer": "FlashAttention uses tiled GEMM: \"Compute QK^{T} and PV block by block instead of materializing the full N  $ \\times $ N matrix.\" [ref_1]",
+      "scoring_points": [
+        "Selects the block-by-block option.",
+        "States that the full N x N matrix is never materialized.",
+        "Does not claim the result is an approximation or that only diagonal blocks are used."
+      ],
+      "max_score": 2.0,
+      "knowledge_points": [
+        "FlashAttention core idea (tiling + online softmax to avoid materializing the attention matrix)",
+        "tiled GEMM with shared memory"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "Which statement about the numerical result of FlashAttention is correct according to the course? [ref_1]",
+      "choices": [
+        "It computes exact attention, not an approximation",
+        "It is a low-rank approximation that trades accuracy for speed",
+        "It approximates the softmax by dropping small entries below a threshold",
+        "It is exact only when the sequence length is a multiple of the tile size"
+      ],
+      "reference_answer": "The course lists \"Exact attention, not approximation\" among the reasons FlashAttention is faster [ref_1].",
+      "scoring_points": [
+        "Selects 'exact attention, not an approximation'.",
+        "Recognizes that the speedup comes from IO/memory-traffic reduction, not from dropping computation.",
+        "Does not impose a tile-size divisibility condition on exactness."
+      ],
+      "max_score": 2.0,
+      "knowledge_points": [
+        "FlashAttention core idea (tiling + online softmax to avoid materializing the attention matrix)"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "In the naive online softmax kernel, what does the update `d = d * expf(m - m_new) + expf(input[j] - m_new);` accomplish? [ref_8]",
+      "choices": [
+        "It rescales the previously accumulated normalizer to the new running maximum and adds the new element's term",
+        "It resets the normalizer to zero whenever a new maximum is found",
+        "It computes the final softmax output for element j",
+        "It stores the running maximum m into shared memory for the next block"
+      ],
+      "reference_answer": "Pass 1 is described as \"// Pass 1: update running maximum m and running normalizer d together\". The term `d * expf(m - m_new)` rescales the old accumulator from the old maximum m to the new maximum m_new, and `expf(input[j] - m_new)` adds the new element's contribution, so d stays a valid normalizer under the updated maximum [ref_8].",
+      "scoring_points": [
+        "Identifies the rescaling of the old accumulator by exp(m - m_new).",
+        "Identifies the addition of the new element's term exp(x_j - m_new).",
+        "Explains that this keeps d consistent with the updated running maximum.",
+        "Does not claim d is reset to zero or that this line produces the final output."
+      ],
+      "max_score": 3.0,
+      "knowledge_points": [
+        "online softmax (single pass)",
+        "stable softmax (overflow prevention)"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "In the course's online softmax kernel, how many passes over the input vector are made, and what does each do? [ref_8]",
+      "choices": [
+        "Two passes: pass 1 updates the running maximum m and normalizer d together; pass 2 computes the final softmax values in parallel",
+        "One pass: the running maximum, normalizer and output are all produced in a single loop",
+        "Three passes: one for the maximum, one for the sum, one for the division",
+        "Two passes: pass 1 computes the maximum, pass 2 computes the sum and the output"
+      ],
+      "reference_answer": "The kernel has \"// Pass 1: update running maximum m and running normalizer d together\" followed by \"// Pass 2: compute final Softmax values in parallel\". The key saving is that the maximum and the normalizer are accumulated together in one scan, rather than in separate passes [ref_8].",
+      "scoring_points": [
+        "States that there are two passes.",
+        "Describes pass 1 as jointly updating m and d.",
+        "Describes pass 2 as computing the final normalized outputs in parallel.",
+        "Contrasts this with the naive three-pass (max, sum, divide) approach."
+      ],
+      "max_score": 3.0,
+      "knowledge_points": [
+        "online softmax (single pass)",
+        "stable softmax (overflow prevention)"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "Why does stable softmax subtract the maximum m = max_j(x_j) before exponentiating? [ref_13]",
+      "choices": [
+        "To prevent overflow, and to avoid catastrophic underflow by making max(x_j - c) = 0",
+        "To make the output distribution uniform across all classes",
+        "To reduce the number of floating-point multiplications in the denominator",
+        "Because exp(x_j - m) is a different function from exp(x_j) and changes the result"
+      ],
+      "reference_answer": "The course states the requirement to prevent overflow and then: \"To avoid catastrophic underflow: Choose $c$ s.t. $max(x_{j}-c)=0$\", denoting the chosen c as m = max_j(x_j) [ref_13].",
+      "scoring_points": [
+        "Mentions overflow prevention as one purpose.",
+        "Mentions avoiding catastrophic underflow / making the largest exponent zero.",
+        "Recognizes that subtracting a constant does not change the mathematical softmax result.",
+        "Does not claim it makes the distribution uniform."
+      ],
+      "max_score": 3.0,
+      "knowledge_points": [
+        "stable softmax (overflow prevention)"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "The course gives the example x = (1000, 1001, 1002) to motivate stable softmax. What problem does it illustrate? [ref_19]",
+      "choices": [
+        "The sum of exp(x_j) may overflow, since exp(1000) is about 1.97e434 and exceeds max(float64) of about 1.8e308",
+        "The sum of exp(x_j) may underflow to zero because the values are too large",
+        "The softmax output is not a valid probability distribution for large inputs",
+        "The maximum operation is undefined when inputs exceed 1000"
+      ],
+      "reference_answer": "The page states \"problem:  $ \\sum_{j=1}^{V} exp(x_{j}) $ may overflow example 1:\" and shows exp(1000) ≈ 1.97e434 while max(float64) ≈ 1.8e308 < exp(1000) [ref_19].",
+      "scoring_points": [
+        "Identifies overflow of the exponential sum as the problem.",
+        "Cites the concrete magnitudes (exp(1000) ≈ 1.97e434 vs max(float64) ≈ 1.8e308).",
+        "Does not misdescribe the failure as underflow or as an invalid distribution."
+      ],
+      "max_score": 2.0,
+      "knowledge_points": [
+        "stable softmax (overflow prevention)"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "In the shared-memory tiling GEMM kernel, why is `__syncthreads()` called after loading a tile and again after the compute loop? [ref_18]",
+      "choices": [
+        "The first waits until the whole tile has been loaded into shared memory; the second ensures all threads finish using the tile before the next tile overwrites it",
+        "Both calls are only needed to synchronize the final write of C to global memory",
+        "The first synchronizes global memory writes; the second synchronizes the host and the device",
+        "They are optional performance hints that have no effect on correctness"
+      ],
+      "reference_answer": "The code comments read \"// Wait until the whole tile has been loaded\" before the compute loop, and after it: \"Make sure all threads finish using this tile before loading the next tile\". Both barriers protect the shared-memory tiles from races between loading and computing [ref_18].",
+      "scoring_points": [
+        "Explains the first barrier as waiting for the tile load to complete.",
+        "Explains the second barrier as preventing the next tile load from overwriting data still in use.",
+        "Identifies the hazard as a race on shared memory.",
+        "Does not describe the barriers as optional or as host/device synchronization."
+      ],
+      "max_score": 3.0,
+      "knowledge_points": [
+        "tiled GEMM with shared memory"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "In the tiled GEMM kernel, what does the loop `for (int t = 0; t < (N + TILE_SIZE - 1) / TILE_SIZE; t++)` iterate over? [ref_18]",
+      "choices": [
+        "The K dimension, moving tile by tile and accumulating into the thread's partial sum",
+        "The output rows of C, one row per iteration",
+        "The batch dimension of the input matrices",
+        "The number of thread blocks launched in the grid"
+      ],
+      "reference_answer": "The comment above the loop is \"// Move along the K dimension tile by tile\", and inside it each thread loads one element of A and one of B into shared memory and accumulates `sum += As[ty][k] * Bs[k][tx];` [ref_18].",
+      "scoring_points": [
+        "Identifies the loop as walking the K (reduction) dimension tile by tile.",
+        "Notes that each iteration loads a new A/B tile into shared memory and accumulates into sum.",
+        "Does not confuse it with iterating over output rows, batches, or blocks."
+      ],
+      "max_score": 2.0,
+      "knowledge_points": [
+        "tiled GEMM with shared memory"
+      ]
+    },
+    {
+      "type": "single-choice",
+      "topic": "FlashAttention",
+      "question": "Which formula does the course give for the attention operator, and how many GEMMs does it decompose into? [ref_7]",
+      "choices": [
+        "Attention(Q,K,V) = softmax(QK^T / sqrt(d_k)) V, decomposed into 2 GEMMs (S = QK^T and O = PV) plus 1 softmax",
+        "Attention(Q,K,V) = softmax(QK^T) V, decomposed into 1 GEMM plus 1 softmax",
+        "Attention(Q,K,V) = softmax(QK^T / d_k) V, decomposed into 3 GEMMs",
+        "Attention(Q,K,V) = softmax(QV^T / sqrt(d_k)) K, decomposed into 2 GEMMs plus 1 softmax"
+      ],
+      "reference_answer": "The course gives \"$$ Attention(Q,K,V)=softmax\\left(\\frac{QK^{T}}{\\sqrt{d_{k}}}\\right)V $$\" and labels the decomposition \"2 GEMM\" with S = QK^T (gemm 1) and O = PV (gemm 2), plus \"1 Softmax\" [ref_7].",
+      "scoring_points": [
+        "Selects the formula with the 1/sqrt(d_k) scaling and the V multiplication.",
+        "States that there are 2 GEMMs: S = QK^T and O = PV.",
+        "States that there is 1 softmax applied to the scaled scores.",
+        "Does not omit the sqrt(d_k) scaling or swap K and V."
+      ],
+      "max_score": 3.0,
+      "knowledge_points": [
+        "attention operator (QK^T / sqrt(d_k))"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "marker": 1,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Fulture CUDA Programming Attention( $ Q, K, V $) = softmax $ \\left(\\frac{QK^{T}}{\\sqrt{d_{k}}}\\right)V $ Why is naive attention slow? - Materializes the full score matrix $S = QK^{T}$ and probabili...",
+      "doc_id": "Tutorial_4",
+      "page_no": 39,
+      "url": null,
+      "chunk_id": "Tutorial_4:p039:c00"
+    },
+    {
+      "marker": 2,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Fulture CUDA Programming What we have explained Core algorithmic idea: Tiled GEMM + Online Softmax Avoid writing the full $S = QK^{T}$ and $P = \\text{softmax}(S)$ • Maintain running m and l while s...",
+      "doc_id": "Tutorial_4",
+      "page_no": 40,
+      "url": null,
+      "chunk_id": "Tutorial_4:p040:c00"
+    },
+    {
+      "marker": 3,
+      "kind": "course",
+      "title": "ACS_Lecture_1_2026F",
+      "summary": "GPU: Optimize Throughput of a Large Number of Simple Threads Why NVIDIA SM Outperforms Other GPUs for Transformer Kernels? TRANSFORMER KERNEL Dense GEMM QKV projection, FFN Batched GEMM QK^T and at...",
+      "doc_id": "ACS_Lecture_1_2026F",
+      "page_no": 53,
+      "url": null,
+      "chunk_id": "ACS_Lecture_1_2026F:p053:c00"
+    },
+    {
+      "marker": 4,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "GEMM Operator - Tiled GEMM Softmax Operator - Stable Softmax - Online Softmax Attention Operator - Basic Attention Operator - Flash Attention Operator From GEMM to Flash Attention 2",
+      "doc_id": "Tutorial_4",
+      "page_no": 2,
+      "url": null,
+      "chunk_id": "Tutorial_4:p002:c00"
+    },
+    {
+      "marker": 5,
+      "kind": "course",
+      "title": "Assignment_2",
+      "summary": "IV. Your Implementation Task Complete attention_forward in attention.cu. The declaration is supplied in attention.h: void attention_forward( const float* Q, const float* K, const float* V, float* o...",
+      "doc_id": "Assignment_2",
+      "page_no": 2,
+      "url": null,
+      "chunk_id": "Assignment_2:p002:c01"
+    },
+    {
+      "marker": 6,
+      "kind": "course",
+      "title": "Assignment_2",
+      "summary": "II. Problem Description This assignment focuses on implementing scaled dot-product attention using CUDA. Given a query matrix Q, a key matrix K, and a value matrix V: $$ \\mathrm{Q}\\colon\\mathrm{M}\\...",
+      "doc_id": "Assignment_2",
+      "page_no": 1,
+      "url": null,
+      "chunk_id": "Assignment_2:p001:c01"
+    },
+    {
+      "marker": 7,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Recondier attention $$ Attention(Q,K,V)=softmax\\left(\\frac{QK^{T}}{\\sqrt{d_{k}}}\\right)V $$ 2 GEMM $$ \\mathrm{S~=~Q K^{T}~(g e m m~1)} $$ $$ 0=PV\\quad(gemm2) $$ 1 Softmax $$ \\begin{array}{l}P=softm...",
+      "doc_id": "Tutorial_4",
+      "page_no": 5,
+      "url": null,
+      "chunk_id": "Tutorial_4:p005:c00"
+    },
+    {
+      "marker": 8,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Achieve Naive Online Softmax __global__ void onlineSoftmax(const float* x, float* y, int B, int N) { // One block processes one Softmax vector int row = blockIdx.x; if (row >= B) return; const floa...",
+      "doc_id": "Tutorial_4",
+      "page_no": 34,
+      "url": null,
+      "chunk_id": "Tutorial_4:p034:c00"
+    },
+    {
+      "marker": 9,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "From Softmax to Online Softmax $$ m_{j-1}=\\underset{1\\leq i\\leq j-1}{max}x_{i} $$ $$ \\widehat{d}_{j-1}=\\sum_{i=1}^{j-1}e^{x_{i}-m_{j-1}} $$ Input $ m_{j-1} $, $ \\widehat{d}_{j-1} $, $ x_j $ Output...",
+      "doc_id": "Tutorial_4",
+      "page_no": 32,
+      "url": null,
+      "chunk_id": "Tutorial_4:p032:c00"
+    },
+    {
+      "marker": 10,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Achieve Parallel Online Softmax __global__ void onlineSoftmax(const float* x, float* y, int B, int N) { // One block processes one Softmax vector int row = blockIdx.x; if (row >= B) return; const f...",
+      "doc_id": "Tutorial_4",
+      "page_no": 38,
+      "url": null,
+      "chunk_id": "Tutorial_4:p038:c00"
+    },
+    {
+      "marker": 11,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "$$ \\exp(x_{2}-m) $$ $$ \\exp(x_{1}-m) $$ $$ x_{N} $$ Stable Softmax Pipeline Input vector Pass 1 MAX Reduction Pass 2 Compute exponentials and SUM Reduction $$ \\exp(x_{0}-m) $$ MAX reduction SUM red...",
+      "doc_id": "Tutorial_4",
+      "page_no": 31,
+      "url": null,
+      "chunk_id": "Tutorial_4:p031:c00"
+    },
+    {
+      "marker": 12,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "From Softmax to Online Softmax $$ m_{j-1}=\\mathop{max}_{1\\leq i\\leq j-1}x_{i} $$ $$ \\overline{\\hat{d}_{j-1}}=\\sum_{i=1}^{j-1}e^{x_{i}-m_{j-1}} $$ Input $ m_{j-1} $, $ \\widehat{d}_{j-1} $, $ x_j $ $...",
+      "doc_id": "Tutorial_4",
+      "page_no": 33,
+      "url": null,
+      "chunk_id": "Tutorial_4:p033:c00"
+    },
+    {
+      "marker": 13,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "From Softmax to Stable Softmax III ingLab HKUST $$ \\begin{aligned}To~prevent~overflow:require\\sum_{j=1}^{V}exp\\left(x_{j}-c\\right)<Float_{max}\\\\ exp(x_{j}-c)<Float_{max}\\\\c\\geq\\max_{j}x_{j}-log~Flo...",
+      "doc_id": "Tutorial_4",
+      "page_no": 25,
+      "url": null,
+      "chunk_id": "Tutorial_4:p025:c00"
+    },
+    {
+      "marker": 14,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "From Max to Softmax Which class does x belong to? $$ scores=[1.2,2.0,3.8] $$ MAX $ \\rightarrow $ choose Class C MAX gives only the winner. Softmax performs a non-linear normalization. It maps arbit...",
+      "doc_id": "Tutorial_4",
+      "page_no": 21,
+      "url": null,
+      "chunk_id": "Tutorial_4:p021:c00"
+    },
+    {
+      "marker": 15,
+      "kind": "course",
+      "title": "ACS_Lecture_1_2026F",
+      "summary": "Syllabus and Readings Key Question Why did AI computing move from CPU-centric systems to GPU-centric systems? Today's Path I. [Review] How code runs and completes computation? 2. [Review] What a ho...",
+      "doc_id": "ACS_Lecture_1_2026F",
+      "page_no": 2,
+      "url": null,
+      "chunk_id": "ACS_Lecture_1_2026F:p002:c00"
+    },
+    {
+      "marker": 16,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Shared-Memory Tiling GEMM #define TILE_SIZE 16 // Tiled GEMM: C = A * B // Each CUDA thread computes one output element C[row][col] __global__ void tiledGEMM(float *A, float *B, float *C, int 0) //...",
+      "doc_id": "Tutorial_4",
+      "page_no": 17,
+      "url": null,
+      "chunk_id": "Tutorial_4:p017:c00"
+    },
+    {
+      "marker": 17,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Shared-Memory Tiling GEMM #define TILE_SIZE 16 // Tiled GEMM: C = A * B // Each CUDA thread computes one output element C[row][col] global__void tiledGEMM(float *A, float *B, float *C, int ) // Sha...",
+      "doc_id": "Tutorial_4",
+      "page_no": 15,
+      "url": null,
+      "chunk_id": "Tutorial_4:p015:c00"
+    },
+    {
+      "marker": 18,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Shared-Memory Tiling GEMM #define TILE_SIZE 16 // Tiled GEMM: C = A * B // Each CUDA thread computes one output element C[row][col] __global__ void tiledGEMM(float *A, float *B, float *C, int 0) //...",
+      "doc_id": "Tutorial_4",
+      "page_no": 14,
+      "url": null,
+      "chunk_id": "Tutorial_4:p014:c00"
+    },
+    {
+      "marker": 19,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "From Softmax to Stable Softmax I $$ x=\\begin{bmatrix}x_{1}\\\\ x_{2}\\\\ \\vdots\\\\ x_{n}\\end{bmatrix}\\in\\mathbb{R}^{n}\\xrightarrow{\\text{Input}}\\text{Softmax}\\xrightarrow{\\text{Output}}Y=\\begin{bmatrix}...",
+      "doc_id": "Tutorial_4",
+      "page_no": 22,
+      "url": null,
+      "chunk_id": "Tutorial_4:p022:c00"
+    },
+    {
+      "marker": 20,
+      "kind": "course",
+      "title": "Tutorial_4",
+      "summary": "Input vector Stable Softmax Workflow II $$ x\\in\\mathbb{R}^{N+1} $$ Elementwise exponentiation (with max-subtraction) Elementwise normalization $$ (z_{i}=\\exp(x_{i}-m)) $$ Thread 0 Thread 1 Thread 2...",
+      "doc_id": "Tutorial_4",
+      "page_no": 27,
+      "url": null,
+      "chunk_id": "Tutorial_4:p027:c00"
+    },
+    {
+      "marker": 21,
+      "kind": "course",
+      "title": "ACS_Lecture_1_2026F",
+      "summary": "Transformation Hierarchy of Computing Abstraction in System Design Application / Problem Al inference, training, web search, recommendation Algorithm GEMM, attention, optimization, sampling Program...",
+      "doc_id": "ACS_Lecture_1_2026F",
+      "page_no": 5,
+      "url": null,
+      "chunk_id": "ACS_Lecture_1_2026F:p005:c00"
+    },
+    {
+      "marker": 22,
+      "kind": "course",
+      "title": "ACS_Lecture_1_2026F",
+      "summary": "Transformation Hierarchy of Computing Abstraction in System Design Application / Problem Al inference, training, web search, recommendation Algorithm GEMM, attention, optimization, sampling Program...",
+      "doc_id": "ACS_Lecture_1_2026F",
+      "page_no": 6,
+      "url": null,
+      "chunk_id": "ACS_Lecture_1_2026F:p006:c00"
+    }
+  ]
+}
