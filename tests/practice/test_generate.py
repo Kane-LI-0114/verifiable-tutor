@@ -73,6 +73,17 @@ JSON_WITH_ANSWER = (
 )
 
 
+def test_generate_practice_treats_a_null_answer_as_missing() -> None:
+    runner = FakeRunner(
+        text='[{"type": "single-choice", "answer": null, "question": "Q?", '
+        '"choices": ["A", "B"], "reference_answer": "B", "max_score": 1}]'
+    )
+
+    questions, _ = generate_practice("MPI", runner, adapter=None)
+
+    assert questions[0].answer == ""
+
+
 def test_generate_practice_keeps_the_exact_choice_answer() -> None:
     runner = FakeRunner(text=JSON_WITH_ANSWER)
 

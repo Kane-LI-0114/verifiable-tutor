@@ -80,7 +80,7 @@ def _parse_questions(text: str, *, default_topic: str = "") -> list[GeneratedQue
                 topic=default_topic or str(item.get("topic") or ""),
                 question=str(item.get("question", "")),
                 choices=[str(choice) for choice in (item.get("choices") or [])],
-                answer=str(item.get("answer", "")),
+                answer=str(item.get("answer") or ""),
                 reference_answer=str(item.get("reference_answer", "")),
                 scoring_points=[
                     str(point) for point in (item.get("scoring_points") or [])
