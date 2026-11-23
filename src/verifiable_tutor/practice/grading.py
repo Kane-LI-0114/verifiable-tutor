@@ -49,8 +49,13 @@ def _build_grading_message(
     reference_answer: str,
     scoring_points: list[str],
     max_score: float,
+    sources: list[dict[str, Any]],
 ) -> str:
     points = "\n".join(f"- {point}" for point in scoring_points)
+    sources_text = "\n".join(
+        f"[ref_{source.get('marker')}] {source.get('summary') or source.get('title', '')}"
+        for source in sources
+    )
     return (
         "Question:\n" + question + "\n\n"
         "Student answer:\n" + student_answer + "\n\n"
@@ -58,7 +63,9 @@ def _build_grading_message(
         "Scoring points (maximum score "
         + str(max_score)
         + "):\n" + points + "\n\n"
-        "Grade the answer and return the JSON object."
+        "Course sources:\n" + sources_text + "\n\n"
+        "Grade the answer. In the explanation, cite the course source that "
+        "supports each scoring decision with its [ref_N] marker. Return the JSON object."
     )
 
 
@@ -81,6 +88,7 @@ def grade_answer(
     reference_answer: str,
     scoring_points: list[str],
     max_score: float,
+    sources: list[dict[str, Any]],
     adapter: Any,
     *,
     provider: str = "deepseek",
@@ -90,11 +98,17 @@ def grade_answer(
 
     The adapter is a seam: production passes the project model adapter, tests
     pass a fake. The model returns one JSON object with ``score``,
-    ``max_score``, and ``explanation``.
+    ``max_score``, and ``explanation``, where the explanation cites the course
+    sources with their ``[ref_N]`` markers.
     """
 
     message = _build_grading_message(
-        question, student_answer, reference_answer, scoring_points, max_score
+        question,
+        student_answer,
+        reference_answer,
+        scoring_points,
+        max_score,
+        sources,
     )
     result = adapter.chat(
         [

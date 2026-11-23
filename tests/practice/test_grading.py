@@ -56,7 +56,7 @@ def test_grade_answer_parses_the_model_json() -> None:
     )
 
     result = grade_answer(
-        "Q", "A", "R", ["p1", "p2", "p3"], 3.0, adapter
+        "Q", "A", "R", ["p1", "p2", "p3"], 3.0, [], adapter
     )
 
     assert result.score == 2.0
@@ -69,7 +69,7 @@ def test_grade_answer_strips_markdown_fences() -> None:
         '```json\n{"score": 1, "max_score": 1, "explanation": "ok"}\n```'
     )
 
-    result = grade_answer("Q", "A", "R", ["p1"], 1.0, adapter)
+    result = grade_answer("Q", "A", "R", ["p1"], 1.0, [], adapter)
 
     assert result.score == 1.0
 
@@ -78,7 +78,7 @@ def test_grade_answer_sends_question_answer_and_points() -> None:
     adapter = FakeAdapter('{"score": 0, "max_score": 1, "explanation": "no"}')
 
     grade_answer(
-        "What is MPI?", "OpenMP", "MPI is message passing", ["define MPI"], 1.0, adapter
+        "What is MPI?", "OpenMP", "MPI is message passing", ["define MPI"], 1.0, [], adapter
     )
 
     user = adapter.calls[0][1]["content"]
@@ -86,3 +86,21 @@ def test_grade_answer_sends_question_answer_and_points() -> None:
     assert "OpenMP" in user
     assert "MPI is message passing" in user
     assert "define MPI" in user
+
+
+def test_grade_answer_sends_course_sources() -> None:
+    adapter = FakeAdapter('{"score": 1, "max_score": 1, "explanation": "ok [ref_1]"}')
+
+    grade_answer(
+        "Q",
+        "A",
+        "R",
+        ["p1"],
+        1.0,
+        [{"marker": 1, "summary": "Tutorial 4 page 39"}],
+        adapter,
+    )
+
+    user = adapter.calls[0][1]["content"]
+    assert "[ref_1]" in user
+    assert "Tutorial 4 page 39" in user

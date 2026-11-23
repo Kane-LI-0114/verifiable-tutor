@@ -45,6 +45,7 @@ export function gradePractice(body: {
   reference_answer: string;
   scoring_points: string[];
   max_score: number;
+  sources: CitationSource[];
 }): Promise<PracticeGradingResponse> {
   return apiFetch<PracticeGradingResponse>("/api/practice/runs", {
     method: "POST",

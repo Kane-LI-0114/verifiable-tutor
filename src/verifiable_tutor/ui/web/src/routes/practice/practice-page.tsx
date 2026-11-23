@@ -239,6 +239,7 @@ export function PracticePage() {
           reference_answer: question.reference_answer,
           scoring_points: question.scoring_points,
           max_score: question.max_score,
+          sources,
         });
       } catch {
         next[index] = {
