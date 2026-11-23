@@ -39,6 +39,7 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
       <TR><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">FK</TD></TR>
       <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">kind</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
@@ -117,6 +118,14 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">reasoning</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">tool_call_position</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">step_id</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  topic_progress [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>topic_progress</B></TD></TR>
+      <TR><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">topic</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">knowledge_point</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">covered</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">mastered</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
   knowledge_builds [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>knowledge_builds</B></TD></TR>
@@ -203,6 +212,7 @@ digraph physical_data_model {
   messages -> message_sources [label="message_id"];
   messages -> tool_calls [label="message_id"];
   messages -> message_events [label="message_id"];
+  users -> topic_progress [label="user_id"];
   users -> knowledge_builds [label="user_id"];
   kb_folders -> kb_folders [label="parent_id"];
   kb_folders -> kb_documents [label="folder_id"];

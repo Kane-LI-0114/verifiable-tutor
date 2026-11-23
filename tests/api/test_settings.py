@@ -28,7 +28,7 @@ def test_load_settings_resolves_paths_and_domains(tmp_path: Path):
     assert settings.knowledge_pages_path is None
     assert settings.agent_max_model_calls == 20
     assert settings.agent_max_tool_calls == 50
-    assert settings.agent_recursion_limit == 16
+    assert settings.agent_recursion_limit == 60
     assert settings.agent_max_tool_output_chars == 4000
     assert settings.agent_retrieval_k == 8
     assert settings.agent_web_search_count == 10

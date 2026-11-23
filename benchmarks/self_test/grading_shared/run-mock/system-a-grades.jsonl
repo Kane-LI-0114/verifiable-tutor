@@ -1,0 +1,4 @@
+{"question_id":"q1","variant":"correct","score":5,"explanation":"correct","citation":{"doc_id":"lec1","page_no":5,"span":"L1 is fastest"},"grader":"A"}
+{"question_id":"q1","variant":"wrong","score":5,"explanation":"incorrectly marked correct","citation":null,"grader":"A"}
+{"question_id":"q2","variant":"partial","score":1,"explanation":"partial credit","citation":null,"grader":"A"}
+{"question_id":"q2","variant":"correct","score":0,"explanation":"incorrectly marked wrong","citation":null,"grader":"A"}

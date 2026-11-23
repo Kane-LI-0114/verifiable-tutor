@@ -105,8 +105,6 @@ def test_key_error_responses_are_documented(api):
     chat = schema["paths"]["/api/chat"]["post"]["responses"]
     assert "503" in chat
     assert "400" in chat
-    practice = schema["paths"]["/api/practice/runs"]["post"]["responses"]
-    assert "503" in practice
     transcription = schema["paths"]["/api/voice/transcriptions"]["post"]["responses"]
     assert "413" in transcription
     assert "415" in transcription

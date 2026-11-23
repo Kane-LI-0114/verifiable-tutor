@@ -1,6 +1,7 @@
 import {
   BookOpenIcon,
   CalendarClockIcon,
+  ClipboardListIcon,
   HammerIcon,
   LogOutIcon,
   MessageSquareIcon,
@@ -125,6 +126,7 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 function SidebarAccountMenu({ showDetails }: { showDetails: boolean }) {
   const t = useT();
   const { user, signOut } = useSession();
+  const navigate = useNavigate();
   const roleLabel =
     user?.role === "instructor" ? t.common.instructor : t.common.student;
 
@@ -161,6 +163,10 @@ function SidebarAccountMenu({ showDetails }: { showDetails: boolean }) {
               <Badge variant="secondary">{roleLabel}</Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => navigate("/profile")}>
+              <UserIcon />
+              {t.profile.title}
+            </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 void signOut();
@@ -342,7 +348,11 @@ function AppSidebar() {
                         onPointerEnter={() => prefetchHistory(session.id)}
                         onFocus={() => prefetchHistory(session.id)}
                       >
-                        <MessageSquareIcon />
+                        {session.kind === "practice" ? (
+                          <ClipboardListIcon />
+                        ) : (
+                          <MessageSquareIcon />
+                        )}
                         <span>{session.title ?? session.id}</span>
                       </NavLink>
                     </SidebarMenuButton>

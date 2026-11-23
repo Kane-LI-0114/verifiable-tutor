@@ -250,12 +250,13 @@ export const en = {
   },
   practice: {
     title: "Practice and self-test",
-    subtitle:
-      "Each question comes with a reference answer and its sources. Code answers run as a TACC job.",
+    subtitle: "Each question comes with a reference answer and its sources.",
     questionsTab: "Questions",
     solutionTab: "My solution",
     settingsTitle: "Question settings",
     topic: "Topic",
+    allTopics: "All topics",
+    others: "Others",
     topicPlaceholder: "MPI collectives, attention softmax, TACC jobs",
     type: "Question type",
     types: {
@@ -268,6 +269,7 @@ export const en = {
     difficulty: "Difficulty",
     difficulties: { easy: "Easy", medium: "Medium", hard: "Hard" },
     generate: "Generate a question",
+    generating: "Generating questions...",
     question: "Question",
     points: "{{count}} points",
     pointsOne: "{{count}} point",
@@ -276,6 +278,7 @@ export const en = {
     answerPlaceholder: "Write your answer here",
     codePlaceholder: "Write the code you would compile",
     submit: "Submit the answer",
+    submitAll: "Submit all answers",
     running: "Running the answer",
     pending: "Waiting for a TACC job",
     scored: "Scored",
@@ -303,6 +306,14 @@ export const en = {
     solutionSubmit: "Explain the solution",
     solutionDisabled:
       "Solution explanations are not available in this build.",
+  },
+  profile: {
+    title: "My profile",
+    subtitle: "Topic mastery across your practice sessions.",
+    emptyTitle: "No practice yet",
+    emptyBody: "Complete a practice set and your topic mastery appears here.",
+    coveredLegend: "Covered by quizzes",
+    masteredLegend: "Mastered (full marks)",
   },
   knowledge: {
     title: "Knowledge base",

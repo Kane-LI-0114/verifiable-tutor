@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 
 import { ChatEmpty } from "@/components/chat/chat-empty";
 import {
@@ -9,6 +9,7 @@ import {
 import { Composer } from "@/components/chat/composer";
 import { PageEmpty, PageError, PageLoading } from "@/components/layout/page-states";
 import { ApiError } from "@/lib/api/client";
+import { parsePractice } from "@/lib/api/practice";
 import { sessionsApi } from "@/lib/api/sessions";
 import { useSession } from "@/lib/auth/session";
 import {
@@ -240,6 +241,7 @@ function LiveChatSession({
 }) {
   const t = useT();
   const { sessions } = useConversations();
+  const navigate = useNavigate();
   const chat = useTutorChat({ sessionId, initialMessages, storedMessages, t });
   const [composer, setComposer] = useState("");
   const title = conversationTitle(sessions, sessionId, t.chat.title);
@@ -265,6 +267,19 @@ function LiveChatSession({
     const text = composer.trim();
     if (text.length === 0 || chat.streaming) {
       return;
+    }
+    try {
+      const parsed = await parsePractice(text);
+      if (parsed.practice) {
+        const topic = encodeURIComponent(parsed.topic || "all topics");
+        const types = encodeURIComponent(
+          parsed.types.join(",") || "single-choice",
+        );
+        navigate(`/practice?topic=${topic}&types=${types}`);
+        return;
+      }
+    } catch {
+      // Parsing is best effort; fall through to a normal chat turn.
     }
     setComposer("");
     clearSources();

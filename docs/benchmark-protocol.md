@@ -4,7 +4,7 @@ Status: draft, version 0.3, 2026-10-29. Owner: LI Jinchuan. This protocol implem
 
 ## 1. Purpose
 
-This benchmark asks one question for a student: does using our agent produce a measurably better self-test loop than using the external chatbot? It is not a test of whether a chatbot can write questions, because a current chatbot can. It tests whether the agent's design (course retrieval, citation and span verification, reference-answer verification, TACC execution of code answers, and rubric-grounded grading) turns the same task into material a student can use without correction.
+This benchmark asks one question for a student: does using our agent produce a measurably better self-test loop than using the external chatbot? It is not a test of whether a chatbot can write questions, because a current chatbot can. It tests whether the agent's design (course retrieval, citation and span verification, reference-answer verification, model grading of code answers, and rubric-grounded grading) turns the same task into material a student can use without correction.
 
 RQ2 is split into:
 
@@ -18,15 +18,15 @@ The comparison is deliberately a small-sample, course-project benchmark. It repo
 | Code | System | Prompt and settings |
 |---|---|---|
 | A | Our agent (course corpus, retrieval, verification, LangGraph workflow) | Project system prompt and tools; model `deepseek-flash` by default; thinking off; temperature 0; the task prompt is identical to the one given to B |
-| B | DeepSeek web version (external chatbot) | DeepSeek web UI with the **DeepSeek Flash model selected**. The model is held constant with A and was confirmed for this evaluation on 2026-10-29. Record the access date, the model selector screenshot, and any visible model label. The web product still applies its own system prompt and may use search; the task prompt is identical to the one given to A |
+| B | DeepSeek web version (external chatbot) | DeepSeek web UI with the **DeepSeek Flash model selected**. The model is held constant with A and was confirmed for this evaluation on 2026-10-29. Record the access date, the model selector screenshot, and any visible model label. The web product still applies its own system prompt and may use search; the task prompt is identical to the one given to A, and B additionally receives the topic's course PDF as an uploaded attachment so both systems see the course material |
 
-Both systems receive the same user task prompt. The agent's system prompt, retrieval, tools, and verification are part of system A and must not be copied into the prompt given to B. Record every raw prompt and output, and take screenshots for the web session.
+Both systems receive the same user task prompt. System B additionally receives the topic's course PDF as an uploaded attachment, so both systems see the course material and the comparison isolates system design rather than material access. The agent's system prompt, retrieval, tools, and verification are part of system A and must not be copied into the prompt given to B. Record every raw prompt and output, and take screenshots for the web session.
 
 The model is held constant: A runs `deepseek-flash` and B runs the DeepSeek web UI with the DeepSeek Flash model selected, confirmed on 2026-10-29. The comparison therefore isolates system design (system prompt, retrieval, tools, verification) rather than model capability. It is still a product-level baseline, because the web product applies its own system prompt, may use search, and does not expose the same knobs. The report states this limitation and keeps the raw transcripts and model-selector screenshots so the comparison can be re-read. If the web UI cannot prove the Flash selection on the run day, the run is recorded as a different-model baseline and is not used for the RQ2b target.
 
 ## 3. RQ2a: generation protocol
 
-1. **Topics.** Choose two course topics from the knowledge point list, for example memory hierarchy and FlashAttention. Use the same topic brief for A and B.
+1. **Topics.** Choose two course topics from the knowledge point list, for example memory hierarchy and FlashAttention. Use the same topic brief for A and B, and give B the topic's course PDF as an uploaded attachment (for example the memory lecture for memory hierarchy, the FlashAttention tutorial for FlashAttention).
 2. **Task prompt.** One prompt template, used verbatim for both systems:
 
    > Generate 10 self-test questions for CSIT6000V on the topic "<topic>". Cover the topic's key knowledge points. Use a mix of single choice, multiple choice, true or false, short answer, and code questions. For every question, give the reference answer, the scoring points, and the course source (lecture, tutorial, or assignment) it comes from. Do not reveal a complete solution to a current assignment.
@@ -58,7 +58,7 @@ Grading is compared under condition B from the design discussion: one fixed ques
 3. **Graders.** Both systems grade the same frozen items:
    - Grading prompt: the question, the answer, the rubric or scoring points, and the maximum score, identical for A and B. Ask for a score per item, a short explanation, and, for A, a citation. B receives the same user grading prompt; its product system prompt is its own.
    - Run each grader once, record raw outputs and timestamps. Do not show either grader the developer scores first.
-   - For code questions, system A may use the `tacc/exec` path; if execution is unavailable, grade from the stated answer and record the fallback.
+   - For code questions, both systems grade from the stated answer with the online model against the scoring points; no TACC execution is used.
 4. **Developer ground truth.** Before grading outputs are joined, two team members score every frozen item against the scoring points. Disagreements are resolved by discussion and the final score is stored as the ground truth. Ground truth is hidden from both graders and from the answer simulator.
 5. **RQ2b metrics.**
    - exact score match rate with the ground truth;
@@ -84,7 +84,7 @@ Beyond the per-system scores, report what each system can actually deliver to a 
 
 - **Verified reference answers.** Developers verify every generated question's reference answer, running tests where applicable. Report the share that passes for both systems.
 - **Grounding.** Share of generated questions with a course source that passes the citation check. If the chatbot does not cite course pages, record the capability as absent and report the measured share for the agent; do not score the absence as zero quality.
-- **Execution evidence.** Share of code questions whose reference answer or student answer actually ran on a test harness. The agent can use `tacc/exec`; the chatbot has no execution path, and that is recorded as absent.
+- **Code grading.** Share of code questions graded with the online model against the scoring points. Both systems grade with the model; the agent additionally grounds its grade in a course citation.
 - **Grounded grading.** Share of grading explanations with a course citation that passes the span verifier, and share of code grades backed by a recorded execution result. Report the agent's share and record the chatbot's absence.
 - **Student usability.** Developers rate a sample of generated questions and graded items as usable as-is or requiring correction, looking for factual errors, ambiguity, missing answers, and feedback a student cannot act on.
 - **Capability table.** A side-by-side table marks each capability for A and B as supported, partial, or absent, with the measured evidence beside it.

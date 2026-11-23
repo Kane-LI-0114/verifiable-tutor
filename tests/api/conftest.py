@@ -6,6 +6,8 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+import shutil
 import sys
 from contextlib import contextmanager
 from pathlib import Path
@@ -191,6 +193,7 @@ class FakeAdapter:
         self.speech_stream_frames: list[str] = ["AAABAA==", "AgADAA=="]
         self.speak_stream_fail_before_first: Exception | None = None
         self.speak_stream_fail_after: int | None = None
+        self.chat_text = '{"score": 2, "max_score": 3, "explanation": "ok"}'
 
     def resolve_selection(
         self,
@@ -229,6 +232,10 @@ class FakeAdapter:
             if self.fail_after is not None and index == self.fail_after:
                 raise ModelResponseError("unavailable", 3, "fake mid-stream failure")
             yield event
+
+    def chat(self, messages: Sequence[Any], **kwargs: Any):
+        self.calls.append({"messages": list(messages), "kwargs": dict(kwargs)})
+        return SimpleNamespace(text=self.chat_text)
 
     def search(self, query: str, *, count: int | None = None, need_content: bool | None = None):
         self.calls.append(
@@ -302,6 +309,14 @@ def make_settings(tmp_path: Path, **overrides: Any) -> AppSettings:
     """Build explicit settings rooted in a temporary directory."""
 
     data = tmp_path / "data"
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(exist_ok=True)
+    knowledge_points = REPO_ROOT / "config" / "knowledge_points.yaml"
+    if knowledge_points.is_file():
+        shutil.copy(knowledge_points, config_dir / "knowledge_points.yaml")
+    deadlines = REPO_ROOT / "config" / "deadlines.yaml"
+    if deadlines.is_file():
+        shutil.copy(deadlines, config_dir / "deadlines.yaml")
     values: dict[str, Any] = {
         "repo_root": tmp_path,
         "base_url": "http://testserver",

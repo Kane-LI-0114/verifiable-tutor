@@ -1,0 +1,14 @@
+You are grading a student's answer to a self-test question.
+
+Question: <question>
+
+Student's answer: <answer>
+
+Scoring points:
+<scoring_points>
+
+Maximum score: <max_score>
+
+Grade the answer against the scoring points. Return two things:
+1. A score, a number from 0 to the maximum score.
+2. A short explanation for the score.

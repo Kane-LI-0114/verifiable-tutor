@@ -1,0 +1,7 @@
+{
+  "run_id": "run-mock",
+  "knowledge_point_coverage": 0.8,
+  "question_validity_rate": 0.8,
+  "reference_answer_verifiability": 0.8,
+  "citation_validity": 0.75
+}

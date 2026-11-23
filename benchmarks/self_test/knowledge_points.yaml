@@ -1,0 +1,49 @@
+# Course knowledge-point list (updated 2026-11-22 against the tracked corpus).
+#
+# Purpose: the denominator source for knowledge_point_coverage. The number of
+# entries under a topic is that topic's --expected-points value.
+#
+# Grounded in the tracked page records (data/corpus/pages/) and document
+# summaries (data/index/summaries.json):
+#   - memory hierarchy: ACS_lecture_2 (memory evolution, memory wall, cache
+#     hierarchy, DRAM, GPU memory, HBM/GDDR, CXL)
+#   - FlashAttention: Tutorial_4 (tiled GEMM, stable/online softmax, attention)
+#   - MPI: Tutorial_1 (processes, ranks, point-to-point), Tutorial_2
+#     (collectives), Assignment_1 (row-partitioned GEMM)
+#   - GEMM: Assignment_1, Tutorial_4 (tiled GEMM)
+#   - CUDA: Tutorial_3 (CUDA basics), Assignment_2 (scaled dot-product attention)
+
+topics:
+  memory hierarchy:
+    - memory wall (capacity, bandwidth, latency gap)
+    - locality (temporal and spatial)
+    - cache hit and miss (benefit vs penalty)
+    - multi-level cache and AMAT
+    - TLB and address resolution
+    - DRAM organization (SRAM vs DRAM, banks, channels)
+    - GPU memory hierarchy (registers, shared memory, bank conflicts)
+    - HBM / GDDR and CXL memory extension
+
+  FlashAttention:
+    - tiled GEMM with shared memory
+    - stable softmax (overflow prevention)
+    - online softmax (single pass)
+    - attention operator (QK^T / sqrt(d_k))
+    - FlashAttention core idea (tiling + online softmax to avoid materializing the attention matrix)
+
+  MPI:
+    - processes and ranks
+    - point-to-point communication (send / recv)
+    - collective communication (broadcast, scatter, all-reduce)
+    - row-partitioned parallel GEMM
+
+  GEMM:
+    - matrix multiplication
+    - row-major memory layout and loop ordering
+    - shared-memory tiling
+
+  CUDA:
+    - thread hierarchy (thread, block, grid)
+    - memory spaces (global, shared, registers)
+    - kernel launch and host-device data transfer
+    - scaled dot-product attention in CUDA

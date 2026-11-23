@@ -1,25 +1,107 @@
-"""Practice-run scaffold: the interface exists but execution is pending."""
+"""Practice generation and model grading HTTP contracts."""
 
 from __future__ import annotations
 
-PRACTICE_UNAVAILABLE = (
-    "practice execution is not available: the tacc/exec job is pending (FR-E4)"
-)
-
 
 def test_practice_run_requires_sign_in(api):
-    response = api.client.post("/api/practice/runs", json={})
+    response = api.client.post(
+        "/api/practice/runs",
+        json={
+            "question": "q",
+            "answer": "a",
+            "reference_answer": "r",
+            "scoring_points": ["p"],
+            "max_score": 1,
+        },
+    )
 
     assert response.status_code == 401
 
 
-def test_practice_run_reports_the_documented_unavailability(api):
+def test_practice_run_grades_with_the_model(api):
     api.create_active_account("alice@ust.hk")
 
     response = api.client.post(
         "/api/practice/runs",
-        json={"pack_id": "mpi-gemm", "question_id": "q1", "answer": "int x = 1;"},
+        json={
+            "question": "What is MPI?",
+            "answer": "Message passing",
+            "reference_answer": "Message passing interface",
+            "scoring_points": ["defines MPI"],
+            "max_score": 3,
+        },
     )
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": PRACTICE_UNAVAILABLE}
+    assert response.status_code == 200
+    body = response.json()
+    assert body["score"] == 2.0
+    assert body["max_score"] == 3.0
+    assert body["explanation"] == "ok"
+
+
+def test_practice_generate_requires_sign_in(api):
+    response = api.client.post(
+        "/api/practice/generate", json={"topic": "FlashAttention"}
+    )
+
+    assert response.status_code == 401
+
+
+def test_practice_generate_returns_questions_and_sources(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+
+    response = agent_api.client.post(
+        "/api/practice/generate", json={"topic": "FlashAttention"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["questions"] == []
+    assert body["sources"] == []
+
+
+def test_practice_session_saves_a_conversation(api):
+    api.create_active_account("alice@ust.hk")
+
+    response = api.client.post(
+        "/api/practice/sessions",
+        json={"topic": "MPI", "content": "# practice\n\nscore 1/1", "sources": []},
+    )
+
+    assert response.status_code == 201
+    session_id = response.json()["session_id"]
+    sessions = api.client.get("/api/sessions").json()["sessions"]
+    assert any(session["id"] == session_id for session in sessions)
+
+
+def test_practice_session_records_knowledge_progress(api):
+    api.create_active_account("alice@ust.hk")
+
+    api.client.post(
+        "/api/practice/sessions",
+        json={
+            "topic": "MPI",
+            "content": "# practice",
+            "sources": [],
+            "progress": [
+                {"topic": "MPI", "covered_points": ["p1", "p2"], "mastered_points": ["p1"]}
+            ],
+        },
+    )
+    api.client.post(
+        "/api/practice/sessions",
+        json={
+            "topic": "MPI",
+            "content": "# practice",
+            "sources": [],
+            "progress": [
+                {"topic": "MPI", "covered_points": ["p2", "p3"], "mastered_points": ["p3"]}
+            ],
+        },
+    )
+
+    topics = api.client.get("/api/profile/mastery").json()["topics"]
+    mpi = next(topic for topic in topics if topic["topic"] == "MPI")
+    assert mpi["total"] == 4
+    assert mpi["covered_count"] == 3  # p1, p2, p3
+    assert mpi["mastered_count"] == 2  # p1, p3

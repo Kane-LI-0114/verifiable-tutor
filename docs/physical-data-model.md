@@ -122,8 +122,13 @@ One user-visible conversation. The HTTP API calls it a session.
 | `id` | TEXT | yes | PK | Conversation id used as session_id in the HTTP API. |
 | `user_id` | TEXT | no | FK | Owner of the conversation. |
 | `title` | TEXT | yes | - | First 60 characters of the first message; null when empty. |
+| `kind` | TEXT | no | - | chat, or practice for a saved practice run. |
 | `created_at` | TEXT | no | - | ISO-8601 UTC creation time. |
 | `updated_at` | TEXT | no | - | Last activity; orders the sidebar newest first. |
+
+Checks:
+
+- `CHECK (kind IN ('chat', 'practice'))`
 
 Foreign keys:
 
@@ -307,6 +312,22 @@ Indexes:
 
 - `idx_message_events_message`: index on (`message_id`, `position`)
 - UNIQUE (`message_id`, `position`)
+
+### topic_progress
+
+Per-user knowledge-point progress per course topic: a point is covered when a practice quiz asks about it, and mastered when a later answer scores full marks. Both flags only grow.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `user_id` | TEXT | no | PK | Account the progress belongs to. |
+| `topic` | TEXT | no | PK | Course topic from config/knowledge_points.yaml. |
+| `knowledge_point` | TEXT | no | PK | One knowledge point of that topic. |
+| `covered` | INTEGER | no | - | 1 when a practice quiz covered the point; never cleared. |
+| `mastered` | INTEGER | no | - | 1 when an answer scored full marks on it; never cleared. |
+
+Foreign keys:
+
+- `user_id` -> `users.id` (ON DELETE CASCADE)
 
 ### knowledge_builds
 

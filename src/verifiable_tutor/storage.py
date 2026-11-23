@@ -88,11 +88,21 @@ CREATE TABLE IF NOT EXISTS conversations (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT,
+    kind TEXT NOT NULL DEFAULT 'chat' CHECK (kind IN ('chat', 'practice')),
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_conversations_user
     ON conversations(user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS topic_progress (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    topic TEXT NOT NULL,
+    knowledge_point TEXT NOT NULL,
+    covered INTEGER NOT NULL DEFAULT 0,
+    mastered INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, topic, knowledge_point)
+);
 
 CREATE TABLE IF NOT EXISTS messages (
     id TEXT PRIMARY KEY,
@@ -399,6 +409,7 @@ class Storage:
             self._add_missing_tool_call_columns(connection)
             self._add_missing_message_event_columns(connection)
             self._add_missing_soft_delete_columns(connection)
+            self._add_missing_conversation_kind_column(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -452,6 +463,19 @@ class Storage:
                 connection.execute(
                     f"ALTER TABLE {table} ADD COLUMN {column} TEXT"
                 )
+
+    @staticmethod
+    def _add_missing_conversation_kind_column(connection: sqlite3.Connection) -> None:
+        """Add the conversation kind a database created before version 7 lacks."""
+
+        existing = {
+            row[1] for row in connection.execute("PRAGMA table_info(conversations)")
+        }
+        if "kind" not in existing:
+            connection.execute(
+                "ALTER TABLE conversations"
+                " ADD COLUMN kind TEXT NOT NULL DEFAULT 'chat'"
+            )
 
     def ping(self) -> bool:
         try:
@@ -629,13 +653,21 @@ class Storage:
         user_id: str,
         title: str | None,
         created_at: datetime,
+        kind: str = "chat",
     ) -> dict[str, Any]:
         with self._connect() as connection:
             connection.execute(
                 "INSERT INTO conversations"
-                " (id, user_id, title, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?)",
-                (conversation_id, user_id, title, iso(created_at), iso(created_at)),
+                " (id, user_id, title, kind, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    conversation_id,
+                    user_id,
+                    title,
+                    kind,
+                    iso(created_at),
+                    iso(created_at),
+                ),
             )
         return self.find_conversation(conversation_id)  # type: ignore[return-value]
 
@@ -653,6 +685,48 @@ class Storage:
                 " WHERE m.conversation_id = c.id) AS message_count"
                 " FROM conversations c WHERE c.user_id = ?"
                 " ORDER BY c.updated_at DESC, c.id",
+                (user_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def record_progress(
+        self,
+        *,
+        user_id: str,
+        topic: str,
+        covered_points: Sequence[str],
+        mastered_points: Sequence[str],
+    ) -> None:
+        """Record the knowledge points a quiz covered and fully mastered.
+
+        Both sets only grow: a covered point stays covered, and a mastered
+        point stays mastered even when a later attempt is not full marks.
+        """
+
+        mastered_set = set(mastered_points)
+        points = set(covered_points) | mastered_set
+        if not points:
+            return
+        with self._connect() as connection:
+            for point in points:
+                connection.execute(
+                    "INSERT INTO topic_progress"
+                    " (user_id, topic, knowledge_point, covered, mastered)"
+                    " VALUES (?, ?, ?, 1, ?)"
+                    " ON CONFLICT(user_id, topic, knowledge_point) DO UPDATE SET"
+                    " covered = 1,"
+                    " mastered = MAX(mastered, excluded.mastered)",
+                    (user_id, topic, point, 1 if point in mastered_set else 0),
+                )
+
+    def list_progress(self, user_id: str) -> list[dict[str, Any]]:
+        """Return one row per topic knowledge point with its flags."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT topic, knowledge_point, covered, mastered"
+                " FROM topic_progress WHERE user_id = ?"
+                " ORDER BY topic, knowledge_point",
                 (user_id,),
             ).fetchall()
         return [dict(row) for row in rows]
