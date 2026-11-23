@@ -4,6 +4,7 @@ import type { QuestionType } from "@/lib/types";
 export interface GradeableQuestion {
   type: QuestionType;
   answer?: string;
+  choices?: string[];
   reference_answer: string;
   max_score: number;
 }
@@ -29,13 +30,21 @@ function answerKeys(answer: string | undefined, multiple: boolean): string[] {
     .filter(Boolean);
 }
 
+function truthOf(reference: string): string {
+  const text = normalize(reference);
+  if (text.startsWith("true")) return "true";
+  if (text.startsWith("false")) return "false";
+  return "";
+}
+
 /**
  * Grade a choice question without a model call.
  *
  * The generated question carries the exact correct choice text in "answer".
- * Older questions, and models that omit the field, fall back to matching the
- * chosen option against the reference answer, which is a sentence and may
- * contain commas.
+ * Without that field only a single, unambiguous reading is accepted: for a
+ * single-choice question, exactly one of the offered choices occurs in the
+ * reference answer. Ambiguous cases return null so the model grader decides,
+ * because a negated distractor in the reference must never earn full marks.
  */
 export function gradeDeterministic(
   question: GradeableQuestion,
@@ -51,27 +60,30 @@ export function gradeDeterministic(
     .filter(Boolean);
   const expected = answerKeys(question.answer, multiple);
 
-  let correct = false;
+  let correct: boolean | null;
   if (expected.length > 0) {
     correct =
       chosen.length === expected.length &&
       expected.every((key) => chosen.includes(key));
+  } else if (multiple) {
+    return null;
   } else if (question.type === "true-false") {
-    const reference = normalize(question.reference_answer);
-    const truth = reference.startsWith("true")
-      ? "true"
-      : reference.startsWith("false")
-        ? "false"
-        : "";
-    correct = truth !== "" && chosen.length === 1 && chosen[0] === truth;
+    const truth = truthOf(question.reference_answer);
+    correct = truth === "" ? null : chosen.length === 1 && chosen[0] === truth;
   } else {
     const reference = normalize(question.reference_answer);
-    correct =
-      chosen.length > 0 &&
-      reference.length > 0 &&
-      chosen.every((choice) => reference.includes(choice));
+    const mentioned = (question.choices ?? [])
+      .map(normalize)
+      .filter((choice) => choice.length > 0 && reference.includes(choice));
+    if (mentioned.length !== 1) {
+      return null;
+    }
+    correct = chosen.length === 1 && chosen[0] === mentioned[0];
   }
 
+  if (correct === null) {
+    return null;
+  }
   return {
     score: correct ? question.max_score : 0,
     max_score: question.max_score,
