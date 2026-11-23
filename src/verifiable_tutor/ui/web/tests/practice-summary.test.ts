@@ -47,4 +47,22 @@ describe("practice summary", () => {
     expect(text).toContain("Your answer: not answered");
     expect(text).not.toMatch(/[\u4e00-\u9fff]/);
   });
+
+  it("keeps dollar signs in the saved text", () => {
+    const text = buildPracticeSummary({
+      topic: "MPI",
+      questions: [
+        question({
+          question: "What does $& mean?",
+          reference_answer: "Cost is $$ and $&.",
+        }),
+      ],
+      answers: ["Use $$O(n)$$ here; cost $& stays."],
+      results: {},
+      labels: LABELS,
+    });
+
+    expect(text).toContain("Use $$O(n)$$ here; cost $& stays.");
+    expect(text).toContain("Cost is $$ and $&.");
+  });
 });

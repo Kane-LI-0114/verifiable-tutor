@@ -12,7 +12,7 @@ export interface SummaryLabels {
 
 function fill(template: string, values: Record<string, string>): string {
   return Object.entries(values).reduce(
-    (text, [key, value]) => text.replaceAll(`{{${key}}}`, value),
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, () => value),
     template,
   );
 }
