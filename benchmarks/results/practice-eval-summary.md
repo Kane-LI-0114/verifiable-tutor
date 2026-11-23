@@ -64,6 +64,3 @@ points.
 - [practice-eval-qwen.md](practice-eval-qwen.md)
 - [grading-accuracy-dim2.md](grading-accuracy-dim2.md) (treatment grading and the
   deterministic-scoring fix)
-
-DeepSeek is not yet in this summary: its web version reads only about the first
-20 pages of an uploaded PDF, so its control run is deferred.

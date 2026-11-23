@@ -1,14 +1,14 @@
 # Evaluation plan: citation accuracy and knowledge-point coverage
 
 This page designs two experiments that compare the verifiable tutor against a
-DeepSeek web session that has the relevant course PDF uploaded. It is the
+general web LLM session that has the relevant course PDF uploaded. It is the
 operational companion to [product-differentiation.md](product-differentiation.md).
 
 ## Baseline
 
 | Group | Material |
 |---|---|
-| Control | DeepSeek web + the relevant course PDFs uploaded to one chat (one or more, as the question requires) |
+| Control | A general web LLM + the relevant course PDFs uploaded to one chat (one or more, as the question requires) |
 | Treatment | The verifiable tutor (pre-vectorized corpus, all 13 documents) |
 
 Both groups can answer from material and cite, so the comparison measures
@@ -34,7 +34,7 @@ five per topic, about 20 in total. Two kinds are included:
 
 1. Treatment: answer each question with the verifiable tutor and record the
    `[ref_N]` citations.
-2. Control: upload the relevant PDFs to DeepSeek web (one PDF for a
+2. Control: upload the relevant PDFs to the general web LLM (one PDF for a
    single-document question, both PDFs for a cross-document question), ask the
    same question, and ask it to cite the specific PDF location (page or passage).
 3. Split both answers into per-claim statements.
@@ -86,7 +86,7 @@ FlashAttention (Tutorial_4), which has five knowledge points in
 1. Generate:
    - Treatment: generate N = 10 questions with the verifiable tutor for the
      "FlashAttention" topic (the generator receives the knowledge-point list).
-   - Control: upload the `Tutorial_4` PDF to DeepSeek web and ask it to generate
+   - Control: upload the `Tutorial_4` PDF to the general web LLM and ask it to generate
      N = 10 questions about FlashAttention.
 2. Independently tag every question from both systems onto the five-point list
    with a separate LLM tagger (or a human). The treatment's own

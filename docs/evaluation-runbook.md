@@ -1,7 +1,7 @@
-# Practice evaluation runbook: four control AIs
+# Practice evaluation runbook: three control AIs
 
-Step-by-step instructions for running the practice evaluation against four
-control assistants: DeepSeek, Doubao, Qwen, and Gemini. Repeat the same
+Step-by-step instructions for running the practice evaluation against three
+control assistants: Doubao, Gemini, and Qwen. Repeat the same
 procedure for each assistant using the same materials so the results are
 comparable.
 
@@ -82,7 +82,6 @@ For each assistant, send the three outputs in this shape:
 - Paste everything verbatim. Do not reword or summarize, because the page
   numbers and quotes are checked against the tracked page records.
 - Turn off web search when the assistant has such a toggle.
-- Record how many pages of the 40-page PDF each assistant actually read. For
-  example DeepSeek web currently reads only about the first 20 pages.
+- Record how many pages of the 40-page PDF each assistant actually read.
 - If an assistant refuses to upload, cannot generate 10 questions, or refuses
   to grade, record that as the result instead of working around it.

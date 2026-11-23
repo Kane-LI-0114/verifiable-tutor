@@ -10,7 +10,7 @@ Index of everything produced during the evaluation. The final report is
 | [../docs/evaluation-plan.md](../docs/evaluation-plan.md) | Overall design: the three practice dimensions, metrics, and the citation-accuracy experiment |
 | [../docs/evaluation-runbook.md](../docs/evaluation-runbook.md) | Step-by-step procedure for the practice evaluation against each control assistant |
 | [../docs/new-question-runbook.md](../docs/new-question-runbook.md) | Step-by-step procedure for the new-question citation evaluation, with the 15 questions |
-| [../docs/product-differentiation.md](../docs/product-differentiation.md) | Capabilities a plain DeepSeek web session cannot reproduce |
+| [../docs/product-differentiation.md](../docs/product-differentiation.md) | Capabilities a general web LLM cannot reproduce |
 
 ## 2. Control assistants (Doubao, Gemini, Qwen) answers and results
 
@@ -38,7 +38,6 @@ New-question citation evaluation, per assistant and question range:
 | [part3a_questions.json](part3a_questions.json) | The treatment's 10 generated FlashAttention questions with `correct_answer` and `knowledge_points` |
 | [part2_dim2_grading.jsonl](part2_dim2_grading.jsonl) | The treatment's 22 graded samples and the deterministic-scoring bug data |
 | [grading-accuracy-dim2.md](grading-accuracy-dim2.md) | Grading-accuracy result and the deterministic-scoring fix |
-| [citation-accuracy-lecture2-q1-q5.md](citation-accuracy-lecture2-q1-q5.md), [citation-accuracy-tutorial4-q6-q10.md](citation-accuracy-tutorial4-q6-q10.md) | Early new-question findings |
 
 ## 4. Conclusions
 
