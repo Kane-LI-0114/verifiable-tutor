@@ -39,6 +39,9 @@ def test_the_ocr_manifest_covers_every_pdf_once() -> None:
         "ACS_Lecture_0_2026F",
         "ACS_Lecture_1_2026F",
         "ACS_lecture_2_2026F",
+        "ACS_Lecture_3_2026F",
+        "ACS_Lecture_4_2026F",
+        "ACS_Lecture_5_2026F",
         "Tutorial_1",
         "Tutorial_2",
         "Tutorial_3",
@@ -49,7 +52,7 @@ def test_the_ocr_manifest_covers_every_pdf_once() -> None:
         "Assignment_1_final",
         "Assignment_2",
     ]
-    assert len({doc_id for doc_id, _pdf in parsed}) == len(parsed) == 12
+    assert len({doc_id for doc_id, _pdf in parsed}) == len(parsed) == 15
     assert all(pdf.endswith(".pdf") for _doc_id, pdf in parsed)
 
 
@@ -60,10 +63,11 @@ def test_each_batch_fits_the_recorded_page_budget() -> None:
         batch: sum(document["expected_pages"] for document in driver.batch_documents(batch))
         for batch in ("lectures", "tutorials", "misc")
     }
-    # Lecture pages 11 + 67 + 69, tutorial pages 16 + 25 + 28 + 40 + 33 + 23 + 34,
-    # assignment pages 6 + 5, all counted from the course PDFs.
-    assert pages == {"lectures": 147, "tutorials": 199, "misc": 11}
-    assert sum(pages.values()) + 8 == 365  # plus the already parsed course_project.pdf
+    # Lecture pages 11 + 67 + 69 + 89 + 71 + 68, tutorial pages
+    # 16 + 25 + 28 + 40 + 33 + 23 + 34, assignment pages 6 + 5, all counted from
+    # the course PDFs.
+    assert pages == {"lectures": 375, "tutorials": 199, "misc": 11}
+    assert sum(pages.values()) + 8 == 593  # plus the already parsed course_project.pdf
 
 
 def test_the_ocr_request_carries_the_ocr_cap_and_the_body_deadline() -> None:
@@ -87,6 +91,9 @@ def test_the_ocr_request_carries_the_ocr_cap_and_the_body_deadline() -> None:
         "ACS_Lecture_0_2026F",
         "ACS_Lecture_1_2026F",
         "ACS_lecture_2_2026F",
+        "ACS_Lecture_3_2026F",
+        "ACS_Lecture_4_2026F",
+        "ACS_Lecture_5_2026F",
     ]
 
 
@@ -168,6 +175,9 @@ def test_a_resumed_run_drops_the_documents_that_already_finished() -> None:
     assert [document["doc_id"] for document in remaining] == [
         "ACS_Lecture_1_2026F",
         "ACS_lecture_2_2026F",
+        "ACS_Lecture_3_2026F",
+        "ACS_Lecture_4_2026F",
+        "ACS_Lecture_5_2026F",
     ]
 
 

@@ -30,6 +30,7 @@ from ..evidence.embedding import LocalEmbedder
 from ..evidence.retrieval import HybridRetriever
 from ..knowledge.browse import KnowledgeBrowser
 from ..knowledge.service import CardStore, DriverBuildRunner, KnowledgeBuildService
+from ..observability import build_tracing
 from ..orchestrator.builtin_tools import build_tool_registry
 from .replay import ReplayService
 from .routers import (
@@ -108,6 +109,7 @@ def create_app(
     email_sender: EmailSender | None = None,
     build_runner: Any | None = None,
     tool_registry: Any | None = None,
+    tracing: Any | None = None,
     docs_api_dir: str | Path | None = None,
 ) -> FastAPI:
     """Build the application; collaborators are injected for tests."""
@@ -172,6 +174,9 @@ def create_app(
             else build_tool_registry(settings=resolved)
         )
         app.state.tool_registry = registry
+        app.state.tracing = (
+            tracing if tracing is not None else build_tracing(resolved.observability)
+        )
         app.state.chat = ChatService(
             settings=resolved,
             storage=database,
@@ -180,6 +185,7 @@ def create_app(
             tool_registry=registry,
             retriever=retriever,
             knowledge_store=knowledge_store,
+            tracing=app.state.tracing,
         )
         app.state.replay = ReplayService(
             storage=database,
@@ -197,7 +203,11 @@ def create_app(
             runner=runner,
             clock=resolved_clock,
         )
-        yield
+        try:
+            yield
+        finally:
+            app.state.tracing.flush()
+            app.state.tracing.shutdown()
 
     app = FastAPI(
         title="Verifiable Tutor API",

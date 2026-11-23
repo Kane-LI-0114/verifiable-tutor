@@ -1,0 +1,13 @@
+# Local development tracing (ADR-0007).
+#
+# Langfuse runs on the laptop only; TACC jobs never send traces. The two keys
+# live in the ignored .env, and tracing fails open when the instance is down,
+# a key is missing, or this block is disabled. The JSONL session trace stays
+# the canonical replay and evaluation record.
+
+langfuse:
+  enabled: true
+  base_url: http://127.0.0.1:3000
+  environment: local
+  release: dev
+  sample_rate: 1.0

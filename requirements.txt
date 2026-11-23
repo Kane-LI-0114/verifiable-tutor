@@ -14,6 +14,8 @@ anyio==4.15.1
     #   openai
     #   starlette
     #   watchfiles
+backoff==2.2.1
+    # via langfuse
 certifi==2026.10.23
     # via
     #   httpcore
@@ -52,6 +54,8 @@ fsspec==2026.9.0
     # via
     #   huggingface-hub
     #   torch
+googleapis-common-protos==1.76.0
+    # via opentelemetry-exporter-otlp-proto-http
 h11==0.16.0
     # via
     #   httpcore
@@ -68,6 +72,7 @@ httptools==0.9.0
 httpx==0.28.1
     # via
     #   langchain-core
+    #   langfuse
     #   langgraph-sdk
     #   verifiable-tutor
 httpx2==2.16.0
@@ -107,6 +112,8 @@ langchain-protocol==0.0.21
     # via
     #   langchain-core
     #   langgraph-sdk
+langfuse==5.2.0
+    # via verifiable-tutor
 langgraph==1.2.18
     # via verifiable-tutor
 langgraph-checkpoint==4.3.1
@@ -177,7 +184,32 @@ nvidia-nvtx==13.2.86 ; (platform_machine == 'aarch64' and sys_platform == 'linux
 openai==3.41.0
     # via verifiable-tutor
 opentelemetry-api==1.45.2
-    # via fastapi
+    # via
+    #   fastapi
+    #   langfuse
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-exporter-http-transport==0.66b2
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-common==0.66b2
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-common==1.45.2
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.45.2
+    # via langfuse
+opentelemetry-proto==1.45.2
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.45.2
+    # via
+    #   langfuse
+    #   opentelemetry-exporter-otlp-common
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-semantic-conventions==0.66b2
+    # via opentelemetry-sdk
 orjson==3.13.0
     # via
     #   langgraph-sdk
@@ -188,15 +220,21 @@ packaging==26.3
     # via
     #   huggingface-hub
     #   langchain-core
+    #   langfuse
     #   langsmith
     #   pytest
     #   transformers
 pluggy==1.7.0
     # via pytest
+protobuf==7.36.2
+    # via
+    #   googleapis-common-protos
+    #   opentelemetry-proto
 pydantic==2.14.1
     # via
     #   fastapi
     #   langchain-core
+    #   langfuse
     #   langgraph
     #   langsmith
     #   openai
@@ -225,6 +263,8 @@ regex==2026.9.29
 requests==2.34.2
     # via
     #   langsmith
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
     #   requests-toolbelt
 requests-toolbelt==1.0.0
     # via langsmith
@@ -278,9 +318,13 @@ typing-extensions==4.16.0
     #   huggingface-hub
     #   langchain-core
     #   langchain-protocol
+    #   langfuse
     #   langsmith
     #   openai
     #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
     #   pydantic
     #   pydantic-core
     #   rich-toolkit
@@ -310,6 +354,8 @@ websockets==17.4
     #   langgraph-sdk
     #   langsmith
     #   uvicorn
+wrapt==2.5.2
+    # via langfuse
 xxhash==4.0.2
     # via
     #   langgraph

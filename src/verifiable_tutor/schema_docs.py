@@ -32,6 +32,7 @@ SCHEMA_TABLE_ORDER = (
     "message_sources",
     "tool_calls",
     "message_events",
+    "topic_progress",
     "knowledge_builds",
     "kb_folders",
     "kb_documents",
@@ -128,6 +129,11 @@ TABLE_NOTES = {
         "belongs to so the UI can group events into step sections (ADR-0019). "
         "The order is the order the model produced them."
     ),
+    "topic_progress": (
+        "Per-user knowledge-point progress per course topic: a point is "
+        "covered when a practice quiz asks about it, and mastered when a "
+        "later answer scores full marks. Both flags only grow."
+    ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
         "Folder tree the knowledge-base browser shows. A document belongs to one "
@@ -182,6 +188,7 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "id": "Conversation id used as session_id in the HTTP API.",
         "user_id": "Owner of the conversation.",
         "title": "First 60 characters of the first message; null when empty.",
+        "kind": "chat, or practice for a saved practice run.",
         "created_at": "ISO-8601 UTC creation time.",
         "updated_at": "Last activity; orders the sidebar newest first.",
     },
@@ -255,6 +262,13 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "reasoning": "Reasoning text for a reasoning event; null for a tool call.",
         "tool_call_position": "Position of the referenced tool_calls row; null for reasoning.",
         "step_id": "Work-chain step row id the event belongs to; null on legacy rows.",
+    },
+    "topic_progress": {
+        "user_id": "Account the progress belongs to.",
+        "topic": "Course topic from config/knowledge_points.yaml.",
+        "knowledge_point": "One knowledge point of that topic.",
+        "covered": "1 when a practice quiz covered the point; never cleared.",
+        "mastered": "1 when an answer scored full marks on it; never cleared.",
     },
     "knowledge_builds": {
         "id": "Build id.",
