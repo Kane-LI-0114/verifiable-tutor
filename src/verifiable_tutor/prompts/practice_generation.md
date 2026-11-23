@@ -32,6 +32,10 @@ object with these fields:
   source
 - "choices": array of option strings, only for single-choice and
   multiple-choice
+- "correct_answer": for single-choice, multiple-choice, and true-false, the
+  correct answer written exactly as it appears in "choices" (single-choice and
+  true-false) or the comma-separated correct choices (multiple-choice); an
+  empty string for short-answer and code
 - "reference_answer": the reference answer, with the [ref_N] marker
 - "scoring_points": array of itemized scoring point strings
 - "max_score": the maximum score as a number

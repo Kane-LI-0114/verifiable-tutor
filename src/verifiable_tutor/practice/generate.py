@@ -28,6 +28,7 @@ class GeneratedQuestion:
     topic: str
     question: str
     choices: list[str]
+    correct_answer: str
     reference_answer: str
     scoring_points: list[str]
     max_score: float
@@ -77,6 +78,7 @@ def _parse_questions(text: str, *, default_topic: str = "") -> list[GeneratedQue
                 topic=str(item.get("topic") or default_topic),
                 question=str(item.get("question", "")),
                 choices=[str(choice) for choice in (item.get("choices") or [])],
+                correct_answer=str(item.get("correct_answer", "")),
                 reference_answer=str(item.get("reference_answer", "")),
                 scoring_points=[
                     str(point) for point in (item.get("scoring_points") or [])

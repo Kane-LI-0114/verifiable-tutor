@@ -68,15 +68,21 @@ function deterministicGrade(
   ) {
     return null;
   }
-  const keyOf = (value: string) => value.trim()[0]?.toUpperCase() ?? "";
-  const refKeys = new Set(
-    question.reference_answer.split(",").map(keyOf).filter(Boolean),
-  );
-  const ansKeys = new Set(answer.split(",").map(keyOf).filter(Boolean));
-  const correct =
-    refKeys.size > 0 &&
-    refKeys.size === ansKeys.size &&
-    [...refKeys].every((key) => ansKeys.has(key));
+  const normalize = (value: string) => value.trim().toLowerCase();
+  const correctAnswer = question.correct_answer ?? "";
+  let correct: boolean;
+  if (question.type === "multiple-choice") {
+    const refSet = new Set(
+      correctAnswer.split(",").map(normalize).filter(Boolean),
+    );
+    const ansSet = new Set(answer.split(",").map(normalize).filter(Boolean));
+    correct =
+      refSet.size > 0 &&
+      refSet.size === ansSet.size &&
+      [...refSet].every((key) => ansSet.has(key));
+  } else {
+    correct = normalize(answer) === normalize(correctAnswer);
+  }
   return {
     score: correct ? question.max_score : 0,
     max_score: question.max_score,
