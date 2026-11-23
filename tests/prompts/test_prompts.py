@@ -29,3 +29,10 @@ def test_chat_system_prompt_requires_numbered_markers_at_paragraph_end():
     assert "Never write a marker that no tool result showed" in text
     assert "Do not write a bare [1]" in text
     assert "Do not use [doc_id p.N]" in text
+
+
+def test_practice_generation_prompt_requires_an_exact_choice_answer():
+    text = load_prompt("practice_generation")
+
+    assert '"answer"' in text
+    assert "exact text of the correct choice" in text

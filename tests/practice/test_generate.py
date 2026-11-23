@@ -65,3 +65,18 @@ def test_generate_practice_uses_the_practice_prompt_and_topic() -> None:
     assert runner.messages[1]["content"] == (
         "Generate self-test questions on the topic: FlashAttention"
     )
+
+JSON_WITH_ANSWER = (
+    '[{"type": "single-choice", "answer": "B. Y", "question": "What is MPI? [ref_1]", '
+    '"choices": ["A. X", "B. Y"], "reference_answer": "The second option, B. Y, is right.", '
+    '"scoring_points": ["defines MPI"], "max_score": 1}]'
+)
+
+
+def test_generate_practice_keeps_the_exact_choice_answer() -> None:
+    runner = FakeRunner(text=JSON_WITH_ANSWER)
+
+    questions, _ = generate_practice("FlashAttention", runner, adapter=None)
+
+    assert questions[0].answer == "B. Y"
+
