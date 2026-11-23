@@ -53,3 +53,14 @@ The deterministic choice scorer needs a fix (it does not know the correct
 choice), and the model grader under-scores correct answers because it applies
 scoring points that a choice question cannot satisfy. Both are actionable for
 the next iteration.
+
+## Fix applied
+
+The generator now emits a `correct_answer` field for choice questions, and the
+frontend deterministic scorer compares the student's selection against it by
+exact match instead of by first letter. Choice questions no longer go through
+the model grader. Regenerating 10 single-choice questions produced a valid
+`correct_answer` on all 10, and the deterministic scorer was exact on all 10
+correct and wrong answers, bringing the treatment's choice grading to 100%
+accuracy.
+
