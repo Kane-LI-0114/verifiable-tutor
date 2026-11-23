@@ -1,0 +1,67 @@
+{
+  "run_id": "dual-dense2-01",
+  "system": "dual_page450_sub128_dense2_lex1",
+  "configuration": {
+    "lexical": "page_first_450, top 30",
+    "dense": "page_first_128 subchunks, top 30",
+    "fusion": "page-level RRF, k=60, weights dense:lexical 2:1",
+    "injection": "full page text for the top pages"
+  },
+  "dual": {
+    "ndcg@5": 0.859631,
+    "ndcg@5_ci": [
+      0.781897,
+      0.92927
+    ],
+    "hit@3": 0.901961,
+    "hit@5": 0.941176,
+    "page_tokens@5": 1136.5
+  },
+  "baseline_page_first_450": {
+    "ndcg@5": 0.848664,
+    "hit@3": 0.882353,
+    "hit@5": 0.882353,
+    "page_tokens@5": 1147.9
+  },
+  "dense_page_first_128": {
+    "ndcg@5": 0.894062,
+    "hit@3": 0.941176,
+    "page_tokens@5": 1141.5
+  },
+  "vs_page_first_450": {
+    "ndcg@5": {
+      "questions": 51,
+      "mean_delta": 0.010968,
+      "ci": [
+        -0.033266,
+        0.059521
+      ],
+      "wins": 5,
+      "ties": 42,
+      "losses": 4
+    },
+    "hit@3": {
+      "baseline_only": 0,
+      "dual_only": 1,
+      "mcnemar_p": 1.0
+    }
+  },
+  "vs_dual_1to1": {
+    "ndcg@5": {
+      "questions": 51,
+      "mean_delta": 0.00289,
+      "ci": [
+        -0.037417,
+        0.044728
+      ],
+      "wins": 5,
+      "ties": 43,
+      "losses": 3
+    },
+    "hit@3": {
+      "baseline_only": 0,
+      "cell_only": 2,
+      "mcnemar_p": 0.5
+    }
+  }
+}
