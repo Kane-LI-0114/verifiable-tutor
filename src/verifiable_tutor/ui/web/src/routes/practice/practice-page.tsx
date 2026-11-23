@@ -28,6 +28,7 @@ import {
 } from "@/lib/api/practice";
 import { format, useT } from "@/lib/i18n";
 import { gradeDeterministic } from "@/lib/practice/grading";
+import { buildPracticeSummary } from "@/lib/practice/summary";
 import { useConversations } from "@/lib/session/conversations";
 import type { CitationSource, QuestionType } from "@/lib/types";
 
@@ -221,27 +222,12 @@ export function PracticePage() {
       }
     }
     setResults(next);
-    const totalMax = questions.reduce((sum, q) => sum + q.max_score, 0);
-    const totalScore = questions.reduce(
-      (sum, _q, index) => sum + (next[index]?.score ?? 0),
-      0,
-    );
-    const lines = [
-      `# 练习：${effectiveTopic}`,
-      "",
-      `**总分：${Math.round(totalScore)}/${Math.round(totalMax)}**`,
-      "",
-    ];
-    questions.forEach((q, index) => {
-      const result = next[index];
-      lines.push(`### ${index + 1}. ${q.question}`);
-      lines.push(`- 你的答案：${answerFor(index, q) || "（未作答）"}`);
-      lines.push(`- 参考答案：${q.reference_answer}`);
-      if (result) {
-        lines.push(`- 得分：${result.score}/${q.max_score}`);
-        lines.push(`- 解析：${result.explanation}`);
-      }
-      lines.push("");
+    const content = buildPracticeSummary({
+      topic: effectiveTopic,
+      questions,
+      answers: questions.map((question, index) => answerFor(index, question)),
+      results: next,
+      labels: t.practice.summary,
     });
     try {
       const title = `${effectiveTopic} ${dateStamp()}`;
@@ -264,7 +250,7 @@ export function PracticePage() {
         covered_points: Array.from(entry.covered),
         mastered_points: Array.from(entry.mastered),
       }));
-      await savePracticeSession(title, lines.join("\n"), sources, progress);
+      await savePracticeSession(title, content, sources, progress);
       refreshConversations();
     } catch {
       // Saving the session is best effort; the result stays on screen.

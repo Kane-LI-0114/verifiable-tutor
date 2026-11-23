@@ -296,6 +296,15 @@ export const zh: Messages = {
     solutionPlaceholder: "粘贴你的 C 或 CUDA 源码",
     solutionSubmit: "讲解解答",
     solutionDisabled: "此版本暂不支持讲解自己的解答。",
+    summary: {
+      title: "练习：{{topic}}",
+      total: "**总分：{{score}}/{{max}}**",
+      yourAnswer: "你的答案：{{answer}}",
+      referenceAnswer: "参考答案：{{answer}}",
+      score: "得分：{{score}}/{{max}}",
+      explanation: "解析：{{text}}",
+      unanswered: "（未作答）",
+    },
   },
   profile: {
     title: "我的档案",
