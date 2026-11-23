@@ -195,6 +195,9 @@ def test_chat_resumes_a_conversation_and_sends_its_history(api):
         "system",
         "user",
     ]
+    assert sent[2] == {"role": "user", "content": "first question"}
+    assert sent[3]["role"] == "assistant"
+    assert sent[3]["content"] == "Hello"
     assert sent[-1] == {"role": "user", "content": "second question"}
     history = api.client.get(f"/api/sessions/{session_id}/messages").json()["messages"]
     assert len(history) == 4
