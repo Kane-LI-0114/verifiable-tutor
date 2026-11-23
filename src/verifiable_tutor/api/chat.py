@@ -25,6 +25,7 @@ from ..llm.adapter import (
 )
 from ..orchestrator.runner import AgentEvent, AgentRunner
 from ..orchestrator.tools import ToolRegistry
+from ..policy.deadline import deadline_status_note
 from . import streaming
 from ..prompts import load_prompt
 from ..settings import AppSettings
@@ -262,6 +263,9 @@ class ChatService:
             {"role": "system", "content": SYSTEM_PROMPT},
             *self._history(conversation["id"]),
         ]
+        deadline_note = deadline_status_note(self._deadlines, now)
+        if deadline_note:
+            messages.insert(1, {"role": "system", "content": deadline_note})
         if document_context:
             note = load_prompt("chat_document_context")
             note = note.replace(

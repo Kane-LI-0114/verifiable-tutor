@@ -70,3 +70,24 @@ def find_deadline(
         if suffix in item.name.lower():
             return item
     return None
+
+
+def deadline_status_note(
+    deadlines: list[AssignmentDeadline], now: datetime
+) -> str:
+    """Describe each assignment deadline and the disclosure rule for the model."""
+
+    if not deadlines:
+        return ""
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    lines = [f"Assignment deadlines as of {now.isoformat(timespec='minutes')}:"]
+    for item in deadlines:
+        state = "open" if item.deadline > now else "passed"
+        lines.append(f"- {item.name}: deadline {item.deadline.isoformat()}, {state}")
+    lines.append(
+        "A complete solution may be explained only for an assignment whose deadline"
+        " has passed. For an open assignment, do not provide a complete solution:"
+        " explain the concept, work a similar example, or offer a hint."
+    )
+    return "\n".join(lines)
