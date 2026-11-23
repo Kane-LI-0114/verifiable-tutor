@@ -9,7 +9,8 @@ Current texts: ``chat_system.md`` is the chat system prompt, and ``kb_v1.md``
 is the knowledge-base job template (``prompt_version`` kb-v1) whose system,
 user, and repair sections the TACC worker parses; the local driver stages a
 copy of it into the task directory. ``practice_generation.md`` is the self-test
-generation system prompt. Model request parameters stay in
+generation system prompt, and ``deadline_status.md`` is the per-turn assignment
+deadline note. Model request parameters stay in
 ``config/models.yaml``; see AGENTS.md.
 """
 

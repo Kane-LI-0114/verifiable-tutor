@@ -14,6 +14,10 @@ from pathlib import Path
 
 import yaml
 
+from ..prompts import load_prompt
+
+DEADLINE_STATUS_PROMPT = load_prompt("deadline_status")
+
 
 @dataclass(frozen=True)
 class AssignmentDeadline:
@@ -81,13 +85,10 @@ def deadline_status_note(
         return ""
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
-    lines = [f"Assignment deadlines as of {now.isoformat(timespec='minutes')}:"]
+    rows = []
     for item in deadlines:
         state = "open" if item.deadline > now else "passed"
-        lines.append(f"- {item.name}: deadline {item.deadline.isoformat()}, {state}")
-    lines.append(
-        "A complete solution may be explained only for an assignment whose deadline"
-        " has passed. For an open assignment, do not provide a complete solution:"
-        " explain the concept, work a similar example, or offer a hint."
-    )
-    return "\n".join(lines)
+        rows.append(f"- {item.name}: deadline {item.deadline.isoformat()}, {state}")
+    return DEADLINE_STATUS_PROMPT.replace(
+        "%%NOW%%", now.isoformat(timespec="minutes")
+    ).replace("%%ASSIGNMENTS%%", "\n".join(rows))

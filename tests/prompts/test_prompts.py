@@ -38,6 +38,14 @@ def test_chat_system_prompt_defers_to_the_deadline_aware_gate():
     assert "deadline" in text.lower()
 
 
+def test_deadline_status_prompt_comes_from_the_prompts_package():
+    text = load_prompt("deadline_status")
+
+    assert "%%NOW%%" in text
+    assert "%%ASSIGNMENTS%%" in text
+    assert "complete solution" in text
+
+
 def test_practice_generation_prompt_requires_an_exact_choice_answer():
     text = load_prompt("practice_generation")
 
