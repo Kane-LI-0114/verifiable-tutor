@@ -36,14 +36,18 @@ prompts for every assistant.
 
 ### Step 2: grade answers (grading accuracy)
 
-1. Start a new chat (a fresh chat avoids context carry-over).
+1. Start a new chat and upload `Tutorial_4.pdf` (a fresh chat avoids context
+   carry-over, and the PDF lets it grade from the material instead of memory).
 2. Send:
    > Below are 10 single-choice questions. Each question has two student
-   > answers, answer 1 and answer 2. Grade each answer: a correct choice earns
-   > full marks and a wrong choice earns 0. Output, for each question, the
-   > question number, answer 1 score, answer 2 score, and the maximum score.
+   > answers, answer 1 and answer 2. For each question, determine the correct
+   > choice using ONLY the uploaded PDF, then grade each answer: a correct
+   > choice earns full marks and a wrong choice earns 0. Do not use your
+   > general knowledge or web search. Output, for each question, the question
+   > number, answer 1 score, answer 2 score, and the maximum score.
 3. Paste the 10 questions, and for each question paste two student answers:
-   answer 1 = the correct answer, answer 2 = the listed wrong answer.
+   answer 1 = the correct answer, answer 2 = the listed wrong answer. Do not
+   tell the assistant which answer is correct.
 4. Wait for it to finish.
 5. Copy the scores verbatim and save them.
 
