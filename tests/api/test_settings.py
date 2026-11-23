@@ -36,6 +36,34 @@ def test_load_settings_resolves_paths_and_domains(tmp_path: Path):
     assert settings.agent_web_tools_enabled is True
 
 
+def test_load_settings_reads_the_local_langfuse_configuration(tmp_path: Path):
+    settings = load_settings(
+        repo_root=REPO_ROOT,
+        env_file=tmp_path / "missing.env",
+        env={
+            "SESSION_SECRET": "unit-test-secret",
+            "LANGFUSE_PUBLIC_KEY": "pk-lf-test",
+            "LANGFUSE_SECRET_KEY": "sk-lf-test",
+        },
+    )
+
+    assert settings.observability.langfuse.enabled is True
+    assert settings.observability.langfuse.base_url == "http://127.0.0.1:3000"
+    assert settings.observability.langfuse.environment == "local"
+    assert settings.observability.public_key == "pk-lf-test"
+
+
+def test_load_settings_without_langfuse_keys_still_loads(tmp_path: Path):
+    settings = load_settings(
+        repo_root=REPO_ROOT,
+        env_file=tmp_path / "missing.env",
+        env={"SESSION_SECRET": "unit-test-secret"},
+    )
+
+    assert settings.observability.public_key is None
+    assert settings.observability.secret_key is None
+
+
 def test_load_settings_fails_closed_when_the_session_secret_is_missing(tmp_path: Path):
     with pytest.raises(SettingsError, match="SESSION_SECRET"):
         load_settings(

@@ -1,6 +1,6 @@
 {
   "schema": "vt-ingest-state/1",
-  "updated_at": "2026-11-06T08:53:57+00:00",
+  "updated_at": "2026-11-23T04:01:07+00:00",
   "documents": {
     "course_project": {
       "doc_id": "course_project",
@@ -14,20 +14,20 @@
         "log_path": null,
         "error": null,
         "source": "data/corpus/pdf-parse/pages-27884.jsonl (job 27884, reused)",
-        "finished_at": "2026-11-06T08:44:46+00:00"
+        "finished_at": "2026-11-23T03:51:34+00:00"
       },
       "chunks": {
         "status": "done",
         "count": 11,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 11,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -56,14 +56,14 @@
         "status": "done",
         "count": 11,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 11,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -92,14 +92,14 @@
         "status": "done",
         "count": 73,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 73,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -128,14 +128,14 @@
         "status": "done",
         "count": 69,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 69,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -164,14 +164,14 @@
         "status": "done",
         "count": 16,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 16,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -200,14 +200,14 @@
         "status": "done",
         "count": 25,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 25,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -236,14 +236,14 @@
         "status": "done",
         "count": 29,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 29,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -272,14 +272,14 @@
         "status": "done",
         "count": 41,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 41,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -308,14 +308,14 @@
         "status": "done",
         "count": 33,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 33,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -344,14 +344,14 @@
         "status": "done",
         "count": 34,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 34,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -380,14 +380,14 @@
         "status": "done",
         "count": 8,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 8,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -416,14 +416,14 @@
         "status": "done",
         "count": 9,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 9,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -452,14 +452,14 @@
         "status": "done",
         "count": 23,
         "chunker_version": "vt-chunker/1",
-        "finished_at": "2026-11-06T08:31:47+00:00"
+        "finished_at": "2026-11-23T03:49:02+00:00"
       },
       "index": {
         "status": "done",
         "vectors": 23,
         "model": "BAAI/bge-m3",
-        "job_id": "28320",
-        "finished_at": "2026-11-06T08:34:26+00:00"
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
       },
       "summary": {
         "status": "done",
@@ -469,6 +469,114 @@
         "finished_at": "2026-11-06T08:53:57+00:00"
       },
       "batch": "tutorials"
+    },
+    "ACS_Lecture_3_2026F": {
+      "doc_id": "ACS_Lecture_3_2026F",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 89,
+        "pages_ok": 89,
+        "seconds": 477.873,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/ACS_Lecture_3_2026F.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-lectures-3-4-20261123/logs/ACS_Lecture_3_2026F-31009.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-23T03:36:16+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 89,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-23T03:49:02+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 89,
+        "model": "BAAI/bge-m3",
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "summary-20261123",
+        "page_count": 89,
+        "finished_at": "2026-11-23T04:01:07+00:00"
+      },
+      "batch": "lectures"
+    },
+    "ACS_Lecture_4_2026F": {
+      "doc_id": "ACS_Lecture_4_2026F",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 71,
+        "pages_ok": 71,
+        "seconds": 357.076,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/ACS_Lecture_4_2026F.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-lectures-3-4-20261123/logs/ACS_Lecture_4_2026F-31009.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-23T03:36:16+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 71,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-23T03:49:02+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 71,
+        "model": "BAAI/bge-m3",
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "summary-20261123",
+        "page_count": 71,
+        "finished_at": "2026-11-23T04:01:07+00:00"
+      },
+      "batch": "lectures"
+    },
+    "ACS_Lecture_5_2026F": {
+      "doc_id": "ACS_Lecture_5_2026F",
+      "ocr": {
+        "status": "done",
+        "job_id": "",
+        "pages": 68,
+        "pages_ok": 68,
+        "seconds": 366.317,
+        "pages_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/corpus/pages/ACS_Lecture_5_2026F.jsonl",
+        "log_path": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/data/caches/ocr-results/ocr-lectures-5-20261123/logs/ACS_Lecture_5_2026F-31012.log",
+        "error": null,
+        "source": null,
+        "finished_at": "2026-11-23T03:48:55+00:00"
+      },
+      "chunks": {
+        "status": "done",
+        "count": 70,
+        "chunker_version": "vt-chunker/1",
+        "finished_at": "2026-11-23T03:49:02+00:00"
+      },
+      "index": {
+        "status": "done",
+        "vectors": 70,
+        "model": "BAAI/bge-m3",
+        "job_id": "31013",
+        "finished_at": "2026-11-23T03:51:31+00:00"
+      },
+      "summary": {
+        "status": "done",
+        "model": "qwen3.8-27b",
+        "build_id": "summary-20261123",
+        "page_count": 68,
+        "finished_at": "2026-11-23T04:01:07+00:00"
+      },
+      "batch": "lectures"
     }
   }
 }
