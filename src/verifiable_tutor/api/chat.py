@@ -99,8 +99,10 @@ class ChatService:
         tool_registry: ToolRegistry,
         retriever: Any,
         knowledge_store: Any,
+        tracing: Any | None = None,
     ) -> None:
         self._settings = settings
+        self._tracing = tracing
         self._storage = storage
         self._trace = trace
         self._clock = clock
@@ -282,6 +284,13 @@ class ChatService:
                 provider=selection.provider,
                 tier=tier,
                 thinking=thinking,
+                callbacks=(
+                    self._tracing.callbacks() if self._tracing is not None else []
+                ),
+                trace_metadata={
+                    "langfuse_session_id": conversation["id"],
+                    "langfuse_user_id": user["id"],
+                },
             )
             first_event = next(events)
         except StopIteration:

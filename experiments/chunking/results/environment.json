@@ -1,0 +1,16 @@
+{
+  "python": "3.12.7 | packaged by Anaconda, Inc. | (main, Oct  4 2024, 13:17:27) [MSC v.1929 64 bit (AMD64)]",
+  "executable": "experiments/chunking/.venv/Scripts/python.exe",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "torch": "2.15.0+cpu",
+  "transformers": "5.22.1",
+  "numpy": "2.5.4",
+  "model": "BAAI/bge-m3",
+  "model_files": {
+    "config.json": 687,
+    "pytorch_model.bin": 2271145830,
+    "tokenizer.json": 17098108
+  },
+  "device": "cpu",
+  "max_length": 512
+}

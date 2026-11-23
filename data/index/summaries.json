@@ -1,6 +1,21 @@
 {
   "schema": "vt-doc-summaries/1",
   "documents": {
+    "ACS_Lecture_3_2026F": {
+      "summary": "This lecture explores the evolution of network systems from traditional kernel TCP/IP to AI-native architectures, addressing how to achieve high throughput and predictable performance in large-scale clusters. It details the internal mechanics of modern NICs, including DMA operations, queue management, and hardware offloads like TSO and GRO. The material covers kernel bypass techniques such as DPDK and XDP, as well as RDMA protocols that move data directly between host memories to reduce latency. The discussion extends to scale-out networks for AI training, analyzing designs like Alibaba's HPN and the challenges of bursty traffic and hash collisions. Finally, it examines scale-up networks and the EtherNode architecture, which uses Ethernet-based fabrics to aggregate HBM resources across multiple racks for high-bandwidth accelerator communication.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-23T04:00:20+00:00"
+    },
+    "ACS_Lecture_4_2026F": {
+      "summary": "This lecture document provides a comprehensive overview of the Transformer model family, tracing its evolution from foundational language model concepts to modern Large Language Models (LLMs). It details the progression from word embeddings and recurrent neural networks to the introduction of attention mechanisms and self-attention as core architectural components. The text explains the specific building blocks of the Transformer, including multi-head attention, positional embeddings, and residual connections, while distinguishing between encoder, decoder, and encoder-decoder variants. Additionally, the document covers the scaling laws and historical milestones of LLMs, such as the GPT series, and discusses practical applications and training costs.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-23T04:00:24+00:00"
+    },
+    "ACS_Lecture_5_2026F": {
+      "summary": "This lecture from Advanced AI Computing and Systems covers the fundamental principles of LLM training, including next-token prediction, cross-entropy loss, and optimization techniques such as gradient descent and Adam. It details distributed training strategies like data, tensor, and pipeline parallelism to address compute and memory constraints on modern GPUs. The document also explores LLM inference fundamentals, distinguishing between compute-bound prefill and memory-bound decode stages using the roofline model. Finally, it examines serving systems, focusing on scheduling methods like continuous batching and memory management techniques such as PagedAttention for efficient KV cache utilization.",
+      "model": "qwen3.8-27b",
+      "created_at": "2026-11-23T04:00:28+00:00"
+    },
     "Tutorial_6": {
       "summary": "This tutorial explains DeepEP, a communication library for expert-parallel Mixture-of-Experts (MoE) models that optimizes token dispatch and combine operations. It details the underlying GPU communication infrastructure, including NVLink and RDMA domains, as well as GPU-Initiated RDMA (IBGDA) for high-performance data transfer. The document contrasts two distinct dispatch paths: a low-latency approach using fixed receive slots and atomic reservations, and a high-throughput approach that pipelines RDMA and NVLink transfers. It further breaks down the high-throughput pipeline into specific roles such as senders, coordinators, and forwarders to manage buffer ownership and token counts. Finally, the tutorial provides a source map linking the Python APIs to the underlying GPU kernels.",
       "model": "qwen3.8-27b",

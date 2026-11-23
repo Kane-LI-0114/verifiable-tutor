@@ -1,0 +1,49 @@
+{
+  "run_id": "dual-granularity-01",
+  "system": "dual_page450_sub128",
+  "configuration": {
+    "lexical": "page_first_450, top 30",
+    "dense": "page_first_128 subchunks, top 30",
+    "fusion": "page-level RRF, k=60, weights 1:1",
+    "injection": "full page text for the top pages"
+  },
+  "dual": {
+    "ndcg@5": 0.856741,
+    "ndcg@5_ci": [
+      0.765171,
+      0.933989
+    ],
+    "hit@3": 0.862745,
+    "hit@5": 0.901961,
+    "page_tokens@5": 1144.8
+  },
+  "baseline_page_first_450": {
+    "ndcg@5": 0.848664,
+    "hit@3": 0.882353,
+    "hit@5": 0.882353,
+    "page_tokens@5": 1147.9
+  },
+  "dense_page_first_128": {
+    "ndcg@5": 0.894062,
+    "hit@3": 0.941176,
+    "page_tokens@5": 1141.5
+  },
+  "vs_page_first_450": {
+    "ndcg@5": {
+      "questions": 51,
+      "mean_delta": 0.008077,
+      "ci": [
+        -0.005869,
+        0.030468
+      ],
+      "wins": 2,
+      "ties": 48,
+      "losses": 1
+    },
+    "hit@3": {
+      "baseline_only": 1,
+      "dual_only": 0,
+      "mcnemar_p": 1.0
+    }
+  }
+}

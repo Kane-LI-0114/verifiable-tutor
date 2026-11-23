@@ -16,6 +16,11 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .llm.config import load_dotenv
+from .observability import (
+    ObservabilityError,
+    ObservabilitySettings,
+    load_observability_settings,
+)
 
 
 class SettingsError(RuntimeError):
@@ -134,6 +139,9 @@ class AppSettings(BaseModel):
     knowledge_embedding_provider: Literal["local", "tacc"]
     session_secret: str
     smtp: SmtpSettings = Field(default_factory=SmtpSettings)
+    observability: ObservabilitySettings = Field(
+        default_factory=ObservabilitySettings
+    )
 
 
 def _resolve(repo_root: Path, value: str) -> Path:
@@ -198,6 +206,16 @@ def load_settings(
     except (ValidationError, ValueError) as exc:
         raise SettingsError(f"invalid SMTP settings: {exc}") from exc
 
+    try:
+        observability = load_observability_settings(
+            config_path=config_file.parent / "observability.yaml",
+            env_file=dotenv,
+            env=merged,
+            repo_root=root,
+        )
+    except ObservabilityError as exc:
+        raise SettingsError(str(exc)) from exc
+
     domains = tuple(
         domain.strip().lower()
         for domain in config.auth.allowed_email_domains
@@ -242,6 +260,7 @@ def load_settings(
             knowledge_embedding_provider=config.knowledge.embedding_provider,
             session_secret=session_secret,
             smtp=smtp,
+            observability=observability,
         )
     except ValidationError as exc:
         raise SettingsError(f"invalid application settings: {exc}") from exc

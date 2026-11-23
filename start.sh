@@ -13,6 +13,11 @@
 # with a non-empty SESSION_SECRET. The UI build writes the ignored
 # src/verifiable_tutor/ui/static directory.
 #
+# Local Langfuse tracing is optional. When Docker is running and the stack is
+# installed at ~/tools/langfuse (override with LANGFUSE_DIR), it starts with
+# the project. A missing Docker or a failed start prints a warning and the
+# project continues without tracing (docs/langfuse-local.md).
+#
 # The default mode serves the SPA at http://127.0.0.1:8000/ from FastAPI.
 # The --dev mode serves the SPA from Vite (usually http://127.0.0.1:5173/)
 # and proxies /api to the backend.
@@ -26,6 +31,8 @@ PORT="8000"
 MODE="serve"
 BUILD="1"
 PREVIEW="0"
+LANGFUSE_DIR="${LANGFUSE_DIR:-$HOME/tools/langfuse}"
+LANGFUSE_URL="${LANGFUSE_URL:-http://127.0.0.1:3000}"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -44,7 +51,7 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     -h|--help)
-      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -66,6 +73,46 @@ command -v npm >/dev/null 2>&1 || fail "npm is not on PATH"
 [ -f "$ROOT/.env" ] || fail "missing .env; copy .env.example to .env and set SESSION_SECRET"
 grep -Eq '^[[:space:]]*SESSION_SECRET=[^[:space:]]+' "$ROOT/.env" \
   || fail "SESSION_SECRET is empty in .env; the backend fails closed without it"
+
+start_langfuse() {
+  if [ ! -f "$LANGFUSE_DIR/docker-compose.yml" ]; then
+    echo "start.sh: Langfuse stack not found at $LANGFUSE_DIR; skipping local tracing (see docs/langfuse-local.md)" >&2
+    return
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "start.sh: docker is not on PATH; skipping local tracing" >&2
+    return
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    echo "start.sh: Docker is not running; skipping local tracing (start Docker Desktop to enable it)" >&2
+    return
+  fi
+
+  echo "start.sh: starting local Langfuse from $LANGFUSE_DIR"
+  if ! (cd "$LANGFUSE_DIR" && docker compose up -d postgres clickhouse redis minio langfuse-web langfuse-worker); then
+    echo "start.sh: Langfuse failed to start; continuing without local tracing" >&2
+    return
+  fi
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "start.sh: Langfuse containers started at $LANGFUSE_URL"
+    return
+  fi
+  for _ in $(seq 1 15); do
+    if curl -fsS --max-time 2 "$LANGFUSE_URL/api/public/ready" >/dev/null 2>&1; then
+      echo "start.sh: Langfuse is ready at $LANGFUSE_URL"
+      return
+    fi
+    sleep 2
+  done
+  echo "start.sh: Langfuse is starting but not ready yet; tracing will catch up at $LANGFUSE_URL" >&2
+}
+
+if [ "$PREVIEW" = "1" ]; then
+  echo "start.sh: preview mode; skipping local Langfuse tracing"
+else
+  start_langfuse
+fi
 
 install_ui_deps() {
   cd "$WEB"

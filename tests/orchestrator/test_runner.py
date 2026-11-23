@@ -6,6 +6,7 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 
 from verifiable_tutor.llm.adapter import StreamEvent, ToolCallDelta
 from verifiable_tutor.orchestrator.builtin_tools import build_tool_registry
@@ -316,3 +317,37 @@ def test_an_empty_final_answer_uses_the_fallback_copy():
     events = _run(adapter)
 
     assert events[-1].data["text"] == FALLBACK_TEXT
+
+
+class RecordingHandler(BaseCallbackHandler):
+    """Collects the chain names a LangGraph run reports to callbacks."""
+
+    def __init__(self):
+        self.starts: list[str] = []
+
+    def on_chain_start(self, serialized, inputs, **kwargs):
+        name = kwargs.get("name") or (serialized or {}).get("name")
+        if name:
+            self.starts.append(name)
+
+
+def test_runner_reports_graph_nodes_to_the_tracing_callbacks():
+    adapter = ScriptAdapter([_tool_script(), _text_script("Answer.")])
+    handler = RecordingHandler()
+
+    list(
+        runner().run(
+            [{"role": "user", "content": "What is MPI_Allreduce?"}],
+            adapter=adapter,
+            provider="deepseek",
+            tier="flash",
+            callbacks=[handler],
+            trace_metadata={
+                "langfuse_session_id": "conversation-1",
+                "langfuse_user_id": "user-1",
+            },
+        )
+    )
+
+    assert "agent" in handler.starts
+    assert "tools" in handler.starts

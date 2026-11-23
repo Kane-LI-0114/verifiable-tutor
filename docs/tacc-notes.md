@@ -251,6 +251,23 @@ The Stage 2 corpus build runs through `scripts/ingest_corpus.py`: three batched 
 - The queue is shared and the partition was busy with two `acstest` jobs and two two-node `lilac` jobs in the afternoon. The second index job waited 632 s pending for a node and then ran for 82.6 s; the summary job started 7 s after submit because the index job had just freed a two-GPU node. Nothing of ours was left running or queued after the summary job.
 - `course_project.pdf` was not parsed again: its eight `vt-page-record/1` records from job 27884 were copied to `data/corpus/pages/course_project.jsonl` and its eight page WebP files were downloaded from `USERDIR/pdf-parse/images/`.
 
+## Corpus refresh (2026-11-23)
+
+Lectures 3, 4 and 5 arrived after the first build. They were added to the `lectures` batch in `scripts/tacc/run_ocr_job.py`, staged under `data/corpus/corpus-pdf/`, and pushed through the same three stages. The per-document record is again in the gitignored `data/index/ingest.json`.
+
+| Job | Work | Id | Body | Fixed startup | Recognition | Result |
+|---|---|---|---|---|---|---|
+| OCR Lectures 3 and 4 | ACS_Lecture_3_2026F (89 pages), ACS_Lecture_4_2026F (71) | 31009 | 1137.0 s | 296 s vLLM | 730.8 s | 160 of 160 pages |
+| OCR Lecture 5 | ACS_Lecture_5_2026F (68 pages) | 31012 | 671.0 s | 299 s vLLM | 319.3 s | 68 of 68 pages |
+| BGE-M3 index refresh | all 16 documents, 612 chunks | 31013 | 69.7 s | 9.2 s load | 12.8 s | 612 vectors, dimension 1024 |
+| Qwen document summaries | ACS_Lecture_3_2026F, `_4`, `_5` through `vt-summary-request/1` | 31014 | 504.8 s | 489 s vLLM | 14.7 s generation | 3 of 3 summaries |
+
+- The three lectures add 228 pages and 230 chunks: 89, 71 and 70. The corpus is now 16 documents, 593 pages, 612 chunks, 612 vectors and 16 summaries, and `ingest_corpus.py status` reports `ok=true`.
+- The new pages were split over two jobs. The 2026-11-05 lectures job averaged 7.0 s per page including per-document startup, so one 228-page job would have run past the 1800 s recognition cap. Job 31009 measured 4.6 s per page across 160 pages and stayed at 731 s of recognition.
+- The index stage replaces `data/index/vectors.npy` and `data/index/row_map.jsonl` with the rows of the job it just ran, so the refresh re-embedded the whole corpus with `index --force` instead of only the new documents. A per-document `--resume` run would have left `ingest_corpus.py import` unable to restore the 13 older documents.
+- The tracked artifacts are self-sufficient: `ingest_corpus.py import` restored all 16 documents from `data/corpus/pages/`, `row_map.jsonl`, `vectors.npy` and `summaries.json` with no issues, which is the path a fresh checkout takes.
+- Queueing was light: 31009 and 31012 started within a minute of submit, and the index job 31013 waited 27.4 s for a GPU. The summary job 31014 ran on 10-0-1-10 for a 489 s vLLM cold start. Nothing of ours was left running or queued afterwards.
+
 ## Sources
 
 - Course staff reply from Yijun Sun, 2026-10-28, by email to LI Jinchuan, TIAN Yujia, and XIE Yifeng.
