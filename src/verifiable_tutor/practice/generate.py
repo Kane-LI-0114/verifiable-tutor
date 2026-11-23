@@ -75,7 +75,9 @@ def _parse_questions(text: str, *, default_topic: str = "") -> list[GeneratedQue
         questions.append(
             GeneratedQuestion(
                 type=str(item.get("type", "")),
-                topic=str(item.get("topic") or default_topic),
+                # A single-topic request keeps the topic the student chose;
+                # the model sometimes tags a knowledge point in "topic".
+                topic=default_topic or str(item.get("topic") or ""),
                 question=str(item.get("question", "")),
                 choices=[str(choice) for choice in (item.get("choices") or [])],
                 answer=str(item.get("answer", "")),

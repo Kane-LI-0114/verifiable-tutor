@@ -80,3 +80,26 @@ def test_generate_practice_keeps_the_exact_choice_answer() -> None:
 
     assert questions[0].answer == "B. Y"
 
+JSON_WITH_TOPIC = (
+    '[{"type": "single-choice", "topic": "processes and ranks", "answer": "B. Y", '
+    '"question": "What is MPI? [ref_1]", "choices": ["A. X", "B. Y"], '
+    '"reference_answer": "B. Y", "scoring_points": ["defines MPI"], "max_score": 1}]'
+)
+
+
+def test_generate_practice_keeps_the_requested_topic_when_the_model_tags_one() -> None:
+    runner = FakeRunner(text=JSON_WITH_TOPIC)
+
+    questions, _ = generate_practice("MPI", runner, adapter=None)
+
+    assert questions[0].topic == "MPI"
+
+
+def test_generate_practice_uses_the_model_topic_for_all_topics() -> None:
+    runner = FakeRunner(text=JSON_WITH_TOPIC)
+
+    questions, _ = generate_practice("all topics", runner, adapter=None)
+
+    assert questions[0].topic == "processes and ranks"
+
+
