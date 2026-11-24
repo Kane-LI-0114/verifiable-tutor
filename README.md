@@ -464,12 +464,12 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `.githooks/` | Versioned Git hooks; the pre-commit hook keeps the physical data model documents in sync with the SQLite schema | present: pre-commit |
 | `src/verifiable_tutor/auth/` | Accounts, authentication, sessions, and roles | present: accounts, sessions, email seam, seeding |
 | `src/verifiable_tutor/api/` | FastAPI application, routers, dependencies, and the AI SDK UI message stream adapter; serves the API and the built UI on one origin | present: factory, routers, chat and replay services, stream encoder |
-| `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | present: five-state gate, intent classification, deadline registry, decision log |
 | `src/verifiable_tutor/orchestrator/` | Request routing and context budget | present: two-node LangGraph loop, typed tool registry, course and web tools |
-| `src/verifiable_tutor/evidence/` | Hybrid retrieval (query plan, FTS5 and dense arms, reciprocal rank fusion) and the deterministic span verifier | present: retrieval; verifier pending |
-| `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/evidence/` | Hybrid retrieval (query plan, FTS5 and dense arms, reciprocal rank fusion) and the deterministic span verifier | present: retrieval and span verifier |
+| `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | present: question generation, deterministic and model grading |
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
-| `src/verifiable_tutor/eval/` | Evaluation harness | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/eval/` | Evaluation harness | present: RQ2 self-test metrics CLI |
 | `src/verifiable_tutor/corpus/` | Page records, the page-first chunker, and the local knowledge store | present: chunker, store, pages |
 | `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state; present: chunk, request and schema validation helpers, card reader, and build lifecycle | present: helpers, cards, builds |
 | `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache, search and fetch used by the agent tools |
@@ -484,7 +484,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, and recorded results; `results/` holds the citation study data, its notes, and the evaluation script | `results/`: present; `questions/` and `policy_scenarios/`: placeholder (`.gitkeep`) |
-| `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
+| `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | present: protocol, checklist, frozen mock runs |
 | `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state | `data/corpus/`, `data/index/`, and `data/kb/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
 | `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
