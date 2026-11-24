@@ -1984,6 +1984,15 @@
             },
             "title": "Scoring Points",
             "type": "array"
+          },
+          "sources": {
+            "description": "The numbered course sources.",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Sources",
+            "type": "array"
           }
         },
         "required": [

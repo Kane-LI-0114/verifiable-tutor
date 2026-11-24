@@ -19,7 +19,7 @@ function question(overrides: Partial<GeneratedQuestion> = {}): GeneratedQuestion
     topic: "MPI",
     question: "What is a rank?",
     choices: ["A", "B"],
-    answer: "B",
+    correct_answer: "B",
     reference_answer: "B is the rank.",
     scoring_points: ["rank"],
     max_score: 1,
