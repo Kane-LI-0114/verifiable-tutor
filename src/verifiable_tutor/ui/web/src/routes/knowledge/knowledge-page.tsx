@@ -1,3 +1,4 @@
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
   ArrowDownIcon,
   ArrowDownUpIcon,
@@ -196,6 +197,9 @@ export function KnowledgePage() {
   const { isPreview: preview, pageState } = usePreview();
   const { user } = useSession();
   const [params, setParams] = useSearchParams();
+  // Tiles enter, leave, and reorder through the library's flip animation. The
+  // ref goes on the existing grid, so no wrapper element is added.
+  const [gridRef] = useAutoAnimate();
   const folderId = params.get("folder");
   const canDelete = user !== null;
 
@@ -614,6 +618,7 @@ export function KnowledgePage() {
             // the gaps at 12px, a 1440 one takes five, so the gutters
             // stay near the row gap instead of opening up.
             <div
+              ref={gridRef}
               data-testid="knowledge-grid"
               className="grid gap-3 grid-cols-[repeat(auto-fill,9rem)] justify-between"
             >

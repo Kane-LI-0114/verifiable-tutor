@@ -41,4 +41,24 @@ if (typeof Element !== "undefined") {
   if (typeof Element.prototype.scrollIntoView !== "function") {
     Element.prototype.scrollIntoView = () => {};
   }
+  // jsdom has no Web Animations API, and the list animation probes for it
+  // through ResizeObserver and then calls animate on the element. Without a
+  // stub every render that touches a list throws an unhandled error.
+  if (typeof Element.prototype.animate !== "function") {
+    Element.prototype.animate = (() =>
+      ({
+        cancel: () => {},
+        finish: () => {},
+        finished: Promise.resolve(),
+        playState: "finished",
+        // The list animation waits on the finish event, so the stub has to
+        // deliver it rather than returning a silent object.
+        addEventListener: (type: string, listener: () => void) => {
+          if (type === "finish") {
+            queueMicrotask(listener);
+          }
+        },
+        removeEventListener: () => {},
+      }) as unknown as Animation) as Element["animate"];
+  }
 }
