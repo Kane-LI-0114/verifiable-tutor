@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 
 import { ChatEmpty } from "@/components/chat/chat-empty";
@@ -244,6 +244,9 @@ function LiveChatSession({
   const navigate = useNavigate();
   const chat = useTutorChat({ sessionId, initialMessages, storedMessages, t });
   const [composer, setComposer] = useState("");
+  // Set before the first await of a turn, so a second press in the same window
+  // cannot start a second request.
+  const submitting = useRef(false);
   const title = conversationTitle(sessions, sessionId, t.chat.title);
   // The assistant message only exists once the stream starts; while the request
   // is in flight the last turn is the question, and the thread holds the
@@ -265,9 +268,12 @@ function LiveChatSession({
 
   async function submit(clearSources: () => void) {
     const text = composer.trim();
-    if (text.length === 0 || chat.streaming) {
+    // The practice probe runs before anything streams, so the streaming flag
+    // alone leaves a window where a second press starts a second turn.
+    if (text.length === 0 || chat.streaming || submitting.current) {
       return;
     }
+    submitting.current = true;
     try {
       const parsed = await parsePractice(text);
       if (parsed.practice) {
@@ -275,6 +281,7 @@ function LiveChatSession({
         const types = encodeURIComponent(
           parsed.types.join(",") || "single-choice",
         );
+        submitting.current = false;
         navigate(`/practice?topic=${topic}&types=${types}`);
         return;
       }
@@ -283,7 +290,11 @@ function LiveChatSession({
     }
     setComposer("");
     clearSources();
-    await chat.send(text);
+    try {
+      await chat.send(text);
+    } finally {
+      submitting.current = false;
+    }
   }
 
   return (
