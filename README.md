@@ -10,7 +10,7 @@ Course project for CSIT6000V Advanced AI Computing and Systems (Fall 2026) by LI
 | Artifact form | source checkout with the tracked course corpus and TACC results; no VM image, no Docker |
 | Reviewer account | `demo.student@ust.hk` / `vt-demo-2026`, seeded at startup and shown on the login page |
 | First result | about 25 minutes, dominated by the dependency install and the 2.3 GB embedding weights |
-| Test suite | `.venv/bin/python -m pytest`: 455 tests |
+| Test suite | `.venv/bin/python -m pytest`: 455 tests; `npm run test`: 275 tests |
 
 This README follows the two-section structure the NSDI '27 Call for Artifacts requires. [Getting Started Instructions](#getting-started-instructions) is the 30-minute kick-the-tires check: install, start, sign in with the seeded student account, and ask one question whose answer cites a page. [Detailed Instructions](#detailed-instructions) is the full evaluation: what each experiment measures, the data and commands that rerun it, the numbers to expect, and the known limitations. The project description, the architecture, and the directory layout follow those two sections.
 
@@ -158,7 +158,7 @@ cd src/verifiable_tutor/ui/web
 npm ci && npm run typecheck && npm run test
 ```
 
-The Python suite is green: 455 passed in about two minutes on the development laptop. The Vitest suite passes 264 of 276 tests; the 12 failures are in `tests/practice-page.test.tsx` and `tests/chat-live.test.tsx` and predate this commit (see [Known limitations](#known-limitations-and-expected-variation)).
+Both suites are green on 24 November 2026: 455 Python tests in about two minutes, and 275 Vitest tests in about a minute. Neither suite needs the network, a model key, or TACC.
 
 ### Troubleshooting
 
@@ -337,7 +337,6 @@ Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 282
 - **Live model output varies.** Chat answers differ between runs. The citation verdicts do not depend on the model: the span verifier compares quoted text with the tracked page record. The response cache under `data/caches/` reduces paid calls; delete it to force fresh calls.
 - **The control arm is a moving product.** DeepSeek web changes without notice, so the control side of section B is dated, transcribed, and judged by hand. The notes are the reproducibility mechanism.
 - **RQ2 committed numbers are a mock run.** They validate the harness, not the hypothesis. A live run needs annotators and web sessions, as the protocol states.
-- **Twelve stale UI tests.** `npm run test` reports 264 of 276 passing; `tests/practice-page.test.tsx` and `tests/chat-live.test.tsx` still assert the pre-live practice and chat pages. The Python suite, which covers the backend contract, is green.
 - **Small samples.** 65 retrieval questions, 15 citation answers, and 8 graded items with 4 variants each. These are course-project signals, not validated benchmarks; the protocol says a tie is a tie.
 - **TACC timing is queue dependent.** Job ids and measured cold starts are recorded, not promised. The one-hour partition limit is why the knowledge-base job is sharded.
 - **Some UI surfaces are preview-only.** The knowledge-card browser and the build console render fixtures; the build itself needs a TACC account.
