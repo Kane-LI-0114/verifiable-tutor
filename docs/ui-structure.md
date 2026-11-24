@@ -140,6 +140,8 @@ Three rules keep the set closed:
 - Red is failure and destructive action only, never decoration, and one red per view. There is no green or amber status colour; success is a cobalt tint with a check icon, a warning is ink with an icon.
 - A border, hover wash, or disabled fill is a tint of one of the three families, not a further colour. `--radius` is `0.375rem`, cards keep a 1px rule and cast nothing, and only overlays cast a shadow.
 
+Typography follows the same split. Page titles and the wordmark take Source Serif 4 with a Songti fallback, so both scripts get a serif at display sizes and a sans in the body; the Latin subset ships in `src/verifiable_tutor/ui/web/public/fonts/` under the OFL. `--input` sits at 3:1 because a field boundary is the only thing that identifies the control (WCAG 1.4.11), while `--border` stays light because a rule is decoration.
+
 `tests/theme-budget.test.ts` scans the component tree for a Tailwind colour utility outside the three families and fails the suite, because a stray hue is how a second identity leaks in. The `.dark` block still holds the original neutral values and is not wired to any control.
 
 ## Documented components and their sources
