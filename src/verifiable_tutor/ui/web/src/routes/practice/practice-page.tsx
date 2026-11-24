@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
-import { Loader2Icon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Loader2Icon,
+  Trash2Icon,
+} from "lucide-react";
 
 import { Markdown } from "@/components/ai/markdown";
 import { PageEmpty, PageHeader } from "@/components/layout/page-states";
@@ -20,17 +25,22 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  generatePractice,
+  createPracticeSession,
+  deletePracticeSession,
+  getPracticeSession,
   gradePractice,
-  savePracticeSession,
+  savePracticeAnswers,
+  startPracticeAttempt,
+  submitPracticeAttempt,
   type GeneratedQuestion,
+  type PracticeAttempt,
   type PracticeGradingResponse,
+  type PracticeSession,
 } from "@/lib/api/practice";
 import { format, useT } from "@/lib/i18n";
 import { gradeDeterministic } from "@/lib/practice/grading";
-import { buildPracticeSummary } from "@/lib/practice/summary";
 import { useConversations } from "@/lib/session/conversations";
-import type { CitationSource, QuestionType } from "@/lib/types";
+import type { QuestionType } from "@/lib/types";
 
 const TOPICS = [
   "all topics",
@@ -49,13 +59,6 @@ const QUESTION_TYPES: QuestionType[] = [
   "short-answer",
   "code",
 ];
-
-function dateStamp(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}${month}${day}`;
-}
 
 function scoreColor(ratio: number): string {
   if (ratio >= 0.85) return "#22c55e";
@@ -110,67 +113,37 @@ function ScoreRing({ score, max }: { score: number; max: number }) {
   );
 }
 
+function answerText(values: string[] | undefined): string {
+  return (values ?? []).join(", ");
+}
+
 export function PracticePage() {
+  const { sessionId } = useParams();
+  return sessionId === undefined ? (
+    <PracticeGenerator />
+  ) : (
+    <PracticeSessionView sessionId={sessionId} />
+  );
+}
+
+function PracticeGenerator() {
   const t = useT();
-  const { refresh: refreshConversations } = useConversations();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [topic, setTopic] = useState("");
   const [customTopic, setCustomTopic] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
-  const [sources, setSources] = useState<CitationSource[]>([]);
-  const [phase, setPhase] = useState<"answer" | "result">("answer");
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [selected, setSelected] = useState<Record<number, string[]>>({});
-  const [results, setResults] = useState<Record<number, PracticeGradingResponse>>({});
   const [generating, setGenerating] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const effectiveTopic = topic === "others" ? customTopic.trim() : topic.trim();
 
-  useEffect(() => {
-    const topicParam = searchParams.get("topic");
-    if (!topicParam) return;
-    setTopic(topicParam);
-    const types = (searchParams.get("types") ?? "").split(",").filter(Boolean);
-    setSelectedTypes(types);
-    setSearchParams({}, { replace: true });
-    setGenerating(true);
-    setQuestions([]);
-    setResults({});
-    setAnswers({});
-    setSelected({});
-    setPhase("answer");
-    generatePractice(topicParam, types)
-      .then((result) => {
-        setQuestions(result.questions);
-        setSources(result.sources);
-        if (result.questions.length === 0) {
-          setGenerateError(t.practice.emptyBody);
-        }
-      })
-      .catch(() => setGenerateError("question generation failed"))
-      .finally(() => setGenerating(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function handleGenerate() {
-    if (!effectiveTopic || generating) return;
+  async function generate(chosenTopic: string, types: string[]) {
     setGenerating(true);
     setGenerateError(null);
-    setQuestions([]);
-    setResults({});
-    setAnswers({});
-    setSelected({});
-    setPhase("answer");
     try {
-      const result = await generatePractice(effectiveTopic, selectedTypes);
-      setQuestions(result.questions);
-      setSources(result.sources);
-      if (result.questions.length === 0) {
-        setGenerateError(t.practice.emptyBody);
-      }
+      const session = await createPracticeSession(chosenTopic, types);
+      navigate(`/practice/${session.id}`);
     } catch (error) {
       setGenerateError(
         error instanceof Error ? error.message : "question generation failed",
@@ -180,91 +153,16 @@ export function PracticePage() {
     }
   }
 
-  function answerFor(index: number, question: GeneratedQuestion): string {
-    if (question.type === "multiple-choice") {
-      return (selected[index] ?? []).join(", ");
-    }
-    return answers[index] ?? "";
-  }
-
-  async function handleSubmitAll() {
-    if (submitting) return;
-    setSubmitting(true);
-    const next: Record<number, PracticeGradingResponse> = {};
-    for (let index = 0; index < questions.length; index += 1) {
-      const question = questions[index];
-      const answer = answerFor(index, question);
-      if (!answer.trim()) continue;
-      const selectedAnswer =
-        question.type === "multiple-choice" ? (selected[index] ?? []) : answer;
-      const deterministic = gradeDeterministic(question, selectedAnswer, {
-        correct: t.practice.verdicts.correct,
-        incorrect: t.practice.verdicts.incorrect,
-      });
-      if (deterministic) {
-        next[index] = deterministic;
-        continue;
-      }
-      try {
-        next[index] = await gradePractice({
-          question: question.question,
-          answer,
-          reference_answer: question.reference_answer,
-          scoring_points: question.scoring_points,
-          max_score: question.max_score,
-          sources,
-        });
-      } catch {
-        next[index] = {
-          score: 0,
-          max_score: question.max_score,
-          explanation: t.common.errorBody,
-        };
-      }
-    }
-    setResults(next);
-    const content = buildPracticeSummary({
-      topic: effectiveTopic,
-      questions,
-      answers: questions.map((question, index) => answerFor(index, question)),
-      results: next,
-      labels: t.practice.summary,
-    });
-    try {
-      const title = `${effectiveTopic} ${dateStamp()}`;
-      const byTopic: Record<
-        string,
-        { covered: Set<string>; mastered: Set<string> }
-      > = {};
-      questions.forEach((question, index) => {
-        const topicName = question.topic || effectiveTopic;
-        const entry =
-          byTopic[topicName] ??
-          (byTopic[topicName] = { covered: new Set(), mastered: new Set() });
-        question.knowledge_points.forEach((point) => entry.covered.add(point));
-        if (next[index] && next[index].score === question.max_score) {
-          question.knowledge_points.forEach((point) => entry.mastered.add(point));
-        }
-      });
-      const progress = Object.entries(byTopic).map(([topicName, entry]) => ({
-        topic: topicName,
-        covered_points: Array.from(entry.covered),
-        mastered_points: Array.from(entry.mastered),
-      }));
-      await savePracticeSession(title, content, sources, progress);
-      refreshConversations();
-    } catch {
-      // Saving the session is best effort; the result stays on screen.
-    }
-    setSubmitting(false);
-    setPhase("result");
-  }
-
-  const totalMax = questions.reduce((sum, question) => sum + question.max_score, 0);
-  const totalScore = questions.reduce(
-    (sum, _question, index) => sum + (results[index]?.score ?? 0),
-    0,
-  );
+  useEffect(() => {
+    const topicParam = searchParams.get("topic");
+    if (!topicParam) return;
+    const types = (searchParams.get("types") ?? "").split(",").filter(Boolean);
+    setTopic(topicParam);
+    setSelectedTypes(types);
+    setSearchParams({}, { replace: true });
+    void generate(topicParam, types);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
@@ -327,7 +225,9 @@ export function PracticePage() {
                 <Button
                   type="button"
                   disabled={generating || !effectiveTopic}
-                  onClick={handleGenerate}
+                  onClick={() => {
+                    void generate(effectiveTopic, selectedTypes);
+                  }}
                 >
                   {generating ? (
                     <Loader2Icon className="size-4 animate-spin" />
@@ -347,20 +247,312 @@ export function PracticePage() {
             <Loader2Icon className="size-8 animate-spin" />
             <p className="text-sm">{t.practice.generating}</p>
           </div>
-        ) : questions.length === 0 ? (
+        ) : (
           <PageEmpty title={t.practice.emptyTitle} description={t.practice.emptyBody} />
-        ) : phase === "result" ? (
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PracticeSessionView({ sessionId }: { sessionId: string }) {
+  const t = useT();
+  const navigate = useNavigate();
+  const { refresh: refreshConversations } = useConversations();
+  const [session, setSession] = useState<PracticeSession | null>(null);
+  const [attemptNo, setAttemptNo] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [results, setResults] = useState<Record<string, PracticeGradingResponse>>({});
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getPracticeSession(sessionId)
+      .then((loaded) => {
+        if (cancelled) return;
+        setSession(loaded);
+        const last = loaded.attempts[loaded.attempts.length - 1];
+        setAttemptNo(last?.attempt_no ?? null);
+        setAnswers(last?.answers ?? {});
+        setResults(last?.results ?? {});
+        setError(null);
+      })
+      .catch(() => {
+        if (!cancelled) setError(t.practice.loadError);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+      if (timer.current !== null) clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  const attempt: PracticeAttempt | null =
+    session?.attempts.find((entry) => entry.attempt_no === attemptNo) ?? null;
+
+  function selectAttempt(nextNo: number) {
+    if (!session) return;
+    const target = session.attempts.find((entry) => entry.attempt_no === nextNo);
+    if (!target) return;
+    setAttemptNo(nextNo);
+    setAnswers(target.answers);
+    setResults(target.results);
+    setSaveState("idle");
+  }
+
+  async function persist(next: Record<string, string[]>) {
+    if (!session || !attempt || attempt.status !== "in_progress") return;
+    setSaveState("saving");
+    try {
+      const saved = await savePracticeAnswers(
+        session.id,
+        attempt.attempt_no,
+        next,
+      );
+      setSaveState("saved");
+      setSession((current) =>
+        current === null ? current : { ...current, status: saved.status },
+      );
+    } catch {
+      setSaveState("idle");
+    }
+  }
+
+  function updateAnswer(question: GeneratedQuestion, values: string[]) {
+    const next = { ...answers, [question.id]: values };
+    setAnswers(next);
+    if (question.type === "short-answer" || question.type === "code") {
+      if (timer.current !== null) clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        void persist(next);
+      }, 1500);
+    } else {
+      void persist(next);
+    }
+  }
+
+  async function handleSubmit() {
+    if (!session || !attempt || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    const graded: Record<string, PracticeGradingResponse> = {};
+    for (const question of session.questions) {
+      const values = answers[question.id] ?? [];
+      const answer = answerText(values);
+      if (!answer.trim()) continue;
+      const deterministic = gradeDeterministic(question, values, {
+        correct: t.practice.verdicts.correct,
+        incorrect: t.practice.verdicts.incorrect,
+      });
+      if (deterministic) {
+        graded[question.id] = deterministic;
+        continue;
+      }
+      try {
+        graded[question.id] = await gradePractice({
+          question: question.question,
+          answer,
+          reference_answer: question.reference_answer,
+          scoring_points: question.scoring_points,
+          max_score: question.max_score,
+          sources: session.sources,
+        });
+      } catch {
+        graded[question.id] = {
+          score: 0,
+          max_score: question.max_score,
+          explanation: t.common.errorBody,
+        };
+      }
+    }
+    try {
+      const updated = await submitPracticeAttempt(
+        session.id,
+        attempt.attempt_no,
+        answers,
+        graded,
+      );
+      const submitted = updated.attempts.find(
+        (entry) => entry.attempt_no === attempt.attempt_no,
+      );
+      setSession(updated);
+      setResults(submitted?.results ?? graded);
+      setSaveState("idle");
+      refreshConversations();
+    } catch {
+      setError(t.common.errorBody);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRedo() {
+    if (!session) return;
+    try {
+      const updated = await startPracticeAttempt(session.id);
+      const last = updated.attempts[updated.attempts.length - 1];
+      setSession(updated);
+      setAttemptNo(last?.attempt_no ?? null);
+      setAnswers(last?.answers ?? {});
+      setResults(last?.results ?? {});
+      setSaveState("idle");
+      refreshConversations();
+    } catch {
+      setError(t.common.errorBody);
+    }
+  }
+
+  async function handleDelete() {
+    if (!session) return;
+    try {
+      await deletePracticeSession(session.id);
+      refreshConversations();
+      navigate("/practice");
+    } catch {
+      setError(t.common.errorBody);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6 text-muted-foreground">
+        <Loader2Icon className="size-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (session === null || attempt === null) {
+    return (
+      <div className="mx-auto w-full max-w-4xl p-6">
+        <PageEmpty title={t.practice.emptyTitle} description={error ?? t.practice.loadError} />
+      </div>
+    );
+  }
+
+  const totalScore = attempt.score ?? 0;
+  const lastAttemptNo = session.attempts[session.attempts.length - 1]?.attempt_no;
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto w-full max-w-4xl space-y-4 p-6">
+        <PageHeader title={session.title ?? session.topic} description={t.practice.subtitle} />
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Badge variant="secondary">
+              {
+                {
+                  not_started: t.practice.statusNotStarted,
+                  in_progress: t.practice.statusInProgress,
+                  completed: t.practice.statusCompleted,
+                }[session.status]
+              }
+            </Badge>
+            <span className="text-muted-foreground">
+              {format(t.practice.bestScore, {
+                score: Math.round(session.best_score),
+                max: Math.round(session.max_score),
+              })}
+            </span>
+            {saveState === "saving" ? (
+              <span className="text-xs text-muted-foreground">{t.practice.saving}</span>
+            ) : null}
+            {saveState === "saved" ? (
+              <span className="text-xs text-muted-foreground">{t.practice.saved}</span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={t.practice.prevAttempt}
+                disabled={attempt.attempt_no <= 1}
+                onClick={() => selectAttempt(attempt.attempt_no - 1)}
+              >
+                <ChevronLeftIcon className="size-4" />
+              </Button>
+              <span className="min-w-24 text-center text-sm">
+                {format(t.practice.attempt, {
+                  current: attempt.attempt_no,
+                  total: session.attempts.length,
+                })}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={t.practice.nextAttempt}
+                disabled={attempt.attempt_no >= (lastAttemptNo ?? attempt.attempt_no)}
+                onClick={() => selectAttempt(attempt.attempt_no + 1)}
+              >
+                <ChevronRightIcon className="size-4" />
+              </Button>
+            </div>
+            {session.status === "completed" &&
+            attempt.attempt_no === lastAttemptNo &&
+            attempt.status === "completed" ? (
+              <Button type="button" variant="outline" size="sm" onClick={handleRedo}>
+                {t.practice.redo}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={t.practice.deletePractice}
+              onClick={() => setConfirmDelete(true)}
+            >
+              <Trash2Icon className="size-4" />
+            </Button>
+          </div>
+        </div>
+
+        {confirmDelete ? (
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <p className="text-sm font-medium">{t.practice.deleteTitle}</p>
+              <p className="text-sm text-muted-foreground">{t.practice.deleteBody}</p>
+              <div className="flex gap-2">
+                <Button type="button" variant="destructive" onClick={handleDelete}>
+                  {t.practice.deleteConfirm}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  {t.common.cancel}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+        {attempt.status === "completed" ? (
           <>
             <Card>
               <CardContent className="flex flex-col items-center gap-3 pt-6">
-                <ScoreRing score={totalScore} max={totalMax} />
+                <ScoreRing score={totalScore} max={attempt.max_score} />
                 <p className="text-sm text-muted-foreground">{t.practice.gradingTitle}</p>
               </CardContent>
             </Card>
-            {questions.map((question, index) => {
-              const result = results[index];
+            {session.questions.map((question) => {
+              const result = results[question.id];
               return (
-                <Card key={index}>
+                <Card key={question.id}>
                   <CardHeader>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="secondary">{t.practice.types[question.type]}</Badge>
@@ -372,7 +564,7 @@ export function PracticePage() {
                       </Badge>
                     </div>
                     <CardTitle>
-                      <Markdown sources={sources} className="text-base font-semibold">
+                      <Markdown sources={session.sources} className="text-base font-semibold">
                         {question.question}
                       </Markdown>
                     </CardTitle>
@@ -382,17 +574,19 @@ export function PracticePage() {
                       <p className="text-xs font-medium text-muted-foreground">
                         {t.practice.answer}
                       </p>
-                      <p className="text-sm">{answerFor(index, question) || "—"}</p>
+                      <p className="text-sm">
+                        {answerText(attempt.answers[question.id]) || "—"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">
                         {t.practice.referenceAnswer}
                       </p>
-                      <Markdown sources={sources}>{question.reference_answer}</Markdown>
+                      <Markdown sources={session.sources}>
+                        {question.reference_answer}
+                      </Markdown>
                     </div>
-                    {result ? (
-                      <p className="text-sm">{result.explanation}</p>
-                    ) : null}
+                    {result ? <p className="text-sm">{result.explanation}</p> : null}
                   </CardContent>
                 </Card>
               );
@@ -400,8 +594,8 @@ export function PracticePage() {
           </>
         ) : (
           <>
-            {questions.map((question, index) => (
-              <Card key={index}>
+            {session.questions.map((question) => (
+              <Card key={question.id}>
                 <CardHeader>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{t.practice.types[question.type]}</Badge>
@@ -415,7 +609,7 @@ export function PracticePage() {
                     </Badge>
                   </div>
                   <CardTitle>
-                    <Markdown sources={sources} className="text-base font-semibold">
+                    <Markdown sources={session.sources} className="text-base font-semibold">
                       {question.question}
                     </Markdown>
                   </CardTitle>
@@ -423,10 +617,8 @@ export function PracticePage() {
                 <CardContent className="space-y-4">
                   {question.type === "single-choice" || question.type === "true-false" ? (
                     <RadioGroup
-                      value={answers[index] ?? ""}
-                      onValueChange={(value) =>
-                        setAnswers((current) => ({ ...current, [index]: value }))
-                      }
+                      value={answers[question.id]?.[0] ?? ""}
+                      onValueChange={(value) => updateAnswer(question, [value])}
                     >
                       {question.choices.map((choice) => (
                         <label key={choice} className="flex items-center gap-2 text-sm">
@@ -439,45 +631,47 @@ export function PracticePage() {
 
                   {question.type === "multiple-choice" ? (
                     <div className="space-y-2">
-                      {question.choices.map((choice) => (
-                        <label key={choice} className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={(selected[index] ?? []).includes(choice)}
-                            onCheckedChange={(checked) =>
-                              setSelected((current) => ({
-                                ...current,
-                                [index]: checked
-                                  ? [...(current[index] ?? []), choice]
-                                  : (current[index] ?? []).filter(
-                                      (value) => value !== choice,
-                                    ),
-                              }))
-                            }
-                          />
-                          {choice}
-                        </label>
-                      ))}
+                      {question.choices.map((choice) => {
+                        const chosen = answers[question.id] ?? [];
+                        return (
+                          <label key={choice} className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              checked={chosen.includes(choice)}
+                              onCheckedChange={(checked) =>
+                                updateAnswer(
+                                  question,
+                                  checked
+                                    ? [...chosen, choice]
+                                    : chosen.filter((value) => value !== choice),
+                                )
+                              }
+                            />
+                            {choice}
+                          </label>
+                        );
+                      })}
                     </div>
                   ) : null}
 
                   {question.type === "short-answer" || question.type === "code" ? (
                     <Field>
-                      <FieldLabel htmlFor={`answer-${index}`}>
+                      <FieldLabel htmlFor={`answer-${question.id}`}>
                         {t.practice.answer}
                       </FieldLabel>
                       <Textarea
-                        id={`answer-${index}`}
+                        id={`answer-${question.id}`}
                         className={
                           question.type === "code" ? "min-h-32 font-mono text-xs" : ""
                         }
                         placeholder={t.practice.answerPlaceholder}
-                        value={answers[index] ?? ""}
+                        value={answers[question.id]?.[0] ?? ""}
                         onChange={(event) =>
-                          setAnswers((current) => ({
-                            ...current,
-                            [index]: event.target.value,
-                          }))
+                          updateAnswer(question, [event.target.value])
                         }
+                        onBlur={() => {
+                          if (timer.current !== null) clearTimeout(timer.current);
+                          void persist(answers);
+                        }}
                       />
                     </Field>
                   ) : null}
@@ -485,7 +679,7 @@ export function PracticePage() {
               </Card>
             ))}
             <div className="flex justify-end">
-              <Button type="button" disabled={submitting} onClick={handleSubmitAll}>
+              <Button type="button" disabled={submitting} onClick={handleSubmit}>
                 {submitting ? t.practice.running : t.practice.submitAll}
               </Button>
             </div>

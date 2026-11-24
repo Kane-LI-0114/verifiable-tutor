@@ -43,6 +43,7 @@ export const routes: RouteObject[] = [
           { path: "chat", element: <ChatPage /> },
           { path: "chat/:sessionId", element: <ChatPage /> },
           { path: "practice", element: <PracticePage /> },
+          { path: "practice/:sessionId", element: <PracticePage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "knowledge", element: <KnowledgePage /> },
           { path: "knowledge/docs/:docId", element: <DocumentPage /> },
