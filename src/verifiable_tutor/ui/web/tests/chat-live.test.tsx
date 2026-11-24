@@ -294,6 +294,11 @@ function routes(overrides: StubRoute[] = []): StubRoute[] {
       path: "/api/sessions",
       handler: () => jsonResponse({ sessions: SESSIONS }),
     },
+    {
+      method: "POST",
+      path: "/api/practice/parse",
+      handler: () => jsonResponse({ practice: false, topic: "", types: [] }),
+    },
     ...overrides,
   ];
 }
@@ -332,7 +337,13 @@ afterEach(() => {
 });
 
 function postCalls(): ReturnType<typeof createFetchStub>["calls"] {
-  return stub === null ? [] : stub.calls.filter((call) => call.method === "POST");
+  // A send first asks the practice parser whether the text is a practice
+  // request, so only the turn itself counts as a chat call.
+  return stub === null
+    ? []
+    : stub.calls.filter(
+        (call) => call.method === "POST" && call.path === "/api/chat",
+      );
 }
 
 function sessionsCalls(): number {
