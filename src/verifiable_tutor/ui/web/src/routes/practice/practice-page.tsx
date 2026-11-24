@@ -461,8 +461,11 @@ export function PracticePage() {
 
                   {question.type === "short-answer" || question.type === "code" ? (
                     <Field>
-                      <FieldLabel>{t.practice.answer}</FieldLabel>
+                      <FieldLabel htmlFor={`answer-${index}`}>
+                        {t.practice.answer}
+                      </FieldLabel>
                       <Textarea
+                        id={`answer-${index}`}
                         className={
                           question.type === "code" ? "min-h-32 font-mono text-xs" : ""
                         }
