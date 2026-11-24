@@ -14,7 +14,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { marked } from "marked";
 
@@ -84,19 +84,90 @@ const html = cover.replace("{{README}}", renderReadme());
 fs.writeFileSync(OUT_HTML, html);
 console.log("wrote", path.relative(REPO, OUT_HTML), (html.length / 1024).toFixed(0) + " KB");
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function waitForPageTarget(port) {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    try {
+      const response = await fetch("http://127.0.0.1:" + port + "/json/list");
+      const targets = await response.json();
+      const page = targets.find(
+        (target) => target.type === "page" && target.url.startsWith("file://"),
+      );
+      if (page && page.webSocketDebuggerUrl) return page;
+    } catch {
+      // Chrome is still starting.
+    }
+    await sleep(150);
+  }
+  throw new Error("Chrome did not expose a page target on port " + port);
+}
+
+async function printPdf(chrome, htmlPath, pdfPath) {
+  const port = 9400 + Math.floor(Math.random() * 200);
+  const profile = fs.mkdtempSync(path.join(BUILD_DIR, "chrome-"));
+  const child = spawn(
+    chrome,
+    [
+      "--headless",
+      "--disable-gpu",
+      "--hide-scrollbars",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--remote-debugging-port=" + port,
+      "--user-data-dir=" + profile,
+      "file://" + htmlPath,
+    ],
+    { stdio: "ignore" },
+  );
+  try {
+    const target = await waitForPageTarget(port);
+    const socket = new WebSocket(target.webSocketDebuggerUrl);
+    await new Promise((resolve, reject) => {
+      socket.onopen = resolve;
+      socket.onerror = reject;
+    });
+
+    const pending = new Map();
+    let nextId = 1;
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      const waiter = message.id ? pending.get(message.id) : undefined;
+      if (!waiter) return;
+      pending.delete(message.id);
+      if (message.error) waiter.reject(new Error(message.error.message));
+      else waiter.resolve(message.result);
+    };
+    const send = (method, params = {}) =>
+      new Promise((resolve, reject) => {
+        const id = nextId++;
+        pending.set(id, { resolve, reject });
+        socket.send(JSON.stringify({ id, method, params }));
+      });
+
+    await send("Page.enable");
+    await sleep(1200); // let fonts and the print styles settle
+    const { data } = await send("Page.printToPDF", {
+      displayHeaderFooter: true,
+      headerTemplate: "<div></div>",
+      footerTemplate:
+        '<div style="width:100%; font-size:8pt; color:#5a6472; font-family:Helvetica,Arial,sans-serif; text-align:center;">' +
+        'Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>',
+      printBackground: true,
+      paperWidth: 8.27,
+      paperHeight: 11.69,
+      marginTop: 0.67,
+      marginBottom: 0.71,
+      marginLeft: 0.63,
+      marginRight: 0.63,
+    });
+    fs.writeFileSync(pdfPath, Buffer.from(data, "base64"));
+    socket.close();
+  } finally {
+    child.kill("SIGKILL");
+  }
+}
+
 const chrome = findChrome();
-const profile = fs.mkdtempSync(path.join(BUILD_DIR, "chrome-"));
-execFileSync(
-  chrome,
-  [
-    "--headless",
-    "--disable-gpu",
-    "--no-pdf-header-footer",
-    "--virtual-time-budget=8000",
-    "--user-data-dir=" + profile,
-    "--print-to-pdf=" + OUT_PDF,
-    "file://" + OUT_HTML,
-  ],
-  { stdio: ["ignore", "ignore", "pipe"] },
-);
+await printPdf(chrome, OUT_HTML, OUT_PDF);
 console.log("wrote", path.relative(REPO, OUT_PDF), (fs.statSync(OUT_PDF).size / 1024).toFixed(0) + " KB");
