@@ -306,6 +306,15 @@ export const en = {
     solutionSubmit: "Explain the solution",
     solutionDisabled:
       "Solution explanations are not available in this build.",
+    summary: {
+      title: "Practice: {{topic}}",
+      total: "**Total: {{score}}/{{max}}**",
+      yourAnswer: "Your answer: {{answer}}",
+      referenceAnswer: "Reference answer: {{answer}}",
+      score: "Score: {{score}}/{{max}}",
+      explanation: "Explanation: {{text}}",
+      unanswered: "not answered",
+    },
   },
   profile: {
     title: "My profile",

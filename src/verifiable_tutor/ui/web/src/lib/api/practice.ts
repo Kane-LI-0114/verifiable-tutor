@@ -6,6 +6,7 @@ export interface GeneratedQuestion {
   topic: string;
   question: string;
   choices: string[];
+  answer?: string;
   reference_answer: string;
   scoring_points: string[];
   max_score: number;

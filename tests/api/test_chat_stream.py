@@ -190,7 +190,14 @@ def test_chat_resumes_a_conversation_and_sends_its_history(api):
 
     assert second.headers["x-conversation-id"] == session_id
     sent = api.adapter.calls[1]["messages"]
-    assert [message["role"] for message in sent[:3]] == ["system", "user", "assistant"]
+    assert [message["role"] for message in sent[:3]] == [
+        "system",
+        "system",
+        "user",
+    ]
+    assert sent[2] == {"role": "user", "content": "first question"}
+    assert sent[3]["role"] == "assistant"
+    assert sent[3]["content"] == "Hello"
     assert sent[-1] == {"role": "user", "content": "second question"}
     history = api.client.get(f"/api/sessions/{session_id}/messages").json()["messages"]
     assert len(history) == 4

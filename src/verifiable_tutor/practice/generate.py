@@ -28,6 +28,7 @@ class GeneratedQuestion:
     topic: str
     question: str
     choices: list[str]
+    answer: str
     reference_answer: str
     scoring_points: list[str]
     max_score: float
@@ -74,9 +75,12 @@ def _parse_questions(text: str, *, default_topic: str = "") -> list[GeneratedQue
         questions.append(
             GeneratedQuestion(
                 type=str(item.get("type", "")),
-                topic=str(item.get("topic") or default_topic),
+                # A single-topic request keeps the topic the student chose;
+                # the model sometimes tags a knowledge point in "topic".
+                topic=default_topic or str(item.get("topic") or ""),
                 question=str(item.get("question", "")),
                 choices=[str(choice) for choice in (item.get("choices") or [])],
+                answer=str(item.get("answer") or ""),
                 reference_answer=str(item.get("reference_answer", "")),
                 scoring_points=[
                     str(point) for point in (item.get("scoring_points") or [])

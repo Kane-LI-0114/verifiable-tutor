@@ -27,6 +27,8 @@ import {
   type PracticeGradingResponse,
 } from "@/lib/api/practice";
 import { format, useT } from "@/lib/i18n";
+import { gradeDeterministic } from "@/lib/practice/grading";
+import { buildPracticeSummary } from "@/lib/practice/summary";
 import { useConversations } from "@/lib/session/conversations";
 import type { CitationSource, QuestionType } from "@/lib/types";
 
@@ -53,35 +55,6 @@ function dateStamp(): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}${month}${day}`;
-}
-
-function deterministicGrade(
-  question: GeneratedQuestion,
-  answer: string,
-  correctLabel: string,
-  incorrectLabel: string,
-): PracticeGradingResponse | null {
-  if (
-    question.type !== "single-choice" &&
-    question.type !== "multiple-choice" &&
-    question.type !== "true-false"
-  ) {
-    return null;
-  }
-  const keyOf = (value: string) => value.trim()[0]?.toUpperCase() ?? "";
-  const refKeys = new Set(
-    question.reference_answer.split(",").map(keyOf).filter(Boolean),
-  );
-  const ansKeys = new Set(answer.split(",").map(keyOf).filter(Boolean));
-  const correct =
-    refKeys.size > 0 &&
-    refKeys.size === ansKeys.size &&
-    [...refKeys].every((key) => ansKeys.has(key));
-  return {
-    score: correct ? question.max_score : 0,
-    max_score: question.max_score,
-    explanation: correct ? correctLabel : incorrectLabel,
-  };
 }
 
 function scoreColor(ratio: number): string {
@@ -222,12 +195,12 @@ export function PracticePage() {
       const question = questions[index];
       const answer = answerFor(index, question);
       if (!answer.trim()) continue;
-      const deterministic = deterministicGrade(
-        question,
-        answer,
-        t.practice.verdicts.correct,
-        t.practice.verdicts.incorrect,
-      );
+      const selectedAnswer =
+        question.type === "multiple-choice" ? (selected[index] ?? []) : answer;
+      const deterministic = gradeDeterministic(question, selectedAnswer, {
+        correct: t.practice.verdicts.correct,
+        incorrect: t.practice.verdicts.incorrect,
+      });
       if (deterministic) {
         next[index] = deterministic;
         continue;
@@ -249,27 +222,12 @@ export function PracticePage() {
       }
     }
     setResults(next);
-    const totalMax = questions.reduce((sum, q) => sum + q.max_score, 0);
-    const totalScore = questions.reduce(
-      (sum, _q, index) => sum + (next[index]?.score ?? 0),
-      0,
-    );
-    const lines = [
-      `# 练习：${effectiveTopic}`,
-      "",
-      `**总分：${Math.round(totalScore)}/${Math.round(totalMax)}**`,
-      "",
-    ];
-    questions.forEach((q, index) => {
-      const result = next[index];
-      lines.push(`### ${index + 1}. ${q.question}`);
-      lines.push(`- 你的答案：${answerFor(index, q) || "（未作答）"}`);
-      lines.push(`- 参考答案：${q.reference_answer}`);
-      if (result) {
-        lines.push(`- 得分：${result.score}/${q.max_score}`);
-        lines.push(`- 解析：${result.explanation}`);
-      }
-      lines.push("");
+    const content = buildPracticeSummary({
+      topic: effectiveTopic,
+      questions,
+      answers: questions.map((question, index) => answerFor(index, question)),
+      results: next,
+      labels: t.practice.summary,
     });
     try {
       const title = `${effectiveTopic} ${dateStamp()}`;
@@ -292,7 +250,7 @@ export function PracticePage() {
         covered_points: Array.from(entry.covered),
         mastered_points: Array.from(entry.mastered),
       }));
-      await savePracticeSession(title, lines.join("\n"), sources, progress);
+      await savePracticeSession(title, content, sources, progress);
       refreshConversations();
     } catch {
       // Saving the session is best effort; the result stays on screen.

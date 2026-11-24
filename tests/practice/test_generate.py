@@ -65,3 +65,50 @@ def test_generate_practice_uses_the_practice_prompt_and_topic() -> None:
     assert runner.messages[1]["content"] == (
         "Generate self-test questions on the topic: FlashAttention"
     )
+
+JSON_WITH_ANSWER = (
+    '[{"type": "single-choice", "answer": "B. Y", "question": "What is MPI? [ref_1]", '
+    '"choices": ["A. X", "B. Y"], "reference_answer": "The second option, B. Y, is right.", '
+    '"scoring_points": ["defines MPI"], "max_score": 1}]'
+)
+
+
+def test_generate_practice_treats_a_null_answer_as_missing() -> None:
+    runner = FakeRunner(
+        text='[{"type": "single-choice", "answer": null, "question": "Q?", '
+        '"choices": ["A", "B"], "reference_answer": "B", "max_score": 1}]'
+    )
+
+    questions, _ = generate_practice("MPI", runner, adapter=None)
+
+    assert questions[0].answer == ""
+
+
+def test_generate_practice_keeps_the_exact_choice_answer() -> None:
+    runner = FakeRunner(text=JSON_WITH_ANSWER)
+
+    questions, _ = generate_practice("FlashAttention", runner, adapter=None)
+
+    assert questions[0].answer == "B. Y"
+
+JSON_WITH_TOPIC = (
+    '[{"type": "single-choice", "topic": "processes and ranks", "answer": "B. Y", '
+    '"question": "What is MPI? [ref_1]", "choices": ["A. X", "B. Y"], '
+    '"reference_answer": "B. Y", "scoring_points": ["defines MPI"], "max_score": 1}]'
+)
+
+
+def test_generate_practice_keeps_the_requested_topic_when_the_model_tags_one() -> None:
+    runner = FakeRunner(text=JSON_WITH_TOPIC)
+
+    questions, _ = generate_practice("MPI", runner, adapter=None)
+
+    assert questions[0].topic == "MPI"
+
+
+def test_generate_practice_uses_the_model_topic_for_all_topics() -> None:
+    runner = FakeRunner(text=JSON_WITH_TOPIC)
+
+    questions, _ = generate_practice("all topics", runner, adapter=None)
+
+    assert questions[0].topic == "processes and ranks"

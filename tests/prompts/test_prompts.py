@@ -29,3 +29,25 @@ def test_chat_system_prompt_requires_numbered_markers_at_paragraph_end():
     assert "Never write a marker that no tool result showed" in text
     assert "Do not write a bare [1]" in text
     assert "Do not use [doc_id p.N]" in text
+
+
+def test_chat_system_prompt_defers_to_the_deadline_aware_gate():
+    text = load_prompt("chat_system")
+
+    assert "not implemented yet" not in text
+    assert "deadline" in text.lower()
+
+
+def test_deadline_status_prompt_comes_from_the_prompts_package():
+    text = load_prompt("deadline_status")
+
+    assert "%%NOW%%" in text
+    assert "%%ASSIGNMENTS%%" in text
+    assert "complete solution" in text
+
+
+def test_practice_generation_prompt_requires_an_exact_choice_answer():
+    text = load_prompt("practice_generation")
+
+    assert '"answer"' in text
+    assert "exact text of the correct choice" in text
