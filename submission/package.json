@@ -1,0 +1,12 @@
+{
+  "name": "verifiable-tutor-submission",
+  "private": true,
+  "description": "Renders the course repository submission PDF from README.md",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "marked": "^18.1.3"
+  }
+}

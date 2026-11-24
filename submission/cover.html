@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CSIT6000V repository submission</title>
+<style>
+  @page { size: A4; margin: 17mm 16mm 18mm 16mm; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Helvetica Neue", Arial, "PingFang SC", sans-serif; font-size: 9.6pt; line-height: 1.45; color: #16181d; margin: 0; }
+  h1, h2, h3, h4 { font-family: "Iowan Old Style", Georgia, "Songti SC", serif; line-height: 1.2; color: #101319; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; }
+  h2 { font-size: 14pt; margin: 16pt 0 5pt; padding-bottom: 2pt; border-bottom: 1px solid #d7dbe2; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 4pt; break-after: avoid; }
+  h4 { font-size: 10pt; margin: 10pt 0 3pt; break-after: avoid; }
+  p, ul, ol, table, pre, blockquote { margin: 0 0 6pt; }
+  a { color: #1a4fbf; text-decoration: none; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.4pt; background: #f3f5f8; padding: 0.5pt 2.5pt; border-radius: 2pt; }
+  pre { background: #f6f8fa; border: 1px solid #e3e7ec; border-radius: 3pt; padding: 5pt 7pt; white-space: pre-wrap; word-break: break-word; font-size: 8.2pt; line-height: 1.35; break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: 8.2pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.4pt; break-inside: auto; }
+  th, td { border: 1px solid #d7dbe2; padding: 3pt 4pt; text-align: left; vertical-align: top; }
+  th { background: #eef1f5; font-weight: 600; }
+  tr { break-inside: avoid; }
+  img { max-width: 100%; }
+  hr { border: none; border-top: 1px solid #d7dbe2; margin: 10pt 0; }
+  blockquote { border-left: 2pt solid #c9d0da; margin-left: 0; padding-left: 7pt; color: #4a5160; }
+  .cover { break-after: page; }
+  .kicker { font-size: 8pt; letter-spacing: 0.14em; text-transform: uppercase; color: #5a6472; }
+  .subtitle { font-size: 11pt; color: #3a4250; margin: 2pt 0 10pt; }
+  .rule { height: 2.4pt; background: #1a4fbf; width: 46pt; margin: 7pt 0 12pt; }
+  .meta td { border: none; padding: 1.5pt 0; font-size: 9pt; }
+  .meta td:first-child { width: 34mm; color: #5a6472; }
+  .linkbox { border: 1px solid #c9d0da; border-radius: 4pt; padding: 9pt 11pt; margin: 10pt 0 12pt; background: #f7f9fc; }
+  .linkbox .url { font-size: 12.5pt; font-weight: 600; word-break: break-all; }
+  .note { font-size: 8.6pt; color: #4a5160; }
+  .readme-intro { border: 1px solid #c9d0da; border-radius: 4pt; padding: 7pt 10pt; background: #f7f9fc; margin: 0 0 10pt; font-size: 9pt; }
+  .doc-title { font-size: 8pt; letter-spacing: 0.14em; text-transform: uppercase; color: #5a6472; margin-bottom: 2pt; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="kicker">CSIT6000V Advanced AI Computing and Systems &middot; Fall 2026</div>
+  <h1>Verifiable AI Tutoring on TACC</h1>
+  <div class="subtitle">Course project repository submission</div>
+  <div class="rule"></div>
+  <table class="meta">
+    <tr><td>Group</td><td>LI Jinchuan (21188271), TIAN Yujia (21201619), XIE Yifeng (21322152)</td></tr>
+    <tr><td>Instructor</td><td>Prof. Kai Chen</td></tr>
+    <tr><td>Submitted</td><td>24 November 2026</td></tr>
+    <tr><td>Contents</td><td>1. Repository link &nbsp; 2. Group contributions &nbsp; 3. Full README.md</td></tr>
+  </table>
+
+  <h2>1. GitHub repository</h2>
+  <div class="linkbox">
+    <div class="url"><a href="https://github.com/Kane-LI-0114/verifiable-tutor">https://github.com/Kane-LI-0114/verifiable-tutor</a></div>
+    <p class="note" style="margin:5pt 0 0">Public repository, reachable without an account for the whole grading period. It holds the source, the tracked course corpus and TACC results, the two experiment reports, and the evaluation scripts. The clone is about 0.5 GB and needs no TACC account for the default path.</p>
+  </div>
+
+  <h2>2. Group contributions</h2>
+  <table>
+    <thead><tr><th style="width:26%">Member</th><th>Contribution</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>LI Jinchuan</strong><br>21188271</td>
+        <td>Project lead. Proposal v1 to v3 and the PRD; the local FastAPI backend (accounts and sessions, streamed chat, replay, voice, knowledge browser); the LangGraph agent loop with its typed tools; hybrid retrieval, the OCR and index pipeline on TACC, and the Qwen knowledge-base job; the React UI; packaging, configuration, and the decision records.</td>
+      </tr>
+      <tr>
+        <td><strong>TIAN Yujia</strong><br>21201619</td>
+        <td>The disclosure policy gate and deadline registry, with intent classification; the deterministic span verifier and the <code>verify_span</code> tool; practice generation, deterministic and model grading, and the practice UI; the RQ2 self-test harness and benchmark protocol; the citation-accuracy study and its result notes; the lectures 3 to 5 corpus batch.</td>
+      </tr>
+      <tr>
+        <td><strong>XIE Yifeng</strong><br>21322152</td>
+        <td>The chunking and hybrid-retrieval experiment: the nine-cell design, page-level metrics with bootstrap confidence intervals and McNemar tests, the RRF weight sweep, the dual-granularity index, the 65-question retrieval set, and the English and Chinese experiment reports that the results in this repository rest on.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">The division follows the repository history and the areas each member owns. All three members took part in the design discussions, the evaluation runs, and the review of this document.</p>
+
+  <h2>3. Repository README</h2>
+  <p>The full contents of <code>README.md</code> follow, unedited apart from rendering: the Getting Started Instructions and the Detailed Instructions sections the Call for Artifacts asks for, then the project description, the architecture, and the directory layout.</p>
+</section>
+
+<section>
+  <div class="doc-title">README.md (full contents)</div>
+  {{README}}
+</section>
+</body>
+</html>
