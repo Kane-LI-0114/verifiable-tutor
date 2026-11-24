@@ -25,7 +25,7 @@ function HighlightBox({
   const [x1, y1, x2, y2] = box;
   return (
     <span
-      className="pointer-events-none absolute rounded-sm border-2 border-amber-500 bg-amber-300/30"
+      className="pointer-events-none absolute rounded-sm border-2 border-primary bg-primary/15"
       style={{
         left: `${x1 * 100}%`,
         top: `${y1 * 100}%`,

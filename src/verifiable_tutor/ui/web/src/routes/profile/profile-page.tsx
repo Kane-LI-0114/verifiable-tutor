@@ -47,11 +47,11 @@ export function ProfilePage() {
             <CardContent className="space-y-5 pt-6">
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-gray-400" />
+                  <span className="h-3 w-3 rounded-full bg-neutral-400" />
                   {t.profile.coveredLegend}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-green-500" />
+                  <span className="h-3 w-3 rounded-full bg-primary" />
                   {t.profile.masteredLegend}
                 </span>
               </div>
@@ -74,11 +74,11 @@ export function ProfilePage() {
                     </div>
                     <div className="relative h-3 overflow-hidden rounded-full bg-muted">
                       <div
-                        className="absolute inset-y-0 left-0 rounded-full bg-gray-400"
+                        className="absolute inset-y-0 left-0 rounded-full bg-neutral-400"
                         style={{ width: `${coveredPercent}%` }}
                       />
                       <div
-                        className="absolute inset-y-0 left-0 rounded-full bg-green-500"
+                        className="absolute inset-y-0 left-0 rounded-full bg-primary"
                         style={{ width: `${masteredPercent}%` }}
                       />
                     </div>

@@ -256,7 +256,7 @@ function AppSidebar() {
                 </span>
                 {expanded ? (
                   <span className="flex min-w-0 flex-col text-left">
-                    <span className="truncate text-sm font-semibold">
+                    <span className="truncate font-display text-sm font-semibold">
                       {t.app.name}
                     </span>
                     <span className="truncate text-xs text-muted-foreground">
