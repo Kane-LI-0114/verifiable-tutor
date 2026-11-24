@@ -151,6 +151,7 @@ Foundations that exist and are tested. They are listed so the backlog is not rea
 | UI | Page structure, live auth and chat, history, replay, knowledge browse, source capsule and pane, inline source markers, tool renderers | Vitest suites under `src/verifiable_tutor/ui/web/tests/` |
 | Citation sources | Turn-scoped marker registry, `data-sources` frames, `message_sources` persistence, source capsule and pane, inline `[ref_n]` markers (rendered as a number only) with hover preview and click navigation; sliding source pane with staged rows and an X close | `tests/evidence/test_sources.py`, `tests/orchestrator/test_tools.py`, `tests/api/test_chat_agent.py`, `source-capsule.test.tsx`, `source-pane.test.tsx`, `citation-markers.test.tsx` |
 | Agent loop and tools | Two-node LangGraph loop, closed typed tool set for course and web use, schema version 4 ordered work-chain events, streamed tool frames, live and stored UI rendering, dual-model smoke | `tests/orchestrator/`, `tests/api/test_chat_agent.py`, `tests/storage/test_tool_calls.py`, `chat-live.test.tsx` |
+| VT-25 Practice sessions | Generated questions persist before the first answer; the first attempt owns the not started, in progress, and completed status; unlimited redos are paged inside one view with autosave; the sidebar splits practice from conversations, shows the best score, filters not started, and deletes a session; the highest score across attempts is the badge | `tests/storage/test_practice_store.py`, `tests/api/test_practice_sessions.py`, `practice-page.test.tsx` |
 
 ## Out of scope
 
@@ -172,3 +173,4 @@ Foundations that exist and are tested. They are listed so the backlog is not rea
 | 2026-11-06 | Restricted the MiMo thinking control to Off and On; stored `low` or `max` selections normalize to On, and the API trace records the normalized level. |
 | 2026-11-06 | Associated each work-chain event with its step (ADR-0019): schema v5 adds `message_events.step_id`, the UI groups events into one section per actual step, and a step with no events keeps its section. |
 | 2026-11-06 | Grouped work-chain events by step id: a reasoning segment attaches to the tool-call step it precedes, and same-name rows with different ids render as separate sections. |
+| 2026-11-25 | Added VT-25 and moved it to Done: practice sessions save at generation (schema v8), the first attempt owns the status, redos only raise the best score, and the sidebar groups practice apart from conversations. |
