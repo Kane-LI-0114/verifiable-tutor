@@ -386,32 +386,34 @@ function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel>{t.nav.practiceGroup}</SidebarGroupLabel>
-          <div className="flex items-center gap-1 px-2 pb-1">
-            <button
-              type="button"
-              aria-pressed={practiceFilter === "all"}
-              onClick={() => setPracticeFilter("all")}
-              className={
-                practiceFilter === "all"
-                  ? "rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium"
-                  : "rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground"
-              }
-            >
-              {t.nav.practiceFilterAll}
-            </button>
-            <button
-              type="button"
-              aria-pressed={practiceFilter === "not_started"}
-              onClick={() => setPracticeFilter("not_started")}
-              className={
-                practiceFilter === "not_started"
-                  ? "rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium"
-                  : "rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground"
-              }
-            >
-              {t.nav.practiceFilterNotStarted}
-            </button>
-          </div>
+          {expanded ? (
+            <div className="flex items-center gap-1 px-2 pb-1">
+              <button
+                type="button"
+                aria-pressed={practiceFilter === "all"}
+                onClick={() => setPracticeFilter("all")}
+                className={
+                  practiceFilter === "all"
+                    ? "rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium"
+                    : "rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground"
+                }
+              >
+                {t.nav.practiceFilterAll}
+              </button>
+              <button
+                type="button"
+                aria-pressed={practiceFilter === "not_started"}
+                onClick={() => setPracticeFilter("not_started")}
+                className={
+                  practiceFilter === "not_started"
+                    ? "rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium"
+                    : "rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground"
+                }
+              >
+                {t.nav.practiceFilterNotStarted}
+              </button>
+            </div>
+          ) : null}
           <SidebarGroupContent>
             {practiceSessions.length === 0 ? (
               <p className="px-2 text-xs text-muted-foreground">
@@ -444,9 +446,11 @@ function AppSidebar() {
                           <span className="truncate">
                             {session.title ?? session.id}
                           </span>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">
-                            {practiceLabel(session)}
-                          </span>
+                          {expanded ? (
+                            <span className="shrink-0 text-[10px] text-muted-foreground">
+                              {practiceLabel(session)}
+                            </span>
+                          ) : null}
                         </span>
                       </NavLink>
                     </SidebarMenuButton>

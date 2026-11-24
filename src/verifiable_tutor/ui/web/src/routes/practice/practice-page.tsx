@@ -319,6 +319,9 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
         next,
       );
       setSaveState("saved");
+      if (session.status === "not_started" && saved.status === "in_progress") {
+        refreshConversations();
+      }
       setSession((current) =>
         current === null ? current : { ...current, status: saved.status },
       );
