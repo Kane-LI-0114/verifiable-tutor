@@ -192,6 +192,7 @@ describe("practice page", () => {
   it("opens the generated session from the ready notice", async () => {
     await openGenerated();
 
+    expect(screen.queryByText("Practice is ready")).not.toBeInTheDocument();
     expect(
       screen.getByText(/Which MPI collective leaves the reduced value/),
     ).toBeInTheDocument();

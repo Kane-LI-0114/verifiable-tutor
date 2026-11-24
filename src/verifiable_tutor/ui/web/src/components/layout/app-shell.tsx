@@ -246,7 +246,7 @@ function AppSidebar() {
   }
 
   const primary: NavItem[] = [
-    { to: "/practice", label: t.nav.practice, icon: WaypointsIcon },
+    { to: "/practice", label: t.nav.practice, icon: WaypointsIcon, end: true },
     {
       to: documentReturnPath ?? "/knowledge",
       label: t.nav.knowledge,

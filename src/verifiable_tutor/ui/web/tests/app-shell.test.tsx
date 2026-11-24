@@ -19,6 +19,24 @@ describe("app shell", () => {
     expect(screen.getByRole("link", { name: "Knowledge base" })).toBeInTheDocument();
   });
 
+  it("does not keep the Practice tab active inside a saved session", () => {
+    renderRoute("/practice/practice-1");
+
+    expect(screen.getByRole("link", { name: "Practice" })).toHaveAttribute(
+      "data-active",
+      "false",
+    );
+  });
+
+  it("marks the Practice tab active on the generator route", () => {
+    renderRoute("/practice");
+
+    expect(screen.getByRole("link", { name: "Practice" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  });
+
   it("moves the account menu and sign out to the sidebar footer", async () => {
     const user = userEvent.setup();
     const router = renderRoute("/chat");
