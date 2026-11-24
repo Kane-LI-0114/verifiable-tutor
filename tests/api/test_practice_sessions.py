@@ -244,6 +244,56 @@ def test_first_submission_records_knowledge_progress(agent_api):
     assert mpi["mastered_count"] == 1
 
 
+def test_deleting_one_attempt_keeps_the_session(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    body = _create(agent_api)
+    agent_api.client.post(
+        f"/api/practice/sessions/{body['id']}/attempts/1/submit",
+        json={
+            "answers": {"q1": ["MPI_Allreduce"]},
+            "results": {"q1": {"score": 2, "max_score": 2, "explanation": "ok"}},
+        },
+    )
+    agent_api.client.post(f"/api/practice/sessions/{body['id']}/attempts")
+    agent_api.client.post(
+        f"/api/practice/sessions/{body['id']}/attempts/2/submit",
+        json={
+            "answers": {"q1": ["MPI_Allreduce"], "q2": ["to the root"]},
+            "results": {
+                "q1": {"score": 2, "max_score": 2, "explanation": "ok"},
+                "q2": {"score": 3, "max_score": 3, "explanation": "ok"},
+            },
+        },
+    )
+
+    deleted = agent_api.client.delete(
+        f"/api/practice/sessions/{body['id']}/attempts/2"
+    )
+
+    assert deleted.status_code == 204
+    session = agent_api.client.get(f"/api/practice/sessions/{body['id']}").json()
+    assert [attempt["attempt_no"] for attempt in session["attempts"]] == [1]
+    assert session["best_score"] == 2
+    assert session["status"] == "completed"
+
+
+def test_deleting_the_last_attempt_removes_the_session(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    body = _create(agent_api)
+
+    deleted = agent_api.client.delete(
+        f"/api/practice/sessions/{body['id']}/attempts/1"
+    )
+
+    assert deleted.status_code == 204
+    assert (
+        agent_api.client.get(f"/api/practice/sessions/{body['id']}").status_code
+        == 404
+    )
+    sessions = agent_api.client.get("/api/sessions").json()["sessions"]
+    assert [item for item in sessions if item["id"] == body["id"]] == []
+
+
 def test_a_practice_session_is_private_to_its_owner(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     body = _create(agent_api)

@@ -5255,6 +5255,57 @@
         ]
       }
     },
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}": {
+      "delete": {
+        "description": "Remove one attempt; the practice disappears only with its last attempt.",
+        "operationId": "delete_practice_attempt_api_practice_sessions__session_id__attempts__attempt_no__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_no",
+            "required": true,
+            "schema": {
+              "title": "Attempt No",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete one attempt, and the session when no attempt remains",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
     "/api/practice/sessions/{session_id}/attempts/{attempt_no}/answers": {
       "patch": {
         "description": "Persist the current answers so a reload resumes the attempt.",

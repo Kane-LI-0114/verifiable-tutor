@@ -436,6 +436,32 @@ def start_practice_attempt(
 
 
 @router.delete(
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}",
+    status_code=204,
+    summary="Delete one attempt, and the session when no attempt remains",
+    responses={401: {"description": "Not signed in."}, 404: {"description": "Not found."}},
+)
+def delete_practice_attempt(
+    session_id: str,
+    attempt_no: int,
+    user: CurrentUser,
+    storage: StorageDep,
+    clock: ClockDep,
+):
+    """Remove one attempt; the practice disappears only with its last attempt."""
+
+    _practice_conversation(storage, user, session_id)
+    if storage.find_practice_attempt(session_id, attempt_no) is None:
+        raise HTTPException(status_code=404, detail="attempt not found")
+    storage.delete_practice_attempt(
+        conversation_id=session_id,
+        attempt_no=attempt_no,
+        updated_at=clock(),
+    )
+    return None
+
+
+@router.delete(
     "/api/practice/sessions/{session_id}",
     status_code=204,
     summary="Delete a practice session and all of its attempts",

@@ -198,3 +198,76 @@ def test_deleting_a_practice_session_removes_its_attempts(tmp_path):
     assert storage.find_practice_session("practice-1") is None
     assert storage.list_practice_attempts("practice-1") == []
     assert storage.find_conversation("practice-1") is None
+
+
+def _submit(storage: Storage, attempt_no: int, score: int, max_score: int) -> None:
+    storage.submit_practice_attempt(
+        conversation_id="practice-1",
+        attempt_no=attempt_no,
+        answers={"q1": ["MPI_Allreduce"]},
+        results={
+            "q1": {
+                "score": score,
+                "max_score": max_score,
+                "explanation": "ok",
+            }
+        },
+        submitted_at=FINISHED,
+    )
+
+
+def test_deleting_one_attempt_keeps_the_session_and_renumbers(tmp_path):
+    storage = _storage(tmp_path)
+    _create(storage)
+    _submit(storage, 1, 2, 2)
+    storage.start_practice_attempt(conversation_id="practice-1", started_at=LATER)
+    _submit(storage, 2, 5, 3)
+
+    remaining = storage.delete_practice_attempt(
+        conversation_id="practice-1",
+        attempt_no=2,
+        updated_at=FINISHED,
+    )
+
+    assert remaining is not None
+    assert remaining["status"] == "completed"
+    assert remaining["best_score"] == 2
+    attempts = storage.list_practice_attempts("practice-1")
+    assert [attempt["attempt_no"] for attempt in attempts] == [1]
+    assert attempts[0]["score"] == 2
+
+
+def test_deleting_the_first_attempt_promotes_the_next_one(tmp_path):
+    storage = _storage(tmp_path)
+    _create(storage)
+    _submit(storage, 1, 2, 2)
+    storage.start_practice_attempt(conversation_id="practice-1", started_at=LATER)
+    _submit(storage, 2, 5, 3)
+
+    remaining = storage.delete_practice_attempt(
+        conversation_id="practice-1",
+        attempt_no=1,
+        updated_at=FINISHED,
+    )
+
+    assert remaining is not None
+    assert remaining["status"] == "completed"
+    assert remaining["best_score"] == 5
+    attempts = storage.list_practice_attempts("practice-1")
+    assert [attempt["attempt_no"] for attempt in attempts] == [1]
+    assert attempts[0]["score"] == 5
+
+
+def test_deleting_the_last_attempt_removes_the_session(tmp_path):
+    storage = _storage(tmp_path)
+    _create(storage)
+
+    remaining = storage.delete_practice_attempt(
+        conversation_id="practice-1",
+        attempt_no=1,
+        updated_at=FINISHED,
+    )
+
+    assert remaining is None
+    assert storage.find_practice_session("practice-1") is None
+    assert storage.find_conversation("practice-1") is None

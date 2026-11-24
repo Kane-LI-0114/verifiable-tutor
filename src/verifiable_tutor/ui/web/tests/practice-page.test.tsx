@@ -116,6 +116,11 @@ function routes({
       path: "/api/practice/sessions/practice-1/attempts",
       handler: () => jsonResponse(redone, { status: 201 }),
     },
+    {
+      method: "DELETE",
+      path: "/api/practice/sessions/practice-1/attempts/1",
+      handler: () => new Response(null, { status: 204 }),
+    },
   ];
 }
 
@@ -134,13 +139,20 @@ async function chooseTopic(
   await user.click(await screen.findByRole("option", { name: topic }));
 }
 
-async function generateQuestion(loaded = session()) {
+async function generateSession(loaded = session()) {
   const user = userEvent.setup();
   stub = createFetchStub(routes({ loaded }));
   renderLiveRoute("/practice");
   await screen.findByRole("button", { name: "Generate a question" });
   await chooseTopic(user, "MPI");
   await user.click(screen.getByRole("button", { name: "Generate a question" }));
+  await screen.findByRole("button", { name: "Open this practice" });
+  return user;
+}
+
+async function openGenerated(loaded = session()) {
+  const user = await generateSession(loaded);
+  await user.click(screen.getByRole("button", { name: "Open this practice" }));
   await screen.findByRole("button", { name: "Submit all answers" });
   return user;
 }
@@ -166,8 +178,19 @@ describe("practice page", () => {
     expect(generate).toBeEnabled();
   });
 
-  it("saves the generated session and opens it as the first attempt", async () => {
-    await generateQuestion();
+  it("shows a ready notice and refreshes the practice list after generating", async () => {
+    await generateSession();
+
+    expect(screen.getByText("Practice is ready")).toBeInTheDocument();
+    expect(
+      screen.getByText("It is already in the Practice list on the left."),
+    ).toBeInTheDocument();
+    expect(callsTo("POST", "/api/practice/sessions")).toBe(1);
+    expect(callsTo("GET", "/api/sessions")).toBeGreaterThanOrEqual(2);
+  });
+
+  it("opens the generated session from the ready notice", async () => {
+    await openGenerated();
 
     expect(
       screen.getByText(/Which MPI collective leaves the reduced value/),
@@ -175,12 +198,11 @@ describe("practice page", () => {
     expect(screen.getByText("MPI_Allreduce")).toBeInTheDocument();
     expect(screen.getByText("1 point")).toBeInTheDocument();
     expect(screen.getByText("Attempt 1/1")).toBeInTheDocument();
-    expect(callsTo("POST", "/api/practice/sessions")).toBe(1);
     expect(callsTo("GET", "/api/practice/sessions/practice-1")).toBe(1);
   });
 
   it("autosaves a choice as soon as it is selected", async () => {
-    const user = await generateQuestion();
+    const user = await openGenerated();
 
     await user.click(screen.getByLabelText("MPI_Allreduce"));
 
@@ -192,7 +214,7 @@ describe("practice page", () => {
   });
 
   it("submits an empty attempt without calling the model grader", async () => {
-    const user = await generateQuestion();
+    const user = await openGenerated();
 
     await user.click(screen.getByRole("button", { name: "Submit all answers" }));
 
@@ -206,7 +228,7 @@ describe("practice page", () => {
   });
 
   it("grades a single-choice answer without a model call", async () => {
-    const user = await generateQuestion();
+    const user = await openGenerated();
 
     await user.click(screen.getByLabelText("MPI_Allreduce"));
     await user.click(screen.getByRole("button", { name: "Submit all answers" }));
@@ -219,10 +241,23 @@ describe("practice page", () => {
   });
 
   it("opens a text area for a short answer question", async () => {
-    await generateQuestion();
+    await openGenerated();
 
     expect(screen.getByLabelText("Your answer")).toBeInTheDocument();
     expect(screen.getByText("2 points")).toBeInTheDocument();
+  });
+
+  it("deletes only the current attempt", async () => {
+    const user = await openGenerated();
+
+    await user.click(screen.getByRole("button", { name: "Delete practice" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() =>
+      expect(
+        callsTo("DELETE", "/api/practice/sessions/practice-1/attempts/1"),
+      ).toBe(1),
+    );
   });
 
   it("opens another attempt and pages between them", async () => {

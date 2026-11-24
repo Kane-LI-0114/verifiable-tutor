@@ -1003,6 +1003,89 @@ class Storage:
         assert stored is not None
         return stored
 
+    def delete_practice_attempt(
+        self,
+        *,
+        conversation_id: str,
+        attempt_no: int,
+        updated_at: datetime,
+    ) -> dict[str, Any] | None:
+        """Delete one attempt, and the session only when none remain.
+
+        The remaining attempts keep their order and are renumbered, and the
+        earliest one decides whether the session is new, in progress, or
+        completed, so the first-attempt rule survives a deletion.
+        """
+
+        with self._connect() as connection:
+            session = connection.execute(
+                "SELECT conversation_id FROM practice_sessions"
+                " WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if session is None:
+                raise LookupError(f"no practice session {conversation_id!r}")
+            connection.execute(
+                "DELETE FROM practice_attempts"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (conversation_id, attempt_no),
+            )
+            remaining = connection.execute(
+                "SELECT attempt_no FROM practice_attempts"
+                " WHERE conversation_id = ? ORDER BY attempt_no",
+                (conversation_id,),
+            ).fetchall()
+            if not remaining:
+                connection.execute(
+                    "DELETE FROM conversations WHERE id = ?", (conversation_id,)
+                )
+                return None
+            for new_no, row in enumerate(remaining, start=1):
+                if row["attempt_no"] != new_no:
+                    connection.execute(
+                        "UPDATE practice_attempts SET attempt_no = ?"
+                        " WHERE conversation_id = ? AND attempt_no = ?",
+                        (new_no, conversation_id, row["attempt_no"]),
+                    )
+            attempts = connection.execute(
+                "SELECT * FROM practice_attempts"
+                " WHERE conversation_id = ? ORDER BY attempt_no",
+                (conversation_id,),
+            ).fetchall()
+            earliest = attempts[0]
+            if earliest["status"] == "completed":
+                status = "completed"
+                completed_at = earliest["submitted_at"]
+            else:
+                answers = _decode_json(earliest["answers_json"]) or {}
+                results = _decode_json(earliest["results_json"]) or {}
+                status = "in_progress" if (answers or results) else "not_started"
+                completed_at = None
+            best_score = max(
+                (
+                    float(attempt["score"])
+                    for attempt in attempts
+                    if attempt["status"] == "completed" and attempt["score"] is not None
+                ),
+                default=0,
+            )
+            connection.execute(
+                "UPDATE practice_sessions SET status = ?, best_score = ?,"
+                " completed_at = ?, updated_at = ? WHERE conversation_id = ?",
+                (
+                    status,
+                    best_score,
+                    completed_at,
+                    iso(updated_at),
+                    conversation_id,
+                ),
+            )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(updated_at), conversation_id),
+            )
+        return self.find_practice_session(conversation_id)
+
     def record_progress(
         self,
         *,

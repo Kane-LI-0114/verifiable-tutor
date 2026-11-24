@@ -107,6 +107,16 @@ export function deletePracticeSession(sessionId: string): Promise<void> {
   );
 }
 
+export function deletePracticeAttempt(
+  sessionId: string,
+  attemptNo: number,
+): Promise<void> {
+  return apiFetch<void>(
+    `/api/practice/sessions/${encodeURIComponent(sessionId)}/attempts/${attemptNo}`,
+    { method: "DELETE" },
+  );
+}
+
 export function gradePractice(body: {
   question: string;
   answer: string;

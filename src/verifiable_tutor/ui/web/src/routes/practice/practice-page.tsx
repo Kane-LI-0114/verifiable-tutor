@@ -26,7 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   createPracticeSession,
-  deletePracticeSession,
+  deletePracticeAttempt,
   getPracticeSession,
   gradePractice,
   savePracticeAnswers,
@@ -129,21 +129,25 @@ export function PracticePage() {
 function PracticeGenerator() {
   const t = useT();
   const navigate = useNavigate();
+  const { refresh: refreshConversations } = useConversations();
   const [searchParams, setSearchParams] = useSearchParams();
   const [topic, setTopic] = useState("");
   const [customTopic, setCustomTopic] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [created, setCreated] = useState<PracticeSession | null>(null);
 
   const effectiveTopic = topic === "others" ? customTopic.trim() : topic.trim();
 
   async function generate(chosenTopic: string, types: string[]) {
     setGenerating(true);
     setGenerateError(null);
+    setCreated(null);
     try {
       const session = await createPracticeSession(chosenTopic, types);
-      navigate(`/practice/${session.id}`);
+      setCreated(session);
+      refreshConversations();
     } catch (error) {
       setGenerateError(
         error instanceof Error ? error.message : "question generation failed",
@@ -247,6 +251,21 @@ function PracticeGenerator() {
             <Loader2Icon className="size-8 animate-spin" />
             <p className="text-sm">{t.practice.generating}</p>
           </div>
+        ) : created ? (
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <p className="text-sm font-medium">{t.practice.createdTitle}</p>
+              <p className="text-sm text-muted-foreground">
+                {t.practice.createdBody}
+              </p>
+              <Button
+                type="button"
+                onClick={() => navigate(`/practice/${created.id}`)}
+              >
+                {t.practice.openPractice}
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <PageEmpty title={t.practice.emptyTitle} description={t.practice.emptyBody} />
         )}
@@ -415,11 +434,28 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
   }
 
   async function handleDelete() {
-    if (!session) return;
+    if (!session || !attempt) return;
     try {
-      await deletePracticeSession(session.id);
+      await deletePracticeAttempt(session.id, attempt.attempt_no);
       refreshConversations();
-      navigate("/practice");
+      try {
+        const updated = await getPracticeSession(session.id);
+        setSession(updated);
+        const index = Math.min(
+          attempt.attempt_no - 1,
+          updated.attempts.length - 1,
+        );
+        const target =
+          updated.attempts[index] ?? updated.attempts[updated.attempts.length - 1];
+        setAttemptNo(target.attempt_no);
+        setAnswers(target.answers);
+        setResults(target.results);
+        setSaveState("idle");
+        setConfirmDelete(false);
+      } catch {
+        // The last attempt is gone, so the practice itself is gone too.
+        navigate("/practice");
+      }
     } catch {
       setError(t.common.errorBody);
     }
@@ -513,7 +549,11 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
               type="button"
               variant="ghost"
               size="sm"
-              aria-label={t.practice.deletePractice}
+              aria-label={
+                session.attempts.length === 1
+                  ? t.practice.deletePractice
+                  : t.practice.deleteAttempt
+              }
               onClick={() => setConfirmDelete(true)}
             >
               <Trash2Icon className="size-4" />
@@ -524,8 +564,16 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
         {confirmDelete ? (
           <Card>
             <CardContent className="space-y-3 pt-6">
-              <p className="text-sm font-medium">{t.practice.deleteTitle}</p>
-              <p className="text-sm text-muted-foreground">{t.practice.deleteBody}</p>
+              <p className="text-sm font-medium">
+                {session.attempts.length === 1
+                  ? t.practice.deleteTitle
+                  : t.practice.deleteAttemptTitle}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {session.attempts.length === 1
+                  ? t.practice.deleteBody
+                  : t.practice.deleteAttemptBody}
+              </p>
               <div className="flex gap-2">
                 <Button type="button" variant="destructive" onClick={handleDelete}>
                   {t.practice.deleteConfirm}
