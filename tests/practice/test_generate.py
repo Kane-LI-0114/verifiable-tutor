@@ -67,7 +67,7 @@ def test_generate_practice_uses_the_practice_prompt_and_topic() -> None:
     )
 
 JSON_WITH_ANSWER = (
-    '[{"type": "single-choice", "answer": "B. Y", "question": "What is MPI? [ref_1]", '
+    '[{"type": "single-choice", "correct_answer": "B. Y", "question": "What is MPI? [ref_1]", '
     '"choices": ["A. X", "B. Y"], "reference_answer": "The second option, B. Y, is right.", '
     '"scoring_points": ["defines MPI"], "max_score": 1}]'
 )
@@ -75,13 +75,13 @@ JSON_WITH_ANSWER = (
 
 def test_generate_practice_treats_a_null_answer_as_missing() -> None:
     runner = FakeRunner(
-        text='[{"type": "single-choice", "answer": null, "question": "Q?", '
+        text='[{"type": "single-choice", "correct_answer": null, "question": "Q?", '
         '"choices": ["A", "B"], "reference_answer": "B", "max_score": 1}]'
     )
 
     questions, _ = generate_practice("MPI", runner, adapter=None)
 
-    assert questions[0].answer == ""
+    assert questions[0].correct_answer == ""
 
 
 def test_generate_practice_keeps_the_exact_choice_answer() -> None:
@@ -89,10 +89,10 @@ def test_generate_practice_keeps_the_exact_choice_answer() -> None:
 
     questions, _ = generate_practice("FlashAttention", runner, adapter=None)
 
-    assert questions[0].answer == "B. Y"
+    assert questions[0].correct_answer == "B. Y"
 
 JSON_WITH_TOPIC = (
-    '[{"type": "single-choice", "topic": "processes and ranks", "answer": "B. Y", '
+    '[{"type": "single-choice", "topic": "processes and ranks", "correct_answer": "B. Y", '
     '"question": "What is MPI? [ref_1]", "choices": ["A. X", "B. Y"], '
     '"reference_answer": "B. Y", "scoring_points": ["defines MPI"], "max_score": 1}]'
 )

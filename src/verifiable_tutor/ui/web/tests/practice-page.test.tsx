@@ -16,7 +16,7 @@ const CHOICE_QUESTION = {
   topic: "MPI",
   question: "Which MPI collective leaves the reduced value on every rank?",
   choices: ["MPI_Allreduce", "MPI_Reduce", "MPI_Bcast"],
-  answer: "MPI_Allreduce",
+  correct_answer: "MPI_Allreduce",
   reference_answer: "MPI_Allreduce leaves the result on every rank.",
   scoring_points: ["names the collective that leaves the result on every rank"],
   max_score: 1,
@@ -29,7 +29,7 @@ const SHORT_QUESTION = {
   question:
     "Explain in one or two sentences why the softmax in attention needs the row maximum.",
   choices: [],
-  answer: undefined,
+  correct_answer: undefined,
   max_score: 2,
 };
 

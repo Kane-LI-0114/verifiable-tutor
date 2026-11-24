@@ -13,7 +13,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "single-choice",
-        answer: "The process identifier inside a communicator",
+        correct_answer: "The process identifier inside a communicator",
         reference_answer: COMMA_REFERENCE,
         max_score: 1,
       },
@@ -29,7 +29,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "single-choice",
-        answer: "The process identifier inside a communicator",
+        correct_answer: "The process identifier inside a communicator",
         reference_answer: COMMA_REFERENCE,
         max_score: 1,
       },
@@ -45,7 +45,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "single-choice",
-        answer: "",
+        correct_answer: "",
         reference_answer: COMMA_REFERENCE,
         max_score: 1,
       },
@@ -60,7 +60,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "single-choice",
-        answer: "",
+        correct_answer: "",
         reference_answer: "The answer is the all-reduce collective, not MPI_Reduce.",
         max_score: 1,
       },
@@ -75,7 +75,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "single-choice",
-        answer: "",
+        correct_answer: "",
         reference_answer: "MPI_Allreduce combines values from all ranks.",
         max_score: 1,
       },
@@ -90,7 +90,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "multiple-choice",
-        answer: "",
+        correct_answer: "",
         reference_answer: "Broadcast and Reduce deliver one value.",
         max_score: 2,
       },
@@ -105,7 +105,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "multiple-choice",
-        answer: "Broadcast | Reduce",
+        correct_answer: "Broadcast | Reduce",
         reference_answer: "Broadcast and Reduce deliver one value.",
         max_score: 2,
       },
@@ -120,7 +120,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "true-false",
-        answer: "",
+        correct_answer: "",
         reference_answer: "True. MPI_COMM_WORLD contains every process.",
         max_score: 1,
       },
@@ -135,7 +135,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "true-false",
-        answer: "True",
+        correct_answer: "True",
         reference_answer: "True. MPI_COMM_WORLD contains every process.",
         max_score: 1,
       },
@@ -150,7 +150,7 @@ describe("deterministic practice grading", () => {
     const result = gradeDeterministic(
       {
         type: "short-answer",
-        answer: "",
+        correct_answer: "",
         reference_answer: "anything",
         max_score: 5,
       },

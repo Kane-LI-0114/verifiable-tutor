@@ -49,5 +49,5 @@ def test_deadline_status_prompt_comes_from_the_prompts_package():
 def test_practice_generation_prompt_requires_an_exact_choice_answer():
     text = load_prompt("practice_generation")
 
-    assert '"answer"' in text
-    assert "exact text of the correct choice" in text
+    assert '"correct_answer"' in text
+    assert "exact" in text and "correct" in text

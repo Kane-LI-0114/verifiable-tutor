@@ -3,7 +3,7 @@ import type { QuestionType } from "@/lib/types";
 
 export interface GradeableQuestion {
   type: QuestionType;
-  answer?: string;
+  correct_answer?: string;
   reference_answer: string;
   max_score: number;
 }
@@ -24,14 +24,16 @@ function normalize(value: string): string {
 
 function answerKeys(answer: string | undefined, multiple: boolean): string[] {
   if (!answer) return [];
-  return (multiple ? answer.split("|") : [answer])
+  // The generator is asked for a comma-separated list; accepting the pipe as
+  // well keeps questions recorded before that instruction working.
+  return (multiple ? answer.split(/[|,]/) : [answer])
     .map(normalize)
     .filter(Boolean);
 }
 
 /**
  * Grade a choice question without a model call, using the exact correct
- * choice text the generator stores in "answer".
+ * choice text the generator stores in "correct_answer".
  *
  * Questions without that key return null so the model grader decides: the
  * reference answer is a sentence, and substring or negation heuristics let a
@@ -45,7 +47,10 @@ export function gradeDeterministic(
   if (!OBJECTIVE_TYPES.includes(question.type)) {
     return null;
   }
-  const expected = answerKeys(question.answer, question.type === "multiple-choice");
+  const expected = answerKeys(
+    question.correct_answer,
+    question.type === "multiple-choice",
+  );
   if (expected.length === 0) {
     return null;
   }

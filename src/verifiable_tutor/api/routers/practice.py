@@ -36,6 +36,9 @@ class PracticeRunBody(BaseModel):
         default_factory=list, description="Itemized scoring points."
     )
     max_score: float = Field(gt=0, description="Maximum score.")
+    sources: list[dict] = Field(
+        default_factory=list, description="The numbered course sources."
+    )
 
 
 @router.post(
@@ -52,6 +55,7 @@ def submit_practice_run(user: CurrentUser, body: PracticeRunBody, model: ModelDe
         reference_answer=body.reference_answer,
         scoring_points=body.scoring_points,
         max_score=body.max_score,
+        sources=body.sources,
         adapter=model,
     )
     return {
