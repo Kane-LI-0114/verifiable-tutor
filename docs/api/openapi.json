@@ -1958,6 +1958,17 @@
             "title": "Max Score",
             "type": "number"
           },
+          "option_orders": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Question id to the choice order shown in this attempt.",
+            "title": "Option Orders",
+            "type": "object"
+          },
           "results": {
             "additionalProperties": {
               "$ref": "#/components/schemas/PracticeResultBody"

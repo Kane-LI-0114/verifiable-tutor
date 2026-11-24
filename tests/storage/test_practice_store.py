@@ -216,6 +216,44 @@ def _submit(storage: Storage, attempt_no: int, score: int, max_score: int) -> No
     )
 
 
+def test_the_correct_choice_is_not_always_first(tmp_path):
+    storage = _storage(tmp_path)
+    storage.create_practice_session(
+        conversation_id="practice-order",
+        user_id="user-1",
+        title="Order",
+        topic="MPI",
+        questions=(
+            {
+                "type": "single-choice",
+                "topic": "MPI",
+                "question": "Which one is correct?",
+                "choices": ["Correct", "Wrong one", "Wrong two", "Wrong three"],
+                "correct_answer": "Correct",
+                "reference_answer": "Correct.",
+                "scoring_points": [],
+                "max_score": 1,
+                "knowledge_points": [],
+            },
+        ),
+        created_at=CREATED,
+    )
+
+    first = storage.find_practice_attempt("practice-order", 1)
+    assert first is not None
+    assert first["option_orders"]["q1"] == [
+        "Wrong three",
+        "Wrong two",
+        "Wrong one",
+        "Correct",
+    ]
+
+    redo = storage.start_practice_attempt(
+        conversation_id="practice-order", started_at=LATER
+    )
+    assert redo["option_orders"]["q1"] != first["option_orders"]["q1"]
+
+
 def test_deleting_one_attempt_keeps_the_session_and_renumbers(tmp_path):
     storage = _storage(tmp_path)
     _create(storage)

@@ -14,6 +14,7 @@ stored conversations, messages, or accounts.
 from __future__ import annotations
 
 import json
+import random
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -21,7 +22,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -118,6 +119,7 @@ CREATE TABLE IF NOT EXISTS practice_attempts (
     status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
     answers_json TEXT NOT NULL DEFAULT '{}',
     results_json TEXT NOT NULL DEFAULT '{}',
+    option_order_json TEXT NOT NULL DEFAULT '{}',
     score REAL,
     max_score REAL NOT NULL DEFAULT 0,
     started_at TEXT NOT NULL,
@@ -400,11 +402,35 @@ def _practice_attempt_row(row: sqlite3.Row) -> dict[str, Any]:
         "status": row["status"],
         "answers": _decode_json(row["answers_json"]) or {},
         "results": _decode_json(row["results_json"]) or {},
+        "option_orders": _decode_json(row["option_order_json"]) or {},
         "score": row["score"],
         "max_score": row["max_score"],
         "started_at": row["started_at"],
         "submitted_at": row["submitted_at"],
     }
+
+
+_OBJECTIVE_TYPES = {"single-choice", "multiple-choice"}
+
+
+def _option_order(
+    questions: Sequence[Mapping[str, Any]], *, seed: str
+) -> dict[str, list[str]]:
+    """Shuffle the choices of each objective question for one attempt.
+
+    The generator tends to place the correct option first, so every answer
+    reads as A. The answers are stored as text, so shuffling here cannot break
+    grading, and each attempt gets its own stable order.
+    """
+
+    rng = random.Random(seed)
+    order: dict[str, list[str]] = {}
+    for question in questions:
+        choices = list(question.get("choices") or [])
+        if question.get("type") in _OBJECTIVE_TYPES and len(choices) > 1:
+            rng.shuffle(choices)
+            order[str(question.get("id") or "")] = choices
+    return order
 
 
 def _insert_step(
@@ -472,6 +498,7 @@ class Storage:
             self._add_missing_message_event_columns(connection)
             self._add_missing_soft_delete_columns(connection)
             self._add_missing_conversation_kind_column(connection)
+            self._add_missing_practice_attempt_columns(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -537,6 +564,22 @@ class Storage:
             connection.execute(
                 "ALTER TABLE conversations"
                 " ADD COLUMN kind TEXT NOT NULL DEFAULT 'chat'"
+            )
+
+    @staticmethod
+    def _add_missing_practice_attempt_columns(
+        connection: sqlite3.Connection,
+    ) -> None:
+        """Add the option order a database created before version 9 lacks."""
+
+        existing = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(practice_attempts)")
+        }
+        if "option_order_json" not in existing:
+            connection.execute(
+                "ALTER TABLE practice_attempts"
+                " ADD COLUMN option_order_json TEXT NOT NULL DEFAULT '{}'"
             )
 
     def ping(self) -> bool:
@@ -797,6 +840,7 @@ class Storage:
             item.setdefault("id", f"q{index}")
             stored.append(item)
         max_score = sum(float(item.get("max_score") or 0) for item in stored)
+        option_order = _option_order(stored, seed=f"{conversation_id}:1")
         with self._connect() as connection:
             connection.execute(
                 "INSERT INTO conversations"
@@ -828,9 +872,14 @@ class Storage:
             connection.execute(
                 "INSERT INTO practice_attempts"
                 " (conversation_id, attempt_no, status, answers_json,"
-                "  results_json, score, max_score, started_at)"
-                " VALUES (?, 1, 'in_progress', '{}', '{}', NULL, ?, ?)",
-                (conversation_id, max_score, iso(created_at)),
+                "  results_json, option_order_json, score, max_score, started_at)"
+                " VALUES (?, 1, 'in_progress', '{}', '{}', ?, NULL, ?, ?)",
+                (
+                    conversation_id,
+                    json.dumps(option_order),
+                    max_score,
+                    iso(created_at),
+                ),
             )
         return {
             "conversation_id": conversation_id,
@@ -970,7 +1019,7 @@ class Storage:
 
         with self._connect() as connection:
             session = connection.execute(
-                "SELECT max_score FROM practice_sessions"
+                "SELECT max_score, questions_json FROM practice_sessions"
                 " WHERE conversation_id = ?",
                 (conversation_id,),
             ).fetchone()
@@ -983,12 +1032,22 @@ class Storage:
             ).fetchone()
             attempt_no = int(row["current"]) + 1
             max_score = float(session["max_score"])
+            questions = _decode_json(session["questions_json"]) or []
+            option_order = _option_order(
+                questions, seed=f"{conversation_id}:{attempt_no}"
+            )
             connection.execute(
                 "INSERT INTO practice_attempts"
                 " (conversation_id, attempt_no, status, answers_json,"
-                "  results_json, score, max_score, started_at)"
-                " VALUES (?, ?, 'in_progress', '{}', '{}', NULL, ?, ?)",
-                (conversation_id, attempt_no, max_score, iso(started_at)),
+                "  results_json, option_order_json, score, max_score, started_at)"
+                " VALUES (?, ?, 'in_progress', '{}', '{}', ?, NULL, ?, ?)",
+                (
+                    conversation_id,
+                    attempt_no,
+                    json.dumps(option_order),
+                    max_score,
+                    iso(started_at),
+                ),
             )
             connection.execute(
                 "UPDATE practice_sessions SET updated_at = ?"

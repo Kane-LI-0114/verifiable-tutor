@@ -32,6 +32,7 @@ export interface PracticeAttempt {
   status: "in_progress" | "completed";
   answers: Record<string, string[]>;
   results: Record<string, PracticeGradingResponse>;
+  option_orders?: Record<string, string[]>;
   score: number | null;
   max_score: number;
   started_at: string;

@@ -19,7 +19,8 @@ from verifiable_tutor.storage import Storage
 # bumps it to 5 for the step tag on each event. Version 6 adds the soft-delete
 # stamps to the knowledge tables. Version 7 adds the numbered sources a turn
 # retrieved. Version 8 adds the stored practice sessions and their attempts.
-SCHEMA_VERSION = 8
+# Version 9 adds the per-attempt choice order.
+SCHEMA_VERSION = 9
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (

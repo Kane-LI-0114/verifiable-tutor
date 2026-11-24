@@ -164,6 +164,10 @@ class PracticeAttemptRecord(BaseModel):
     )
     answers: dict[str, list[str]] = Field(default_factory=dict)
     results: dict[str, PracticeResultBody] = Field(default_factory=dict)
+    option_orders: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Question id to the choice order shown in this attempt.",
+    )
     score: float | None = Field(default=None, description="Total score; null while open.")
     max_score: float = Field(description="Maximum total score of the session.")
     started_at: str = Field(description="ISO-8601 UTC time the attempt opened.")

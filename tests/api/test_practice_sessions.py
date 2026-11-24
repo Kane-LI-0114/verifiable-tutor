@@ -65,6 +65,10 @@ def test_generation_persists_the_questions_before_the_first_answer(agent_api):
     assert len(body["attempts"]) == 1
     assert body["attempts"][0]["attempt_no"] == 1
     assert body["attempts"][0]["answers"] == {}
+    assert set(body["attempts"][0]["option_orders"]["q1"]) == {
+        "MPI_Allreduce",
+        "MPI_Reduce",
+    }
 
     reloaded = agent_api.client.get(f"/api/practice/sessions/{body['id']}")
     assert reloaded.status_code == 200

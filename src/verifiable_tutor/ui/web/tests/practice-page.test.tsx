@@ -247,6 +247,21 @@ describe("practice page", () => {
     expect(screen.getByText("2 points")).toBeInTheDocument();
   });
 
+  it("renders the choices in the attempt's stored order", async () => {
+    const loaded = session();
+    loaded.attempts[0].option_orders = {
+      q1: ["MPI_Reduce", "MPI_Bcast", "MPI_Allreduce"],
+    };
+    stub = createFetchStub(routes({ loaded }));
+    renderLiveRoute("/practice/practice-1");
+
+    await screen.findByRole("button", { name: "Submit all answers" });
+
+    expect(
+      screen.getAllByRole("radio").map((radio) => radio.getAttribute("value")),
+    ).toEqual(["MPI_Reduce", "MPI_Bcast", "MPI_Allreduce"]);
+  });
+
   it("deletes only the current attempt", async () => {
     const user = await openGenerated();
 

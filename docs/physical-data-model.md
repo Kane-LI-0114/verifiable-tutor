@@ -365,6 +365,7 @@ One row per attempt at a practice session. The first attempt decides the session
 | `status` | TEXT | no | - | in_progress or completed. |
 | `answers_json` | TEXT | no | - | JSON object of question id to the selected answers. |
 | `results_json` | TEXT | no | - | JSON object of question id to its stored score and explanation. |
+| `option_order_json` | TEXT | no | - | JSON object of question id to the shuffled choice order shown in this attempt. |
 | `score` | REAL | yes | - | Total score of this attempt; null while in progress. |
 | `max_score` | REAL | no | - | Sum of every question's maximum score. |
 | `started_at` | TEXT | no | - | ISO-8601 UTC time the attempt opened. |
@@ -527,7 +528,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 8`.
+- Schema version: `PRAGMA user_version = 9`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

@@ -300,6 +300,7 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "status": "in_progress or completed.",
         "answers_json": "JSON object of question id to the selected answers.",
         "results_json": "JSON object of question id to its stored score and explanation.",
+        "option_order_json": "JSON object of question id to the shuffled choice order shown in this attempt.",
         "score": "Total score of this attempt; null while in progress.",
         "max_score": "Sum of every question's maximum score.",
         "started_at": "ISO-8601 UTC time the attempt opened.",

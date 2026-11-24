@@ -84,7 +84,7 @@ def test_initialize_creates_the_knowledge_tables_and_bumps_the_version(tmp_path)
         "kb_chunks_fts",
         "kb_index_state",
     } <= names
-    assert version == SCHEMA_VERSION == 8
+    assert version == SCHEMA_VERSION == 9
 
 
 def test_a_stored_document_can_be_read_back_with_its_chunks(tmp_path) -> None:

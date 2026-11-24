@@ -645,7 +645,10 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
           </>
         ) : (
           <>
-            {session.questions.map((question) => (
+            {session.questions.map((question) => {
+              const choices =
+                attempt.option_orders?.[question.id] ?? question.choices;
+              return (
               <Card key={question.id}>
                 <CardHeader>
                   <div className="flex flex-wrap items-center gap-2">
@@ -671,7 +674,7 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
                       value={answers[question.id]?.[0] ?? ""}
                       onValueChange={(value) => updateAnswer(question, [value])}
                     >
-                      {question.choices.map((choice) => (
+                      {choices.map((choice) => (
                         <label key={choice} className="flex items-center gap-2 text-sm">
                           <RadioGroupItem value={choice} />
                           {choice}
@@ -682,7 +685,7 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
 
                   {question.type === "multiple-choice" ? (
                     <div className="space-y-2">
-                      {question.choices.map((choice) => {
+                      {choices.map((choice) => {
                         const chosen = answers[question.id] ?? [];
                         return (
                           <label key={choice} className="flex items-center gap-2 text-sm">
@@ -728,7 +731,8 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
                   ) : null}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
             <div className="flex justify-end">
               <Button type="button" disabled={submitting} onClick={handleSubmit}>
                 {submitting ? t.practice.running : t.practice.submitAll}
