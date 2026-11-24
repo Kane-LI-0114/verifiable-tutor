@@ -112,5 +112,3 @@ def test_generate_practice_uses_the_model_topic_for_all_topics() -> None:
     questions, _ = generate_practice("all topics", runner, adapter=None)
 
     assert questions[0].topic == "processes and ranks"
-
-
