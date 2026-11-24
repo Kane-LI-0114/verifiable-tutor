@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient
 from verifiable_tutor.auth.service import bootstrap_instructor
 from verifiable_tutor.auth.email import EmailMessage
 from verifiable_tutor.api.factory import create_app
-from verifiable_tutor.settings import AppSettings, SmtpSettings
+from verifiable_tutor.settings import AppSettings, DemoAccount, SmtpSettings
 from verifiable_tutor.llm.adapter import (
     FetchResult,
     ModelResponseError,
@@ -36,6 +36,9 @@ from verifiable_tutor.llm.adapter import (
 from verifiable_tutor.orchestrator.tools import ToolResult
 
 DEFAULT_PASSWORD = "correct-horse-battery"
+# Mirrors the seeded reviewer account in config/app.yaml.
+DEMO_EMAIL = "demo.student@ust.hk"
+DEMO_PASSWORD = "vt-demo-2026"
 
 # Mirrors the committed chat defaults in config/models.yaml for the fake seam.
 DEFAULT_PROVIDER = "deepseek"
@@ -471,6 +474,19 @@ def agent_api(tmp_path: Path):
 def domains_api(tmp_path: Path):
     with _harness(
         tmp_path, {"allowed_email_domains": ("connect.ust.hk", "ust.hk")}
+    ) as harness:
+        yield harness
+
+
+@pytest.fixture
+def demo_api(tmp_path: Path):
+    with _harness(
+        tmp_path,
+        {
+            "demo_account": DemoAccount(
+                email=DEMO_EMAIL, password=DEMO_PASSWORD
+            )
+        },
     ) as harness:
         yield harness
 

@@ -45,6 +45,13 @@ class DataSection(_StrictModel):
     ui_static_dir: str = "src/verifiable_tutor/ui/static"
 
 
+class DemoAccount(_StrictModel):
+    """The seeded student account the login page advertises to a reviewer."""
+
+    email: str
+    password: str
+
+
 class AuthSection(_StrictModel):
     allowed_email_domains: list[str] = Field(
         default_factory=lambda: ["connect.ust.hk", "ust.hk"]
@@ -54,6 +61,9 @@ class AuthSection(_StrictModel):
     cookie_secure: bool = False
     verification_code_ttl_minutes: int = 10
     reset_token_ttl_minutes: int = 30
+    # When present, the backend seeds this student account at startup and the
+    # login page shows it as a hint, so a reviewer skips registration.
+    demo_account: DemoAccount | None = None
 
 
 class ChatSection(_StrictModel):
@@ -121,6 +131,7 @@ class AppSettings(BaseModel):
     cookie_secure: bool
     verification_code_ttl: timedelta
     reset_token_ttl: timedelta
+    demo_account: DemoAccount | None = None
     chat_history_messages: int
     replay_default_speed: float
     agent_max_model_calls: int = 5
@@ -240,6 +251,7 @@ def load_settings(
                 minutes=config.auth.verification_code_ttl_minutes
             ),
             reset_token_ttl=timedelta(minutes=config.auth.reset_token_ttl_minutes),
+            demo_account=config.auth.demo_account,
             chat_history_messages=config.chat.history_messages,
             replay_default_speed=config.chat.replay_default_speed,
             agent_max_model_calls=config.agent.max_model_calls,

@@ -67,6 +67,9 @@ export const zh: Messages = {
     noAccount: "还没有账号？",
     createAccount: "注册",
     forgotPassword: "忘记密码？",
+    demoHintTitle: "评审演示账号",
+    demoHintBody: "直接用内置学生账号登录，无需注册或邮箱验证。",
+    demoHintFill: "填入演示账号",
     domainHint: "请使用 connect.ust.hk 或 ust.hk 邮箱注册。",
     checks: [
       {

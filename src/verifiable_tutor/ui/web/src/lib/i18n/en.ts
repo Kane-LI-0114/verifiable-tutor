@@ -67,6 +67,10 @@ export const en = {
     noAccount: "No account yet?",
     createAccount: "Create one",
     forgotPassword: "Forgot your password?",
+    demoHintTitle: "Reviewer demo account",
+    demoHintBody:
+      "Sign in directly with the seeded student account; no registration or email verification needed.",
+    demoHintFill: "Use demo account",
     domainHint: "Register with a connect.ust.hk or ust.hk address.",
     checks: [
       {

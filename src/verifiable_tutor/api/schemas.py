@@ -294,6 +294,27 @@ class DomainsResponse(BaseModel):
     )
 
 
+class DemoAccountResponse(BaseModel):
+    """The seeded student account the login page advertises, when enabled.
+
+    Both fields are null when no demo account is configured; the login page
+    then shows no hint and a reviewer registers normally.
+    """
+
+    model_config = _example(
+        {"email": "demo.student@ust.hk", "password": "vt-demo-2026"}
+    )
+
+    email: str | None = _opt(
+        "demo.student@ust.hk",
+        "Seeded student email; null when no demo account is configured.",
+    )
+    password: str | None = _opt(
+        "vt-demo-2026",
+        "Seeded student password, shown as the login hint; null when disabled.",
+    )
+
+
 class SessionSummary(BaseModel):
     model_config = _example(SESSION_EXAMPLE)
 

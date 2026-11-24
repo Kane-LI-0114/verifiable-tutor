@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ...auth.service import AuthError, AuthService
 from ..deps import CurrentUser, SettingsDep, get_auth
 from ..schemas import (
+    DemoAccountResponse,
     DomainsResponse,
     LoginResponse,
     MeResponse,
@@ -184,6 +185,24 @@ def domains(settings: SettingsDep):
     """Return the configured registration domains in their configured order."""
 
     return {"domains": list(settings.allowed_email_domains)}
+
+
+@router.get(
+    "/api/auth/demo",
+    response_model=DemoAccountResponse,
+    summary="Seeded student account shown on the login page",
+)
+def demo_account(settings: SettingsDep):
+    """Return the seeded reviewer account, or nulls when none is configured.
+
+    The account is created at startup by the app lifespan, so a successful
+    login needs no registration or verification email.
+    """
+
+    account = settings.demo_account
+    if account is None:
+        return {"email": None, "password": None}
+    return {"email": account.email, "password": account.password}
 
 
 @router.post(

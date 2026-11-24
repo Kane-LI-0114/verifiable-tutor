@@ -20,7 +20,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 
 from . import API_VERSION
-from ..auth.service import AuthService
+from ..auth.service import AuthError, AuthService, ensure_demo_account
 from .chat import ChatService
 from ..auth.email import EmailSender, build_email_sender
 from pathlib import Path
@@ -162,6 +162,19 @@ def create_app(
             email_sender=resolved_email,
             clock=resolved_clock,
         )
+        if resolved.demo_account is not None:
+            # A reviewer signs in with the advertised account instead of
+            # registering, which needs the registration email. Seeding is
+            # idempotent, so every start repairs a changed password or role.
+            try:
+                ensure_demo_account(
+                    storage=database,
+                    email=resolved.demo_account.email,
+                    password=resolved.demo_account.password,
+                    clock=resolved_clock,
+                )
+            except AuthError as exc:
+                logger.warning("demo account not seeded: %s", exc.detail)
         knowledge_store = KnowledgeStore(database)
         app.state.knowledge_store = knowledge_store
         retriever = HybridRetriever(

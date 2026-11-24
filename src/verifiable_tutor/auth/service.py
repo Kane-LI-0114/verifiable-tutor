@@ -246,14 +246,21 @@ class AuthService:
         return {"email": user["email"], "sessions_invalidated": invalidated}
 
 
-def bootstrap_instructor(
+def _ensure_account(
     *,
     storage: Storage,
     email: str,
     password: str,
+    role: str,
     clock: Callable[[], datetime],
+    repair_password: bool,
 ) -> dict[str, Any]:
-    """Create the seeded instructor account or repair its role; idempotent."""
+    """Create a seeded account or repair its role, status, and password.
+
+    A seeded account is active without the email verification round trip, so it
+    can sign in on a fresh checkout. Repairing is idempotent: a second call
+    changes nothing once the row matches the configuration.
+    """
 
     normalised = email.strip().lower()
     if not _EMAIL_RE.match(normalised):
@@ -268,16 +275,61 @@ def bootstrap_instructor(
             user_id=uuid.uuid4().hex,
             email=normalised,
             password_hash=hash_password(password),
-            role="instructor",
+            role=role,
             status="active",
             created_at=now,
         )
-        return {"email": normalised, "role": "instructor", "created": True}
+        return {"email": normalised, "role": role, "created": True}
     updates: dict[str, Any] = {}
-    if existing["role"] != "instructor":
-        updates["role"] = "instructor"
+    if existing["role"] != role:
+        updates["role"] = role
     if existing["status"] != "active":
         updates["status"] = "active"
+    if repair_password and not verify_password(password, existing["password_hash"]):
+        updates["password_hash"] = hash_password(password)
     if updates:
         storage.update_user(existing["id"], **updates)
-    return {"email": normalised, "role": "instructor", "created": False}
+    return {"email": normalised, "role": role, "created": False}
+
+
+def bootstrap_instructor(
+    *,
+    storage: Storage,
+    email: str,
+    password: str,
+    clock: Callable[[], datetime],
+) -> dict[str, Any]:
+    """Create the seeded instructor account or repair its role; idempotent."""
+
+    return _ensure_account(
+        storage=storage,
+        email=email,
+        password=password,
+        role="instructor",
+        clock=clock,
+        repair_password=False,
+    )
+
+
+def ensure_demo_account(
+    *,
+    storage: Storage,
+    email: str,
+    password: str,
+    clock: Callable[[], datetime],
+) -> dict[str, Any]:
+    """Create the seeded student reviewer account, or repair it; idempotent.
+
+    The login page advertises these credentials, so a password changed in
+    config/app.yaml takes effect on the next backend start. The account is a
+    plain student: it grants the access any verified registration would.
+    """
+
+    return _ensure_account(
+        storage=storage,
+        email=email,
+        password=password,
+        role="student",
+        clock=clock,
+        repair_password=True,
+    )

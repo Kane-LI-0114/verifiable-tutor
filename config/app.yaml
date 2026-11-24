@@ -28,6 +28,14 @@ auth:
   cookie_secure: false
   verification_code_ttl_minutes: 10
   reset_token_ttl_minutes: 30
+  # Seeded as an active student at startup so a reviewer can sign in without
+  # the registration email round trip. The login page shows these values as a
+  # hint. Remove the block to disable the account and the hint. This is demo
+  # data, not a secret: it grants the same access any student registration
+  # would, against the local course corpus.
+  demo_account:
+    email: demo.student@ust.hk
+    password: vt-demo-2026
 
 chat:
   history_messages: 12

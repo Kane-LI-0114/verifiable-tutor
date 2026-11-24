@@ -11,6 +11,13 @@ export interface LoginResponse {
   user: Pick<Me, "id" | "email" | "role">;
 }
 
+export interface DemoAccountResponse {
+  /** Seeded student email, or null when the backend has no demo account. */
+  email: string | null;
+  /** Seeded student password shown as the login hint, or null when disabled. */
+  password: string | null;
+}
+
 export interface RegisterResponse {
   email: string;
   role: "student";
@@ -42,6 +49,11 @@ export const authApi = {
 
   me(signal?: AbortSignal): Promise<Me> {
     return apiFetch<Me>("/api/auth/me", { signal });
+  },
+
+  /** The seeded reviewer account, so sign-in needs no registration step. */
+  demo(signal?: AbortSignal): Promise<DemoAccountResponse> {
+    return apiFetch<DemoAccountResponse>("/api/auth/demo", { signal });
   },
 
   login(email: string, password: string): Promise<LoginResponse> {

@@ -28,7 +28,7 @@ Mandatory action rule, read before any other section. Commit each completed stag
 | RQ2 benchmark protocol | [docs/benchmark-protocol.md](docs/benchmark-protocol.md) | Edit by hand; rerun the dry run after changing the baseline, the shared set, or the target values |
 | Domain vocabulary | [GLOSSARY.md](GLOSSARY.md) | Edit by hand when a term is resolved |
 | Technology decisions | [docs/tech-selection.md](docs/tech-selection.md) and the ADRs under `docs/adr/` | Edit by hand; append a new ADR to supersede a decision |
-| Application runtime settings (domains, cookie flags, data paths, replay speed) | `config/app.yaml`; secrets stay in the ignored `.env` | Edit by hand; `.env.example` is the committed template |
+| Application runtime settings (domains, cookie flags, the seeded demo account, data paths, replay speed) | `config/app.yaml`; secrets stay in the ignored `.env` | Edit by hand; `.env.example` is the committed template |
 | Prompt texts sent to a model (system, user, and repair sections) | `src/verifiable_tutor/prompts/`, one `.md` file per prompt | Edit by hand; package code loads them with `verifiable_tutor.prompts.load_prompt`, and the local knowledge-base driver stages `kb_v1.md` into the TACC task directory |
 | FastAPI backend implementation decisions | [docs/adr/0012-fastapi-backend-structure-and-sessions.md](docs/adr/0012-fastapi-backend-structure-and-sessions.md) | Edit by hand; supersede with a new ADR |
 | FastAPI conventions for the local backend | [docs/fastapi-reference.md](docs/fastapi-reference.md) | Edit by hand; re-verify against the official documentation when the FastAPI version changes |

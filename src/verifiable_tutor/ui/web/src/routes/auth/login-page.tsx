@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -41,6 +41,28 @@ export function LoginPage() {
     return null;
   });
   const [pending, setPending] = useState(false);
+  const [demo, setDemo] = useState<{ email: string; password: string } | null>(
+    null,
+  );
+
+  // The backend seeds a student account so a reviewer can sign in without the
+  // registration email. The hint is optional: a failed or disabled lookup must
+  // leave a normal sign-in untouched, so errors are ignored on purpose.
+  useEffect(() => {
+    if (isPreview) {
+      return;
+    }
+    const controller = new AbortController();
+    authApi
+      .demo(controller.signal)
+      .then((account) => {
+        if (account.email && account.password) {
+          setDemo({ email: account.email, password: account.password });
+        }
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [isPreview]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,6 +140,29 @@ export function LoginPage() {
             </Button>
           </FieldGroup>
         </form>
+        {demo ? (
+          <div className="mt-4 rounded-md border border-border bg-muted/40 p-3 text-sm">
+            <p className="font-medium">{t.auth.demoHintTitle}</p>
+            <p className="mt-1 text-muted-foreground">{t.auth.demoHintBody}</p>
+            <div className="mt-2 space-y-0.5 font-mono text-xs">
+              <p data-testid="demo-email">{demo.email}</p>
+              <p data-testid="demo-password">{demo.password}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setEmail(demo.email);
+                setPassword(demo.password);
+                setNotice(null);
+              }}
+            >
+              {t.auth.demoHintFill}
+            </Button>
+          </div>
+        ) : null}
       </CardContent>
       <CardFooter className="flex flex-col items-start gap-2 text-sm">
         <p className="text-muted-foreground">

@@ -665,6 +665,44 @@
         "title": "DeleteFolderResponse",
         "type": "object"
       },
+      "DemoAccountResponse": {
+        "additionalProperties": false,
+        "description": "The seeded student account the login page advertises, when enabled.\n\nBoth fields are null when no demo account is configured; the login page\nthen shows no hint and a reviewer registers normally.",
+        "example": {
+          "email": "demo.student@ust.hk",
+          "password": "vt-demo-2026"
+        },
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Seeded student email; null when no demo account is configured.",
+            "example": "demo.student@ust.hk",
+            "title": "Email"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Seeded student password, shown as the login hint; null when disabled.",
+            "example": "vt-demo-2026",
+            "title": "Password"
+          }
+        },
+        "title": "DemoAccountResponse",
+        "type": "object"
+      },
       "DocumentContextBody": {
         "additionalProperties": false,
         "properties": {
@@ -3324,6 +3362,28 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/auth/demo": {
+      "get": {
+        "description": "Return the seeded reviewer account, or nulls when none is configured.\n\nThe account is created at startup by the app lifespan, so a successful\nlogin needs no registration or verification email.",
+        "operationId": "demo_account_api_auth_demo_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoAccountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Seeded student account shown on the login page",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/domains": {
       "get": {
         "description": "Return the configured registration domains in their configured order.",

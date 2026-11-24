@@ -37,12 +37,15 @@ let signedIn = false;
 let allowedDomains: string[] = [];
 /** Non-null makes `GET /api/auth/domains` fail, for the offline-config path. */
 let domainsStatus: number | null = null;
+/** The seeded account the login hint advertises; null hides the hint. */
+let demoAccount: { email: string; password: string } | null = null;
 let stub: ReturnType<typeof createFetchStub> | null = null;
 
 beforeEach(() => {
   signedIn = false;
   allowedDomains = ["connect.ust.hk", "ust.hk"];
   domainsStatus = null;
+  demoAccount = null;
 });
 
 afterEach(() => {
@@ -70,6 +73,12 @@ function liveRoutes(overrides: StubRoute[] = []): StubRoute[] {
         domainsStatus === null
           ? jsonResponse({ domains: allowedDomains })
           : errorResponse("domains unavailable", domainsStatus),
+    },
+    {
+      method: "GET",
+      path: "/api/auth/demo",
+      handler: () =>
+        jsonResponse(demoAccount ?? { email: null, password: null }),
     },
     ...overrides,
   ];
@@ -186,6 +195,33 @@ describe("live sign-in page", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Your email is confirmed. Sign in to continue.",
     );
+  });
+
+  it("advertises the seeded student account and fills it in on request", async () => {
+    demoAccount = { email: "demo.student@ust.hk", password: "vt-demo-2026" };
+    stub = createFetchStub(liveRoutes());
+    renderLiveRoute("/login");
+
+    expect(await screen.findByTestId("demo-email")).toHaveTextContent(
+      "demo.student@ust.hk",
+    );
+    expect(screen.getByTestId("demo-password")).toHaveTextContent(
+      "vt-demo-2026",
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Use demo account" }));
+
+    expect(screen.getByLabelText("Email")).toHaveValue("demo.student@ust.hk");
+    expect(screen.getByLabelText("Password")).toHaveValue("vt-demo-2026");
+  });
+
+  it("hides the hint when the backend has no demo account", async () => {
+    stub = createFetchStub(liveRoutes());
+    renderLiveRoute("/login");
+
+    await waitFor(() => expect(callsTo("/api/auth/demo")).toHaveLength(1));
+    expect(screen.queryByTestId("demo-email")).not.toBeInTheDocument();
   });
 
   it("explains the updated password from the reset link", async () => {
