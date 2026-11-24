@@ -1918,6 +1918,133 @@
         "title": "ParsePracticeBody",
         "type": "object"
       },
+      "PracticeAnswersBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Question id to the selected choices or typed answer.",
+            "title": "Answers",
+            "type": "object"
+          }
+        },
+        "title": "PracticeAnswersBody",
+        "type": "object"
+      },
+      "PracticeAttemptRecord": {
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Answers",
+            "type": "object"
+          },
+          "attempt_no": {
+            "description": "1-based attempt number.",
+            "title": "Attempt No",
+            "type": "integer"
+          },
+          "max_score": {
+            "description": "Maximum total score of the session.",
+            "title": "Max Score",
+            "type": "number"
+          },
+          "results": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PracticeResultBody"
+            },
+            "title": "Results",
+            "type": "object"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total score; null while open.",
+            "title": "Score"
+          },
+          "started_at": {
+            "description": "ISO-8601 UTC time the attempt opened.",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "description": "Whether this attempt is still open or submitted.",
+            "enum": [
+              "in_progress",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO-8601 UTC submission time; null while open.",
+            "title": "Submitted At"
+          }
+        },
+        "required": [
+          "attempt_no",
+          "status",
+          "max_score",
+          "started_at"
+        ],
+        "title": "PracticeAttemptRecord",
+        "type": "object"
+      },
+      "PracticeCreateBody": {
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "description": "Course topic to generate self-test questions for.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Question types to generate, for example [\"single-choice\"].",
+            "title": "Types"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "title": "PracticeCreateBody",
+        "type": "object"
+      },
       "PracticeGenerateBody": {
         "additionalProperties": false,
         "properties": {
@@ -1948,6 +2075,108 @@
           "topic"
         ],
         "title": "PracticeGenerateBody",
+        "type": "object"
+      },
+      "PracticeQuestionRecord": {
+        "additionalProperties": true,
+        "properties": {
+          "choices": {
+            "description": "Selectable choices.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "correct_answer": {
+            "default": "",
+            "description": "Exact correct choice text for objective questions.",
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "id": {
+            "description": "Stable question id inside the session, q1..qN.",
+            "title": "Id",
+            "type": "string"
+          },
+          "knowledge_points": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Knowledge Points",
+            "type": "array"
+          },
+          "max_score": {
+            "description": "Maximum points of the question.",
+            "title": "Max Score",
+            "type": "number"
+          },
+          "question": {
+            "description": "Question stem.",
+            "title": "Question",
+            "type": "string"
+          },
+          "reference_answer": {
+            "description": "Reference answer used for grading.",
+            "title": "Reference Answer",
+            "type": "string"
+          },
+          "scoring_points": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scoring Points",
+            "type": "array"
+          },
+          "topic": {
+            "description": "Course topic the question belongs to.",
+            "title": "Topic",
+            "type": "string"
+          },
+          "type": {
+            "description": "Question type, for example single-choice.",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "topic",
+          "question",
+          "reference_answer",
+          "max_score"
+        ],
+        "title": "PracticeQuestionRecord",
+        "type": "object"
+      },
+      "PracticeResultBody": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "default": "",
+            "description": "Feedback shown to the student.",
+            "title": "Explanation",
+            "type": "string"
+          },
+          "max_score": {
+            "description": "Maximum points of the question.",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Score",
+            "type": "number"
+          },
+          "score": {
+            "description": "Points earned on the question.",
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "score",
+          "max_score"
+        ],
+        "title": "PracticeResultBody",
         "type": "object"
       },
       "PracticeRunBody": {
@@ -2004,25 +2233,78 @@
         "title": "PracticeRunBody",
         "type": "object"
       },
-      "PracticeSessionBody": {
-        "additionalProperties": false,
+      "PracticeSaveResponse": {
         "properties": {
-          "content": {
-            "description": "The rendered result, markdown.",
-            "minLength": 1,
-            "title": "Content",
+          "attempt_no": {
+            "title": "Attempt No",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "attempt_no"
+        ],
+        "title": "PracticeSaveResponse",
+        "type": "object"
+      },
+      "PracticeSessionRecord": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeAttemptRecord"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
+          "best_score": {
+            "description": "Highest total score across attempts.",
+            "title": "Best Score",
+            "type": "number"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the first attempt was submitted.",
+            "title": "Completed At"
+          },
+          "created_at": {
+            "description": "ISO-8601 UTC generation time.",
+            "title": "Created At",
             "type": "string"
           },
-          "progress": {
-            "description": "Per-topic knowledge-point progress.",
+          "id": {
+            "description": "Practice conversation id.",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_score": {
+            "description": "Sum of every question's maximum score.",
+            "title": "Max Score",
+            "type": "number"
+          },
+          "questions": {
             "items": {
-              "$ref": "#/components/schemas/TopicProgressBody"
+              "$ref": "#/components/schemas/PracticeQuestionRecord"
             },
-            "title": "Progress",
+            "title": "Questions",
             "type": "array"
           },
           "sources": {
-            "description": "The numbered course sources.",
             "items": {
               "additionalProperties": true,
               "type": "object"
@@ -2030,19 +2312,75 @@
             "title": "Sources",
             "type": "array"
           },
+          "status": {
+            "description": "Session status, decided by the first attempt only.",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sidebar title.",
+            "title": "Title"
+          },
           "topic": {
-            "description": "The topic.",
-            "maxLength": 200,
-            "minLength": 1,
+            "description": "Topic the questions were generated for.",
             "title": "Topic",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "ISO-8601 UTC last activity time.",
+            "title": "Updated At",
             "type": "string"
           }
         },
         "required": [
+          "id",
           "topic",
-          "content"
+          "status",
+          "best_score",
+          "max_score",
+          "created_at",
+          "updated_at"
         ],
-        "title": "PracticeSessionBody",
+        "title": "PracticeSessionRecord",
+        "type": "object"
+      },
+      "PracticeSubmitBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Question id to the selected choices or typed answer.",
+            "title": "Answers",
+            "type": "object"
+          },
+          "results": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PracticeResultBody"
+            },
+            "description": "Question id to its stored grading result.",
+            "title": "Results",
+            "type": "object"
+          }
+        },
+        "title": "PracticeSubmitBody",
         "type": "object"
       },
       "RegisterBody": {
@@ -2643,6 +2981,7 @@
           "sessions": [
             {
               "created_at": "2026-11-02T12:00:00+00:00",
+              "has_practice": false,
               "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
               "kind": "chat",
               "message_count": 2,
@@ -2657,6 +2996,7 @@
             "example": [
               {
                 "created_at": "2026-11-02T12:00:00+00:00",
+                "has_practice": false,
                 "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
                 "kind": "chat",
                 "message_count": 2,
@@ -2807,6 +3147,7 @@
         "additionalProperties": false,
         "example": {
           "created_at": "2026-11-02T12:00:00+00:00",
+          "has_practice": false,
           "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
           "kind": "chat",
           "message_count": 2,
@@ -2819,6 +3160,12 @@
             "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
+          },
+          "has_practice": {
+            "description": "True when the conversation carries a stored practice session; a practice conversation without one is a legacy record.",
+            "example": false,
+            "title": "Has Practice",
+            "type": "boolean"
           },
           "id": {
             "description": "Conversation id, used as session_id in the API.",
@@ -2837,6 +3184,47 @@
             "example": 2,
             "title": "Message Count",
             "type": "integer"
+          },
+          "practice_best_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Highest practice score across attempts.",
+            "title": "Practice Best Score"
+          },
+          "practice_max_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum total score of the practice session.",
+            "title": "Practice Max Score"
+          },
+          "practice_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_started",
+                  "in_progress",
+                  "completed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Practice session status, decided by its first attempt.",
+            "title": "Practice Status"
           },
           "title": {
             "anyOf": [
@@ -2863,7 +3251,8 @@
           "kind",
           "created_at",
           "updated_at",
-          "message_count"
+          "message_count",
+          "has_practice"
         ],
         "title": "SessionSummary",
         "type": "object"
@@ -3076,38 +3465,6 @@
           "status"
         ],
         "title": "ToolCallRecord",
-        "type": "object"
-      },
-      "TopicProgressBody": {
-        "additionalProperties": false,
-        "properties": {
-          "covered_points": {
-            "description": "Knowledge points the quiz covered.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Covered Points",
-            "type": "array"
-          },
-          "mastered_points": {
-            "description": "Knowledge points answered with full marks.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Mastered Points",
-            "type": "array"
-          },
-          "topic": {
-            "description": "The topic.",
-            "minLength": 1,
-            "title": "Topic",
-            "type": "string"
-          }
-        },
-        "required": [
-          "topic"
-        ],
-        "title": "TopicProgressBody",
         "type": "object"
       },
       "TranscriptionResponse": {
@@ -4713,13 +5070,13 @@
     },
     "/api/practice/sessions": {
       "post": {
-        "description": "Persist a finished practice result as a conversation.",
-        "operationId": "save_practice_session_api_practice_sessions_post",
+        "description": "Generate the questions and persist them before the first answer.\n\nSaving at generation time is what makes a reload resume the session; an\nempty generation stores nothing so the sidebar never fills with blanks.",
+        "operationId": "create_practice_session_api_practice_sessions_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PracticeSessionBody"
+                "$ref": "#/components/schemas/PracticeCreateBody"
               }
             }
           },
@@ -4729,7 +5086,9 @@
           "201": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
               }
             },
             "description": "Successful Response"
@@ -4746,9 +5105,293 @@
               }
             },
             "description": "Validation Error"
+          },
+          "502": {
+            "description": "The model returned no usable questions."
           }
         },
-        "summary": "Save a practice session so it appears in the conversation list",
+        "summary": "Generate and save a practice session",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}": {
+      "delete": {
+        "operationId": "delete_practice_session_api_practice_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete a practice session and all of its attempts",
+        "tags": [
+          "practice"
+        ]
+      },
+      "get": {
+        "operationId": "get_practice_session_api_practice_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Load a practice session with its attempts",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts": {
+      "post": {
+        "description": "Open a new attempt; the session status stays decided by attempt one.",
+        "operationId": "start_practice_attempt_api_practice_sessions__session_id__attempts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "409": {
+            "description": "The first attempt is not submitted yet."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start another attempt",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}/answers": {
+      "patch": {
+        "description": "Persist the current answers so a reload resumes the attempt.",
+        "operationId": "save_practice_answers_api_practice_sessions__session_id__attempts__attempt_no__answers_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_no",
+            "required": true,
+            "schema": {
+              "title": "Attempt No",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswersBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSaveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "409": {
+            "description": "The attempt is already submitted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Autosave the answers of one attempt",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}/submit": {
+      "post": {
+        "description": "Store the grading result of an attempt.\n\nThe first attempt completes the session and records knowledge-point\nprogress; later attempts only contribute to the best score.",
+        "operationId": "submit_practice_attempt_api_practice_sessions__session_id__attempts__attempt_no__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_no",
+            "required": true,
+            "schema": {
+              "title": "Attempt No",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeSubmitBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "409": {
+            "description": "The attempt is already submitted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit and grade one attempt",
         "tags": [
           "practice"
         ]
@@ -4781,6 +5424,28 @@
       "get": {
         "description": "List the signed-in user's conversations, newest first.",
         "operationId": "list_sessions_api_sessions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "chat",
+                    "practice"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4791,6 +5456,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List the signed-in user's conversations",

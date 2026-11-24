@@ -11,8 +11,9 @@ import json
 import re
 import uuid
 from dataclasses import asdict
+from typing import Literal
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import ChatDep, ClockDep, CurrentUser, ModelDep, StorageDep
@@ -101,70 +102,356 @@ def generate_practice_questions(
     }
 
 
-class TopicProgressBody(BaseModel):
+class PracticeCreateBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    topic: str = Field(min_length=1, description="The topic.")
-    covered_points: list[str] = Field(
-        default_factory=list, description="Knowledge points the quiz covered."
+    topic: str = Field(
+        min_length=1,
+        max_length=200,
+        description="Course topic to generate self-test questions for.",
     )
-    mastered_points: list[str] = Field(
-        default_factory=list,
-        description="Knowledge points answered with full marks.",
+    types: list[str] | None = Field(
+        default=None,
+        description="Question types to generate, for example [\"single-choice\"].",
     )
 
 
-class PracticeSessionBody(BaseModel):
+class PracticeResultBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    topic: str = Field(min_length=1, max_length=200, description="The topic.")
-    content: str = Field(min_length=1, description="The rendered result, markdown.")
-    sources: list[dict] = Field(
-        default_factory=list, description="The numbered course sources."
+    score: float = Field(ge=0, description="Points earned on the question.")
+    max_score: float = Field(gt=0, description="Maximum points of the question.")
+    explanation: str = Field(default="", description="Feedback shown to the student.")
+
+
+class PracticeAnswersBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    answers: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Question id to the selected choices or typed answer.",
     )
-    progress: list[TopicProgressBody] = Field(
-        default_factory=list, description="Per-topic knowledge-point progress."
+
+
+class PracticeSubmitBody(PracticeAnswersBody):
+    results: dict[str, PracticeResultBody] = Field(
+        default_factory=dict,
+        description="Question id to its stored grading result.",
     )
+
+
+class PracticeQuestionRecord(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str = Field(description="Stable question id inside the session, q1..qN.")
+    type: str = Field(description="Question type, for example single-choice.")
+    topic: str = Field(description="Course topic the question belongs to.")
+    question: str = Field(description="Question stem.")
+    choices: list[str] = Field(default_factory=list, description="Selectable choices.")
+    correct_answer: str = Field(
+        default="", description="Exact correct choice text for objective questions."
+    )
+    reference_answer: str = Field(description="Reference answer used for grading.")
+    scoring_points: list[str] = Field(default_factory=list)
+    max_score: float = Field(description="Maximum points of the question.")
+    knowledge_points: list[str] = Field(default_factory=list)
+
+
+class PracticeAttemptRecord(BaseModel):
+    attempt_no: int = Field(description="1-based attempt number.")
+    status: Literal["in_progress", "completed"] = Field(
+        description="Whether this attempt is still open or submitted."
+    )
+    answers: dict[str, list[str]] = Field(default_factory=dict)
+    results: dict[str, PracticeResultBody] = Field(default_factory=dict)
+    score: float | None = Field(default=None, description="Total score; null while open.")
+    max_score: float = Field(description="Maximum total score of the session.")
+    started_at: str = Field(description="ISO-8601 UTC time the attempt opened.")
+    submitted_at: str | None = Field(
+        default=None, description="ISO-8601 UTC submission time; null while open."
+    )
+
+
+class PracticeSessionRecord(BaseModel):
+    id: str = Field(description="Practice conversation id.")
+    title: str | None = Field(default=None, description="Sidebar title.")
+    topic: str = Field(description="Topic the questions were generated for.")
+    status: Literal["not_started", "in_progress", "completed"] = Field(
+        description="Session status, decided by the first attempt only."
+    )
+    best_score: float = Field(description="Highest total score across attempts.")
+    max_score: float = Field(description="Sum of every question's maximum score.")
+    questions: list[PracticeQuestionRecord] = Field(default_factory=list)
+    sources: list[dict] = Field(default_factory=list)
+    attempts: list[PracticeAttemptRecord] = Field(default_factory=list)
+    created_at: str = Field(description="ISO-8601 UTC generation time.")
+    updated_at: str = Field(description="ISO-8601 UTC last activity time.")
+    completed_at: str | None = Field(
+        default=None, description="When the first attempt was submitted."
+    )
+
+
+class PracticeSaveResponse(BaseModel):
+    status: Literal["not_started", "in_progress", "completed"]
+    attempt_no: int
+
+
+def _practice_conversation(storage, user: dict, session_id: str) -> dict:
+    conversation = storage.find_conversation(session_id)
+    if (
+        conversation is None
+        or conversation["user_id"] != user["id"]
+        or conversation["kind"] != "practice"
+    ):
+        raise HTTPException(status_code=404, detail="practice session not found")
+    return conversation
+
+
+def _session_payload(storage, conversation: dict) -> dict:
+    session = storage.find_practice_session(conversation["id"])
+    if session is None:
+        raise HTTPException(status_code=404, detail="practice session not found")
+    return {
+        "id": conversation["id"],
+        "title": conversation["title"],
+        "topic": session["topic"],
+        "status": session["status"],
+        "best_score": session["best_score"],
+        "max_score": session["max_score"],
+        "questions": session["questions"],
+        "sources": session["sources"],
+        "attempts": storage.list_practice_attempts(conversation["id"]),
+        "created_at": session["created_at"],
+        "updated_at": session["updated_at"],
+        "completed_at": session["completed_at"],
+    }
+
+
+def _attempt_or_409(storage, session_id: str, attempt_no: int) -> dict:
+    attempt = storage.find_practice_attempt(session_id, attempt_no)
+    if attempt is None:
+        raise HTTPException(status_code=404, detail="attempt not found")
+    if attempt["status"] != "in_progress":
+        raise HTTPException(status_code=409, detail="attempt is already submitted")
+    return attempt
 
 
 @router.post(
     "/api/practice/sessions",
     status_code=201,
-    summary="Save a practice session so it appears in the conversation list",
-    responses={401: {"description": "Not signed in."}},
+    response_model=PracticeSessionRecord,
+    summary="Generate and save a practice session",
+    responses={
+        401: {"description": "Not signed in."},
+        502: {"description": "The model returned no usable questions."},
+    },
 )
-def save_practice_session(
+def create_practice_session(
     user: CurrentUser,
-    body: PracticeSessionBody,
+    body: PracticeCreateBody,
+    chat: ChatDep,
+    model: ModelDep,
     storage: StorageDep,
     clock: ClockDep,
 ):
-    """Persist a finished practice result as a conversation."""
+    """Generate the questions and persist them before the first answer.
 
+    Saving at generation time is what makes a reload resume the session; an
+    empty generation stores nothing so the sidebar never fills with blanks.
+    """
+
+    questions, sources = chat.generate_practice(
+        body.topic, adapter=model, types=body.types
+    )
+    if not questions:
+        raise HTTPException(
+            status_code=502, detail="question generation returned no questions"
+        )
+    now = clock()
     conversation_id = uuid.uuid4().hex
-    storage.create_conversation(
+    storage.create_practice_session(
         conversation_id=conversation_id,
         user_id=user["id"],
-        title=body.topic,
-        created_at=clock(),
-        kind="practice",
+        title=f"{body.topic} {now:%Y%m%d}",
+        topic=body.topic,
+        questions=[asdict(question) for question in questions],
+        sources=sources,
+        created_at=now,
     )
-    storage.add_assistant_turn(
-        message_id=uuid.uuid4().hex,
-        conversation_id=conversation_id,
-        sequence=1,
-        content=body.content,
-        created_at=clock(),
-        sources=body.sources,
+    conversation = storage.find_conversation(conversation_id)
+    assert conversation is not None
+    return _session_payload(storage, conversation)
+
+
+@router.get(
+    "/api/practice/sessions/{session_id}",
+    response_model=PracticeSessionRecord,
+    summary="Load a practice session with its attempts",
+    responses={401: {"description": "Not signed in."}, 404: {"description": "Not found."}},
+)
+def get_practice_session(
+    session_id: str, user: CurrentUser, storage: StorageDep
+):
+    conversation = _practice_conversation(storage, user, session_id)
+    return _session_payload(storage, conversation)
+
+
+@router.patch(
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}/answers",
+    response_model=PracticeSaveResponse,
+    summary="Autosave the answers of one attempt",
+    responses={
+        401: {"description": "Not signed in."},
+        404: {"description": "Not found."},
+        409: {"description": "The attempt is already submitted."},
+    },
+)
+def save_practice_answers(
+    session_id: str,
+    attempt_no: int,
+    body: PracticeAnswersBody,
+    user: CurrentUser,
+    storage: StorageDep,
+    clock: ClockDep,
+):
+    """Persist the current answers so a reload resumes the attempt."""
+
+    _practice_conversation(storage, user, session_id)
+    _attempt_or_409(storage, session_id, attempt_no)
+    storage.save_practice_answers(
+        conversation_id=session_id,
+        attempt_no=attempt_no,
+        answers=body.answers,
+        updated_at=clock(),
     )
-    for entry in body.progress:
-        storage.record_progress(
-            user_id=user["id"],
-            topic=entry.topic,
-            covered_points=entry.covered_points,
-            mastered_points=entry.mastered_points,
+    session = storage.find_practice_session(session_id)
+    assert session is not None
+    return {"status": session["status"], "attempt_no": attempt_no}
+
+
+@router.post(
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}/submit",
+    response_model=PracticeSessionRecord,
+    summary="Submit and grade one attempt",
+    responses={
+        401: {"description": "Not signed in."},
+        404: {"description": "Not found."},
+        409: {"description": "The attempt is already submitted."},
+    },
+)
+def submit_practice_attempt(
+    session_id: str,
+    attempt_no: int,
+    body: PracticeSubmitBody,
+    user: CurrentUser,
+    storage: StorageDep,
+    clock: ClockDep,
+):
+    """Store the grading result of an attempt.
+
+    The first attempt completes the session and records knowledge-point
+    progress; later attempts only contribute to the best score.
+    """
+
+    conversation = _practice_conversation(storage, user, session_id)
+    _attempt_or_409(storage, session_id, attempt_no)
+    session = storage.find_practice_session(session_id)
+    assert session is not None
+    questions = session["questions"]
+    known = {question["id"] for question in questions}
+    unknown = (set(body.answers) | set(body.results)) - known
+    if unknown:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unknown question ids: {', '.join(sorted(unknown))}",
         )
-    return {"session_id": conversation_id}
+
+    results: dict[str, dict] = {}
+    for question in questions:
+        stored = body.results.get(question["id"])
+        results[question["id"]] = {
+            "score": float(stored.score) if stored is not None else 0.0,
+            "max_score": float(question["max_score"]),
+            "explanation": stored.explanation if stored is not None else "",
+        }
+
+    storage.submit_practice_attempt(
+        conversation_id=session_id,
+        attempt_no=attempt_no,
+        answers=body.answers,
+        results=results,
+        submitted_at=clock(),
+    )
+
+    if attempt_no == 1:
+        by_topic: dict[str, dict[str, set[str]]] = {}
+        for question in questions:
+            topic = question.get("topic") or session["topic"]
+            entry = by_topic.setdefault(
+                topic, {"covered": set(), "mastered": set()}
+            )
+            entry["covered"].update(question.get("knowledge_points") or [])
+            if float(results[question["id"]]["score"]) >= float(
+                question["max_score"]
+            ):
+                entry["mastered"].update(question.get("knowledge_points") or [])
+        for topic, entry in by_topic.items():
+            storage.record_progress(
+                user_id=user["id"],
+                topic=topic,
+                covered_points=sorted(entry["covered"]),
+                mastered_points=sorted(entry["mastered"]),
+            )
+
+    refreshed = storage.find_conversation(session_id)
+    assert refreshed is not None
+    return _session_payload(storage, refreshed)
+
+
+@router.post(
+    "/api/practice/sessions/{session_id}/attempts",
+    status_code=201,
+    response_model=PracticeSessionRecord,
+    summary="Start another attempt",
+    responses={
+        401: {"description": "Not signed in."},
+        404: {"description": "Not found."},
+        409: {"description": "The first attempt is not submitted yet."},
+    },
+)
+def start_practice_attempt(
+    session_id: str, user: CurrentUser, storage: StorageDep, clock: ClockDep
+):
+    """Open a new attempt; the session status stays decided by attempt one."""
+
+    conversation = _practice_conversation(storage, user, session_id)
+    session = storage.find_practice_session(session_id)
+    assert session is not None
+    if session["status"] != "completed":
+        raise HTTPException(
+            status_code=409, detail="submit the first attempt before a redo"
+        )
+    storage.start_practice_attempt(conversation_id=session_id, started_at=clock())
+    return _session_payload(storage, conversation)
+
+
+@router.delete(
+    "/api/practice/sessions/{session_id}",
+    status_code=204,
+    summary="Delete a practice session and all of its attempts",
+    responses={401: {"description": "Not signed in."}, 404: {"description": "Not found."}},
+)
+def delete_practice_session(
+    session_id: str, user: CurrentUser, storage: StorageDep
+):
+    conversation = storage.find_conversation(session_id)
+    if conversation is None or conversation["user_id"] != user["id"]:
+        raise HTTPException(status_code=404, detail="practice session not found")
+    if conversation["kind"] == "practice":
+        storage.delete_conversation(session_id, user["id"])
+    else:
+        raise HTTPException(status_code=404, detail="practice session not found")
+    return None
 
 
 class ParsePracticeBody(BaseModel):

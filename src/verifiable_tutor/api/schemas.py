@@ -71,6 +71,10 @@ SESSION_EXAMPLE: dict[str, Any] = {
     "created_at": _CREATED_AT,
     "updated_at": _CREATED_AT,
     "message_count": 2,
+    "has_practice": False,
+    "practice_status": None,
+    "practice_best_score": None,
+    "practice_max_score": None,
 }
 CITATION_EXAMPLE: dict[str, Any] = {
     "doc_id": "course_project",
@@ -326,6 +330,20 @@ class SessionSummary(BaseModel):
     created_at: str = _ex(_CREATED_AT, "ISO-8601 UTC creation time.")
     updated_at: str = _ex(_CREATED_AT, "ISO-8601 UTC last update time.")
     message_count: int = _ex(2, "Number of stored messages.")
+    has_practice: bool = _ex(
+        False,
+        "True when the conversation carries a stored practice session; a "
+        "practice conversation without one is a legacy record.",
+    )
+    practice_status: Literal["not_started", "in_progress", "completed"] | None = _opt(
+        None, "Practice session status, decided by its first attempt."
+    )
+    practice_best_score: float | None = _opt(
+        None, "Highest practice score across attempts."
+    )
+    practice_max_score: float | None = _opt(
+        None, "Maximum total score of the practice session."
+    )
 
 
 class SessionListResponse(BaseModel):
