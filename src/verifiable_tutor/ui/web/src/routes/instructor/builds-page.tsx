@@ -55,7 +55,7 @@ function formatTimestamp(value: string, locale: string): string {
 
 function stateIcon(state: BuildState) {
   if (state === "ready") {
-    return <CheckCircle2Icon className="size-3.5 text-emerald-600" />;
+    return <CheckCircle2Icon className="size-3.5 text-primary" />;
   }
   if (state === "failed") {
     return <XCircleIcon className="size-3.5 text-destructive" />;

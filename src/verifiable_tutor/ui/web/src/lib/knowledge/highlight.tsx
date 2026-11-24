@@ -39,7 +39,7 @@ export function HighlightedText({ text, ranges }: HighlightProps) {
         part.marked ? (
           <mark
             key={index}
-            className="rounded-sm bg-yellow-200/70 px-0.5 text-foreground"
+            className="rounded-sm bg-primary/15 px-0.5 text-foreground"
           >
             {part.value}
           </mark>

@@ -120,6 +120,28 @@ Instructors get a build list and a new-build dialog with the document id and the
 
 Instructors get a read-only table of assignments with release date, due date, extension window, and the five policy states (`pre-release`, `active`, `extension-window`, `post-deadline`, `unknown`), plus the registry version and the injected clock. An unknown state shows the fail-closed notice. The in-app editor is P1 and the page says so. The backend has no registry endpoint yet.
 
+## Theme and colour budget
+
+The palette is one neutral family, one accent family, and one semantic family, defined as CSS custom properties in `src/verifiable_tutor/ui/web/src/styles/index.css`. Every value is an official Tailwind v4 OKLCH step, so no colour is hand-picked and none drifts as the ramp darkens.
+
+| Family | Token | Value | Job |
+|---|---|---|---|
+| Neutral | `--background` | `oklch(1 0 0)` | page and card surface |
+| Neutral | `--foreground` | `oklch(0.141 0.005 285.823)` | body text, zinc-950, 19.8:1 |
+| Neutral | `--muted-foreground` | `oklch(0.439 0 0)` | secondary text, neutral-600, 7.8:1 |
+| Neutral | `--border` | `oklch(0.922 0 0)` | rules and card edges, neutral-200 |
+| Accent | `--primary`, `--ring` | `oklch(0.488 0.243 264.376)` | primary actions, links, focus, blue-700, 6.8:1 |
+| Accent | `--sidebar-accent` | `oklch(0.488 0.243 264.376 / 0.12)` | current destination and hover |
+| Semantic | `--destructive` | `oklch(0.505 0.213 27.518)` | failure text and destructive fill, red-700 |
+
+Three rules keep the set closed:
+
+- Cobalt marks interaction and provenance only: primary actions, links, focus rings, the current destination, and the markers that tie a claim to its page. Nothing else takes the hue.
+- Red is failure and destructive action only, never decoration, and one red per view. There is no green or amber status colour; success is a cobalt tint with a check icon, a warning is ink with an icon.
+- A border, hover wash, or disabled fill is a tint of one of the three families, not a further colour. `--radius` is `0.375rem`, cards keep a 1px rule and cast nothing, and only overlays cast a shadow.
+
+`tests/theme-budget.test.ts` scans the component tree for a Tailwind colour utility outside the three families and fails the suite, because a stray hue is how a second identity leaks in. The `.dark` block still holds the original neutral values and is not wired to any control.
+
 ## Documented components and their sources
 
 The stack decision is [ADR-0003](adr/0003-react-spa-with-ai-elements.md). The AI Elements patterns now live in shadcn/ui, and the older elements.ai-sdk.dev site is being retired. The UI installs the shadcn primitives and copies the pattern compositions into `src/verifiable_tutor/ui/web/src/components/ai/`.

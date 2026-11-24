@@ -48,7 +48,7 @@ export function TestResults({ suites }: { suites: TestSuite[] }) {
                   {suite.cases.map((testCase) => (
                     <li key={testCase.name} className="flex items-start gap-2 text-sm">
                       {testCase.status === "passed" ? (
-                        <CheckCircle2Icon className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
+                        <CheckCircle2Icon className="mt-0.5 size-3.5 shrink-0 text-primary" />
                       ) : (
                         <XCircleIcon className="mt-0.5 size-3.5 shrink-0 text-destructive" />
                       )}

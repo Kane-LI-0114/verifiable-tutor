@@ -55,39 +55,67 @@
     monospace;
 }
 
+/* Overlays cast a neutral shadow tinted with the ink rather than black. Cards
+   keep a 1px rule and cast nothing, so depth stays a single step. */
+@theme {
+  --shadow-sm: 0 1px 2px oklch(0.141 0.005 285.823 / 0.06);
+  --shadow-md:
+    0 1px 2px oklch(0.141 0.005 285.823 / 0.06),
+    0 4px 12px oklch(0.141 0.005 285.823 / 0.08);
+  --shadow-lg:
+    0 2px 4px oklch(0.141 0.005 285.823 / 0.06),
+    0 12px 32px oklch(0.141 0.005 285.823 / 0.12);
+}
+
 :root {
-  --radius: 0.625rem;
+  --radius: 0.375rem;
+
+  /* Neutral family. White surfaces, zinc ink, neutral grey for secondary text.
+     A rule or a border is a tint of the ink, not a further colour. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
   --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
+  --secondary-foreground: oklch(0.269 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.439 0 0);
   --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent-foreground: oklch(0.269 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+
+  /* Accent family. Cobalt marks interaction and provenance: primary actions,
+     links, focus rings, the active destination, and the markers that tie a
+     claim to the page it came from. Nothing else takes this hue. */
+  --primary: oklch(0.488 0.243 264.376);
+  --primary-foreground: oklch(1 0 0);
+  --ring: oklch(0.488 0.243 264.376);
+
+  /* Semantic family. Red is failure and destructive action only. One step
+     darker than a generic alert red so the same value clears 4.5:1 both as
+     text on its own tint and as a fill behind white text. */
+  --destructive: oklch(0.505 0.213 27.518);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Unused by the current pages, kept neutral so a future chart cannot add a
+     third hue by accident. */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.488 0.243 264.376 / 0.12);
+  --sidebar-accent-foreground: oklch(0.269 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.488 0.243 264.376);
   --sidebar-width: 17rem;
   --sidebar-width-icon: 3rem;
 }
