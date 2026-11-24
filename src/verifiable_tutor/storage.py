@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -94,6 +94,36 @@ CREATE TABLE IF NOT EXISTS conversations (
 );
 CREATE INDEX IF NOT EXISTS idx_conversations_user
     ON conversations(user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS practice_sessions (
+    conversation_id TEXT PRIMARY KEY
+        REFERENCES conversations(id) ON DELETE CASCADE,
+    topic TEXT NOT NULL,
+    questions_json TEXT NOT NULL,
+    sources_json TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (
+        status IN ('not_started', 'in_progress', 'completed')
+    ),
+    best_score REAL NOT NULL DEFAULT 0,
+    max_score REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS practice_attempts (
+    conversation_id TEXT NOT NULL
+        REFERENCES practice_sessions(conversation_id) ON DELETE CASCADE,
+    attempt_no INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
+    answers_json TEXT NOT NULL DEFAULT '{}',
+    results_json TEXT NOT NULL DEFAULT '{}',
+    score REAL,
+    max_score REAL NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL,
+    submitted_at TEXT,
+    PRIMARY KEY (conversation_id, attempt_no)
+);
 
 CREATE TABLE IF NOT EXISTS topic_progress (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -343,6 +373,38 @@ def _decode_json(value: str | None) -> Any:
     if value is None:
         return None
     return json.loads(value)
+
+
+def _practice_session_row(row: sqlite3.Row) -> dict[str, Any]:
+    """Decode one practice session row for the API and the tests."""
+
+    return {
+        "conversation_id": row["conversation_id"],
+        "topic": row["topic"],
+        "questions": _decode_json(row["questions_json"]),
+        "sources": _decode_json(row["sources_json"]),
+        "status": row["status"],
+        "best_score": row["best_score"],
+        "max_score": row["max_score"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "completed_at": row["completed_at"],
+    }
+
+
+def _practice_attempt_row(row: sqlite3.Row) -> dict[str, Any]:
+    """Decode one practice attempt row, including its saved answers."""
+
+    return {
+        "attempt_no": row["attempt_no"],
+        "status": row["status"],
+        "answers": _decode_json(row["answers_json"]) or {},
+        "results": _decode_json(row["results_json"]) or {},
+        "score": row["score"],
+        "max_score": row["max_score"],
+        "started_at": row["started_at"],
+        "submitted_at": row["submitted_at"],
+    }
 
 
 def _insert_step(
@@ -678,16 +740,268 @@ class Storage:
             ).fetchone()
         return dict(row) if row is not None else None
 
-    def list_conversations(self, user_id: str) -> list[dict[str, Any]]:
+    def list_conversations(
+        self, user_id: str, *, kind: str | None = None
+    ) -> list[dict[str, Any]]:
+        query = (
+            "SELECT c.*, (SELECT COUNT(*) FROM messages m"
+            " WHERE m.conversation_id = c.id) AS message_count,"
+            " (ps.conversation_id IS NOT NULL) AS has_practice,"
+            " ps.status AS practice_status,"
+            " ps.best_score AS practice_best_score,"
+            " ps.max_score AS practice_max_score"
+            " FROM conversations c"
+            " LEFT JOIN practice_sessions ps ON ps.conversation_id = c.id"
+            " WHERE c.user_id = ?"
+        )
+        parameters: list[Any] = [user_id]
+        if kind is not None:
+            query += " AND c.kind = ?"
+            parameters.append(kind)
+        query += " ORDER BY c.updated_at DESC, c.id"
+        with self._connect() as connection:
+            rows = connection.execute(query, tuple(parameters)).fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_conversation(self, conversation_id: str, user_id: str) -> bool:
+        """Delete one conversation and everything cascading from it."""
+
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "DELETE FROM conversations WHERE id = ? AND user_id = ?",
+                (conversation_id, user_id),
+            )
+            return cursor.rowcount > 0
+
+    # -- practice sessions -------------------------------------------------
+    def create_practice_session(
+        self,
+        *,
+        conversation_id: str,
+        user_id: str,
+        title: str | None,
+        topic: str,
+        questions: Sequence[Mapping[str, Any]],
+        sources: Sequence[Mapping[str, Any]] = (),
+        created_at: datetime,
+    ) -> dict[str, Any]:
+        """Store the generated questions and start the first attempt.
+
+        Saving at generation time is what lets a reload resume the questions,
+        so the first attempt opens in progress before any answer exists.
+        """
+
+        stored: list[dict[str, Any]] = []
+        for index, question in enumerate(questions, start=1):
+            item = dict(question)
+            item.setdefault("id", f"q{index}")
+            stored.append(item)
+        max_score = sum(float(item.get("max_score") or 0) for item in stored)
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO conversations"
+                " (id, user_id, title, kind, created_at, updated_at)"
+                " VALUES (?, ?, ?, 'practice', ?, ?)",
+                (
+                    conversation_id,
+                    user_id,
+                    title,
+                    iso(created_at),
+                    iso(created_at),
+                ),
+            )
+            connection.execute(
+                "INSERT INTO practice_sessions"
+                " (conversation_id, topic, questions_json, sources_json, status,"
+                "  best_score, max_score, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, 'not_started', 0, ?, ?, ?)",
+                (
+                    conversation_id,
+                    topic,
+                    json.dumps(stored),
+                    json.dumps(list(sources)),
+                    max_score,
+                    iso(created_at),
+                    iso(created_at),
+                ),
+            )
+            connection.execute(
+                "INSERT INTO practice_attempts"
+                " (conversation_id, attempt_no, status, answers_json,"
+                "  results_json, score, max_score, started_at)"
+                " VALUES (?, 1, 'in_progress', '{}', '{}', NULL, ?, ?)",
+                (conversation_id, max_score, iso(created_at)),
+            )
+        return {
+            "conversation_id": conversation_id,
+            "status": "not_started",
+            "max_score": max_score,
+        }
+
+    def find_practice_session(
+        self, conversation_id: str
+    ) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM practice_sessions WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return _practice_session_row(row)
+
+    def list_practice_attempts(self, conversation_id: str) -> list[dict[str, Any]]:
         with self._connect() as connection:
             rows = connection.execute(
-                "SELECT c.*, (SELECT COUNT(*) FROM messages m"
-                " WHERE m.conversation_id = c.id) AS message_count"
-                " FROM conversations c WHERE c.user_id = ?"
-                " ORDER BY c.updated_at DESC, c.id",
-                (user_id,),
+                "SELECT * FROM practice_attempts WHERE conversation_id = ?"
+                " ORDER BY attempt_no",
+                (conversation_id,),
             ).fetchall()
-        return [dict(row) for row in rows]
+        return [_practice_attempt_row(row) for row in rows]
+
+    def find_practice_attempt(
+        self, conversation_id: str, attempt_no: int
+    ) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM practice_attempts"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (conversation_id, attempt_no),
+            ).fetchone()
+        return None if row is None else _practice_attempt_row(row)
+
+    def save_practice_answers(
+        self,
+        *,
+        conversation_id: str,
+        attempt_no: int,
+        answers: Mapping[str, Any],
+        updated_at: datetime,
+    ) -> None:
+        """Autosave the current answers and start the session if needed."""
+
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE practice_attempts SET answers_json = ?"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (
+                    json.dumps(dict(answers)),
+                    conversation_id,
+                    attempt_no,
+                ),
+            )
+            connection.execute(
+                "UPDATE practice_sessions SET status = 'in_progress',"
+                " updated_at = ? WHERE conversation_id = ?"
+                " AND status = 'not_started'",
+                (iso(updated_at), conversation_id),
+            )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(updated_at), conversation_id),
+            )
+
+    def submit_practice_attempt(
+        self,
+        *,
+        conversation_id: str,
+        attempt_no: int,
+        answers: Mapping[str, Any],
+        results: Mapping[str, Mapping[str, Any]],
+        submitted_at: datetime,
+    ) -> dict[str, Any]:
+        """Grade one attempt, and complete the session only on the first one."""
+
+        score = sum(float(result.get("score") or 0) for result in results.values())
+        with self._connect() as connection:
+            session = connection.execute(
+                "SELECT max_score FROM practice_sessions"
+                " WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if session is None:
+                raise LookupError(f"no practice session {conversation_id!r}")
+            max_score = float(session["max_score"])
+            connection.execute(
+                "UPDATE practice_attempts"
+                " SET answers_json = ?, results_json = ?, status = 'completed',"
+                "  score = ?, max_score = ?, submitted_at = ?"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (
+                    json.dumps(dict(answers)),
+                    json.dumps(dict(results)),
+                    score,
+                    max_score,
+                    iso(submitted_at),
+                    conversation_id,
+                    attempt_no,
+                ),
+            )
+            if attempt_no == 1:
+                connection.execute(
+                    "UPDATE practice_sessions"
+                    " SET status = 'completed', completed_at = ?,"
+                    "  best_score = MAX(best_score, ?), updated_at = ?"
+                    " WHERE conversation_id = ?",
+                    (
+                        iso(submitted_at),
+                        score,
+                        iso(submitted_at),
+                        conversation_id,
+                    ),
+                )
+            else:
+                connection.execute(
+                    "UPDATE practice_sessions"
+                    " SET best_score = MAX(best_score, ?), updated_at = ?"
+                    " WHERE conversation_id = ?",
+                    (score, iso(submitted_at), conversation_id),
+                )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(submitted_at), conversation_id),
+            )
+        return {"score": score, "max_score": max_score}
+
+    def start_practice_attempt(
+        self, *, conversation_id: str, started_at: datetime
+    ) -> dict[str, Any]:
+        """Open the next attempt without touching the first-attempt status."""
+
+        with self._connect() as connection:
+            session = connection.execute(
+                "SELECT max_score FROM practice_sessions"
+                " WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if session is None:
+                raise LookupError(f"no practice session {conversation_id!r}")
+            row = connection.execute(
+                "SELECT COALESCE(MAX(attempt_no), 0) AS current"
+                " FROM practice_attempts WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            attempt_no = int(row["current"]) + 1
+            max_score = float(session["max_score"])
+            connection.execute(
+                "INSERT INTO practice_attempts"
+                " (conversation_id, attempt_no, status, answers_json,"
+                "  results_json, score, max_score, started_at)"
+                " VALUES (?, ?, 'in_progress', '{}', '{}', NULL, ?, ?)",
+                (conversation_id, attempt_no, max_score, iso(started_at)),
+            )
+            connection.execute(
+                "UPDATE practice_sessions SET updated_at = ?"
+                " WHERE conversation_id = ?",
+                (iso(started_at), conversation_id),
+            )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(started_at), conversation_id),
+            )
+        stored = self.find_practice_attempt(conversation_id, attempt_no)
+        assert stored is not None
+        return stored
 
     def record_progress(
         self,

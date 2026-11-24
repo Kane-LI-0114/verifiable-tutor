@@ -329,6 +329,55 @@ Foreign keys:
 
 - `user_id` -> `users.id` (ON DELETE CASCADE)
 
+### practice_sessions
+
+One generated practice session attached to a practice conversation: the structured questions, their sources, the first-attempt status, and the highest score across attempts.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `conversation_id` | TEXT | yes | PK | Practice conversation that owns this session. |
+| `topic` | TEXT | no | - | Topic the questions were generated for. |
+| `questions_json` | TEXT | no | - | JSON array of questions, each with a stable qN id. |
+| `sources_json` | TEXT | no | - | JSON array of the numbered course sources. |
+| `status` | TEXT | no | - | not_started, in_progress, or completed; only the first attempt decides it. |
+| `best_score` | REAL | no | - | Highest total score across submitted attempts. |
+| `max_score` | REAL | no | - | Sum of every question's maximum score. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC generation time. |
+| `updated_at` | TEXT | no | - | Last answer save, submission, or new attempt. |
+| `completed_at` | TEXT | yes | - | When the first attempt was submitted; null before that. |
+
+Checks:
+
+- `CHECK (status IN ('not_started', 'in_progress', 'completed'))`
+
+Foreign keys:
+
+- `conversation_id` -> `conversations.id` (ON DELETE CASCADE)
+
+### practice_attempts
+
+One row per attempt at a practice session. The first attempt decides the session status; later attempts are read-only history and can only raise the best score.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `conversation_id` | TEXT | no | PK | Practice session the attempt belongs to. |
+| `attempt_no` | INTEGER | no | PK | 1-based attempt number; 1 is the first attempt. |
+| `status` | TEXT | no | - | in_progress or completed. |
+| `answers_json` | TEXT | no | - | JSON object of question id to the selected answers. |
+| `results_json` | TEXT | no | - | JSON object of question id to its stored score and explanation. |
+| `score` | REAL | yes | - | Total score of this attempt; null while in progress. |
+| `max_score` | REAL | no | - | Sum of every question's maximum score. |
+| `started_at` | TEXT | no | - | ISO-8601 UTC time the attempt opened. |
+| `submitted_at` | TEXT | yes | - | ISO-8601 UTC submission time; null while in progress. |
+
+Checks:
+
+- `CHECK (status IN ('in_progress', 'completed'))`
+
+Foreign keys:
+
+- `conversation_id` -> `practice_sessions.conversation_id` (ON DELETE CASCADE)
+
 ### knowledge_builds
 
 State of one submitted Qwen knowledge-base build.
@@ -478,7 +527,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 7`.
+- Schema version: `PRAGMA user_version = 8`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

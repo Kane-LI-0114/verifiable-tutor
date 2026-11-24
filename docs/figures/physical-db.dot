@@ -127,6 +127,31 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">covered</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">mastered</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
+  practice_sessions [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>practice_sessions</B></TD></TR>
+      <TR><TD ALIGN="LEFT">conversation_id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">topic</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">questions_json</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">sources_json</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">best_score</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">max_score</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">completed_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  practice_attempts [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>practice_attempts</B></TD></TR>
+      <TR><TD ALIGN="LEFT">conversation_id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">attempt_no</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">answers_json</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">results_json</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">score</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">max_score</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">started_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">submitted_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
   knowledge_builds [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>knowledge_builds</B></TD></TR>
       <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
@@ -213,6 +238,8 @@ digraph physical_data_model {
   messages -> tool_calls [label="message_id"];
   messages -> message_events [label="message_id"];
   users -> topic_progress [label="user_id"];
+  conversations -> practice_sessions [label="conversation_id"];
+  practice_sessions -> practice_attempts [label="conversation_id"];
   users -> knowledge_builds [label="user_id"];
   kb_folders -> kb_folders [label="parent_id"];
   kb_folders -> kb_documents [label="folder_id"];

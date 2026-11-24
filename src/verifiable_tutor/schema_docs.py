@@ -33,6 +33,8 @@ SCHEMA_TABLE_ORDER = (
     "tool_calls",
     "message_events",
     "topic_progress",
+    "practice_sessions",
+    "practice_attempts",
     "knowledge_builds",
     "kb_folders",
     "kb_documents",
@@ -133,6 +135,16 @@ TABLE_NOTES = {
         "Per-user knowledge-point progress per course topic: a point is "
         "covered when a practice quiz asks about it, and mastered when a "
         "later answer scores full marks. Both flags only grow."
+    ),
+    "practice_sessions": (
+        "One generated practice session attached to a practice conversation: "
+        "the structured questions, their sources, the first-attempt status, "
+        "and the highest score across attempts."
+    ),
+    "practice_attempts": (
+        "One row per attempt at a practice session. The first attempt decides "
+        "the session status; later attempts are read-only history and can only "
+        "raise the best score."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -269,6 +281,29 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "knowledge_point": "One knowledge point of that topic.",
         "covered": "1 when a practice quiz covered the point; never cleared.",
         "mastered": "1 when an answer scored full marks on it; never cleared.",
+    },
+    "practice_sessions": {
+        "conversation_id": "Practice conversation that owns this session.",
+        "topic": "Topic the questions were generated for.",
+        "questions_json": "JSON array of questions, each with a stable qN id.",
+        "sources_json": "JSON array of the numbered course sources.",
+        "status": "not_started, in_progress, or completed; only the first attempt decides it.",
+        "best_score": "Highest total score across submitted attempts.",
+        "max_score": "Sum of every question's maximum score.",
+        "created_at": "ISO-8601 UTC generation time.",
+        "updated_at": "Last answer save, submission, or new attempt.",
+        "completed_at": "When the first attempt was submitted; null before that.",
+    },
+    "practice_attempts": {
+        "conversation_id": "Practice session the attempt belongs to.",
+        "attempt_no": "1-based attempt number; 1 is the first attempt.",
+        "status": "in_progress or completed.",
+        "answers_json": "JSON object of question id to the selected answers.",
+        "results_json": "JSON object of question id to its stored score and explanation.",
+        "score": "Total score of this attempt; null while in progress.",
+        "max_score": "Sum of every question's maximum score.",
+        "started_at": "ISO-8601 UTC time the attempt opened.",
+        "submitted_at": "ISO-8601 UTC submission time; null while in progress.",
     },
     "knowledge_builds": {
         "id": "Build id.",
