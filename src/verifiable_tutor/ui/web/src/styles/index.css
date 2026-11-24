@@ -73,6 +73,13 @@
 /* Overlays cast a neutral shadow tinted with the ink rather than black. Cards
    keep a 1px rule and cast nothing, so depth stays a single step. */
 @theme {
+  /* One default motion for every transition that does not ask for its own. The
+     curve leaves fast and settles, which suits a state change better than the
+     symmetric default, and 150ms is short enough to read as a response rather
+     than an animation. Panes opt into 300ms because a width change is larger. */
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+
   --shadow-sm: 0 1px 2px oklch(0.141 0.005 285.823 / 0.06);
   --shadow-md:
     0 1px 2px oklch(0.141 0.005 285.823 / 0.06),

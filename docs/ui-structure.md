@@ -142,6 +142,8 @@ Three rules keep the set closed:
 
 Typography follows the same split. Page titles and the wordmark take Source Serif 4 with a Songti fallback, so both scripts get a serif at display sizes and a sans in the body; the Latin subset ships in `src/verifiable_tutor/ui/web/public/fonts/` under the OFL. `--input` sits at 3:1 because a field boundary is the only thing that identifies the control (WCAG 1.4.11), while `--border` stays light because a rule is decoration.
 
+Motion follows one default: `--default-transition-duration` is 150ms and `--default-transition-timing-function` is `cubic-bezier(0.23, 1, 0.32, 1)`, so any transition that does not ask for its own duration leaves fast and settles. Panes ask for 300ms because a width change covers more ground, and the knowledge grid animates through `@formkit/auto-animate`. Every animation is skipped under `prefers-reduced-motion`.
+
 `tests/theme-budget.test.ts` scans the component tree for a Tailwind colour utility outside the three families and fails the suite, because a stray hue is how a second identity leaks in. The `.dark` block still holds the original neutral values and is not wired to any control.
 
 ## Documented components and their sources
