@@ -174,14 +174,15 @@ Both suites are green on 24 November 2026: 455 Python tests in about two minutes
 
 ## Detailed Instructions
 
-Everything below runs from the repository root. The default path needs no TACC account; the TACC jobs in section D are optional and exist to rebuild the corpus artifacts that are already tracked.
+Everything below runs from the repository root. The default path needs no TACC account; the TACC jobs in section E are optional and exist to rebuild the corpus artifacts that are already tracked.
 
 ### What can be reproduced
 
 | Result | Data in the repository | Rerun with | Numbers live in |
 |---|---|---|---|
 | Chunking matrix, RRF sweep, dual-granularity index | 65 questions, a 13-document page snapshot, 9 cells | `experiments/chunking/scripts/run_experiment.py` | [experiments/chunking/RESULTS.md](experiments/chunking/RESULTS.md), [REPORT.md](experiments/chunking/REPORT.md) |
-| Citation accuracy, control against treatment | 15 answers, 11 generated questions, two judged question sets | [benchmarks/results/run_eval.py](benchmarks/results/run_eval.py), plus the manual web baseline | [benchmarks/results/](benchmarks/results/) notes |
+| Citation accuracy against three hosted assistants | per-assistant transcripts and the cross-control summary | `run_eval.py` for the treatment; browser sessions for the controls, per [new-question-runbook.md](docs/new-question-runbook.md) | [new-question-summary.md](benchmarks/results/new-question-summary.md), [evaluation-report.md](docs/evaluation-report.md) |
+| Practice evaluation: question quality, grading, grading citations | 10 fixed questions and the per-assistant reports | [evaluation-runbook.md](docs/evaluation-runbook.md) | [practice-eval-summary.md](benchmarks/results/practice-eval-summary.md) |
 | Self-test generation and grading metrics | a frozen mock run: questions, answers, grades, ground truth | `python -m verifiable_tutor.eval.cli` | [benchmarks/self_test/](benchmarks/self_test/) `metrics.json` |
 | OCR, index, and Qwen knowledge-base jobs | job directories and tracked outputs | `scripts/tacc/` and `tcloud` | [docs/tacc-notes.md](docs/tacc-notes.md) |
 
@@ -260,33 +261,63 @@ Expected, dual granularity (nDCG@5, hit@3, hit@5): `page_first_450` hybrid 0.848
 
 Runtime: the full matrix took 8 minutes on an Apple M-series laptop with MPS, about 4 of them the first embedding pass (2,844 new texts; 4,510 distinct chunk texts across the calibration cells). Vectors are cached by content in `experiments/chunking/data/cache/vectors.db`, so a second run over the same cells takes about a minute. `.venv/bin/python experiments/chunking/scripts/report.py experiments/chunking/results/repro-01/summary.json` prints the Markdown tables from a summary.
 
-### B. Citation accuracy against a hosted chatbot
+### B. Citation accuracy against three hosted assistants
 
-Experiment Part 2 asks whether each system cites what it says, and whether the citation can be checked without trusting the model. Control: DeepSeek web with the course PDF uploaded. Treatment: this tutor, which retrieves from all 16 documents and verifies each quoted span against its page.
+Experiment Part 2 asks whether a cited page really holds the sentence an assistant quotes. The same 15 questions (5 memory hierarchy, 5 FlashAttention, 3 cross-document, 1 MPI, 1 GEMM) go to three hosted assistants and to the tutor.
 
-Data and state: `benchmarks/results/part2b_answers.jsonl` holds the treatment's 15 answers with numbered `[ref_N]` sources; `part3a_questions.json` holds 11 generated FlashAttention questions with knowledge points; the two result notes record the judged control and treatment behaviour.
+Controls: Doubao, Gemini, and Qwen, each given the relevant course PDFs in its own web product. Treatment: this tutor, which retrieves from all 16 documents and checks every quoted span against the tracked page record.
+
+Procedure and prompts: [docs/new-question-runbook.md](docs/new-question-runbook.md). Per-assistant transcripts are the `new-question-*.md` files, the cross-assistant table is [new-question-summary.md](benchmarks/results/new-question-summary.md), and the combined report is [docs/evaluation-report.md](docs/evaluation-report.md).
+
+| Dimension | Doubao | Gemini | Qwen | Treatment |
+|---|---|---|---|---|
+| Recall of bank conflict and CXL | missed both | full | full, one page early | full |
+| Invented quotes | 0 | 2 | 1 | 0 |
+| False "does not contain" | 3 | 0 | 0 | 0 |
+| Page accuracy | good | best | one page low on Lecture 2 | programmatic, exact |
+| Document label | Tutorial 4 called "Tutorial 3" | correct | correct | correct |
+
+What to check:
+
+- Doubao's citations are accurate but low-recall: it misses bank conflict and CXL, reports present material as absent three times, and mislabels Tutorial 4.
+- Gemini and Qwen reach the late pages, but both invent a "materializing S and P" quote from the FlashAttention paper, Gemini adds "IO-aware tiling", and Qwen's Lecture 2 page numbers are systematically one low.
+- The treatment invents nothing and cannot drift by a page, because `[ref_N]` comes from retrieval and the span verifier compares the quote with the page.
+
+To regenerate the treatment side, with the backend running:
 
 ```bash
-# with the backend running (step 5 of Getting Started), regenerate the treatment side
 .venv/bin/python benchmarks/results/run_eval.py
 ```
 
-The script logs in with the account in its `main` function, posts the 15 questions to `/api/chat`, parses the AI SDK stream, and writes both files. Change the email and password in the script if you seeded a different account. It prints one line per question with latency, answer length, and source count.
+The script logs in with the account in its `main` function, posts the 15 questions to `/api/chat`, parses the stream, and writes `part2b_answers.jsonl` and `part3a_questions.json`. It prints one line per question with latency, answer length, and source count. Change the email and password if you seeded a different account. The three control sides are browser sessions; the runbook is their procedure and the transcripts are their record.
 
-Expected: 15 answers, each with numbered sources, in about four minutes. The judged result to reproduce is in [citation-accuracy-lecture2-q1-q5.md](benchmarks/results/citation-accuracy-lecture2-q1-q5.md) and [citation-accuracy-tutorial4-q6-q10.md](benchmarks/results/citation-accuracy-tutorial4-q6-q10.md):
+### C. Practice evaluation: question quality, grading, and grading citations
 
-- The control's positive citations are all correct: 18 of 18 quoted spans are on the page it names.
-- The control's negative claims are all wrong: 4 of 4 "the PDF does not mention X" claims point at material that is present (CXL on pages 60, 66, and 67; bank conflict on page 51; locality on pages 22 to 24; registers and shared memory on pages 43 and 50).
-- The treatment answers those three questions and cites the pages.
-- On a 40-page tutorial the control stopped at page 12; the treatment retrieved across all pages.
+The practice evaluation asks whether a generated self-test is usable and whether its feedback can be checked. All four systems work from one 40-page tutorial (FlashAttention) and the same 10 single-choice questions in [practice-eval-material.md](benchmarks/results/practice-eval-material.md); each control receives the PDF in its web product.
 
-Checking a treatment citation needs no model: the span verifier compares the quoted text with the tracked page record, and the same check runs in the chat stream as `verify_span`. The control side is judged by hand, because the web product exposes no API; the notes date each run.
+Procedure: [docs/evaluation-runbook.md](docs/evaluation-runbook.md). Results: [practice-eval-summary.md](benchmarks/results/practice-eval-summary.md), the per-assistant files, and [grading-accuracy-dim2.md](benchmarks/results/grading-accuracy-dim2.md) for the treatment's deterministic-scoring fix.
 
-### C. Self-test generation and grading
+| Dimension | Doubao | Gemini | Qwen | Treatment |
+|---|---|---|---|---|
+| Question groundedness | 10/10 | 6/10 | 6/10 | 10/10 |
+| Off-topic questions | 0/10 | 4/10 | 4/10 | 0/10 |
+| Knowledge-point coverage | 3/5 | 3/5 | 3/5 | 5/5 |
+| Grading accuracy | 10/10 | 10/10 | 10/10 | 10/10 |
+| Evaluation judgement | 10/10 | 10/10 | 10/10 | 10/10 |
+| Citation accuracy | 8/10 | 10/10 | 9/10 | 10/10 |
 
-This is RQ2. The protocol is [docs/benchmark-protocol.md](docs/benchmark-protocol.md): two topics, two systems (this agent and DeepSeek web with the chapter PDF), blind annotation, a frozen shared grading set of 8 questions with 4 simulated answers each, developer ground truth, and both graders run on the same items. Metrics: knowledge-point coverage, question validity, reference-answer verifiability, citation validity, and for grading exact match, within-one-point agreement, normalized mean absolute error, false-pass rate, and false-fail rate.
+What to check:
 
-Data layout and the step-by-step checklist are in [benchmarks/self_test/](benchmarks/self_test/) (`RQ2_checklist.md`, `annotation_template.md`, `knowledge_points.yaml`). The committed `run-mock` directories are a frozen fixture that proves the metric arithmetic; the FlashAttention generation runs hold the web transcripts.
+- Gemini and Qwen each invent four questions about material the tutorial does not contain (FA-2, FA-3, PagedAttention, MHA/MQA/GQA). Doubao and the tutor stay inside the PDF.
+- Only the tutor covers all five knowledge points; each control covers three and misses stable softmax and the attention operator.
+- Grading ties at 10 of 10. On single-choice answers the evaluation does not separate the systems, and the report says so rather than claiming a win.
+- Grading citations separate: Doubao and Qwen cite page 39 for content on page 40, while the tutor's citations are programmatic.
+
+### D. Self-test metrics harness
+
+The harness behind RQ2a and RQ2b computes metrics from a run directory. The committed `run-mock` fixture proves the arithmetic; a live run writes the same files.
+
+The protocol is [docs/benchmark-protocol.md](docs/benchmark-protocol.md); the data layout, annotation template, and checklist are in [benchmarks/self_test/](benchmarks/self_test/).
 
 ```bash
 .venv/bin/python -m verifiable_tutor.eval.cli rq2a benchmarks/self_test/generation/run-mock --expected-points 5
@@ -303,9 +334,9 @@ Expected output, byte for byte the committed `metrics.json`:
  "false_pass_rate": 0.0, "false_fail_rate": 0.0}
 ```
 
-A live RQ2 run needs two annotators, one DeepSeek web session per topic, and the simulated answers from `scripts/simulate_student_answers.py`; the checklist is the procedure and the numbers are written back to `metrics.json`. This is a small-sample course benchmark, and the protocol states that a tie is reported as a tie.
+A live run needs two annotators, one session per system, and the simulated answers from `scripts/simulate_student_answers.py`; the checklist is the procedure and the numbers are written back to `metrics.json`.
 
-### D. Optional: the TACC model-serving path
+### E. Optional: the TACC model-serving path
 
 The corpus artifacts under `data/` were produced by three submitted jobs, and the tracked results mean a reviewer never has to run them. To rerun them, configure the platform CLI with `tcloud config -u <user> -f <key>` and `tcloud init`, then:
 
@@ -325,7 +356,8 @@ Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 282
 | Table 2, RRF weight sweep | `REPORT.md` Experiment 2, `RESULTS.md` RRF section | `rrf_weights.py` |
 | Table 3, dual-granularity index | `REPORT.md` Experiment 3, `RESULTS.md` dual section | `dual_granularity.py` |
 | Lexical and dense ablation, category and page-length breakdown | `RESULTS.md` ablation and breakdown sections | `report.py` on `summary.json` |
-| Citation accuracy: precision, negative claims, long-document recall | the two `citation-accuracy-*.md` notes | `run_eval.py`, plus the dated manual control run |
+| Citation accuracy: recall, invented quotes, page accuracy | `new-question-summary.md` and the per-assistant files | `run_eval.py` for the treatment, dated browser sessions for the controls |
+| Practice evaluation: groundedness, coverage, grading, grading citations | `practice-eval-*.md`, `grading-accuracy-dim2.md` | the treatment through the practice page, the controls per the evaluation runbook |
 | RQ2a and RQ2b tables | `benchmarks/self_test/*/metrics.json` | `verifiable_tutor.eval.cli` |
 | System and container diagram | `proposal/figs/fig2_components_v3.png` and its `.dot` source | `dot -Gdpi=300 -Tpng proposal/figs/fig2_components_v3.dot -o proposal/figs/fig2_components_v3.png` |
 
@@ -335,7 +367,8 @@ Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 282
 - **Page records were regenerated after the run.** The sha256 values recorded in `page_manifest.json` no longer match the tracked files, because the OCR stage re-exported them. Page numbering and page text are unchanged. A rerun on 2026-11-24 on macOS with MPS reproduced six of the nine hybrid cells exactly and the other three within 0.005 nDCG. The dense arms of three small-chunk cells moved by up to 0.015, because those cells carry up to 48 oversize chunks that BGE truncates at 512 tokens, so the weight of the last tokens depends on the device. Every paired interval still crosses zero, and the ordering among statistically tied cells can swap, which is what the intervals are for.
 - **Embedding device and library version.** Ranking is stable across CPU and MPS; the fourth decimal of nDCG can move. The original environment is recorded in `experiments/chunking/results/environment.json`.
 - **Live model output varies.** Chat answers differ between runs. The citation verdicts do not depend on the model: the span verifier compares quoted text with the tracked page record. The response cache under `data/caches/` reduces paid calls; delete it to force fresh calls.
-- **The control arm is a moving product.** DeepSeek web changes without notice, so the control side of section B is dated, transcribed, and judged by hand. The notes are the reproducibility mechanism.
+- **The controls are hosted products.** Doubao, Gemini, and Qwen are read through their web UIs on 2026-11-23 and 2026-11-24, and those products change without notice; the dated transcripts are the reproducibility record. Only the treatment side runs from this repository.
+- **Grading does not separate the systems.** All four graded the 10 choice questions exactly, so the reported advantage is coverage and citation exactness, not grading quality.
 - **RQ2 committed numbers are a mock run.** They validate the harness, not the hypothesis. A live run needs annotators and web sessions, as the protocol states.
 - **Small samples.** 65 retrieval questions, 15 citation answers, and 8 graded items with 4 variants each. These are course-project signals, not validated benchmarks; the protocol says a tie is a tie.
 - **TACC timing is queue dependent.** Job ids and measured cold starts are recorded, not promised. The one-hour partition limit is why the knowledge-base job is sharded.
@@ -351,7 +384,8 @@ Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 282
 | `.venv/bin/python -m pytest` | 2 to 4 minutes | 455 tests, no network |
 | Chunking matrix, section A | about 8 minutes | 9 cells, first embedding pass |
 | RRF sweep and dual granularity | about 2 and 4 minutes | reuse the vector cache |
-| Citation run, section B | about 4 minutes | 15 chat turns, paid model calls |
+| Treatment citation run, section B | about 4 minutes | 15 chat turns, paid model calls |
+| Practice evaluation, section C | about 10 minutes per system | one PDF and 10 questions |
 | RQ2 metrics on the frozen run | under a second | no model calls |
 
 ## What it is
