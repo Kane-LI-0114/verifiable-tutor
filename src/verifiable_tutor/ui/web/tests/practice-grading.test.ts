@@ -4,13 +4,6 @@ import { gradeDeterministic } from "@/lib/practice/grading";
 
 const LABELS = { correct: "Correct", incorrect: "Incorrect" };
 
-const CHOICES = [
-  "The total number of processes launched by mpiexec",
-  "The process identifier inside a communicator",
-  "The priority level assigned to a message by the user",
-  "The physical core on which a process happens to be scheduled",
-];
-
 const COMMA_REFERENCE =
   'The rank is the process identifier inside a communicator: "Rank: process identifier inside a communicator". ' +
   "It is not a core id, not the process count, and not a scheduling priority.";
@@ -21,7 +14,6 @@ describe("deterministic practice grading", () => {
       {
         type: "single-choice",
         answer: "The process identifier inside a communicator",
-        choices: CHOICES,
         reference_answer: COMMA_REFERENCE,
         max_score: 1,
       },
@@ -38,7 +30,6 @@ describe("deterministic practice grading", () => {
       {
         type: "single-choice",
         answer: "The process identifier inside a communicator",
-        choices: CHOICES,
         reference_answer: COMMA_REFERENCE,
         max_score: 1,
       },
@@ -50,12 +41,11 @@ describe("deterministic practice grading", () => {
     expect(result?.explanation).toBe("Incorrect");
   });
 
-  it("uses the only choice the reference mentions when the key is missing", () => {
+  it("sends a key-less single choice to the model grader", () => {
     const result = gradeDeterministic(
       {
         type: "single-choice",
         answer: "",
-        choices: CHOICES,
         reference_answer: COMMA_REFERENCE,
         max_score: 1,
       },
@@ -63,47 +53,44 @@ describe("deterministic practice grading", () => {
       LABELS,
     );
 
-    expect(result?.score).toBe(1);
+    expect(result).toBeNull();
   });
 
-  it("does not mark a negated distractor correct without a key", () => {
-    const negated =
-      "The answer is the process identifier inside a communicator. " +
-      "It is not the total number of processes launched by mpiexec.";
-
-    const picked = gradeDeterministic(
+  it("does not trust a negated distractor when the key is missing", () => {
+    const result = gradeDeterministic(
       {
         type: "single-choice",
         answer: "",
-        choices: CHOICES,
-        reference_answer: negated,
+        reference_answer: "The answer is the all-reduce collective, not MPI_Reduce.",
         max_score: 1,
       },
-      "The total number of processes launched by mpiexec",
+      "MPI_Reduce",
       LABELS,
     );
-    const ambiguous = gradeDeterministic(
+
+    expect(result).toBeNull();
+  });
+
+  it("does not trust a substring collision when the key is missing", () => {
+    const result = gradeDeterministic(
       {
         type: "single-choice",
         answer: "",
-        choices: CHOICES,
-        reference_answer: negated,
+        reference_answer: "MPI_Allreduce combines values from all ranks.",
         max_score: 1,
       },
-      "The process identifier inside a communicator",
+      "Reduce",
       LABELS,
     );
 
-    expect(picked?.score).not.toBe(1);
-    expect(ambiguous).toBeNull();
+    expect(result).toBeNull();
   });
 
-  it("sends a partial multiple choice without a key to the model grader", () => {
+  it("sends a key-less multiple choice to the model grader", () => {
     const result = gradeDeterministic(
       {
         type: "multiple-choice",
         answer: "",
-        choices: ["Broadcast", "Reduce", "Scatter"],
         reference_answer: "Broadcast and Reduce deliver one value.",
         max_score: 2,
       },
@@ -119,7 +106,6 @@ describe("deterministic practice grading", () => {
       {
         type: "multiple-choice",
         answer: "Broadcast | Reduce",
-        choices: ["Broadcast", "Reduce", "Scatter"],
         reference_answer: "Broadcast and Reduce deliver one value.",
         max_score: 2,
       },
@@ -130,16 +116,34 @@ describe("deterministic practice grading", () => {
     expect(result?.score).toBe(2);
   });
 
-  it("compares true and false without a key", () => {
-    const base = {
-      type: "true-false" as const,
-      answer: "",
-      reference_answer: "True. MPI_COMM_WORLD contains every process.",
-      max_score: 1,
-    };
+  it("sends a key-less true or false question to the model grader", () => {
+    const result = gradeDeterministic(
+      {
+        type: "true-false",
+        answer: "",
+        reference_answer: "True. MPI_COMM_WORLD contains every process.",
+        max_score: 1,
+      },
+      "True",
+      LABELS,
+    );
 
-    expect(gradeDeterministic(base, "True", LABELS)?.score).toBe(1);
-    expect(gradeDeterministic(base, "False", LABELS)?.score).toBe(0);
+    expect(result).toBeNull();
+  });
+
+  it("grades true or false when the key exists", () => {
+    const result = gradeDeterministic(
+      {
+        type: "true-false",
+        answer: "True",
+        reference_answer: "True. MPI_COMM_WORLD contains every process.",
+        max_score: 1,
+      },
+      "False",
+      LABELS,
+    );
+
+    expect(result?.score).toBe(0);
   });
 
   it("returns null for a short answer so the model grades it", () => {
