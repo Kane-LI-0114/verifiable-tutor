@@ -2,11 +2,358 @@
 
 *A course-grounded agent with evidence-checked answers, executable practice labs, and enforced course policy*
 
-Project repository for CSIT6000V Advanced AI Computing and Systems (Fall 2026) by LI Jinchuan, TIAN Yujia, and XIE Yifeng: a course-grounded tutoring agent served from the developer laptop, with TACC as a required model-serving backend reached through job submission.
+Course project for CSIT6000V Advanced AI Computing and Systems (Fall 2026) by LI Jinchuan (21188271), TIAN Yujia (21201619), and XIE Yifeng (21322152). Instructor: Prof. Kai Chen.
 
-## Status
+| Item | Value |
+|---|---|
+| Repository | [https://github.com/Kane-LI-0114/verifiable-tutor](https://github.com/Kane-LI-0114/verifiable-tutor), public |
+| Artifact form | source checkout with the tracked course corpus and TACC results; no VM image, no Docker |
+| Reviewer account | `demo.student@ust.hk` / `vt-demo-2026`, seeded at startup and shown on the login page |
+| First result | about 25 minutes, dominated by the dependency install and the 2.3 GB embedding weights |
+| Test suite | `.venv/bin/python -m pytest`: 455 tests |
 
-**Technology selected; model layer, Qwen knowledge-base round trip, and the first FastAPI backend surface implemented; PRD v0.11 drafted.** The substantive content is the course project proposal v1 (submitted), the v2 draft, and the current v3, the product requirements in [docs/prd.md](docs/prd.md), the domain vocabulary in [GLOSSARY.md](GLOSSARY.md), the technology selection record, twenty ADRs (including the local offline Swagger UI, the persisted conversation turn metadata, the FastAPI backend structure and sessions, LangGraph orchestration, local Langfuse tracing, typed agent tools, and the required TACC model-serving backend with the knowledge base), the local tracing and email runbooks, the knowledge-base schema, configuration and local driver, the Qwen knowledge-base job under `tacc/serve/` with its chunk, request and validation helpers, and the model layer: configuration loading, the unified DeepSeek and MiMo adapter, its pytest suite, and a live smoke script. The Qwen knowledge-base round trip is verified on TACC (job 28067, 2026-11-02: 8 of 8 records valid). The first backend surface is implemented: the FastAPI app factory with health; accounts with scrypt hashing, email verification, password reset, and server-side cookie sessions; streamed chat with the AI SDK UI message stream and JSONL session traces; conversation history with persisted turn metadata (work steps, thinking, model profile, numbered sources, tool calls); session replay; voice transcription and speech; knowledge cards and the Qwen build lifecycle; corpus page images; the practice-run scaffold; and the `tests/api/` suite. A committed offline Swagger UI bundle under [docs/api/](docs/api/) documents the API and is served at `/docs` and `/api-docs/`. The physical SQLite schema the backend creates is documented in the generated [docs/physical-data-model.md](docs/physical-data-model.md), kept separate from the logical ER model in the PRD. Hybrid retrieval over the local chunk store exists as a retriever and a `GET /api/knowledge/retrieve` entry point; the disclosure gate, the LangGraph runtime, the TACC OCR and index jobs' production wiring, chunk injection into the chat prompt, verified citations, span verification, benchmark data, and the evaluation report do not exist yet. The React UI is wired live for authentication, the server-side session, conversation history, streamed chat, and replay, with an offline preview demo selectable with `?preview=1` or a `VITE_PREVIEW=1` build ([docs/ui-structure.md](docs/ui-structure.md)). A chat answer carries a source capsule above its actions, inline `[ref_n]` source markers, rendered as the number only, and a per-answer citation source pane; numbered sources persist in `message_sources` and stream as `data-sources` ([ADR-0020](docs/adr/0020-numbered-turn-sources-and-the-source-pane.md)). Verified citations and highlights, practice execution, the knowledge-card and build pages, the deadline registry, and voice still use preview structures; the knowledge-base browser and the document preview are wired live. Everything else described below as behavior is planned; planned directories appear in the layout table as `placeholder (.gitkeep)` or `planned`. Multi-course deployment is out of scope for this deliverable and is recorded as future development in the PRD.
+This README follows the two-section structure the NSDI '27 Call for Artifacts requires. [Getting Started Instructions](#getting-started-instructions) is the 30-minute kick-the-tires check: install, start, sign in with the seeded student account, and ask one question whose answer cites a page. [Detailed Instructions](#detailed-instructions) is the full evaluation: what each experiment measures, the data and commands that rerun it, the numbers to expect, and the known limitations. The project description, the architecture, and the directory layout follow those two sections.
+
+## Getting Started Instructions
+
+### Prerequisites
+
+| Requirement | Version used | Needed for |
+|---|---|---|
+| macOS or Linux | macOS 15, Ubuntu 22.04 | everything; the commands below are POSIX |
+| Python | 3.12 (developed on 3.12.13) | backend, tests, both experiments |
+| Node.js and npm | 18 or later (developed on 25.9) | building the browser UI |
+| Free disk | about 6 GB | 2.3 GB weights, about 2.5 GB virtual environment, 0.5 GB checkout |
+| Network | PyPI and huggingface.co | installing dependencies and the weights |
+| DeepSeek API key | any active key | live chat in the end-to-end example |
+| TACC account and `tcloud` | optional | only to rerun the OCR, index, and Qwen jobs |
+
+The repository ships the material the default path needs: 16 documents, 593 page records, 612 chunk vectors, and 16 document summaries under `data/corpus/`, `data/index/`, and `data/kb/`. A fresh checkout does not rerun OCR and does not submit a TACC job.
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/Kane-LI-0114/verifiable-tutor.git
+cd verifiable-tutor
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+`requirements.txt` is generated from `pyproject.toml` and `uv.lock` and pins every dependency to an exact version. The install pulls the embedding stack (torch and transformers, about 2 GB). If that stack is not wanted, replace the last two commands with `pip install -e '.[dev]'`; the backend then runs with the lexical retrieval arm only.
+
+### 2. Configure secrets
+
+```bash
+cp .env.example .env
+python3 -c "import secrets; print(secrets.token_hex(32))"   # paste this as SESSION_SECRET
+```
+
+Set `SESSION_SECRET` and `DEEPSEEK_API_KEY` in `.env`. `MIMO_API_KEY` enables the voice routes. The `SMTP_*` keys are only for registration email, which the reviewer account makes unnecessary. `LANGFUSE_*` is optional local tracing. `.env` is gitignored.
+
+### 3. Download the query embedder
+
+```bash
+.venv/bin/hf download BAAI/bge-m3 --local-dir models/bge-m3
+```
+
+The weights are 2.3 GB and live inside the checkout, gitignored. Without them the backend still starts and retrieval reports `"dense": false`, so only the lexical arm answers, with coarser results.
+
+### 4. Restore the course store
+
+```bash
+.venv/bin/python scripts/ingest_corpus.py import
+.venv/bin/python scripts/ingest_corpus.py status
+```
+
+`import` rebuilds the chunks from the tracked page records, applies the tracked `vectors.npy` and `row_map.jsonl`, and writes the local SQLite store. `status` prints one row per document and ends with:
+
+```
+documents=16 pages=593 chunks=612 vectors=612 summaries=16 done=16 failed=0 ok=true
+```
+
+### 5. Start the backend
+
+```bash
+.venv/bin/fastapi dev --port 8000     # API only; interactive schema at /docs
+# or, for the browser UI served on the same origin:
+./start.sh
+```
+
+Startup also seeds the reviewer account. Expected tail:
+
+```
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000
+```
+
+### 6. End-to-end example
+
+Five requests check the whole path from storage to a cited answer. Run them from the repository root in a second terminal.
+
+```bash
+# a. liveness and store health
+curl -s http://127.0.0.1:8000/api/health
+
+# b. the reviewer account, exactly as the login page shows it
+curl -s http://127.0.0.1:8000/api/auth/demo
+
+# c. sign in; the session cookie goes to cookies.txt
+curl -s -c cookies.txt -X POST http://127.0.0.1:8000/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"demo.student@ust.hk","password":"vt-demo-2026"}'
+
+# d. hybrid retrieval over the course corpus
+curl -s -b cookies.txt \
+  'http://127.0.0.1:8000/api/knowledge/retrieve?q=What%20is%20the%20memory%20wall%3F&k=2'
+
+# e. one streamed tutor turn
+curl -s -N -b cookies.txt -X POST http://127.0.0.1:8000/api/chat \
+  -H 'content-type: application/json' \
+  -d '{"message":"According to Lecture 2, what is the memory wall? Cite the page."}'
+```
+
+Expected output, trimmed to the fields worth checking. Observed on 24 November 2026.
+
+```text
+# a
+{"status":"ok","version":"0.1.0","database":"ok"}
+
+# b
+{"email":"demo.student@ust.hk","password":"vt-demo-2026"}
+
+# c
+{"user":{"id":"...","email":"demo.student@ust.hk","role":"student"}}
+
+# d
+{"query":"What is the memory wall?","need_retrieval":true,"lexical":true,"dense":true,
+ "chunks":[{"chunk_id":"ACS_lecture_2_2026F:p011:c00","doc_id":"ACS_lecture_2_2026F",
+            "page_no":11,"section":"Memory Wall","sources":["lexical","dense"]}, ...]}
+
+# e, one server-sent event per line
+data: {"type": "start", "messageId": "..."}
+data: {"type": "data-step", "data": {"step": "retrieve", "status": "started", ...}}
+data: {"type": "data-tool", "data": {"tool_name": "search_course", ...}}
+data: {"type": "data-tool", "data": {"tool_name": "verify_span", ...}}
+data: {"type": "text-delta", "delta": "## The Memory Wall (Lecture 2)"}
+data: {"type": "data-sources", "data": {"sources": [{"doc_id": "ACS_lecture_2_2026F",
+                                                     "page_no": 11, ...}]}}
+data: {"type": "finish"}
+```
+
+Three checks tell you the system works:
+
+- Retrieval answers with `"dense": true` and puts `ACS_lecture_2_2026F` page 11, the "Memory Wall" slide, in the first two chunks.
+- The chat stream runs `search_course`, `read_course_page`, and `verify_span` tool frames before the answer text, so every quoted span was checked against its page.
+- The final turn carries numbered sources. Our run produced 16, from 14 tool calls (six `search_course`, four `read_course_page`, four `verify_span`).
+
+The browser path is the same backend. Open `http://127.0.0.1:8000/` after `./start.sh`, click **Use demo account** on the login page, and ask the same question in the composer. The answer streams with numbered citation chips that open the cited page image.
+
+### 7. Run the tests
+
+```bash
+.venv/bin/python -m pytest                       # 455 tests, all pass
+cd src/verifiable_tutor/ui/web
+npm ci && npm run typecheck && npm run test
+```
+
+The Python suite is green: 455 passed in about two minutes on the development laptop. The Vitest suite passes 264 of 276 tests; the 12 failures are in `tests/practice-page.test.tsx` and `tests/chat-live.test.tsx` and predate this commit (see [Known limitations](#known-limitations-and-expected-variation)).
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `start.sh` exits asking for `SESSION_SECRET` | `.env` missing or empty | step 2 |
+| Retrieval returns `"dense": false` | weights absent | step 3 |
+| `Address already in use` | port 8000 busy | `--port 8001`, or `fastapi dev --port 8001` |
+| Login returns 401 with the hint account | backend started before the account existed | restart the backend and check `/api/auth/demo` |
+| Chat returns a timeout or unavailable message | no network, or an exhausted key | check `DEEPSEEK_API_KEY` and the provider status |
+| `/` returns 404 | the UI was never built | run `./start.sh` without `--no-build` |
+| `import` fails on SQLite | a stale local store from an older schema | delete `data/app/app.sqlite3` and repeat step 4 |
+
+## Detailed Instructions
+
+Everything below runs from the repository root. The default path needs no TACC account; the TACC jobs in section D are optional and exist to rebuild the corpus artifacts that are already tracked.
+
+### What can be reproduced
+
+| Result | Data in the repository | Rerun with | Numbers live in |
+|---|---|---|---|
+| Chunking matrix, RRF sweep, dual-granularity index | 65 questions, a 13-document page snapshot, 9 cells | `experiments/chunking/scripts/run_experiment.py` | [experiments/chunking/RESULTS.md](experiments/chunking/RESULTS.md), [REPORT.md](experiments/chunking/REPORT.md) |
+| Citation accuracy, control against treatment | 15 answers, 11 generated questions, two judged question sets | [benchmarks/results/run_eval.py](benchmarks/results/run_eval.py), plus the manual web baseline | [benchmarks/results/](benchmarks/results/) notes |
+| Self-test generation and grading metrics | a frozen mock run: questions, answers, grades, ground truth | `python -m verifiable_tutor.eval.cli` | [benchmarks/self_test/](benchmarks/self_test/) `metrics.json` |
+| OCR, index, and Qwen knowledge-base jobs | job directories and tracked outputs | `scripts/tacc/` and `tcloud` | [docs/tacc-notes.md](docs/tacc-notes.md) |
+
+### A. Chunking and hybrid retrieval
+
+This is the main quantitative result: which chunking rule puts the correct page in front of the model, and at what token cost. Nine cells share one retrieval stack, so a difference comes only from how pages are cut.
+
+Fixed design, identical in every cell: BGE-M3 dense retrieval plus SQLite FTS5 BM25, reciprocal rank fusion with `k=60`, 30 candidates per arm, page-level deduplication, the raw question text with no rewrite, temperature 0. Primary metric: page-level nDCG@5 on hybrid retrieval over the 51 test questions, with a paired bootstrap (2000 samples, 95 percent interval) and an exact McNemar test for hit rates.
+
+Data:
+
+- `experiments/chunking/questions/retrieval_v1.jsonl`: 65 questions, 14 dev and 51 test, each with gold pages.
+- `data/corpus/pages/`: the tracked page records, now 16 documents.
+- `experiments/chunking/results/page_manifest.json`: the 13 documents and 365 pages the questions were written against.
+
+The corpus grew to 16 documents on 2026-11-23, after the experiment ran. Use the manifest to rebuild the smaller snapshot, so the numbers below are the numbers you get:
+
+```bash
+python3 - <<'PY'
+import json, shutil, pathlib
+manifest = json.load(open("experiments/chunking/results/page_manifest.json"))
+out = pathlib.Path("/tmp/vt-chunking-pages"); out.mkdir(exist_ok=True)
+for name in manifest["files"]:
+    shutil.copy(pathlib.Path("data/corpus/pages") / name, out / name)
+print(len(list(out.glob("*.jsonl"))), "documents,", manifest["pages"], "pages")
+PY
+```
+
+Expected: `13 documents, 365 pages`.
+
+The project virtual environment already holds torch, transformers, and the package, so no second environment is needed. The embedder downloads to `models/bge-m3` in step 3 of Getting Started.
+
+```bash
+export PYTHONPATH="$PWD/src:$PWD/experiments/chunking"
+.venv/bin/python experiments/chunking/scripts/run_experiment.py \
+  --pages /tmp/vt-chunking-pages \
+  run --cells full --calibrate-semantic --run-id repro-01 --model-path models/bge-m3
+```
+
+The run calibrates the semantic threshold on the dev split first and prints, in order, `[calibrate] threshold=0.25 dev_ndcg@5=0.8682 chunks=381`, `threshold=0.3 dev_ndcg@5=0.8588`, `threshold=0.35 dev_ndcg@5=0.8445`, then `selected threshold=0.25`, then one line per cell, then the summary table. It writes `experiments/chunking/results/repro-01/summary.json`.
+
+Expected results on the 51 test questions, hybrid retrieval. This is the table the report cites.
+
+| Cell | nDCG@5 (95 percent CI) | hit@5 | tokens@5 |
+|---|---:|---:|---:|
+| `page_only` | 0.8512 [0.7562, 0.9330] | 0.882 | 1059 |
+| `page_first_128` | 0.8405 [0.7563, 0.9160] | 0.922 | 586 |
+| `page_first_256` | 0.8384 [0.7463, 0.9197] | 0.902 | 760 |
+| `page_first_450` | 0.8487 [0.7532, 0.9314] | 0.882 | 937 |
+| `recursive_128` | 0.8130 [0.7188, 0.8949] | 0.902 | 596 |
+| `recursive_256` | 0.8488 [0.7580, 0.9272] | 0.902 | 811 |
+| `recursive_450` | 0.8562 [0.7677, 0.9343] | 0.902 | 1008 |
+| `semantic_450` | 0.8562 [0.7677, 0.9343] | 0.902 | 1008 |
+| `cross_page_450` | 0.8368 [0.7463, 0.9143] | 0.902 | 944 |
+
+What the numbers mean, and what to check:
+
+- Every paired interval against `page_only` crosses zero, so no cell significantly beats it. `recursive_450` and `semantic_450` lead by 0.005 with 1 win, 49 ties, and 1 loss, which is noise.
+- `page_first_450` is statistically tied with `page_only` and uses 122 fewer tokens for the top five pages, which is why it is the production rule.
+- The lexical arm prefers large chunks and the dense arm prefers small ones; the ablation table in `RESULTS.md` shows `page_first_450` at 0.7786 lexical against `page_first_128` at 0.7270, and dense at 0.8319 against 0.8941. Hybrid ties because the two preferences cancel.
+
+Two optional runs complete the report:
+
+```bash
+# Experiment 2: RRF weight sweep on the three strongest distinct cells
+.venv/bin/python experiments/chunking/scripts/rrf_weights.py --run-id rrf-weights-01
+
+# Experiment 3: dual-granularity index, 1:1 and dense 2:1
+.venv/bin/python experiments/chunking/scripts/dual_granularity.py --run-id dual-granularity-01
+.venv/bin/python experiments/chunking/scripts/dual_granularity.py --run-id dual-dense2-01 --weights 2:1
+```
+
+Expected, RRF (nDCG@5, dense:lexical weights 1:1, 2:1, 1:2): `recursive_450` 0.8562, 0.8302, 0.8412; `page_only` 0.8512, 0.8302, 0.8218; `page_first_450` 0.8487, 0.8302, 0.8337. Every change is worse than 1:1.
+
+Expected, dual granularity (nDCG@5, hit@3, hit@5): `page_first_450` hybrid 0.8487, 0.882, 0.882; `page_first_128` dense only 0.8941, 0.941, 0.980; dual 1:1 0.8567, 0.863, 0.902; dual dense 2:1 0.8596, 0.902, 0.941. Both dual intervals cross zero, and the index costs about 2.7 times as many vectors.
+
+Runtime: the full matrix took 8 minutes on an Apple M-series laptop with MPS, about 4 of them the first embedding pass (2,844 new texts; 4,510 distinct chunk texts across the calibration cells). Vectors are cached by content in `experiments/chunking/data/cache/vectors.db`, so a second run over the same cells takes about a minute. `.venv/bin/python experiments/chunking/scripts/report.py experiments/chunking/results/repro-01/summary.json` prints the Markdown tables from a summary.
+
+### B. Citation accuracy against a hosted chatbot
+
+Experiment Part 2 asks whether each system cites what it says, and whether the citation can be checked without trusting the model. Control: DeepSeek web with the course PDF uploaded. Treatment: this tutor, which retrieves from all 16 documents and verifies each quoted span against its page.
+
+Data and state: `benchmarks/results/part2b_answers.jsonl` holds the treatment's 15 answers with numbered `[ref_N]` sources; `part3a_questions.json` holds 11 generated FlashAttention questions with knowledge points; the two result notes record the judged control and treatment behaviour.
+
+```bash
+# with the backend running (step 5 of Getting Started), regenerate the treatment side
+.venv/bin/python benchmarks/results/run_eval.py
+```
+
+The script logs in with the account in its `main` function, posts the 15 questions to `/api/chat`, parses the AI SDK stream, and writes both files. Change the email and password in the script if you seeded a different account. It prints one line per question with latency, answer length, and source count.
+
+Expected: 15 answers, each with numbered sources, in about four minutes. The judged result to reproduce is in [citation-accuracy-lecture2-q1-q5.md](benchmarks/results/citation-accuracy-lecture2-q1-q5.md) and [citation-accuracy-tutorial4-q6-q10.md](benchmarks/results/citation-accuracy-tutorial4-q6-q10.md):
+
+- The control's positive citations are all correct: 18 of 18 quoted spans are on the page it names.
+- The control's negative claims are all wrong: 4 of 4 "the PDF does not mention X" claims point at material that is present (CXL on pages 60, 66, and 67; bank conflict on page 51; locality on pages 22 to 24; registers and shared memory on pages 43 and 50).
+- The treatment answers those three questions and cites the pages.
+- On a 40-page tutorial the control stopped at page 12; the treatment retrieved across all pages.
+
+Checking a treatment citation needs no model: the span verifier compares the quoted text with the tracked page record, and the same check runs in the chat stream as `verify_span`. The control side is judged by hand, because the web product exposes no API; the notes date each run.
+
+### C. Self-test generation and grading
+
+This is RQ2. The protocol is [docs/benchmark-protocol.md](docs/benchmark-protocol.md): two topics, two systems (this agent and DeepSeek web with the chapter PDF), blind annotation, a frozen shared grading set of 8 questions with 4 simulated answers each, developer ground truth, and both graders run on the same items. Metrics: knowledge-point coverage, question validity, reference-answer verifiability, citation validity, and for grading exact match, within-one-point agreement, normalized mean absolute error, false-pass rate, and false-fail rate.
+
+Data layout and the step-by-step checklist are in [benchmarks/self_test/](benchmarks/self_test/) (`RQ2_checklist.md`, `annotation_template.md`, `knowledge_points.yaml`). The committed `run-mock` directories are a frozen fixture that proves the metric arithmetic; the FlashAttention generation runs hold the web transcripts.
+
+```bash
+.venv/bin/python -m verifiable_tutor.eval.cli rq2a benchmarks/self_test/generation/run-mock --expected-points 5
+.venv/bin/python -m verifiable_tutor.eval.cli rq2b benchmarks/self_test/grading_shared/run-mock --grader b
+```
+
+Expected output, byte for byte the committed `metrics.json`:
+
+```json
+{"run_id": "run-mock", "knowledge_point_coverage": 0.8, "question_validity_rate": 0.8,
+ "reference_answer_verifiability": 0.8, "citation_validity": 0.75}
+{"run_id": "run-mock", "grader": "b", "exact_match_rate": 1.0,
+ "within_one_point_agreement": 1.0, "normalized_mae": 0.0,
+ "false_pass_rate": 0.0, "false_fail_rate": 0.0}
+```
+
+A live RQ2 run needs two annotators, one DeepSeek web session per topic, and the simulated answers from `scripts/simulate_student_answers.py`; the checklist is the procedure and the numbers are written back to `metrics.json`. This is a small-sample course benchmark, and the protocol states that a tie is reported as a tie.
+
+### D. Optional: the TACC model-serving path
+
+The corpus artifacts under `data/` were produced by three submitted jobs, and the tracked results mean a reviewer never has to run them. To rerun them, configure the platform CLI with `tcloud config -u <user> -f <key>` and `tcloud init`, then:
+
+```bash
+.venv/bin/python scripts/ingest_corpus.py ocr --batch lectures     # GPU OCR job
+.venv/bin/python scripts/ingest_corpus.py index --force            # BGE-M3 index job
+.venv/bin/python scripts/ingest_corpus.py summarize --resume       # Qwen knowledge cards
+```
+
+Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 28242 on 2026-11-05, refreshed as jobs 31009 to 31014 on 2026-11-23 for lectures 3 to 5; the Qwen knowledge-base round trip is job 28067 with a 434 s vLLM cold start and 8 of 8 valid records. `index --force` is required over the whole corpus, because an index job replaces the vector file with the rows it computed. Job budgets, queue behaviour, and the one-hour limit are in [docs/tacc-notes.md](docs/tacc-notes.md).
+
+### Mapping from results to the report
+
+| Reported item | Repository artifact that holds it | Command that produces it |
+|---|---|---|
+| Table 1, nine-cell chunking matrix (nDCG, hit, tokens, truncation) | `experiments/chunking/REPORT.md` Experiment 1, `RESULTS.md` main table | the `run_experiment.py` command in section A |
+| Table 2, RRF weight sweep | `REPORT.md` Experiment 2, `RESULTS.md` RRF section | `rrf_weights.py` |
+| Table 3, dual-granularity index | `REPORT.md` Experiment 3, `RESULTS.md` dual section | `dual_granularity.py` |
+| Lexical and dense ablation, category and page-length breakdown | `RESULTS.md` ablation and breakdown sections | `report.py` on `summary.json` |
+| Citation accuracy: precision, negative claims, long-document recall | the two `citation-accuracy-*.md` notes | `run_eval.py`, plus the dated manual control run |
+| RQ2a and RQ2b tables | `benchmarks/self_test/*/metrics.json` | `verifiable_tutor.eval.cli` |
+| System and container diagram | `proposal/figs/fig2_components_v3.png` and its `.dot` source | `dot -Gdpi=300 -Tpng proposal/figs/fig2_components_v3.dot -o proposal/figs/fig2_components_v3.png` |
+
+### Known limitations and expected variation
+
+- **The corpus grew after the chunking run.** The experiment used 13 documents and 365 pages; the tracked corpus now has 16 documents and 593 pages. Section A pins the snapshot from `page_manifest.json`. Run against the current corpus on 2026-11-24, the same command gives `page_only` 0.8316 and `page_first_450` 0.8487 on the test split; every paired interval still crosses zero, and `page_first_450` stays tied and cheaper, so the conclusion does not change.
+- **Page records were regenerated after the run.** The sha256 values recorded in `page_manifest.json` no longer match the tracked files, because the OCR stage re-exported them. Page numbering and page text are unchanged. A rerun on 2026-11-24 on macOS with MPS reproduced six of the nine hybrid cells exactly and the other three within 0.005 nDCG. The dense arms of three small-chunk cells moved by up to 0.015, because those cells carry up to 48 oversize chunks that BGE truncates at 512 tokens, so the weight of the last tokens depends on the device. Every paired interval still crosses zero, and the ordering among statistically tied cells can swap, which is what the intervals are for.
+- **Embedding device and library version.** Ranking is stable across CPU and MPS; the fourth decimal of nDCG can move. The original environment is recorded in `experiments/chunking/results/environment.json`.
+- **Live model output varies.** Chat answers differ between runs. The citation verdicts do not depend on the model: the span verifier compares quoted text with the tracked page record. The response cache under `data/caches/` reduces paid calls; delete it to force fresh calls.
+- **The control arm is a moving product.** DeepSeek web changes without notice, so the control side of section B is dated, transcribed, and judged by hand. The notes are the reproducibility mechanism.
+- **RQ2 committed numbers are a mock run.** They validate the harness, not the hypothesis. A live run needs annotators and web sessions, as the protocol states.
+- **Twelve stale UI tests.** `npm run test` reports 264 of 276 passing; `tests/practice-page.test.tsx` and `tests/chat-live.test.tsx` still assert the pre-live practice and chat pages. The Python suite, which covers the backend contract, is green.
+- **Small samples.** 65 retrieval questions, 15 citation answers, and 8 graded items with 4 variants each. These are course-project signals, not validated benchmarks; the protocol says a tie is a tie.
+- **TACC timing is queue dependent.** Job ids and measured cold starts are recorded, not promised. The one-hour partition limit is why the knowledge-base job is sharded.
+- **Some UI surfaces are preview-only.** The knowledge-card browser and the build console render fixtures; the build itself needs a TACC account.
+
+### Cost and runtime
+
+| Step | Wall time | Notes |
+|---|---|---|
+| `pip install -r requirements.txt` | 5 to 10 minutes | about 2 GB of wheels |
+| BGE-M3 download | 3 to 10 minutes | 2.3 GB |
+| `ingest_corpus.py import` | about 30 seconds | 612 chunks from tracked records |
+| `.venv/bin/python -m pytest` | 2 to 4 minutes | 455 tests, no network |
+| Chunking matrix, section A | about 8 minutes | 9 cells, first embedding pass |
+| RRF sweep and dual granularity | about 2 and 4 minutes | reuse the vector cache |
+| Citation run, section B | about 4 minutes | 15 chat turns, paid model calls |
+| RQ2 metrics on the frozen run | under a second | no model calls |
 
 ## What it is
 
@@ -18,7 +365,7 @@ Students can:
 - Ask course questions and receive answers that cite the exact page and quoted span.
 - Ask by voice: record in the composer for transcription, or attach an audio file for MiMo 2.6 to analyze; play assistant answers as speech.
 - Request a review outline or self-test questions on a topic; answer them and receive graded feedback with citations.
-- Practise with a generated exercise at the scale and environment of the corresponding assignment, receiving a reference solution, tests, and a stepwise explanation; code answers run as TACC jobs.
+- Practise with a generated exercise at the scale and environment of the corresponding assignment, receiving a reference solution, tests, and a stepwise explanation; code answers are graded by the model against the scoring points.
 - Submit their own solution and receive line-anchored teaching.
 - Browse the course knowledge base built by Qwen on TACC; the agent uses the cards for review outlines and self-tests.
 
@@ -28,7 +375,7 @@ Instructors and TAs can:
 
 ## Disclosure policy
 
-A five-state policy decides what the agent may reveal. The states are pre-release, active, extension window, post-deadline, and unknown; the gate that enforces them is planned, not implemented.
+A five-state policy decides what the agent may reveal. The states are pre-release, active, extension window, post-deadline, and unknown.
 
 | Policy state | What the agent does |
 |---|---|
@@ -40,23 +387,40 @@ The gate is code, not a prompt: a versioned registry of release and due dates wi
 
 ## Architecture
 
-The planned system has four moving parts: a React browser UI served by the agent backend, the local FastAPI backend and its stores, a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), and a required TACC model-serving path. TACC runs two submitted model jobs: the BGE-M3 index job and the Qwen knowledge-base enrichment job. The Qwen job reads course chunks and a request from `USERDIR`, writes cited knowledge cards as JSONL, and exits; the local backend polls, downloads, validates, and stores them. TACC is reached only through job submission, with no SSH forwarding or inbound service ([ADR-0011](docs/adr/0011-tacc-as-required-model-serving-backend.md)). The agent workflow is a LangGraph `StateGraph` ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)), and local development traces model calls and graph steps into a self-hosted Langfuse instance ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)). The retrieval index is built on TACC with BGE-M3, and query embedding runs on the laptop ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
+The system has four moving parts: a React browser UI served by the agent backend, the local FastAPI backend and its stores, a model-client abstraction over external OpenAI-compatible APIs (DeepSeek primary, Xiaomi MiMo selectable, with no automatic cross-model fallback), and a required TACC model-serving path. TACC runs two submitted model jobs: the BGE-M3 index job and the Qwen knowledge-base enrichment job. The Qwen job reads course chunks and a request from `USERDIR`, writes cited knowledge cards as JSONL, and exits; the local backend polls, downloads, validates, and stores them. TACC is reached only through job submission, with no SSH forwarding or inbound service ([ADR-0011](docs/adr/0011-tacc-as-required-model-serving-backend.md)). The agent workflow is a LangGraph `StateGraph` ([ADR-0008](docs/adr/0008-langgraph-as-agent-orchestration-runtime.md)), and local development traces model calls and graph steps into a self-hosted Langfuse instance ([ADR-0007](docs/adr/0007-langfuse-for-local-model-call-tracing.md), [docs/langfuse-local.md](docs/langfuse-local.md)). The retrieval index is built on TACC with BGE-M3, and query embedding runs on the laptop ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)). The project environment is a pinned layer installed into the user workspace; the platform does not support custom images ([ADR-0001](docs/adr/0001-pinned-python-environment-without-docker.md)).
 
 ![System containers and components](proposal/figs/fig2_components_v3.png)
 
 The Qwen knowledge-base job loads Qwen3.8-27B-AWQ-INT4 with vLLM at TP=2 and 32K context inside one submitted job per document shard and exits; no endpoint is exposed. Interactive text generation uses external APIs configured in `config/models.yaml` with keys in `.env` ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)); Qwen is the required offline text-processing backend ([ADR-0011](docs/adr/0011-tacc-as-required-model-serving-backend.md)). The figure source is [proposal/figs/fig2_components_v3.dot](proposal/figs/fig2_components_v3.dot).
 
-The planned subsystems inside the backend (the agent loop and model layer are implemented; the rest are planned):
+The subsystems inside the backend:
 - Agent loop (implemented 2026-11-06): a two-node LangGraph graph calls the model, executes a closed typed tool set (course search, page reading, DeepSeek search, DeepSeek fetch), returns the results to the model, and streams step, tool, text, and reasoning frames; reasoning and tool calls persist as ordered work-chain events with their step association in schema version 5 ([ADR-0016](docs/adr/0016-minimal-agent-loop-and-typed-tools.md), [ADR-0017](docs/adr/0017-ordered-work-chain-events.md), [ADR-0019](docs/adr/0019-step-event-association.md)).
 - Accounts: email and password sign-in restricted to course student domains, with a verification code, password reset, scrypt hashing, and server-side sessions; a student and an instructor role. The requirements are in [docs/prd.md](docs/prd.md) and the QQ Mail procedure in [docs/email-local.md](docs/email-local.md).
 - Evidence: a TACC OCR job parses PDF files, one file per request, into page records with page numbers, block boxes, reading order, and page images ([ADR-0002](docs/adr/0002-ocr-on-tacc-with-paddleocr-vl.md), [docs/corpus-schema.md](docs/corpus-schema.md)); `scripts/tacc/parse_pdf.py` runs the whole local-to-TACC round trip and returns per-page JSONL plus one document markdown; hybrid retrieval fuses SQLite FTS5 BM25 with BGE-M3 dense embeddings and an optional reranker ([ADR-0004](docs/adr/0004-hybrid-retrieval-with-bge-m3.md)); a deterministic span verifier requires every quoted span to occur on its cited page, with one repair round or abstention.
-- Practice lab and self-test: generated questions in the types the student asks for or the agent chooses, with cited reference answers; reference tests and student code answers execute as TACC jobs, and the agent grades the answers with citations. The first pack is MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness; a generated reference solution is accepted only after it compiles and passes the pack's tests.
+- Practice lab and self-test: generated questions in the types the student asks for or the agent chooses, with cited reference answers; choice questions are graded deterministically and open and code answers are graded by the model against the scoring points, with citations. The pack design is MPI/GEMM with the same toolchain, Makefile, public datasets, and an sdk-test-style harness; a generated reference solution is accepted only after it compiles and passes the pack's tests.
 - Knowledge base: a TACC Qwen job builds cited knowledge cards for course chunks; the backend polls the job, downloads and validates the records, and stores them locally for browsing, review outlines, and self-tests ([ADR-0011](docs/adr/0011-tacc-as-required-model-serving-backend.md), [docs/knowledge-schema.md](docs/knowledge-schema.md)).
 - Policy gate: the code-level gate described above, plus the versioned deadline registry it reads.
 - Teaching explainer: cites page spans, code lines, and test outcomes, and never invents missing content before the deadline.
 - Model client and trace logger: external OpenAI-compatible APIs are primary for interactive text (DeepSeek, and Xiaomi MiMo when the user or config selects it, including audio). A failed call retries the selected model and then shows a timeout or unavailable message; it never switches models, configured in `config/models.yaml` with keys in `.env`; Qwen on TACC is the required offline knowledge-base backend, not a chat provider; every call is labelled and cached; audio-file input is supported when a MiMo 2.6 model is selected, the composer microphone uses MiMo ASR, and assistant text can be spoken with MiMo TTS ([model-providers.md](docs/model-providers.md)); traces, tests, and results follow the required execution path from task to visible result ([ADR-0005](docs/adr/0005-external-model-apis-as-primary.md)).
 
 The browser UI is a React single-page application with shadcn and AI Elements components, served as static assets by the backend on one origin. The page structure, routes, component map, and preview fixtures are in [docs/ui-structure.md](docs/ui-structure.md); the preview build makes no API request. Streaming uses the AI SDK UI message stream protocol, so the same frontend path serves live and replay sessions ([ADR-0003](docs/adr/0003-react-spa-with-ai-elements.md)). The job topology, batch windows, and demo modes are in [docs/tech-selection.md](docs/tech-selection.md#jobs-and-demo-modes).
+
+## Implementation status
+
+Everything marked implemented runs on the development laptop and is covered by the Python suite; the rest is stated so a reviewer does not look for it.
+
+| Area | State |
+|---|---|
+| Model layer | implemented: DeepSeek and MiMo adapters, streaming, ASR, TTS, content-addressed cache, live smoke |
+| Backend | implemented: health, accounts and sessions, streamed chat, history and replay, voice, knowledge browser, corpus page images, practice |
+| Agent loop | implemented: two-node LangGraph, typed tools (course search, page read, DeepSeek search and fetch, span verify), ordered work-chain events, numbered sources |
+| Retrieval | implemented: FTS5 BM25 plus BGE-M3 with RRF and page deduplication; the span verifier is implemented, claim support is pending |
+| Policy gate | implemented: five states, versioned deadline registry, intent classification, decision log |
+| Practice | implemented: question generation, deterministic grading for choice questions, model grading for open and code answers |
+| Knowledge base | implemented: the Qwen job, record validation, the local store, and browsing; the card browser and the build console are preview pages |
+| Corpus pipeline | implemented on TACC: OCR, the BGE-M3 index, and document summaries; the artifacts are tracked |
+| Evaluation | implemented: the chunking matrix, the citation study, and the RQ2 harness |
+| Not built | the SQLite checkpointer, the six-node topology, TACC code execution, multi-course support |
 
 ## Repository layout
 
@@ -86,12 +450,13 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/index/` | TACC GPU job for BGE-M3 chunk embeddings (vectors, row map, summary) | present: index job |
 | `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
-| `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, recorded results | placeholder (`.gitkeep`) |
+| `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, and recorded results; `results/` holds the citation study data, its notes, and the evaluation script | `results/`: present; `questions/` and `policy_scenarios/`: placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
 | `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state | `data/corpus/`, `data/index/`, and `data/kb/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
 | `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
 | `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, the live model smoke, the API documentation build and vendor scripts, and the physical data model build script | present: scripts |
+| `experiments/` | Self-contained experiments that import the application read only: the chunking and hybrid-retrieval study, its 65 questions, tracked summaries, and its English and Chinese reports | present: chunking experiment |
 | `tests/` | Test suites under `tests/llm/` (configuration, chat, streaming, transcription, search, fetch), `tests/knowledge/` (chunks, request, schema), `tests/tacc/` (Qwen job worker, driver validation), `tests/api/` (HTTP contracts, accounts, chat, replay, voice, knowledge, corpus, SPA deep links), `tests/storage/` (schema upgrade, turn metadata), and `tests/docs/` (generated data model drift); the UI tests live inside the Vite project at `src/verifiable_tutor/ui/web/tests/` | present: tests |
 | `pyproject.toml`, `uv.lock`, `requirements.txt` | Python packaging, dependencies, pytest configuration, and locked local environment; `requirements.txt` is generated from the lock with exact version pins for the runtime, the `dev` extra, and the `embedding` extra | present: packaging |
 | `start.sh` | One-command local start: install UI dependencies when needed, build the SPA, and run the backend on one origin; flags for the Vite dev server, skipping the build, and the backend port | present: start script |
@@ -114,85 +479,9 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `docs/tacc-notes.md` | Platform constraints, budgets, and mechanics | present: notes |
 | `proposal/` | Proposal sources: v1 `proposal.md`, v2 `proposal_v2.md`, and v3 `proposal_v3.md`, `build_proposal.py`, figure `.dot` sources, rendered PDFs, DOCX files, and v3 previews | present: proposal sources |
 
-## Local environment
-
-The backend and the browser UI run on the developer laptop. TACC is reached only through job submission, so a local setup needs Python, Node, the model API keys, and optionally the local BGE-M3 weights for the dense retrieval arm. Prerequisites: Python 3.12 and Node 18 or later with npm; the TACC command line is needed only for the OCR, index, and knowledge-base jobs.
-
-1. Create the Python environment. [requirements.txt](requirements.txt) is generated from `pyproject.toml` and `uv.lock` and pins every dependency to an exact version, so plain `pip` reproduces the locked environment:
-
-   ```bash
-   python3.12 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   pip install -e .
-   ```
-
-   The same steps with `uv`: `uv venv .venv --python 3.12`, `uv pip install -r requirements.txt`, `uv pip install -e .`. The file covers the runtime, the `dev` extra, and the optional `embedding` extra (torch and transformers); `pip install -e '.[dev]'` skips the embedding stack when the local dense arm is not wanted. Regenerate the file with the command in [AGENTS.md](AGENTS.md#toolchain-and-commands) after a dependency change, and never edit it by hand.
-
-2. Configure the secrets. Copy the template and fill in the keys:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   `DEEPSEEK_API_KEY` serves chat and search, `MIMO_API_KEY` serves image, audio, and speech calls, and `SESSION_SECRET` signs the session cookie and must be non-empty before `./start.sh` runs. `SMTP_*` is only for registration and reset email ([docs/email-local.md](docs/email-local.md)), and `LANGFUSE_*` is optional local tracing ([docs/langfuse-local.md](docs/langfuse-local.md)). `.env` is gitignored; never commit it.
-
-3. The embedding weights. Dense retrieval loads `BAAI/bge-m3` from `embedding.model_path` in [config/models.yaml](config/models.yaml), which is the checkout-local `models/bge-m3` and resolves against the repository root:
-
-   ```bash
-   .venv/bin/hf download BAAI/bge-m3 --local-dir models/bge-m3
-   ```
-
-   The weights are about 2.3 GB and are runtime artifacts, not source: they live inside the checkout but are gitignored, so a clone needs this download once. Without the weights the backend still starts, says the dense arm is unavailable, and falls back to the lexical arm.
-
-4. Build the UI and start the app:
-
-   ```bash
-   ./start.sh
-   ```
-
-   The script installs the UI dependencies when the lockfile is newer, builds the SPA, and serves the UI with the API on `http://127.0.0.1:8000/`. `./start.sh --dev` runs the Vite dev server beside the backend, `--no-build` reuses the last build, `--preview` builds the offline demo, and `--port` changes the port. For the backend alone, run `.venv/bin/fastapi dev`; a missing UI build only disables the UI mount.
-
-5. Run the tests:
-
-   ```bash
-   .venv/bin/python -m pytest
-   ```
-
-TACC jobs use their own pinned layer, [scripts/tacc/requirements-tacc.txt](scripts/tacc/requirements-tacc.txt) (PaddleOCR, PaddlePaddle, `pypdfium2`), installed into `$HOME` by `scripts/tacc/bootstrap.sh`; the submit, poll, and download workflow is in [AGENTS.md](AGENTS.md#tacc-and-model-serving). Runtime state under `data/app/` and `data/caches/`, and the local model weights under `models/`, are gitignored; the tracked corpus and TACC results live under `data/corpus/`, `data/index/`, and `data/kb/`.
-
-## Evaluation plan
-
-All evaluation work is planned and the repository contains no results. The project is task-oriented (the course brief's task learning and adaptation direction): it quantifies tutoring-task performance against baselines, and reports efficiency as a secondary metric in RQ4. Four research questions, detailed in [proposal section 4](proposal/proposal_v3.md#4-evaluation-plan):
-
-- RQ1 evidence fidelity: citation span accuracy (deterministic) and faithfulness (human-checked support rate).
-- RQ2 practice and self-test verifiability: the share of generated questions whose reference answer compiles and passes course-style tests, environment alignment, cost per question, and grading consistency on a small constructed sample.
-- RQ3 disclosure correctness: behavior across the five policy states, including a deadline extension, and an adversarial set (false "deadline passed" claims, TA impersonation, role-play, pasted "official" solutions) against a prompt-only baseline.
-- RQ4 cost: end-to-end latency, model calls per request, TACC queue and cold-start time for the knowledge-base job, and a retrieval ablation over BM25, dense, and hybrid variants.
-
-The benchmark is planned to hold fifty course questions, ten policy scenarios, one MPI/GEMM practice pack, and a shared self-test grading set, with later-released sessions held out; runs use temperature 0, cached retrieval snapshots and responses, and an injected clock. The required TACC workflow is reported separately: one knowledge-base build runs end to end, and its job id, queue, cold-start, build time, coverage, and schema validity go into the report.
-
-## Roadmap
-
-The four one-week workstreams from proposal v3 Table 1 (planned):
-
-| Workstream | W1 | W2 | W3 | W4 |
-|---|---|---|---|---|
-| Corpus and OCR pipeline | X | | | |
-| Hybrid index and retrieval | X | X | | |
-| Span verifier | | X | | |
-| Policy engine and registry | | X | X | |
-| Practice pack and tests | | | X | |
-| Explainer | | | X | |
-| UI and replay mode | | | X | X |
-| Evaluation, report, demo | | | | X |
-
-Deliverables: the code repository, the evaluation report, the tested demo, and the final presentation.
-
-Multi-course support is out of scope for this deliverable and is recorded as future development in [docs/prd.md](docs/prd.md#future-development).
-
 ## Documentation
 
+- [experiments/chunking/REPORT.md](experiments/chunking/REPORT.md): the chunking experiment report, with [RESULTS.md](experiments/chunking/RESULTS.md) for the data and [README.md](experiments/chunking/README.md) for the runbook.
 - [proposal/proposal_v3.md](proposal/proposal_v3.md): readable Markdown text of the current proposal, generated by `proposal/build_proposal.py --version 3`.
 - [proposal/proposal_v2.md](proposal/proposal_v2.md): Markdown text of the previous draft, kept for history.
 - [proposal/proposal.md](proposal/proposal.md): Markdown text of the submitted v1 proposal, kept frozen.
