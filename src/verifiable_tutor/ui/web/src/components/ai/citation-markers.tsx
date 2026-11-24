@@ -111,7 +111,7 @@ function markerFromHref(href: string | undefined): number | null {
 }
 
 const MARKER_CLASS =
-  "mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-border bg-muted/50 px-1 align-baseline font-mono text-[11px] tabular-nums leading-none text-foreground no-underline transition-colors hover:border-foreground/30 hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none";
+  "mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-primary/25 bg-primary/10 px-1 align-baseline font-mono text-[11px] tabular-nums leading-none text-primary no-underline transition-colors hover:border-primary/50 hover:bg-primary/15 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none";
 
 const DefaultLink = defaultComponents.a as ComponentType<
   Record<string, unknown>
