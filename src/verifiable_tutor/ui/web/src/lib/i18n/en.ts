@@ -284,6 +284,7 @@ export const en = {
     scored: "Scored",
     gradingTitle: "Grading",
     score: "{{score}} of {{max}}",
+    boolean: { true: "True", false: "False" },
     verdicts: { correct: "Correct", partial: "Partially correct", incorrect: "Incorrect" },
     explanation: "Explanation",
     referenceAnswer: "Reference answer",
