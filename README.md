@@ -262,9 +262,9 @@ Runtime: the full matrix took 8 minutes on an Apple M-series laptop with MPS, ab
 
 ### B. Citation accuracy against a hosted chatbot
 
-Experiment Part 2 asks whether each system cites what it says, and whether the citation can be checked without trusting the model. Control: DeepSeek web with the course PDF uploaded. Treatment: this tutor, which retrieves from all 16 documents and verifies each quoted span against its page.
+Experiment Part 2 asks whether each system cites what it says, and whether the citation can be checked without trusting the model. Control: three general web LLMs (Gemini, Doubao, and Qwen) with the course PDF uploaded. Treatment: this tutor, which retrieves from all 16 documents and verifies each quoted span against its page.
 
-Data and state: `benchmarks/results/part2b_answers.jsonl` holds the treatment's 15 answers with numbered `[ref_N]` sources; `part3a_questions.json` holds 11 generated FlashAttention questions with knowledge points; the two result notes record the judged control and treatment behaviour.
+Data and state: `benchmarks/results/part2b_answers.jsonl` holds the treatment's 15 answers with numbered `[ref_N]` sources; `part3a_questions.json` holds 10 generated FlashAttention questions with knowledge points; the per-assistant notes under `benchmarks/results/` record the judged control and treatment behaviour.
 
 ```bash
 # with the backend running (step 5 of Getting Started), regenerate the treatment side
@@ -273,18 +273,18 @@ Data and state: `benchmarks/results/part2b_answers.jsonl` holds the treatment's 
 
 The script logs in with the account in its `main` function, posts the 15 questions to `/api/chat`, parses the AI SDK stream, and writes both files. Change the email and password in the script if you seeded a different account. It prints one line per question with latency, answer length, and source count.
 
-Expected: 15 answers, each with numbered sources, in about four minutes. The judged result to reproduce is in [citation-accuracy-lecture2-q1-q5.md](benchmarks/results/citation-accuracy-lecture2-q1-q5.md) and [citation-accuracy-tutorial4-q6-q10.md](benchmarks/results/citation-accuracy-tutorial4-q6-q10.md):
+Expected: 15 answers, each with numbered sources, in about four minutes. The judged results to reproduce are the new-question summary and per-assistant notes under [benchmarks/results/](benchmarks/results/) (`new-question-summary.md` and the `new-question-*.md` files):
 
-- The control's positive citations are all correct: 18 of 18 quoted spans are on the page it names.
-- The control's negative claims are all wrong: 4 of 4 "the PDF does not mention X" claims point at material that is present (CXL on pages 60, 66, and 67; bank conflict on page 51; locality on pages 22 to 24; registers and shared memory on pages 43 and 50).
-- The treatment answers those three questions and cites the pages.
-- On a 40-page tutorial the control stopped at page 12; the treatment retrieved across all pages.
+- Recall: Gemini and Qwen retrieved the late-page content (bank conflict on page 51, CXL on pages 60 to 67) that Doubao missed.
+- Invention: Gemini and Qwen each quoted "materializing S and P in HBM" from the FlashAttention paper, which the course does not contain; Gemini also quoted "IO-aware tiling".
+- Page accuracy: Gemini was the most accurate; Doubao mislabeled Tutorial 4 as Tutorial 3, and Qwen's Lecture 2 page numbers were systematically one too low.
+- The treatment answered all 15 questions with programmatic `[ref_N]` citations and none of the three failure modes.
 
 Checking a treatment citation needs no model: the span verifier compares the quoted text with the tracked page record, and the same check runs in the chat stream as `verify_span`. The control side is judged by hand, because the web product exposes no API; the notes date each run.
 
 ### C. Self-test generation and grading
 
-This is RQ2. The protocol is [docs/benchmark-protocol.md](docs/benchmark-protocol.md): two topics, two systems (this agent and DeepSeek web with the chapter PDF), blind annotation, a frozen shared grading set of 8 questions with 4 simulated answers each, developer ground truth, and both graders run on the same items. Metrics: knowledge-point coverage, question validity, reference-answer verifiability, citation validity, and for grading exact match, within-one-point agreement, normalized mean absolute error, false-pass rate, and false-fail rate.
+This is RQ2. The protocol is [docs/benchmark-protocol.md](docs/benchmark-protocol.md): two topics, this agent and three general web LLMs (Gemini, Doubao, and Qwen) with the chapter PDF, blind annotation, a frozen shared grading set of 8 questions with 4 simulated answers each, developer ground truth, and the graders run on the same items. Metrics: knowledge-point coverage, question validity, reference-answer verifiability, citation validity, and for grading exact match, within-one-point agreement, normalized mean absolute error, false-pass rate, and false-fail rate.
 
 Data layout and the step-by-step checklist are in [benchmarks/self_test/](benchmarks/self_test/) (`RQ2_checklist.md`, `annotation_template.md`, `knowledge_points.yaml`). The committed `run-mock` directories are a frozen fixture that proves the metric arithmetic; the FlashAttention generation runs hold the web transcripts.
 
@@ -303,7 +303,7 @@ Expected output, byte for byte the committed `metrics.json`:
  "false_pass_rate": 0.0, "false_fail_rate": 0.0}
 ```
 
-A live RQ2 run needs two annotators, one DeepSeek web session per topic, and the simulated answers from `scripts/simulate_student_answers.py`; the checklist is the procedure and the numbers are written back to `metrics.json`. This is a small-sample course benchmark, and the protocol states that a tie is reported as a tie.
+A live RQ2 run needs two annotators, one general web LLM session per topic, and the simulated answers from `scripts/simulate_student_answers.py`; the checklist is the procedure and the numbers are written back to `metrics.json`. This is a small-sample course benchmark, and the protocol states that a tie is reported as a tie.
 
 ### D. Optional: the TACC model-serving path
 
@@ -325,7 +325,7 @@ Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 282
 | Table 2, RRF weight sweep | `REPORT.md` Experiment 2, `RESULTS.md` RRF section | `rrf_weights.py` |
 | Table 3, dual-granularity index | `REPORT.md` Experiment 3, `RESULTS.md` dual section | `dual_granularity.py` |
 | Lexical and dense ablation, category and page-length breakdown | `RESULTS.md` ablation and breakdown sections | `report.py` on `summary.json` |
-| Citation accuracy: precision, negative claims, long-document recall | the two `citation-accuracy-*.md` notes | `run_eval.py`, plus the dated manual control run |
+| Citation accuracy: recall, invented quotes, page accuracy | `new-question-summary.md` and the per-assistant `new-question-*.md` notes | `run_eval.py`, plus the dated manual control run |
 | RQ2a and RQ2b tables | `benchmarks/self_test/*/metrics.json` | `verifiable_tutor.eval.cli` |
 | System and container diagram | `proposal/figs/fig2_components_v3.png` and its `.dot` source | `dot -Gdpi=300 -Tpng proposal/figs/fig2_components_v3.dot -o proposal/figs/fig2_components_v3.png` |
 
@@ -335,7 +335,7 @@ Recorded evidence: OCR and index jobs 28201, 28215, 28227, 28214, 28237, and 282
 - **Page records were regenerated after the run.** The sha256 values recorded in `page_manifest.json` no longer match the tracked files, because the OCR stage re-exported them. Page numbering and page text are unchanged. A rerun on 2026-11-24 on macOS with MPS reproduced six of the nine hybrid cells exactly and the other three within 0.005 nDCG. The dense arms of three small-chunk cells moved by up to 0.015, because those cells carry up to 48 oversize chunks that BGE truncates at 512 tokens, so the weight of the last tokens depends on the device. Every paired interval still crosses zero, and the ordering among statistically tied cells can swap, which is what the intervals are for.
 - **Embedding device and library version.** Ranking is stable across CPU and MPS; the fourth decimal of nDCG can move. The original environment is recorded in `experiments/chunking/results/environment.json`.
 - **Live model output varies.** Chat answers differ between runs. The citation verdicts do not depend on the model: the span verifier compares quoted text with the tracked page record. The response cache under `data/caches/` reduces paid calls; delete it to force fresh calls.
-- **The control arm is a moving product.** DeepSeek web changes without notice, so the control side of section B is dated, transcribed, and judged by hand. The notes are the reproducibility mechanism.
+- **The control arm is a moving product.** The general web LLMs change without notice, so the control side of section B is dated, transcribed, and judged by hand. The notes are the reproducibility mechanism.
 - **RQ2 committed numbers are a mock run.** They validate the harness, not the hypothesis. A live run needs annotators and web sessions, as the protocol states.
 - **Small samples.** 65 retrieval questions, 15 citation answers, and 8 graded items with 4 variants each. These are course-project signals, not validated benchmarks; the protocol says a tie is a tie.
 - **TACC timing is queue dependent.** Job ids and measured cold starts are recorded, not promised. The one-hour partition limit is why the knowledge-base job is sharded.
@@ -430,12 +430,12 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `.githooks/` | Versioned Git hooks; the pre-commit hook keeps the physical data model documents in sync with the SQLite schema | present: pre-commit |
 | `src/verifiable_tutor/auth/` | Accounts, authentication, sessions, and roles | present: accounts, sessions, email seam, seeding |
 | `src/verifiable_tutor/api/` | FastAPI application, routers, dependencies, and the AI SDK UI message stream adapter; serves the API and the built UI on one origin | present: factory, routers, chat and replay services, stream encoder |
-| `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/policy/` | Code-level disclosure gate and deadline registry | present: five-state gate, intent classification, deadline registry, decision log |
 | `src/verifiable_tutor/orchestrator/` | Request routing and context budget | present: two-node LangGraph loop, typed tool registry, course and web tools |
 | `src/verifiable_tutor/evidence/` | Hybrid retrieval (query plan, FTS5 and dense arms, reciprocal rank fusion) and the deterministic span verifier | present: retrieval; verifier pending |
-| `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | present: question generation, deterministic and model grading |
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
-| `src/verifiable_tutor/eval/` | Evaluation harness | placeholder (`.gitkeep`) |
+| `src/verifiable_tutor/eval/` | Evaluation harness | present: RQ2 self-test metrics CLI |
 | `src/verifiable_tutor/corpus/` | Page records, the page-first chunker, and the local knowledge store | present: chunker, store, pages |
 | `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state; present: chunk, request and schema validation helpers, card reader, and build lifecycle | present: helpers, cards, builds |
 | `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache, search and fetch used by the agent tools |
@@ -450,7 +450,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/exec/` | TACC CPU job that runs reference tests and self-test code answers | planned (not created yet) |
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, and recorded results; `results/` holds the citation study data, its notes, and the evaluation script | `results/`: present; `questions/` and `policy_scenarios/`: placeholder (`.gitkeep`) |
-| `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | planned (not created yet) |
+| `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | present: protocol, checklist, frozen mock runs |
 | `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state | `data/corpus/`, `data/index/`, and `data/kb/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
 | `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
