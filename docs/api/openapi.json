@@ -2733,6 +2733,124 @@
         "title": "RetrievalResponse",
         "type": "object"
       },
+      "RevisionDocumentDetail": {
+        "properties": {
+          "category": {
+            "description": "Category derived from the file name.",
+            "enum": [
+              "assignment",
+              "lecture",
+              "tutorial",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "doc_id": {
+            "description": "Course document id.",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Original file name.",
+            "title": "Filename"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO-8601 UTC generation time.",
+            "title": "Generated At"
+          },
+          "intro_markdown": {
+            "default": "",
+            "description": "Markdown before the first knowledge point.",
+            "title": "Intro Markdown",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model that wrote the chapter.",
+            "title": "Model"
+          },
+          "points": {
+            "description": "Knowledge points in display order.",
+            "items": {
+              "$ref": "#/components/schemas/RevisionPointSummary"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "theme_id": {
+            "description": "Theme the document belongs to.",
+            "title": "Theme Id",
+            "type": "string"
+          },
+          "theme_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Theme title.",
+            "title": "Theme Title"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Document title.",
+            "title": "Title"
+          },
+          "total": {
+            "description": "Number of knowledge points.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id",
+          "category",
+          "theme_id",
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionDocumentDetail",
+        "type": "object"
+      },
       "RevisionDocumentSummary": {
         "properties": {
           "category": {
@@ -2763,6 +2881,16 @@
             "description": "Original file name.",
             "title": "Filename"
           },
+          "generated": {
+            "description": "True when the review chapter has been generated.",
+            "title": "Generated",
+            "type": "boolean"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
           "title": {
             "anyOf": [
               {
@@ -2774,13 +2902,112 @@
             ],
             "description": "Document title.",
             "title": "Title"
+          },
+          "total": {
+            "description": "Number of knowledge points in the chapter.",
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
           "doc_id",
-          "category"
+          "category",
+          "generated",
+          "total",
+          "mastered"
         ],
         "title": "RevisionDocumentSummary",
+        "type": "object"
+      },
+      "RevisionPointSummary": {
+        "properties": {
+          "body_markdown": {
+            "description": "Markdown body of the point.",
+            "title": "Body Markdown",
+            "type": "string"
+          },
+          "id": {
+            "description": "Knowledge point id.",
+            "title": "Id",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Whether the signed-in user marked it known.",
+            "title": "Mastered",
+            "type": "boolean"
+          },
+          "page_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page the point is introduced on.",
+            "title": "Page No"
+          },
+          "position": {
+            "description": "Display order inside the document.",
+            "title": "Position",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Knowledge point heading.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body_markdown",
+          "position",
+          "mastered"
+        ],
+        "title": "RevisionPointSummary",
+        "type": "object"
+      },
+      "RevisionProgressBody": {
+        "additionalProperties": false,
+        "properties": {
+          "mastered": {
+            "description": "Whether the point is marked as known.",
+            "title": "Mastered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mastered"
+        ],
+        "title": "RevisionProgressBody",
+        "type": "object"
+      },
+      "RevisionProgressResponse": {
+        "properties": {
+          "doc_id": {
+            "description": "Document the point belongs to.",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Number of knowledge points in the document.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id",
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionProgressResponse",
         "type": "object"
       },
       "RevisionThemeSummary": {
@@ -2798,6 +3025,11 @@
             "title": "Id",
             "type": "string"
           },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
           "position": {
             "description": "Display order of the theme.",
             "title": "Position",
@@ -2812,19 +3044,31 @@
             "description": "Theme title.",
             "title": "Title",
             "type": "string"
+          },
+          "total": {
+            "description": "Knowledge points across the theme's documents.",
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "title",
           "summary",
-          "position"
+          "position",
+          "total",
+          "mastered"
         ],
         "title": "RevisionThemeSummary",
         "type": "object"
       },
       "RevisionTreeResponse": {
         "properties": {
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
           "themes": {
             "description": "Revision themes in display order.",
             "items": {
@@ -2832,8 +3076,17 @@
             },
             "title": "Themes",
             "type": "array"
+          },
+          "total": {
+            "description": "Knowledge points across the whole course.",
+            "title": "Total",
+            "type": "integer"
           }
         },
+        "required": [
+          "total",
+          "mastered"
+        ],
         "title": "RevisionTreeResponse",
         "type": "object"
       },
@@ -5588,7 +5841,7 @@
     },
     "/api/revision": {
       "get": {
-        "description": "Return the stored outline as themes with their documents.",
+        "description": "Return the stored outline with the user's three-level progress.",
         "operationId": "revision_tree_api_revision_get",
         "responses": {
           "200": {
@@ -5606,6 +5859,166 @@
           }
         },
         "summary": "The revision guide outline",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/api/revision/docs/{doc_id}": {
+      "get": {
+        "description": "Return the chapter and the signed-in user's self-check state.",
+        "operationId": "revision_document_api_revision_docs__doc_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Unknown document or chapter not generated yet."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "One generated review chapter with its knowledge points",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/api/revision/docs/{doc_id}/markdown": {
+      "get": {
+        "description": "Return the stored chapter as a downloadable Markdown file.",
+        "operationId": "download_revision_document_api_revision_docs__doc_id__markdown_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A clean Markdown file, with no internal page markers."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Unknown document or chapter not generated yet."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download one review chapter as Markdown",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/api/revision/points/{point_id}": {
+      "patch": {
+        "description": "Store one self-check and return the document's new counts.",
+        "operationId": "update_revision_point_api_revision_points__point_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "point_id",
+            "required": true,
+            "schema": {
+              "title": "Point Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionProgressBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionProgressResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark one knowledge point as known or unknown",
         "tags": [
           "revision"
         ]

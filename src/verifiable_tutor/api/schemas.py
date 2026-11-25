@@ -367,6 +367,11 @@ class RevisionDocumentSummary(BaseModel):
     category: Literal["assignment", "lecture", "tutorial", "other"] = Field(
         description="Category derived from the file name."
     )
+    generated: bool = Field(
+        description="True when the review chapter has been generated."
+    )
+    total: int = Field(description="Number of knowledge points in the chapter.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
 
 
 class RevisionThemeSummary(BaseModel):
@@ -374,15 +379,65 @@ class RevisionThemeSummary(BaseModel):
     title: str = Field(description="Theme title.")
     summary: str = Field(description="One or two sentences describing the theme.")
     position: int = Field(description="Display order of the theme.")
+    total: int = Field(description="Knowledge points across the theme's documents.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
     documents: list[RevisionDocumentSummary] = Field(
         default_factory=list, description="Documents grouped under this theme."
     )
 
 
 class RevisionTreeResponse(BaseModel):
+    total: int = Field(description="Knowledge points across the whole course.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
     themes: list[RevisionThemeSummary] = Field(
         default_factory=list, description="Revision themes in display order."
     )
+
+
+class RevisionPointSummary(BaseModel):
+    id: str = Field(description="Knowledge point id.")
+    title: str = Field(description="Knowledge point heading.")
+    body_markdown: str = Field(description="Markdown body of the point.")
+    position: int = Field(description="Display order inside the document.")
+    page_no: int | None = Field(
+        default=None, description="Page the point is introduced on."
+    )
+    mastered: bool = Field(description="Whether the signed-in user marked it known.")
+
+
+class RevisionDocumentDetail(BaseModel):
+    doc_id: str = Field(description="Course document id.")
+    title: str | None = Field(default=None, description="Document title.")
+    filename: str | None = Field(default=None, description="Original file name.")
+    category: Literal["assignment", "lecture", "tutorial", "other"] = Field(
+        description="Category derived from the file name."
+    )
+    theme_id: str = Field(description="Theme the document belongs to.")
+    theme_title: str | None = Field(default=None, description="Theme title.")
+    intro_markdown: str = Field(
+        default="", description="Markdown before the first knowledge point."
+    )
+    model: str | None = Field(default=None, description="Model that wrote the chapter.")
+    generated_at: str | None = Field(
+        default=None, description="ISO-8601 UTC generation time."
+    )
+    total: int = Field(description="Number of knowledge points.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
+    points: list[RevisionPointSummary] = Field(
+        default_factory=list, description="Knowledge points in display order."
+    )
+
+
+class RevisionProgressBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mastered: bool = Field(description="Whether the point is marked as known.")
+
+
+class RevisionProgressResponse(BaseModel):
+    doc_id: str = Field(description="Document the point belongs to.")
+    total: int = Field(description="Number of knowledge points in the document.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
 
 
 class WorkStepRecord(BaseModel):
