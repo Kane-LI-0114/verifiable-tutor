@@ -44,6 +44,7 @@ export const en = {
   nav: {
     chat: "Chat",
     practice: "Practice",
+    revision: "Revision guide",
     knowledge: "Knowledge base",
     instructor: "Instructor",
     builds: "Builds",
@@ -348,6 +349,21 @@ export const en = {
     nextAttempt: "Next attempt",
     legacyHint:
       "This practice record was saved before practice sessions were stored. Open it from the chat list.",
+  },
+  revision: {
+    title: "Revision guide",
+    subtitle:
+      "The course grouped into study themes, with each document mapped to one theme.",
+    emptyTitle: "No revision guide yet",
+    emptyBody: "Run the revision build script to create the outline.",
+    loadError: "Could not load the revision guide.",
+    notGenerated: "Not generated",
+    categories: {
+      assignment: "Assignment",
+      lecture: "Lecture",
+      tutorial: "Tutorial",
+      other: "Other",
+    },
   },
   profile: {
     title: "My profile",

@@ -16,6 +16,9 @@ describe("app shell", () => {
     expect(screen.queryByRole("link", { name: "Chat" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "New question" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Practice" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Revision guide" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Knowledge base" })).toBeInTheDocument();
   });
 

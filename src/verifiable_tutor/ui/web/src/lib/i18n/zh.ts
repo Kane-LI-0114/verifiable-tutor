@@ -45,6 +45,7 @@ export const zh: Messages = {
   nav: {
     chat: "对话",
     practice: "练习",
+    revision: "复习指南",
     knowledge: "知识库",
     instructor: "教师",
     builds: "构建",
@@ -336,6 +337,20 @@ export const zh: Messages = {
     prevAttempt: "上一次",
     nextAttempt: "下一次",
     legacyHint: "这次练习保存于新结构上线之前，请从会话列表打开。",
+  },
+  revision: {
+    title: "复习指南",
+    subtitle: "按主题整理的课程内容，每份文档只属于一个主题。",
+    emptyTitle: "还没有复习指南",
+    emptyBody: "运行复习指南构建脚本后，大纲会显示在这里。",
+    loadError: "无法加载复习指南。",
+    notGenerated: "未生成",
+    categories: {
+      assignment: "作业",
+      lecture: "讲座",
+      tutorial: "教程",
+      other: "其他",
+    },
   },
   profile: {
     title: "我的档案",

@@ -3,6 +3,7 @@ import {
   CalendarClockIcon,
   ClipboardListIcon,
   HammerIcon,
+  ListTreeIcon,
   LogOutIcon,
   MessageSquareIcon,
   PlusIcon,
@@ -92,6 +93,9 @@ function currentTitle(pathname: string, t: ReturnType<typeof useT>): string {
   }
   if (pathname.startsWith("/practice")) {
     return t.practice.title;
+  }
+  if (pathname.startsWith("/revision")) {
+    return t.revision.title;
   }
   if (pathname.startsWith("/knowledge")) {
     return t.knowledge.title;
@@ -247,6 +251,7 @@ function AppSidebar() {
 
   const primary: NavItem[] = [
     { to: "/practice", label: t.nav.practice, icon: WaypointsIcon, end: true },
+    { to: "/revision", label: t.nav.revision, icon: ListTreeIcon },
     {
       to: documentReturnPath ?? "/knowledge",
       label: t.nav.knowledge,
