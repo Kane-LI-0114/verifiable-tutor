@@ -1,0 +1,1 @@
+A source becomes a citation only after the span check. The verifier normalizes whitespace and case, locates the quoted span on the cited page, allows one bounded repair, and otherwise abstains. Pass becomes a citation; fail goes back to repair or no answer. The part still missing is persistence: the citations table is empty, and we say so.

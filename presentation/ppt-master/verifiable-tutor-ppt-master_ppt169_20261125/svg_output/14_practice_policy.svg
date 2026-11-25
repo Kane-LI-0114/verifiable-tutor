@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">13 / FUNCTIONS / PRACTICE &amp; POLICY</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Practice, then check the policy.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">One question record, five types, one dated gate.</text>
+  </g>
+  <g id="practice-column" data-pptx-bounds="64 184 540 420">
+    <use data-icon="tabler-outline/flask" x="64" y="204" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="230" font-size="21.33" font-weight="bold" fill="#09090B">PRACTICE</text>
+    <rect x="64" y="256" width="238" height="36" fill="#F4F4F5"/>
+    <text x="76" y="282" font-size="21.33" fill="#18181B">Single choice</text>
+    <rect x="318" y="256" width="250" height="36" fill="#F4F4F5"/>
+    <text x="330" y="282" font-size="21.33" fill="#18181B">Multiple choice</text>
+    <rect x="64" y="304" width="238" height="36" fill="#F4F4F5"/>
+    <text x="76" y="330" font-size="21.33" fill="#18181B">True / false</text>
+    <rect x="318" y="304" width="250" height="36" fill="#F4F4F5"/>
+    <text x="330" y="330" font-size="21.33" fill="#18181B">Short answer</text>
+    <rect x="64" y="352" width="238" height="36" fill="#F4F4F5"/>
+    <text x="76" y="378" font-size="21.33" fill="#18181B">Code</text>
+    <text x="64" y="430" font-size="21.33" fill="#18181B">Reference answer · scoring points</text>
+    <text x="64" y="462" font-size="21.33" fill="#18181B">Page markers on every question.</text>
+    <text x="64" y="494" font-size="21.33" fill="#52525B">Choice: deterministic.</text>
+    <text x="64" y="522" font-size="21.33" fill="#52525B">Open and code: model-graded.</text>
+  </g>
+  <g id="policy-column" data-pptx-bounds="636 184 580 420">
+    <use data-icon="tabler-outline/lock" x="636" y="204" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="688" y="230" font-size="21.33" font-weight="bold" fill="#09090B">DISCLOSURE GATE</text>
+    <line x1="656" y1="260" x2="656" y2="530" stroke="#1447E6" stroke-width="2"/>
+    <circle cx="656" cy="276" r="6" fill="#1447E6"/>
+    <text x="684" y="284" font-size="21.33" fill="#18181B">allowed</text>
+    <circle cx="656" cy="324" r="6" fill="#1447E6"/>
+    <text x="684" y="332" font-size="21.33" fill="#18181B">hint</text>
+    <circle cx="656" cy="372" r="6" fill="#1447E6"/>
+    <text x="684" y="380" font-size="21.33" fill="#18181B">outline</text>
+    <circle cx="656" cy="420" r="6" fill="#1447E6"/>
+    <text x="684" y="428" font-size="21.33" fill="#18181B">concepts</text>
+    <circle cx="656" cy="468" r="6" fill="#C10007"/>
+    <text x="684" y="476" font-size="21.33" fill="#C10007">refuse</text>
+    <text x="684" y="520" font-size="21.33" fill="#52525B">server-side 403</text>
+    <text x="636" y="570" font-size="21.33" fill="#18181B">Five states, dated registry.</text>
+  </g>
+  <g id="deadline-band" data-pptx-bounds="64 616 1152 52">
+    <rect x="64" y="616" width="1152" height="52" fill="#F4F4F5"/>
+    <text x="84" y="650" font-size="21.33" fill="#18181B">Before 2026-11-29: a complete Assignment 3 solution is refused; concepts, example, hint offered.</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">14 / 20</text>
+  </g>
+</svg>

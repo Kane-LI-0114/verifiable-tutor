@@ -1,0 +1,29 @@
+=== v2: 20 slides, 1 issues ===
+  ISSUE: fact 8/8 not in visible slide text
+  instructor visible: [18] notes: []
+  TA visible: [18] notes: []
+  yoga slides: [13]
+  notes present: 20 missing: []
+  facts: {'17 tables': [4], '16 documents': [1, 2, 8, 20], '593 pages': [1, 2, 8, 20], '612 chunks': [8, 20], 'nDCG 0.849': [9], 'hit 0.882': [9, 17], '937 tokens': [9], '10/10': [16], '5/5': [16], '0.617': [17], '434 s': [17, 20], '43.9 s': [20], '8/8': []}
+  titles ok: 20 / 20
+  numbers: 64
+=== stage: 20 slides, 2 issues ===
+  ISSUE: fact 8/8 not in visible slide text
+  ISSUE: missing speaker notes on slides [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  instructor visible: [17] notes: []
+  TA visible: [17] notes: []
+  yoga slides: [13]
+  notes present: 0 missing: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  facts: {'17 tables': [1, 3, 4], '16 documents': [8, 20], '593 pages': [8, 20], '612 chunks': [1, 8, 20], 'nDCG 0.849': [9], 'hit 0.882': [9], '937 tokens': [9], '10/10': [16], '5/5': [16], '0.617': [17], '434 s': [20], '43.9 s': [20], '8/8': []}
+  titles ok: 20 / 20
+  numbers: 55
+=== custom: 20 slides, 0 issues ===
+  instructor visible: [17, 18] notes: []
+  TA visible: [17, 18] notes: []
+  yoga slides: [13]
+  notes present: 20 missing: []
+  facts: {'17 tables': [4], '16 documents': [8, 20], '593 pages': [2, 8, 20], '612 chunks': [8, 20], 'nDCG 0.849': [9], 'hit 0.882': [9, 17], '937 tokens': [9], '10/10': [16], '5/5': [16], '0.617': [17], '434 s': [20], '43.9 s': [20], '8/8': [20]}
+  titles ok: 20 / 20
+  numbers: 54
+
+wrote /Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/presentation/editions/qa/audits/content-audit.json

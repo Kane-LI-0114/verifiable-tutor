@@ -1,0 +1,82 @@
+{
+  "stage": {
+    "refCount": 12,
+    "cssRefCount": 2,
+    "missingRefs": [],
+    "externalRefs": [],
+    "httpInCss": 0,
+    "cjk": {
+      "cjkInRawFile": 3131,
+      "cjkInCommentsOrScripts": 3085,
+      "cjkInMarkupText": 0
+    },
+    "notes": {
+      "count": 20,
+      "minutes": [
+        0.25,
+        0.75,
+        0.75,
+        0.5,
+        0.4167,
+        0.6667,
+        0.5,
+        0.5833,
+        0.5833,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.4167,
+        0.5833,
+        0.5833,
+        0.5,
+        0.2,
+        0.2
+      ],
+      "totalMinutes": 9.983,
+      "cjk": 0
+    }
+  },
+  "custom": {
+    "refCount": 40,
+    "cssRefCount": 1,
+    "missingRefs": [
+      "\"backgrounds/title.jpg\""
+    ],
+    "externalRefs": [],
+    "httpInCss": 0,
+    "cjk": {
+      "cjkInRawFile": 0,
+      "cjkInCommentsOrScripts": 0,
+      "cjkInMarkupText": 0
+    }
+  },
+  "contentJs": {
+    "cjk": 0
+  },
+  "v2theme": {
+    "latinFaces": [
+      "Georgia",
+      "Arial"
+    ]
+  },
+  "v2notes": {
+    "missing": [],
+    "cjk": 0,
+    "heads": [
+      "0:15. A tutor that can show its work. Ev",
+      "0:45. The user is a CSIT6000V student. T",
+      "0:45. The product runs on the laptop: Re"
+    ]
+  },
+  "customNotes": {
+    "count": 20,
+    "cjk": 0,
+    "heads": [
+      "0:15. A tutor that can show its ",
+      "0:45. The user is a CSIT6000V st",
+      "0:45. The product runs on the la"
+    ]
+  }
+}

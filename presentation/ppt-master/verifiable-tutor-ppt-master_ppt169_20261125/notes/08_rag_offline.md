@@ -1,0 +1,1 @@
+The evidence base is built offline on TACC. PaddleOCR parses the course PDFs, the chunker keeps pages first with a 450-token budget, and BGE-M3 writes the vectors. The import lands in local SQLite with float32 vectors. The result is sixteen documents, 593 pages, and 612 chunks and vectors. The index never runs at request time.

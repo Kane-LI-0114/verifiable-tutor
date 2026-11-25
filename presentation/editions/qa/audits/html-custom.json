@@ -1,0 +1,979 @@
+{
+  "slideCount": 20,
+  "viewport": [
+    1920,
+    1080
+  ],
+  "externalResources": [],
+  "externalAttrs": [],
+  "externalCss": [],
+  "cjkAll": 0,
+  "fontStacks": [
+    "Arial, Helvetica, sans-serif",
+    "Georgia, \"Times New Roman\", serif",
+    "\"Courier New\", Courier, monospace"
+  ],
+  "slides": [
+    {
+      "index": 1,
+      "id": "Verifiable Tutor",
+      "titleAttr": "Verifiable Tutor",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        112
+      ],
+      "expected": [
+        32,
+        112
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 12,
+        "112": 2
+      },
+      "families": {
+        "Arial": 11,
+        "Georgia": 2,
+        "Courier New": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Verifiable",
+        "Tutor"
+      ],
+      "titleDisplay": "Verifiable",
+      "words": 40,
+      "bodyWords": 31,
+      "notesChars": 135,
+      "notes": "0:15. A tutor that can show its work. Every answer names the page it came from, and every practice question carries a reference answer.",
+      "imgCount": 3,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [
+        "file:///Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/presentation/editions/custom-html/assets/backgrounds/title.jpg"
+      ],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "CSIT6000V / FINAL PRESENTATION / FALL 2026 Verifiable Tutor A course-grounded agent with evidence you can check. LI Jinchuan · TIAN Yujia · XIE Yifeng 21188271 · 21201619 · 21322152 EVIDENCE p.9 Memory Wall capacity p.10 Trends bandwidth and latency Tutorial 4 p.40 FlashAttention 01 / 20",
+      "textNodeCount": 14
+    },
+    {
+      "index": 2,
+      "id": "A study loop students can trust",
+      "titleAttr": "A study loop students can trust",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 15,
+        "80": 3
+      },
+      "families": {
+        "Arial": 15,
+        "Georgia": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "A study loop students can",
+        "trust",
+        "."
+      ],
+      "titleDisplay": "A study loop students can",
+      "words": 51,
+      "bodyWords": 40,
+      "notesChars": 313,
+      "notes": "0:45. The user is a CSIT6000V student. The job is to keep up with dense material, practise at assignment scale, and know what help is allowed. The pain is that a fluent answer is not a checkable answer. We chose the task-oriented direction: measure the study loop against hosted assistants, not system efficiency.",
+      "imgCount": 4,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "01 / Problem & Goal A study loop students can trust . A fluent answer is not a checkable answer. Ask Every claim names its page. Practice Questions that stay inside the course. Policy Know what is allowed today. BEFORE answer, trust me. AFTER answer, page, policy. p.9 Course material · 593 pages 02 / 20",
+      "textNodeCount": 18
+    },
+    {
+      "index": 3,
+      "id": "One local product. One batch backend on TACC",
+      "titleAttr": "One local product. One batch backend on TACC",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 25,
+        "80": 3
+      },
+      "families": {
+        "Arial": 25,
+        "Georgia": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "One local product. One batch backend on",
+        "TACC",
+        "."
+      ],
+      "titleDisplay": "One local product. One batch backend on",
+      "words": 43,
+      "bodyWords": 31,
+      "notesChars": 277,
+      "notes": "0:45. The product runs on the laptop: React SPA, FastAPI, LangGraph, SQLite and local files. TACC is a required model-serving backend, but only through submitted batch jobs: OCR, index, and the Qwen knowledge-base job. No inbound service. The bottom strip is the one-turn flow.",
+      "imgCount": 11,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "02 / System One local product. One batch backend on TACC . Local product React SPA FastAPI LangGraph SQLite Accounts Gate Practice Knowledge External APIs DeepSeek MiMo TACC batch OCR Index Qwen KB No inbound service. ONE TURN Ask Plan Act Verify Answer 03 / 20",
+      "textNodeCount": 28
+    },
+    {
+      "index": 4,
+      "id": "The data model makes the evidence chain durable",
+      "titleAttr": "The data model makes the evidence chain durable",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 21,
+        "80": 3
+      },
+      "families": {
+        "Arial": 10,
+        "Georgia": 3,
+        "Courier New": 11
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "The data model makes the evidence chain",
+        "durable",
+        "."
+      ],
+      "titleDisplay": "The data model makes the evidence chain",
+      "words": 37,
+      "bodyWords": 25,
+      "notesChars": 240,
+      "notes": "0:30. All durable state is one local SQLite database: identity, conversations and the work chain, and the knowledge store. message_sources is the bridge from an answer to a document page; citations is the verified layer we are still wiring.",
+      "imgCount": 5,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "03 / Data The data model makes the evidence chain durable . Conversations conversations messages message_steps Evidence message_sources citations empty Knowledge kb_documents kb_chunks kb_chunks_fts Access users login_sessions source pane 17 tables + FTS5. message_sources bridges answer to page. 04 / 20",
+      "textNodeCount": 24
+    },
+    {
+      "index": 5,
+      "id": "A small stack with one job per layer",
+      "titleAttr": "A small stack with one job per layer",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 33,
+        "80": 3
+      },
+      "families": {
+        "Arial": 28,
+        "Georgia": 3,
+        "Courier New": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "A small stack with one job per",
+        "layer",
+        "."
+      ],
+      "titleDisplay": "A small stack with one job per",
+      "words": 61,
+      "bodyWords": 49,
+      "notesChars": 211,
+      "notes": "0:25. The UI is a React SPA served by FastAPI; the agent is a typed LangGraph loop; retrieval is SQLite FTS5 plus BGE-M3; and batch model jobs run on TACC. Versions are pinned in package.json and pyproject.toml.",
+      "imgCount": 5,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "04 / Stack A small stack with one job per layer . 01 Interface React 19 AI SDK 5 PDF.js one origin 02 Backend FastAPI SQLite SSE one process 03 Agent LangGraph 5 typed tools Work chain typed loop 04 Retrieval FTS5 BGE-M3 RRF two arms 05 Platform DeepSeek MiMo TACC batch only One origin. Typed loop. Local-first stores. Batch TACC. 05 / 20",
+      "textNodeCount": 36
+    },
+    {
+      "index": 6,
+      "id": "A typed loop, not a prompt",
+      "titleAttr": "A typed loop, not a prompt",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 22,
+        "80": 3
+      },
+      "families": {
+        "Arial": 12,
+        "Georgia": 3,
+        "Courier New": 10
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "A typed loop, not a",
+        "prompt",
+        "."
+      ],
+      "titleDisplay": "A typed loop, not a",
+      "words": 49,
+      "bodyWords": 38,
+      "notesChars": 306,
+      "notes": "0:40. Perception is the message, history, document context, and tool results. Planning is model-driven inside the agent node, constrained by a closed tool set. Execution validates arguments and streams results. Reflection is tool-mediated: verify_span, same-model retries, abstain when evidence is missing.",
+      "imgCount": 4,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "05 / Functions / Agent A typed loop, not a prompt . 01 Perceive Message, history, tool results. 02 Plan Pick the next tool. 03 Act Validate arguments, return JSON. 04 Reflect Check quote, retry, abstain. Tool surface search_course read_course_page verify_span web_search web_fetch No shell. Every call typed, bounded, visible. 06 / 20",
+      "textNodeCount": 25
+    },
+    {
+      "index": 7,
+      "id": "Watch the loop work",
+      "titleAttr": "Watch the loop work",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 7,
+        "80": 6
+      },
+      "families": {
+        "Arial": 6,
+        "Georgia": 6,
+        "Courier New": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Watch the",
+        "loop",
+        "work.",
+        "5",
+        "2",
+        "4"
+      ],
+      "titleDisplay": "Watch the",
+      "words": 24,
+      "bodyWords": 12,
+      "notesChars": 251,
+      "notes": "0:30. This is a real turn: five retrieval calls, two page reads, and four span checks. verify_span carries the doc id, page number, and exact quote. The output is span verified. Every call is persisted in the work chain and can be replayed from JSONL.",
+      "imgCount": 4,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 940,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 13,
+      "visibleText": "06 / Demo / Agent Watch the loop work. 5 retrievals 2 page reads 4 span checks span verified verify_span · doc_id, page_no, exact quote. 07 / 20",
+      "textNodeCount": 13
+    },
+    {
+      "index": 8,
+      "id": "Build the evidence base on TACC",
+      "titleAttr": "Build the evidence base on TACC",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 19,
+        "80": 7
+      },
+      "families": {
+        "Arial": 19,
+        "Georgia": 7
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Build the evidence base on",
+        "TACC",
+        ".",
+        "16",
+        "593",
+        "612",
+        "16"
+      ],
+      "titleDisplay": "Build the evidence base on",
+      "words": 46,
+      "bodyWords": 30,
+      "notesChars": 239,
+      "notes": "0:35. Offline, the course PDFs are parsed by a TACC OCR job, chunked page-first, embedded with BGE-M3 on TACC, and imported into the local SQLite store. The index never runs at request time. 16 documents, 593 pages, 612 chunks and vectors.",
+      "imgCount": 15,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "07 / Functions / RAG Offline Build the evidence base on TACC . PDFs TACC OCR Chunk BGE-M3 Local store 16 documents 593 pages 612 chunks 16 summaries p.9 Lecture 2 p.40 Tutorial 4 Page is the unit No vector database Import restores offline No request-time index 08 / 20",
+      "textNodeCount": 26
+    },
+    {
+      "index": 9,
+      "id": "Retrieve pages, then let the model read",
+      "titleAttr": "Retrieve pages, then let the model read",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 12,
+        "80": 6
+      },
+      "families": {
+        "Arial": 12,
+        "Georgia": 6
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Retrieve pages, then let the model",
+        "read",
+        ".",
+        "0.849",
+        "0.882",
+        "937"
+      ],
+      "titleDisplay": "Retrieve pages, then let the model",
+      "words": 36,
+      "bodyWords": 20,
+      "notesChars": 253,
+      "notes": "0:35. Online, the model writes the tool query. FTS5 BM25 and a local BGE-M3 query embedding each return 30 candidates. RRF fuses them, and the tool returns page-anchored text with a marker. The model reads the page and checks the quote before answering.",
+      "imgCount": 10,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "08 / Functions / RAG Online Retrieve pages, then let the model read . Question BM25 + BGE RRF k=60 Read page Answer nDCG@5 0.849 hit@5 0.882 tokens@5 937 A source is retrieved evidence, not a citation. sources 09 / 20",
+      "textNodeCount": 18
+    },
+    {
+      "index": 10,
+      "id": "Every paragraph names its source",
+      "titleAttr": "Every paragraph names its source",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 6,
+        "80": 6
+      },
+      "families": {
+        "Arial": 6,
+        "Georgia": 6
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Every paragraph names its",
+        "source",
+        ".",
+        "14",
+        "3",
+        "0"
+      ],
+      "titleDisplay": "Every paragraph names its",
+      "words": 24,
+      "bodyWords": 11,
+      "notesChars": 212,
+      "notes": "0:30. This is the source pane for one answer: 14 retrieved course pages in marker order. A marker opens the exact page. A source is retrieved evidence, not yet a verified citation; the verifier is the next layer.",
+      "imgCount": 4,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 980,
+      "contentBottomNode": "DIV.bleed",
+      "blankBottomPct": 9.3,
+      "visibleText": "09 / Demo / RAG Every paragraph names its source . 14 retrieved pages 3 page-exact markers 0 verified citations p.9 · p.10 · p.11 · source pane 10 / 20",
+      "textNodeCount": 12
+    },
+    {
+      "index": 11,
+      "id": "A conversation that lives beside the file",
+      "titleAttr": "A conversation that lives beside the file",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 11,
+        "80": 3
+      },
+      "families": {
+        "Arial": 6,
+        "Georgia": 3,
+        "Courier New": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "A conversation that lives beside the",
+        "file",
+        "."
+      ],
+      "titleDisplay": "A conversation that lives beside the",
+      "words": 41,
+      "bodyWords": 29,
+      "notesChars": 246,
+      "notes": "0:30. Every turn carries doc_id and page_no. The system note names the file and page but does not inject the page text; the model must call read_course_page. A citation target is a URL to that exact page, and the conversation belongs to the file.",
+      "imgCount": 4,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "10 / Functions / Knowledge A conversation that lives beside the file . 01 Every turn carries doc_id and page_no. 02 The model must read the page. 03 History stays with the document. Page chat · Lecture 2, p.9 doc_id: ACS_lecture_2_2026F page_no: 9 11 / 20",
+      "textNodeCount": 14
+    },
+    {
+      "index": 12,
+      "id": "From a marker to the exact page",
+      "titleAttr": "From a marker to the exact page",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 5,
+        "80": 3
+      },
+      "families": {
+        "Arial": 5,
+        "Georgia": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "From a marker to the exact",
+        "page",
+        "."
+      ],
+      "titleDisplay": "From a marker to the exact",
+      "words": 27,
+      "bodyWords": 15,
+      "notesChars": 194,
+      "notes": "0:30. The open file is Lecture 2, page 9. The answer cites page 9, page 10, page 11 and a cross-document page. Clicking the page-10 marker moves the PDF to page 10 while the chat stays in place.",
+      "imgCount": 3,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "11 / Demo / Knowledge From a marker to the exact page . Open · p.9 After click · p.10 [3] moves the PDF to page 10; the chat stays. 12 / 20",
+      "textNodeCount": 8
+    },
+    {
+      "index": 13,
+      "id": "A source is not a citation until the span passes",
+      "titleAttr": "A source is not a citation until the span passes",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 13,
+        "80": 3
+      },
+      "families": {
+        "Arial": 11,
+        "Georgia": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "A source is not a citation until the span",
+        "passes",
+        "."
+      ],
+      "titleDisplay": "A source is not a citation until the span",
+      "words": 41,
+      "bodyWords": 27,
+      "notesChars": 265,
+      "notes": "0:30. The verifier normalizes whitespace and case, requires the quoted span to occur on the cited page, allows one repair round, and otherwise abstains. Pass becomes a citation; fail goes back to repair or abstention. Persisting the verified layer is the next step.",
+      "imgCount": 12,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "12 / Verifier A source is not a citation until the span passes . Normalize Locate Repair once Abstain PASS “PU core number doubling every ~2 years.” p.9 → citation FAIL “IO-aware tiling saves HBM traffic.” not on p.40 → abstain Implementation: Yoga 13 / 20",
+      "textNodeCount": 16
+    },
+    {
+      "index": 14,
+      "id": "Practice and integrity",
+      "titleAttr": "Practice and integrity",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 19,
+        "80": 4
+      },
+      "families": {
+        "Arial": 13,
+        "Georgia": 4,
+        "Courier New": 6
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Practice and",
+        "integrity",
+        ".",
+        "5"
+      ],
+      "titleDisplay": "Practice and",
+      "words": 50,
+      "bodyWords": 40,
+      "notesChars": 281,
+      "notes": "0:30. Practice and self-test share one question record: five types, a reference answer, scoring points, and course citations. Choice questions are graded deterministically; open and code answers are model-graded. The disclosure gate is code, with five states from a dated registry.",
+      "imgCount": 2,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "13 / Functions / Practice & Policy Practice and integrity . Practice & self-test single multiple true/false short code Reference answer + scoring points. FlashAttention · single choice · source [3] 5 question types Choice graded deterministically; open and code by model. Disclosure gate pre-release active extension post-deadline unknown Refuse now, teach after. Policy is code. 14 / 20",
+      "textNodeCount": 23
+    },
+    {
+      "index": 15,
+      "id": "Practice, then check",
+      "titleAttr": "Practice, then check",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 7,
+        "80": 3
+      },
+      "families": {
+        "Arial": 7,
+        "Georgia": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Practice, then",
+        "check",
+        "."
+      ],
+      "titleDisplay": "Practice, then",
+      "words": 27,
+      "bodyWords": 18,
+      "notesChars": 229,
+      "notes": "0:25. The student chooses a topic and type; the question comes from the course with a page marker. Before the deadline, a complete Assignment 3 solution is blocked and the refusal points to concepts, a similar example, or a hint.",
+      "imgCount": 2,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "14 / Demo / Practice & Policy Practice, then check . FlashAttention · single choice PRACTICE 2 points · source marker [3] POLICY Assignment 3 · complete solution blocked before the deadline. 15 / 20",
+      "textNodeCount": 10
+    },
+    {
+      "index": 16,
+      "id": "We win on coverage. We tie on grading",
+      "titleAttr": "We win on coverage. We tie on grading",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 29,
+        "80": 9
+      },
+      "families": {
+        "Arial": 17,
+        "Georgia": 9,
+        "Courier New": 12
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "We win on coverage. We tie on",
+        "grading",
+        ".",
+        "5/5",
+        "0",
+        "10/10",
+        "0",
+        "0",
+        "exact"
+      ],
+      "titleDisplay": "We win on coverage. We tie on",
+      "words": 59,
+      "bodyWords": 41,
+      "notesChars": 268,
+      "notes": "0:35. On ten practice questions we match the best control on groundedness, lead on knowledge-point coverage, and tie on grading. In the 15-question citation study we invent no quotes and no false negatives, and page numbers are programmatic. Ties are reported as ties.",
+      "imgCount": 3,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "15 / Evaluation We win on coverage. We tie on grading . Knowledge coverage 5/5 Invented quotes 0 Grading 10/10 Practice Tutor Doubao Gemini Qwen Grounded 10/10 10/10 6/10 6/10 Coverage 5/5 3/5 3/5 3/5 Grading 10/10 10/10 10/10 10/10 0 invented quotes 0 false “not in PDF” exact page accuracy 10 practice questions, 3 controls. Ties stay ties. 16 / 20",
+      "textNodeCount": 38
+    },
+    {
+      "index": 17,
+      "id": "Tutorials are the hard slice",
+      "titleAttr": "Tutorials are the hard slice",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 15,
+        "80": 7
+      },
+      "families": {
+        "Arial": 15,
+        "Georgia": 7
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Tutorials are the hard",
+        "slice",
+        ".",
+        "0.617",
+        "0.875",
+        "0.909",
+        "0.912"
+      ],
+      "titleDisplay": "Tutorials are the hard",
+      "words": 57,
+      "bodyWords": 43,
+      "notesChars": 305,
+      "notes": "0:35. Tutorial questions retrieve worse than concept, mechanism or assignment questions. The likely cause is that tutorial pages bundle several sub-tasks into one page. Dual-granularity chunking raised hit@5 but not significantly, at 2.7 times the index cost, so we kept the page-first rule and logged it.",
+      "imgCount": 6,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "16 / Failure & Limits Tutorials are the hard slice . Page-level nDCG@5, 51 test questions. tutorial 0.617 mechanism 0.875 assignment 0.909 concept 0.912 Tutorial pages bundle several sub-tasks. Tutorial 4 Verified citations: next TACC execution: next Instructor/TA UI: partial Scope: one course Lesson Dual granularity raised hit@5 0.882 to 0.941; nDCG interval crossed zero; index cost 2.7×. 17 / 20",
+      "textNodeCount": 22
+    },
+    {
+      "index": 18,
+      "id": "Verifiability is a system property",
+      "titleAttr": "Verifiability is a system property",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 11,
+        "80": 7
+      },
+      "families": {
+        "Arial": 7,
+        "Georgia": 7,
+        "Courier New": 4
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Verifiability is a system",
+        "property",
+        ".",
+        "Page-first retrieval",
+        "Policy as code",
+        "Coverage and integrity",
+        "Questions"
+      ],
+      "titleDisplay": "Verifiability is a system",
+      "words": 45,
+      "bodyWords": 27,
+      "notesChars": 250,
+      "notes": "0:30. The page is the retrieval unit, the policy is code, and the evaluation separates grounding from grading. The student loop is end-to-end. The operator console, verifier persistence, TACC execution, and multi-course support are the next surfaces.",
+      "imgCount": 1,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "17 / Conclusion Verifiability is a system property . 01 Page-first retrieval beats BM25 and dense. 02 Policy as code deadline changes the answer. 03 Coverage and integrity beats three hosted assistants. Next: instructor/TA console, citations, execution. LI Jinchuan · TIAN Yujia · XIE Yifeng Questions github.com/Kane-LI-0114/verifiable-tutor 18 / 20",
+      "textNodeCount": 18
+    },
+    {
+      "index": 19,
+      "id": "One question, end to end",
+      "titleAttr": "One question, end to end",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 15,
+        "80": 3
+      },
+      "families": {
+        "Arial": 15,
+        "Georgia": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "One question, end to",
+        "end",
+        "."
+      ],
+      "titleDisplay": "One question, end to",
+      "words": 30,
+      "bodyWords": 21,
+      "notesChars": 156,
+      "notes": "Appendix. The sequence from student to answer: SPA, API, gate, LangGraph, typed tools, verifier, model, store, and SSE. Solid is shipped; dashed is planned.",
+      "imgCount": 11,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "Appendix / A1 One question, end to end . Student React SPA FastAPI Gate LangGraph Tools Verifier Model Store SSE shipped partial No inbound service; TACC steps are batch jobs. 19 / 20",
+      "textNodeCount": 18
+    },
+    {
+      "index": 20,
+      "id": "Evaluation method and TACC evidence",
+      "titleAttr": "Evaluation method and TACC evidence",
+      "layout": "",
+      "sizeKeys": [
+        32,
+        80
+      ],
+      "expected": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "sizes": {
+        "32": 17,
+        "80": 6
+      },
+      "families": {
+        "Arial": 17,
+        "Georgia": 6
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "displayTexts": [
+        "Evaluation method and TACC",
+        "evidence",
+        ".",
+        "434 s",
+        "43.9 s",
+        "8/8"
+      ],
+      "titleDisplay": "Evaluation method and TACC",
+      "words": 66,
+      "bodyWords": 52,
+      "notesChars": 209,
+      "notes": "Appendix. Ten practice questions and fifteen citation questions against three hosted assistants. The Qwen knowledge-base job 28067 measured a 434 second cold start, 43.9 second build, and 8 of 8 valid records.",
+      "imgCount": 6,
+      "svgCount": 0,
+      "brokenImages": [],
+      "bgUrls": [],
+      "outOfBounds": [],
+      "cjkCount": 0,
+      "contentBottom": 1052,
+      "contentBottomNode": "FOOTER.vt-foot",
+      "blankBottomPct": 2.6,
+      "visibleText": "Appendix / A2 Evaluation method and TACC evidence . Evaluation method Practice 10 questions, 3 controls. Citation 15 questions, page and quote checked. Chunking 51 questions, page-level nDCG@5. Grading 10 questions, model vs ground truth. Controls: Doubao, Gemini, Qwen. TACC / Qwen job 28067 434 s vLLM cold start 43.9 s 8-chunk build 8/8 valid records One shard, 8 chunks. Corpus: 16 docs, 593 pages, 612 chunks. 20 / 20",
+      "textNodeCount": 23
+    }
+  ]
+}

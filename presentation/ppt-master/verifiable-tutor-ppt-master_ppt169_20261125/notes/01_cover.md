@@ -1,0 +1,1 @@
+A tutor that can show its work. Every answer names the page it came from, and every practice item carries a reference. The screenshot behind the title is a real source pane, not a mockup. Three numbers preview the agent turn: five retrieval calls, two page reads, and four span checks.

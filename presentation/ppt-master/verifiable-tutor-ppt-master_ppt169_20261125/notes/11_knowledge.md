@@ -1,0 +1,1 @@
+Every knowledge-chat turn carries a document id and a page number, and the conversation belongs to the file. The system note names the file and page, but it does not inject the page text. The model still has to call read_course_page. That keeps the file pane and the chat on one route without turning the note into hidden evidence.

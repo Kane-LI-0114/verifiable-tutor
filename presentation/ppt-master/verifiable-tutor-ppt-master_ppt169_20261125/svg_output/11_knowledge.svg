@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">10 / FUNCTIONS / KNOWLEDGE</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Chat beside the exact page.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">Every turn carries doc_id and page_no.</text>
+  </g>
+  <g id="chat-plate" data-pptx-bounds="64 184 820 480">
+    <rect x="64" y="190" width="700" height="473" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-knowledge-page9.png" x="64" y="190" width="700" height="473" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+  <g id="knowledge-callouts" data-pptx-bounds="888 184 328 480">
+    <text x="888" y="226" font-size="21.33" font-weight="bold" fill="#1447E6">DOC + PAGE</text>
+    <text x="888" y="258" font-size="21.33" fill="#18181B">doc_id and page_no</text>
+    <text x="888" y="286" font-size="21.33" fill="#18181B">on every turn.</text>
+    <line x1="888" y1="310" x2="1216" y2="310" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="888" y="352" font-size="21.33" font-weight="bold" fill="#1447E6">NOT INJECTED</text>
+    <text x="888" y="384" font-size="21.33" fill="#18181B">The system note names</text>
+    <text x="888" y="412" font-size="21.33" fill="#18181B">the file and page.</text>
+    <text x="888" y="440" font-size="21.33" fill="#18181B">It does not inject text.</text>
+    <line x1="888" y1="464" x2="1216" y2="464" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="888" y="506" font-size="21.33" font-weight="bold" fill="#1447E6">READ TOOL</text>
+    <text x="888" y="538" font-size="21.33" fill="#18181B">The model must call</text>
+    <text x="888" y="566" font-family="Courier New" font-size="21.33" fill="#18181B">read_course_page</text>
+    <text x="888" y="614" font-size="21.33" fill="#52525B">one route: file + chat</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">11 / 20</text>
+  </g>
+</svg>

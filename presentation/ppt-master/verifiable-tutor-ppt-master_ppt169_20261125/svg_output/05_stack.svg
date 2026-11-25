@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">04 / STACK</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Small stack, clear jobs.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">Pinned in package.json and pyproject.toml.</text>
+  </g>
+  <g id="stack-bands" data-pptx-bounds="64 184 1152 420">
+    <rect x="64" y="190" width="1152" height="58" fill="#F4F4F5"/>
+    <text x="82" y="228" font-family="Georgia" font-size="21.33" fill="#1447E6">01</text>
+    <use data-icon="tabler-outline/layers-intersect" x="128" y="202" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="180" y="228" font-size="21.33" font-weight="bold" fill="#09090B">INTERFACE</text>
+    <text x="420" y="228" font-size="21.33" fill="#18181B">React SPA</text>
+    <text x="620" y="228" font-size="21.33" fill="#18181B">Vite</text>
+    <text x="760" y="228" font-size="21.33" fill="#18181B">Tailwind</text>
+    <rect x="64" y="260" width="1152" height="58" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="82" y="298" font-family="Georgia" font-size="21.33" fill="#1447E6">02</text>
+    <use data-icon="tabler-outline/cpu" x="128" y="272" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="180" y="298" font-size="21.33" font-weight="bold" fill="#09090B">API</text>
+    <text x="420" y="298" font-size="21.33" fill="#18181B">FastAPI</text>
+    <text x="620" y="298" font-size="21.33" fill="#18181B">SSE</text>
+    <text x="760" y="298" font-size="21.33" fill="#18181B">SQLite</text>
+    <rect x="64" y="330" width="1152" height="58" fill="#F4F4F5"/>
+    <text x="82" y="368" font-family="Georgia" font-size="21.33" fill="#1447E6">03</text>
+    <use data-icon="tabler-outline/git-branch" x="128" y="342" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="180" y="368" font-size="21.33" font-weight="bold" fill="#09090B">AGENT</text>
+    <text x="420" y="368" font-size="21.33" fill="#18181B">LangGraph</text>
+    <text x="620" y="368" font-size="21.33" fill="#18181B">typed tools</text>
+    <rect x="64" y="400" width="1152" height="58" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="82" y="438" font-family="Georgia" font-size="21.33" fill="#1447E6">04</text>
+    <use data-icon="tabler-outline/search" x="128" y="412" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="180" y="438" font-size="21.33" font-weight="bold" fill="#09090B">EVIDENCE</text>
+    <text x="420" y="438" font-size="21.33" fill="#18181B">FTS5</text>
+    <text x="620" y="438" font-size="21.33" fill="#18181B">BGE-M3</text>
+    <text x="760" y="438" font-size="21.33" fill="#18181B">span verifier</text>
+    <rect x="64" y="470" width="1152" height="58" fill="#F4F4F5"/>
+    <text x="82" y="508" font-family="Georgia" font-size="21.33" fill="#1447E6">05</text>
+    <use data-icon="tabler-outline/box" x="128" y="482" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="180" y="508" font-size="21.33" font-weight="bold" fill="#09090B">BATCH</text>
+    <text x="420" y="508" font-size="21.33" fill="#18181B">TACC</text>
+    <text x="620" y="508" font-size="21.33" fill="#18181B">PaddleOCR</text>
+    <text x="760" y="508" font-size="21.33" fill="#18181B">Qwen</text>
+    <rect x="64" y="540" width="1152" height="58" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="82" y="578" font-family="Georgia" font-size="21.33" fill="#1447E6">06</text>
+    <use data-icon="tabler-outline/link" x="128" y="552" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="180" y="578" font-size="21.33" font-weight="bold" fill="#09090B">EXTERNAL</text>
+    <text x="420" y="578" font-size="21.33" fill="#18181B">DeepSeek</text>
+    <text x="620" y="578" font-size="21.33" fill="#18181B">MiMo</text>
+    <text x="760" y="578" font-size="21.33" fill="#18181B">QQ Mail</text>
+  </g>
+  <g id="stack-note" data-pptx-bounds="64 616 1152 52">
+    <text x="64" y="648" font-size="21.33" fill="#52525B">One process; one origin; local data. Batch jobs are submitted, never served inward.</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">05 / 20</text>
+  </g>
+</svg>

@@ -1,0 +1,415 @@
+{
+  "deck": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/presentation/editions/custom-html/index.html",
+  "slideCount": 20,
+  "externalResources": [],
+  "externalAttrs": [],
+  "externalCss": [],
+  "cjkAll": 0,
+  "fontStacks": [
+    "Arial, Helvetica, sans-serif",
+    "Georgia, \"Times New Roman\", serif",
+    "\"Courier New\", Courier, monospace"
+  ],
+  "perSlide": [
+    {
+      "i": 1,
+      "id": "Verifiable Tutor",
+      "sizes": [
+        32,
+        112
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 31,
+      "words": 40,
+      "img": 3,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 135
+    },
+    {
+      "i": 2,
+      "id": "A study loop students can trust",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 40,
+      "words": 51,
+      "img": 4,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 313
+    },
+    {
+      "i": 3,
+      "id": "One local product. One batch backend on TACC",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 31,
+      "words": 43,
+      "img": 11,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 277
+    },
+    {
+      "i": 4,
+      "id": "The data model makes the evidence chain durable",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 25,
+      "words": 37,
+      "img": 5,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 240
+    },
+    {
+      "i": 5,
+      "id": "A small stack with one job per layer",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 49,
+      "words": 61,
+      "img": 5,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 211
+    },
+    {
+      "i": 6,
+      "id": "A typed loop, not a prompt",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 38,
+      "words": 49,
+      "img": 4,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 306
+    },
+    {
+      "i": 7,
+      "id": "Watch the loop work",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 12,
+      "words": 24,
+      "img": 4,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 13,
+      "cjk": 0,
+      "notes": 251
+    },
+    {
+      "i": 8,
+      "id": "Build the evidence base on TACC",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 30,
+      "words": 46,
+      "img": 15,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 239
+    },
+    {
+      "i": 9,
+      "id": "Retrieve pages, then let the model read",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 20,
+      "words": 36,
+      "img": 10,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 253
+    },
+    {
+      "i": 10,
+      "id": "Every paragraph names its source",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 11,
+      "words": 24,
+      "img": 4,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 9.3,
+      "cjk": 0,
+      "notes": 212
+    },
+    {
+      "i": 11,
+      "id": "A conversation that lives beside the file",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 29,
+      "words": 41,
+      "img": 4,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 246
+    },
+    {
+      "i": 12,
+      "id": "From a marker to the exact page",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 15,
+      "words": 27,
+      "img": 3,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 194
+    },
+    {
+      "i": 13,
+      "id": "A source is not a citation until the span passes",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 27,
+      "words": 41,
+      "img": 12,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 265
+    },
+    {
+      "i": 14,
+      "id": "Practice and integrity",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 40,
+      "words": 50,
+      "img": 2,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 281
+    },
+    {
+      "i": 15,
+      "id": "Practice, then check",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 18,
+      "words": 27,
+      "img": 2,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 229
+    },
+    {
+      "i": 16,
+      "id": "We win on coverage. We tie on grading",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 41,
+      "words": 59,
+      "img": 3,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 268
+    },
+    {
+      "i": 17,
+      "id": "Tutorials are the hard slice",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 43,
+      "words": 57,
+      "img": 6,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 305
+    },
+    {
+      "i": 18,
+      "id": "Verifiability is a system property",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 27,
+      "words": 45,
+      "img": 1,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 250
+    },
+    {
+      "i": 19,
+      "id": "One question, end to end",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 21,
+      "words": 30,
+      "img": 11,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 156
+    },
+    {
+      "i": 20,
+      "id": "Evaluation method and TACC evidence",
+      "sizes": [
+        32,
+        80
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 52,
+      "words": 66,
+      "img": 6,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 2.6,
+      "cjk": 0,
+      "notes": 209
+    }
+  ]
+}

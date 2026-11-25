@@ -1,0 +1,1024 @@
+{
+  "schema": "vt-shared-assets/1",
+  "branch": "presentation/three-editions",
+  "owner": "asset-librarian, shared task task-1",
+  "created_at": "2026-11-25T16:38:20+08:00",
+  "status": "frozen",
+  "policy": "Shared read-only inputs for the v2-pptx, stage-html, and custom-html editions. Builders read these files and must not modify, move, rename, or overwrite them. Report gaps to the lead.",
+  "path_base": "repository root",
+  "references": [
+    "presentation/editions/shared/theme.json",
+    "presentation/editions/shared/brief.md",
+    "presentation/assets/screenshots/manifest.json"
+  ],
+  "icon_names": [
+    "search",
+    "file-text",
+    "shield-check",
+    "flask-conical",
+    "database",
+    "cpu",
+    "git-branch",
+    "quote",
+    "check",
+    "x",
+    "layers",
+    "boxes",
+    "gauge",
+    "book-open",
+    "arrow-right",
+    "terminal"
+  ],
+  "icon_renderings": {
+    "svg": "24x24 viewBox, stroke currentColor, transparent, scalable",
+    "png_ink": "256x256 RGBA, stroke #09090B, transparent",
+    "png_white": "256x256 RGBA, stroke #FFFFFF, transparent"
+  },
+  "counts": {
+    "course-page-thumbnail": 3,
+    "icon-svg": 16,
+    "icon-png": 32,
+    "qr-code": 1,
+    "ui-screenshot": 11
+  },
+  "total_assets": 63,
+  "assets": [
+    {
+      "path": "presentation/editions/shared/assets/course/acs2-p09.png",
+      "kind": "course-page-thumbnail",
+      "origin": "new-2026-11-25",
+      "source": "data/corpus/corpus-pdf/ACS_lecture_2_2026F.pdf, page 9 (1-based), rendered with pdftoppm -png -r 180; page size 720x540 pt (4:3)",
+      "license": "Course material for CSIT6000V (HKUST). Tracked in this repository for the teaching team; no separate license.",
+      "dimensions": {
+        "width": 1800,
+        "height": 1350,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "4:3 source page. Crop or letterbox when placed in a 16:9 slide; do not stretch.",
+      "sha256": "99728b1eb291baa05a692ea267e322f2ec0d54885913e46847610a297e757a08"
+    },
+    {
+      "path": "presentation/editions/shared/assets/course/acs2-p10.png",
+      "kind": "course-page-thumbnail",
+      "origin": "new-2026-11-25",
+      "source": "data/corpus/corpus-pdf/ACS_lecture_2_2026F.pdf, page 10 (1-based), rendered with pdftoppm -png -r 180; page size 720x540 pt (4:3)",
+      "license": "Course material for CSIT6000V (HKUST). Tracked in this repository for the teaching team; no separate license.",
+      "dimensions": {
+        "width": 1800,
+        "height": 1350,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "4:3 source page. Crop or letterbox when placed in a 16:9 slide; do not stretch.",
+      "sha256": "7a3004449410b0dbc3aaa5d508d50f3b458bdfda38835ba5387425f2efc3a732"
+    },
+    {
+      "path": "presentation/editions/shared/assets/course/tutorial4-p40.png",
+      "kind": "course-page-thumbnail",
+      "origin": "new-2026-11-25",
+      "source": "data/corpus/corpus-pdf/Tutorial_4.pdf, page 40 (1-based), rendered with pdftoppm -png -r 180; page size 720x540 pt (4:3)",
+      "license": "Course material for CSIT6000V (HKUST). Tracked in this repository for the teaching team; no separate license.",
+      "dimensions": {
+        "width": 1800,
+        "height": 1350,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "4:3 source page. Crop or letterbox when placed in a 16:9 slide; do not stretch.",
+      "sha256": "87c59379df1055563c222ae55eb273aa268f181f90cbe900d156f5f47f0237da"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/search.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'search' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/search.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "0092dee46f6035edf116a76efbdcaa024e14aff9be5f94d885c8b14d37a0333a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/file-text.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'file-text' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/file-text.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "4485e379c93f88ed2bdb43663f43257ae7ce759791c3256015231c8aa25e96ca"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/shield-check.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'shield-check' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/shield-check.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "d7cfb1de96312a72b987a75cf8ac23aa9518e1665e043120e50a6792b3665ceb"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/flask-conical.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'flask-conical' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/flask-conical.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "0eb7a44120b40614ea9898840a9e0dd2d77bce051b3d1174f6e6278821e3c75d"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/database.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'database' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/database.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "813151983345d0c31316029f91453d01d76cc6ccaa38904bd51f5f41e7427441"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/cpu.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'cpu' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/cpu.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "c8fd9bd4c169babb583dbb46342f2a4687095d20aa7ee09cea8ea1c62a09791a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/git-branch.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'git-branch' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/git-branch.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "4bc9d13b384af3e5761c4ee3b4d353e340e9ecbc925dc797f8bbd4713edf0832"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/quote.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'quote' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/quote.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "b9149205f3e8e5ca39d61eccaeaee1a627ac55da841958cac8c9e9200580ee81"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/check.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'check' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/check.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "810813384e57549839dac029679210aeebe1a015245ea3db3f04ea3bc2203f9d"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/x.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'x' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/x.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "115df1387dd800b4ffa79220f40f86b3de84bafa2b2bb807b7cc7aa719d34f11"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/layers.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'layers' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/layers.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "8f85ce6ea6b494c9768656eda1985da5113eb41d9ca4acade160cd56bd27bb4a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/boxes.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'boxes' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/boxes.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "87786d80f6eca2602aad5a6a5d608dc3386219ba71f3cf2746e69b2bb99e7214"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/gauge.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'gauge' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/gauge.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "edade1e7342784b0c737cb32a434fe41bfb7c4617ecba1b44329345055bad955"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/book-open.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'book-open' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/book-open.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "bf8a9c66281a94acfe869e7a579d7e7ee06b0e8a039629a487519e4eca61711f"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/arrow-right.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'arrow-right' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/arrow-right.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "4c89b0a445b6a96c442a4fb02ca91fb5afffa07baad46d341b01279ac8f10958"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/terminal.svg",
+      "kind": "icon-svg",
+      "origin": "new-2026-11-25",
+      "source": "Lucide icon 'terminal' v1.66.0, rebuilt from src/verifiable_tutor/ui/web/node_modules/lucide-react/dist/esm/icons/terminal.mjs with the canonical Lucide SVG attributes",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 24,
+        "height": 24,
+        "unit": "px",
+        "viewBox": "0 0 24 24",
+        "scalable": true
+      },
+      "english_only": true,
+      "notes": "Transparent background; stroke=currentColor, fill=none, stroke-width=2. Tint with CSS color or the SVG stroke attribute.",
+      "sha256": "b70150da6af1e8e22b3481f2ec3219902fab7a8b6b90ea3abd411e7f9f88971c"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/search.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/search.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "143fcecf3d45a2ba40e0416e37c4ef35121e3274f832a7797ec916d788e1809a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/file-text.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/file-text.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "7a11569350c2d783d3849bb5b6f8a7e74adf4b7160879672fd298a0d03ca6335"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/shield-check.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/shield-check.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "c6f4ef165474ad20a7dd9c2663ea5846f3abbd63146d8a58636ab77c01ce11c8"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/flask-conical.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/flask-conical.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "0561ca58b8c0c340bf7b386ed7c2bb1d453de1f1e109f31ef50283c1a77578f3"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/database.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/database.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "b05726833202c31f94e48184b1d2bf8711e303cedeca79b37f9a115903ca4d6d"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/cpu.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/cpu.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "6b007cae55f90f69324532d7df27e26cb575b84fd6ec11074c708e66d4f6ea50"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/git-branch.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/git-branch.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "3b9aecbb5474ef96fa6e5718abb53cf6c1641cfb617446be9f22381c9658033b"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/quote.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/quote.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "0e3f9bbe67f88fec56084800161e7307afd2ea5aa1134cd1a45e32aea77d9d56"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/check.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/check.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "8e1531a3c292db43942c736cb6b5aac125fbdc3c940cb421f661ea1d908274bd"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/x.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/x.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "6e2f443d47e2d8206f1359757a9850d05182630371c100c218a3fc8bbf6c3e57"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/layers.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/layers.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "8aab9c873da3ce9e355cc5318e773958f783566cc8309224560898809aacf804"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/boxes.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/boxes.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "357658ebd37024faa0e71c4de4d7ed42b58229d998422961b5ad5f1cc0980924"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/gauge.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/gauge.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "999f3f106bfcb167927698e2eaf1ccc9c424f43599f1911a27b3084bb0fbcca4"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/book-open.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/book-open.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "250b74b5b48e491ad10a801b2095615927ba48203a5946d9315e557e7ad55345"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/arrow-right.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/arrow-right.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "16deced974108a675628b69c11d1f79d52f33a5866a4622a1736203a14ffce3e"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/terminal.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/terminal.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #09090B (ink)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. Ink variant for paper #FAFAFA backgrounds.",
+      "sha256": "b27478f011228bf58ec9e7fd17ffa2a5e9c626b6e4cc6f3d984fd360f8a677a7"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/search.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/search.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "1b66ed888913b149db396766b51e968116ba5f610aee81a47cb3f22a3117ed62"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/file-text.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/file-text.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "e7fda86a6cf091860d8f38d5f1ffdac7701a892ef4bb52670e8594b1a7509abd"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/shield-check.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/shield-check.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "553a124a4eb282a7e443d6e69a08536912547845a10210a60b1719893e356e25"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/flask-conical.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/flask-conical.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "482b7e8d5651568259d9c4193c5f2c3f7e9ef0d621d1af46e895bd623860bf07"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/database.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/database.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "6dfd3e736d31388ba4b1b9c045c8d762c1ea683f7e4c07332781960426781e2a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/cpu.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/cpu.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "dca9a32332f85e72139a169d8850fb59c596f67778f2317cbf249ae1b62c6a4b"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/git-branch.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/git-branch.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "0510ea5bfa6d4eb52f10780ad5b4c19ebcc321fb8ed60cf3078c439d5f9ad85a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/quote.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/quote.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "c6b1eaa273ef51c75df3bb100dd2d1ec8142cc72720892b4c12b1f1a9a36c281"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/check.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/check.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "fbaea2df230d94823c2a6f12b9d5a7863a8661469006b346dee7daa5dfa0a28a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/x.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/x.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "0f2b78c10b66394346731b611c0fa9279a3b4b23529d3a991ed8bb5944d48502"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/layers.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/layers.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "9f3feaf880b54841f0c58d8f81f547966929fe99838c964a836b2cc9ba5c8b14"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/boxes.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/boxes.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "02255d285695f8fb41372831276e46e977919f4615cc13d1236f458da54e1923"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/gauge.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/gauge.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "8e560ca031b1689ee2ffe5b6da1e1376c30e97f9a7a319a0b3b4d3dcb7aac125"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/book-open.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/book-open.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "fdd0a6e3820edaffc96a92d6908dcd88c3c2cbc5095c41ae4577fcf09b931c83"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/arrow-right.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/arrow-right.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "0f747deea5e7720e9901dfeea7ff72c651dea1428c1688463350e1aa0f89b37a"
+    },
+    {
+      "path": "presentation/editions/shared/assets/icons/white/terminal.png",
+      "kind": "icon-png",
+      "origin": "new-2026-11-25",
+      "source": "Rasterized from icons/terminal.svg with rsvg-convert 2.62.1, -w 256 -h 256, stroke #FFFFFF (white)",
+      "license": "ISC (Lucide Icons and Contributors), reconstructed from the lucide-react 1.66.0 package",
+      "dimensions": {
+        "width": 256,
+        "height": 256,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "RGBA transparent background. White variant for graphite #0A0A0A / #171717 backgrounds.",
+      "sha256": "03c997d3261447d66effc89ce535302bf04fc74123f5f8c7b99a0637d783197f"
+    },
+    {
+      "path": "presentation/editions/shared/assets/qr/repo.png",
+      "kind": "qr-code",
+      "origin": "new-2026-11-25",
+      "source": "Generated locally with python-qrcode 8.2 from https://github.com/Kane-LI-0114/verifiable-tutor (QR version 4, error correction M, 30 px modules, 4-module quiet zone); decoded back with OpenCV 4.11 QRCodeDetector",
+      "license": "Generated output; no creative license. Generator library python-qrcode is BSD-3-Clause. URL and payload belong to the project.",
+      "dimensions": {
+        "width": 1230,
+        "height": 1230,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Black modules on white. Keep the white quiet zone and do not recolor or crop when placing; scan-tested at full size.",
+      "sha256": "3442a47dee257b2f57163e5a0d18cbe989fa73fea1f64bf8ac409e096f7f15dd"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/agent-workchain.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [1090, 170, 2590, 1345]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 1556,
+        "height": 1231,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "99a00e5dc048483db5d91e00aecb0af0ceb53626ff50a7f992876bbe64aa3d73"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/kb-chat-before.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [2410, 140, 3180, 1250]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 826,
+        "height": 1166,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "d53a10630740ad247c92dcf7f05fc566facf13fc8d4ea87c4c1d9443881ac802"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/kb-page10-detail.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [480, 80, 2320, 1700]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 1896,
+        "height": 1676,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "be97ec0f92798b9cb020690b1370ad3d1cd7cb865de9f4e9cb2bada5bd4b6562"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/kb-page10.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [480, 90, 3200, 1910]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 2776,
+        "height": 1876,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "743fc1718ecd7f790483e94f1d83c896182dbd01dcfce3127b40f1de0aa0f7a9"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/kb-page9-detail.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [480, 80, 2320, 1700]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 1896,
+        "height": 1676,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "474317eac856164dcb7c2a1f9e9d87214cedd568a8350d7e828295f2e694fcd5"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/kb-page9.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [480, 90, 3200, 1910]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 2776,
+        "height": 1876,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "797511c930c67c78c73b310d8e4a530e814782724d4f38a26fe823535ad3c99b"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/policy-refusal.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [1180, 85, 2630, 600]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 1506,
+        "height": 571,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "337b2b2db68e1574c0733d972a410cc05cf69b258aee49e028bb838269ae4728"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/practice-question.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [990, 285, 2720, 1550]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 1786,
+        "height": 1321,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "830113a634cd7678b0850a909390b07e95dec6e9d484f0e393f42f7e77a5d977"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/rag-answer-detail.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [500, 170, 2500, 1500]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 2056,
+        "height": 1386,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "4184747a00c4a73050266c2cc84834036774f5da6f26ce4f22db8085a9b45e25"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/rag-source-detail.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [2500, 120, 3200, 1500]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 756,
+        "height": 1436,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "b6d81ce8f88ec2079e641ec81d4b547167472403c06d2e92d11311b663f565d0"
+    },
+    {
+      "path": "presentation/editions/shared/assets/screenshots/rag-source-pane.png",
+      "kind": "ui-screenshot",
+      "origin": "seeded-2026-11-25",
+      "source": "Seeded from presentation/assets/screenshots/manifest.json: local app capture at commit 2b2b3a8, viewport 1600x1000 @2x, crop [500, 170, 3200, 1740]",
+      "license": "Project screenshot, project-owned (Verifiable Tutor UI; no third-party assets)",
+      "dimensions": {
+        "width": 2756,
+        "height": 1626,
+        "unit": "px"
+      },
+      "english_only": true,
+      "notes": "Read-only copy; the canonical originals and crop metadata are under presentation/assets/screenshots/.",
+      "sha256": "ebf2e99307cbfc4c97f899f455cce731390e82aa3ade68a71bdad88d60f47a86"
+    }
+  ]
+}

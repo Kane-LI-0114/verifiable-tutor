@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="ending" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">17 / CONCLUSION</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Verifiability is a system property.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">Page as unit, policy as code, evaluation split.</text>
+  </g>
+  <g id="takeaways" data-pptx-bounds="64 184 700 420">
+    <use data-icon="tabler-outline/file-text" x="64" y="204" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="220" font-size="21.33" font-weight="bold" fill="#09090B">PAGE IS THE UNIT</text>
+    <text x="116" y="250" font-size="21.33" fill="#18181B">retrieval, citation, and UI</text>
+    <text x="116" y="278" font-size="21.33" fill="#18181B">all use the page.</text>
+    <use data-icon="tabler-outline/lock" x="64" y="330" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="346" font-size="21.33" font-weight="bold" fill="#09090B">POLICY IS CODE</text>
+    <text x="116" y="376" font-size="21.33" fill="#18181B">five states from a dated</text>
+    <text x="116" y="404" font-size="21.33" fill="#18181B">registry; server-side 403.</text>
+    <use data-icon="tabler-outline/gauge" x="64" y="456" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="472" font-size="21.33" font-weight="bold" fill="#09090B">SPLIT THE EVALUATION</text>
+    <text x="116" y="502" font-size="21.33" fill="#18181B">grounding is not grading;</text>
+    <text x="116" y="530" font-size="21.33" fill="#18181B">wins and ties stay separate.</text>
+  </g>
+  <g id="future" data-pptx-bounds="796 184 420 300">
+    <text x="796" y="212" font-size="21.33" font-weight="bold" fill="#1447E6">FUTURE DEVELOPMENT</text>
+    <text x="796" y="252" font-size="21.33" fill="#18181B">operator console for instructor/TA</text>
+    <text x="796" y="284" font-size="21.33" fill="#18181B">citation persistence</text>
+    <text x="796" y="316" font-size="21.33" fill="#18181B">TACC exec</text>
+    <text x="796" y="348" font-size="21.33" fill="#18181B">multi-course support</text>
+  </g>
+  <g id="qa" data-pptx-bounds="796 500 420 120">
+    <line x1="796" y1="500" x2="1216" y2="500" stroke="#1447E6" stroke-width="3"/>
+    <text x="796" y="566" font-family="Georgia" font-size="53.33" fill="#09090B">Questions</text>
+    <text x="796" y="602" font-size="21.33" fill="#52525B">github.com/Kane-LI-0114/verifiable-tutor</text>
+  </g>
+  <g id="team-line" data-pptx-bounds="64 630 700 40">
+    <text x="64" y="660" font-size="21.33" fill="#52525B">LI Jinchuan · TIAN Yujia · XIE Yifeng</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">18 / 20</text>
+  </g>
+</svg>

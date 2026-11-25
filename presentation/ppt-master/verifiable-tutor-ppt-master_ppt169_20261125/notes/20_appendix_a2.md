@@ -1,0 +1,1 @@
+The evaluation uses ten practice questions and fifteen citation questions against Doubao, Gemini, and Qwen. The retrieval study uses fifty-one questions and reports nDCG@5 and hit@5. The TACC receipt is job 28067: 434 seconds of cold start, 43.9 seconds for the eight-chunk build, and eight of eight valid records. One job is a receipt, not an average.

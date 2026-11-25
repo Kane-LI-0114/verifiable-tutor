@@ -1,0 +1,1 @@
+Online, the model writes the tool query. FTS5 BM25 and a local BGE-M3 embedding each return thirty candidates. RRF fuses the two lists, the model reads the page, and verify_span checks the quote before the answer. The measured retrieval is nDCG@5 0.849 and hit@5 0.882 at 937 tokens for five results. Pages, not loose text, are the unit.

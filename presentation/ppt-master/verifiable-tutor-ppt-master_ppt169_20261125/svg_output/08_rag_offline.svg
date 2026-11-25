@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><polygon points="0,0 10,5 0,10" fill="#52525B"/></marker>
+  </defs>
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">07 / FUNCTIONS / RAG OFFLINE</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Build the evidence base on TACC.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">The index never runs at request time.</text>
+  </g>
+  <g id="pipeline" data-pptx-bounds="64 184 1152 140">
+    <rect x="64" y="198" width="250" height="90" fill="#F4F4F5"/>
+    <text x="80" y="232" font-size="21.33" font-weight="bold" fill="#09090B">01 / OCR</text>
+    <text x="80" y="262" font-size="21.33" fill="#52525B">PaddleOCR on TACC</text>
+    <line x1="318" y1="243" x2="334" y2="243" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="340" y="198" width="250" height="90" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="356" y="232" font-size="21.33" font-weight="bold" fill="#09090B">02 / CHUNK</text>
+    <text x="356" y="262" font-size="21.33" fill="#52525B">page-first, 450-token</text>
+    <line x1="594" y1="243" x2="610" y2="243" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="616" y="198" width="250" height="90" fill="#F4F4F5"/>
+    <text x="632" y="232" font-size="21.33" font-weight="bold" fill="#09090B">03 / EMBED</text>
+    <text x="632" y="262" font-size="21.33" fill="#52525B">BGE-M3 vectors</text>
+    <line x1="870" y1="243" x2="886" y2="243" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="892" y="198" width="250" height="90" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="908" y="232" font-size="21.33" font-weight="bold" fill="#09090B">04 / IMPORT</text>
+    <text x="908" y="262" font-size="21.33" fill="#52525B">local SQLite + float32</text>
+  </g>
+  <g id="scale" data-pptx-bounds="64 340 1152 80">
+    <text x="64" y="372" font-size="21.33" font-weight="bold" fill="#09090B">16 docs</text>
+    <text x="288" y="372" font-size="21.33" font-weight="bold" fill="#09090B">593 pages</text>
+    <text x="532" y="372" font-size="21.33" font-weight="bold" fill="#09090B">612 chunks</text>
+    <text x="796" y="372" font-size="21.33" font-weight="bold" fill="#09090B">612 vectors</text>
+    <text x="64" y="402" font-size="21.33" fill="#52525B">one local index, one import</text>
+  </g>
+  <g id="page-samples" data-pptx-bounds="64 440 1152 200">
+    <rect x="64" y="450" width="200" height="150" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/course-lecture2-p09.webp" x="64" y="450" width="200" height="150" preserveAspectRatio="xMidYMid meet"/>
+    <text x="64" y="628" font-size="21.33" fill="#52525B">Lecture 2 / p.9</text>
+    <rect x="300" y="450" width="200" height="150" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/course-lecture2-p10.webp" x="300" y="450" width="200" height="150" preserveAspectRatio="xMidYMid meet"/>
+    <text x="300" y="628" font-size="21.33" fill="#52525B">Lecture 2 / p.10</text>
+    <rect x="536" y="450" width="200" height="150" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/course-lecture2-p11.webp" x="536" y="450" width="200" height="150" preserveAspectRatio="xMidYMid meet"/>
+    <text x="536" y="628" font-size="21.33" fill="#52525B">Lecture 2 / p.11</text>
+    <text x="800" y="490" font-size="21.33" font-weight="bold" fill="#09090B">3 of 16 documents</text>
+    <text x="800" y="522" font-size="21.33" fill="#52525B">593 pages · 612 chunks</text>
+    <text x="800" y="554" font-size="21.33" fill="#52525B">page-first, not slide-first</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">08 / 20</text>
+  </g>
+</svg>

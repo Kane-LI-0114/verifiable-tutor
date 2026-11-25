@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><polygon points="0,0 10,5 0,10" fill="#52525B"/></marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><polygon points="0,0 10,5 0,10" fill="#C10007"/></marker>
+  </defs>
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">APPENDIX / A1</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">One question, end to end.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">Nine shipped nodes; the citation store is planned.</text>
+  </g>
+  <g id="sequence-map" data-pptx-bounds="64 184 1152 420">
+    <rect x="64" y="210" width="200" height="80" fill="#F4F4F5"/>
+    <text x="80" y="244" font-size="21.33" font-weight="bold" fill="#09090B">React SPA</text>
+    <text x="80" y="272" font-size="21.33" fill="#52525B">task input</text>
+    <line x1="264" y1="250" x2="288" y2="250" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="292" y="210" width="200" height="80" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="308" y="244" font-size="21.33" font-weight="bold" fill="#09090B">FastAPI</text>
+    <text x="308" y="272" font-size="21.33" fill="#52525B">one origin</text>
+    <line x1="492" y1="250" x2="516" y2="250" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="520" y="210" width="200" height="80" fill="#F4F4F5"/>
+    <text x="536" y="244" font-size="21.33" font-weight="bold" fill="#09090B">Policy gate</text>
+    <text x="536" y="272" font-size="21.33" fill="#52525B">allow / refuse</text>
+    <line x1="720" y1="250" x2="744" y2="250" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="748" y="210" width="200" height="80" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="764" y="244" font-size="21.33" font-weight="bold" fill="#09090B">LangGraph</text>
+    <text x="764" y="272" font-size="21.33" fill="#52525B">agent loop</text>
+    <line x1="948" y1="250" x2="972" y2="250" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="976" y="210" width="200" height="80" fill="#F4F4F5"/>
+    <text x="992" y="244" font-size="21.33" font-weight="bold" fill="#09090B">Typed tools</text>
+    <text x="992" y="272" font-size="21.33" fill="#52525B">read · verify</text>
+    <line x1="1076" y1="290" x2="1076" y2="338" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="976" y="342" width="200" height="80" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="992" y="376" font-size="21.33" font-weight="bold" fill="#09090B">Span verifier</text>
+    <text x="992" y="404" font-size="21.33" fill="#52525B">pass / fail</text>
+    <line x1="972" y1="382" x2="948" y2="382" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="748" y="342" width="200" height="80" fill="#F4F4F5"/>
+    <text x="764" y="376" font-size="21.33" font-weight="bold" fill="#09090B">Model adapter</text>
+    <text x="764" y="404" font-size="21.33" fill="#52525B">answer</text>
+    <line x1="744" y1="382" x2="720" y2="382" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="520" y="342" width="200" height="80" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="536" y="376" font-size="21.33" font-weight="bold" fill="#09090B">SQLite + JSONL</text>
+    <text x="536" y="404" font-size="21.33" fill="#52525B">durable state</text>
+    <line x1="516" y1="382" x2="492" y2="382" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="292" y="342" width="200" height="80" fill="#F4F4F5"/>
+    <text x="308" y="376" font-size="21.33" font-weight="bold" fill="#09090B">SSE</text>
+    <text x="308" y="404" font-size="21.33" fill="#52525B">stream to SPA</text>
+    <line x1="292" y1="382" x2="268" y2="382" stroke="#52525B" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="976" y="468" width="200" height="64" fill="#FFFFFF" stroke="#C10007" stroke-width="1" stroke-dasharray="6,4"/>
+    <text x="992" y="504" font-size="21.33" font-weight="bold" fill="#C10007">Citation store</text>
+    <text x="992" y="528" font-size="21.33" fill="#52525B">next</text>
+    <line x1="1076" y1="422" x2="1076" y2="462" stroke="#C10007" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow-red)"/>
+  </g>
+  <g id="legend" data-pptx-bounds="64 610 1152 62">
+    <line x1="64" y1="630" x2="120" y2="630" stroke="#52525B" stroke-width="2"/>
+    <text x="136" y="638" font-size="21.33" fill="#18181B">shipped</text>
+    <line x1="300" y1="630" x2="356" y2="630" stroke="#C10007" stroke-width="2" stroke-dasharray="6,4"/>
+    <text x="372" y="638" font-size="21.33" fill="#18181B">planned</text>
+    <text x="64" y="660" font-size="21.33" fill="#52525B">TACC is a batch lane, not an inbound node.</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">19 / 20</text>
+  </g>
+</svg>

@@ -1,0 +1,1 @@
+On the left is a real practice item: a FlashAttention single-choice question with a page marker and two points. On the right is the policy refusal for a complete Assignment 3 solution before 2026-11-29. It offers concepts, a similar example, or a hint. Same user, same course, two different guardrails doing their jobs.

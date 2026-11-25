@@ -1,0 +1,278 @@
+{
+  "viewport": [
+    1920,
+    1080
+  ],
+  "slideCount": 20,
+  "fonts": {
+    "display": "Georgia, \"Times New Roman\", serif",
+    "body": "Arial, Helvetica, sans-serif",
+    "mono": "\"Courier New\", Courier, monospace"
+  },
+  "externalResources": [],
+  "slides": [
+    {
+      "index": 1,
+      "title": "Verifiable Tutor",
+      "sizes": [
+        32,
+        112
+      ],
+      "sizeSetOk": true,
+      "notes": 135,
+      "images": 3,
+      "allWords": 14,
+      "bodyWords": 10
+    },
+    {
+      "index": 2,
+      "title": "A study loop students can trust",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 311,
+      "images": 4,
+      "allWords": 17,
+      "bodyWords": 13
+    },
+    {
+      "index": 3,
+      "title": "One local product. One batch backend on TACC",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 277,
+      "images": 11,
+      "allWords": 27,
+      "bodyWords": 23
+    },
+    {
+      "index": 4,
+      "title": "The data model makes the evidence chain durable",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 239,
+      "images": 5,
+      "allWords": 23,
+      "bodyWords": 19
+    },
+    {
+      "index": 5,
+      "title": "A small stack with one job per layer",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 211,
+      "images": 5,
+      "allWords": 35,
+      "bodyWords": 31
+    },
+    {
+      "index": 6,
+      "title": "A typed loop, not a prompt",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 304,
+      "images": 4,
+      "allWords": 24,
+      "bodyWords": 20
+    },
+    {
+      "index": 7,
+      "title": "Watch the loop work",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 251,
+      "images": 4,
+      "allWords": 13,
+      "bodyWords": 5
+    },
+    {
+      "index": 8,
+      "title": "Build the evidence base on TACC",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 239,
+      "images": 15,
+      "allWords": 25,
+      "bodyWords": 17
+    },
+    {
+      "index": 9,
+      "title": "Retrieve pages, then let the model read",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 253,
+      "images": 10,
+      "allWords": 17,
+      "bodyWords": 10
+    },
+    {
+      "index": 10,
+      "title": "Every paragraph names its source",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 212,
+      "images": 4,
+      "allWords": 11,
+      "bodyWords": 4
+    },
+    {
+      "index": 11,
+      "title": "A conversation that lives beside the file",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 246,
+      "images": 4,
+      "allWords": 13,
+      "bodyWords": 9
+    },
+    {
+      "index": 12,
+      "title": "From a marker to the exact page",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 193,
+      "images": 3,
+      "allWords": 7,
+      "bodyWords": 3
+    },
+    {
+      "index": 13,
+      "title": "A source is not a citation until the span passes",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 264,
+      "images": 12,
+      "allWords": 15,
+      "bodyWords": 11
+    },
+    {
+      "index": 14,
+      "title": "Practice and integrity",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 281,
+      "images": 2,
+      "allWords": 22,
+      "bodyWords": 17
+    },
+    {
+      "index": 15,
+      "title": "Practice, then check",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 228,
+      "images": 2,
+      "allWords": 9,
+      "bodyWords": 5
+    },
+    {
+      "index": 16,
+      "title": "We win on coverage. We tie on grading",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 267,
+      "images": 3,
+      "allWords": 37,
+      "bodyWords": 30
+    },
+    {
+      "index": 17,
+      "title": "Tutorials are the hard slice",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 304,
+      "images": 6,
+      "allWords": 21,
+      "bodyWords": 13
+    },
+    {
+      "index": 18,
+      "title": "Verifiability is a system property",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 250,
+      "images": 1,
+      "allWords": 17,
+      "bodyWords": 9
+    },
+    {
+      "index": 19,
+      "title": "One question, end to end",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 156,
+      "images": 11,
+      "allWords": 17,
+      "bodyWords": 13
+    },
+    {
+      "index": 20,
+      "title": "Evaluation method and TACC evidence",
+      "sizes": [
+        32,
+        80
+      ],
+      "sizeSetOk": true,
+      "notes": 208,
+      "images": 6,
+      "allWords": 22,
+      "bodyWords": 15
+    }
+  ],
+  "wordLimitViolations": [],
+  "violations": [],
+  "ok": true
+}

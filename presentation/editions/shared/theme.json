@@ -1,0 +1,43 @@
+{
+  "name": "Verifiable Tutor 2026F",
+  "palette": {
+    "paper": "#FAFAFA",
+    "ink": "#09090B",
+    "cobalt": "#1447E6",
+    "line": "#E5E5E5",
+    "graphite": "#0A0A0A",
+    "graphiteCard": "#171717",
+    "failure": "#C10007",
+    "white": "#FFFFFF"
+  },
+  "fonts": {
+    "display": "Georgia",
+    "body": "Arial",
+    "mono": "Courier New"
+  },
+  "pptx": {
+    "display": 40,
+    "cover": 64,
+    "body": 16,
+    "minBody": 14,
+    "maxSizesPerSlide": 2
+  },
+  "html": {
+    "display": 80,
+    "cover": 112,
+    "body": 32,
+    "minBody": 28,
+    "maxSizesPerSlide": 2
+  },
+  "stageHtml": {
+    "display": 96,
+    "cover": 120,
+    "body": 32
+  },
+  "deck": {
+    "mainSlides": 18,
+    "appendixSlides": 2,
+    "totalSlides": 20,
+    "targetDuration": "9:35"
+  }
+}

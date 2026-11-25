@@ -1,0 +1,34 @@
+slide  sizes        body words  imgs  notes  title
+    1 32,112px             10     3    135  Verifiable Tutor
+    2 32,80px              13     4    311  A study loop students can trust
+    3 32,80px              23    11    277  One local product. One batch backend on TACC
+    4 32,80px              19     5    239  The data model makes the evidence chain durable
+    5 32,80px              31     5    211  A small stack with one job per layer
+    6 32,80px              20     4    304  A typed loop, not a prompt
+    7 32,80px               5     4    251  Watch the loop work
+    8 32,80px              17    15    239  Build the evidence base on TACC
+    9 32,80px              10    10    253  Retrieve pages, then let the model read
+   10 32,80px               4     4    212  Every paragraph names its source
+   11 32,80px               9     4    246  A conversation that lives beside the file
+   12 32,80px               3     3    193  From a marker to the exact page
+   13 32,80px              11    12    264  A source is not a citation until the span passes
+   14 32,80px              17     2    281  Practice and integrity
+   15 32,80px               5     2    228  Practice, then check
+   16 32,80px              30     3    267  We win on coverage. We tie on grading
+   17 32,80px              13     6    304  Tutorials are the hard slice
+   18 32,80px               9     1    250  Verifiability is a system property
+   19 32,80px              13    11    156  One question, end to end
+   20 32,80px              15     6    208  Evaluation method and TACC evidence
+
+viewport: 1920 x 1080
+slide count: 20
+fonts: {
+  display: 'Georgia, "Times New Roman", serif',
+  body: 'Arial, Helvetica, sans-serif',
+  mono: '"Courier New", Courier, monospace'
+}
+external resources: 0
+body-word limit violations: 0
+violations: 0
+audit written to /Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/presentation/editions/custom-html/exports/type-audit.json
+TYPE AUDIT PASS: every visible text is 32px, 80px, or the cover 112px
