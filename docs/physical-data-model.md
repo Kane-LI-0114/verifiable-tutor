@@ -379,6 +379,44 @@ Foreign keys:
 
 - `conversation_id` -> `practice_sessions.conversation_id` (ON DELETE CASCADE)
 
+### revision_themes
+
+AI-generated study themes that group the course documents for the revision guide; each document belongs to exactly one theme.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Theme id assigned by the generator (t1, t2, ...). |
+| `title` | TEXT | no | - | Short English theme title. |
+| `summary` | TEXT | no | - | One or two sentences describing the theme. |
+| `position` | INTEGER | no | - | Display order of the theme in the guide. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the outline was written. |
+| `model` | TEXT | yes | - | Model that grouped the documents. |
+| `prompt_version` | TEXT | yes | - | Outline prompt version used for the build. |
+
+### revision_documents
+
+One row per course document in the revision guide, with its theme and its file-name category used for the tree colours.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `doc_id` | TEXT | yes | PK | Course document placed in this theme. |
+| `theme_id` | TEXT | no | FK | Theme the document belongs to. |
+| `category` | TEXT | no | - | assignment, lecture, tutorial, or other, from the file name. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the mapping was written. |
+
+Checks:
+
+- `CHECK (category IN ('assignment', 'lecture', 'tutorial', 'other'))`
+
+Foreign keys:
+
+- `doc_id` -> `kb_documents.id` (ON DELETE CASCADE)
+- `theme_id` -> `revision_themes.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_revision_documents_theme`: index on (`theme_id`)
+
 ### knowledge_builds
 
 State of one submitted Qwen knowledge-base build.
@@ -528,7 +566,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 9`.
+- Schema version: `PRAGMA user_version = 10`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

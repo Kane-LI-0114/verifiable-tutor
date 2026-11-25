@@ -153,6 +153,23 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">started_at</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">submitted_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
+  revision_themes [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>revision_themes</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">summary</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">model</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">prompt_version</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  revision_documents [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>revision_documents</B></TD></TR>
+      <TR><TD ALIGN="LEFT">doc_id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">theme_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">category</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
   knowledge_builds [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>knowledge_builds</B></TD></TR>
       <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
@@ -241,6 +258,8 @@ digraph physical_data_model {
   users -> topic_progress [label="user_id"];
   conversations -> practice_sessions [label="conversation_id"];
   practice_sessions -> practice_attempts [label="conversation_id"];
+  kb_documents -> revision_documents [label="doc_id"];
+  revision_themes -> revision_documents [label="theme_id"];
   users -> knowledge_builds [label="user_id"];
   kb_folders -> kb_folders [label="parent_id"];
   kb_folders -> kb_documents [label="folder_id"];

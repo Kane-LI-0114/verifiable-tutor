@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -126,6 +126,27 @@ CREATE TABLE IF NOT EXISTS practice_attempts (
     submitted_at TEXT,
     PRIMARY KEY (conversation_id, attempt_no)
 );
+
+CREATE TABLE IF NOT EXISTS revision_themes (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    model TEXT,
+    prompt_version TEXT
+);
+
+CREATE TABLE IF NOT EXISTS revision_documents (
+    doc_id TEXT PRIMARY KEY REFERENCES kb_documents(id) ON DELETE CASCADE,
+    theme_id TEXT NOT NULL REFERENCES revision_themes(id) ON DELETE CASCADE,
+    category TEXT NOT NULL CHECK (
+        category IN ('assignment', 'lecture', 'tutorial', 'other')
+    ),
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_revision_documents_theme
+    ON revision_documents(theme_id);
 
 CREATE TABLE IF NOT EXISTS topic_progress (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -1144,6 +1165,88 @@ class Storage:
                 (iso(updated_at), conversation_id),
             )
         return self.find_practice_session(conversation_id)
+
+    # -- revision guide ----------------------------------------------------
+    def replace_revision_outline(
+        self,
+        *,
+        themes: Sequence[Mapping[str, Any]],
+        documents: Sequence[Mapping[str, Any]],
+        created_at: datetime,
+        model: str | None = None,
+        prompt_version: str | None = None,
+    ) -> None:
+        """Replace the whole outline; one document belongs to one theme."""
+
+        with self._connect() as connection:
+            connection.execute("DELETE FROM revision_documents")
+            connection.execute("DELETE FROM revision_themes")
+            for theme in themes:
+                connection.execute(
+                    "INSERT INTO revision_themes"
+                    " (id, title, summary, position, created_at, model,"
+                    "  prompt_version) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        theme["id"],
+                        theme["title"],
+                        theme["summary"],
+                        int(theme["position"]),
+                        iso(created_at),
+                        model,
+                        prompt_version,
+                    ),
+                )
+            for document in documents:
+                connection.execute(
+                    "INSERT INTO revision_documents"
+                    " (doc_id, theme_id, category, created_at)"
+                    " VALUES (?, ?, ?, ?)",
+                    (
+                        document["doc_id"],
+                        document["theme_id"],
+                        document["category"],
+                        iso(created_at),
+                    ),
+                )
+
+    def list_revision_tree(self) -> list[dict[str, Any]]:
+        """Return the outline as themes with their documents, in display order."""
+
+        with self._connect() as connection:
+            themes = connection.execute(
+                "SELECT * FROM revision_themes ORDER BY position, id"
+            ).fetchall()
+            documents = connection.execute(
+                "SELECT d.doc_id, d.theme_id, d.category, doc.title, doc.filename"
+                " FROM revision_documents d"
+                " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
+                " ORDER BY d.category, doc.title, d.doc_id"
+            ).fetchall()
+        by_theme: dict[str, list[dict[str, Any]]] = {}
+        for row in documents:
+            item = dict(row)
+            by_theme.setdefault(item.pop("theme_id"), []).append(item)
+        return [
+            {
+                "id": theme["id"],
+                "title": theme["title"],
+                "summary": theme["summary"],
+                "position": theme["position"],
+                "documents": by_theme.get(theme["id"], []),
+            }
+            for theme in themes
+        ]
+
+    def list_revision_candidates(self) -> list[dict[str, Any]]:
+        """Return the summarised documents an outline can group."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id AS doc_id, title, filename, summary FROM kb_documents"
+                " WHERE deleted_at IS NULL AND summary IS NOT NULL"
+                " AND summary <> '' ORDER BY id"
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def record_progress(
         self,

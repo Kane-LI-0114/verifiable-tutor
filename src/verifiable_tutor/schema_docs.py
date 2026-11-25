@@ -35,6 +35,8 @@ SCHEMA_TABLE_ORDER = (
     "topic_progress",
     "practice_sessions",
     "practice_attempts",
+    "revision_themes",
+    "revision_documents",
     "knowledge_builds",
     "kb_folders",
     "kb_documents",
@@ -145,6 +147,14 @@ TABLE_NOTES = {
         "One row per attempt at a practice session. The first attempt decides "
         "the session status; later attempts are read-only history and can only "
         "raise the best score."
+    ),
+    "revision_themes": (
+        "AI-generated study themes that group the course documents for the "
+        "revision guide; each document belongs to exactly one theme."
+    ),
+    "revision_documents": (
+        "One row per course document in the revision guide, with its theme and "
+        "its file-name category used for the tree colours."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -305,6 +315,21 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "max_score": "Sum of every question's maximum score.",
         "started_at": "ISO-8601 UTC time the attempt opened.",
         "submitted_at": "ISO-8601 UTC submission time; null while in progress.",
+    },
+    "revision_themes": {
+        "id": "Theme id assigned by the generator (t1, t2, ...).",
+        "title": "Short English theme title.",
+        "summary": "One or two sentences describing the theme.",
+        "position": "Display order of the theme in the guide.",
+        "created_at": "ISO-8601 UTC time the outline was written.",
+        "model": "Model that grouped the documents.",
+        "prompt_version": "Outline prompt version used for the build.",
+    },
+    "revision_documents": {
+        "doc_id": "Course document placed in this theme.",
+        "theme_id": "Theme the document belongs to.",
+        "category": "assignment, lecture, tutorial, or other, from the file name.",
+        "created_at": "ISO-8601 UTC time the mapping was written.",
     },
     "knowledge_builds": {
         "id": "Build id.",
