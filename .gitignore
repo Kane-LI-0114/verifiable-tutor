@@ -23,11 +23,13 @@ build/
 dist/
 
 # --- Data: tracked corpus and TACC results, ignored runtime state ---
-# The course PDFs, their OCR output, the BGE-M3 index, and the Qwen knowledge
-# records are tracked so a new checkout can rebuild the local knowledge store
-# without re-running the TACC jobs. They are course material: keep the
-# repository private and do not redistribute the PDFs or OCR text. The SQLite
-# store, traces, model caches, and request/result scratch stay local.
+# The course PDFs, their OCR output, the BGE-M3 index, the Qwen knowledge
+# records, and the generated revision guide are tracked so a new checkout can
+# rebuild the local knowledge store and open the revision guide without
+# re-running the TACC jobs or a paid model call. They are course material: the
+# repository is public so the teaching team can reach the artifact; do not
+# redistribute the PDFs or OCR text outside it. The SQLite store, traces, model
+# caches, and request/result scratch stay local.
 data/app/*
 !data/app/.gitkeep
 data/caches/*
