@@ -182,6 +182,53 @@ def test_generated_points_and_progress_reach_the_tree(tmp_path):
     assert attention["mastered"] == 1
 
 
+def test_regenerating_a_chapter_keeps_progress_on_unchanged_points(tmp_path):
+    storage = _storage(tmp_path)
+    _outline(storage)
+
+    def save(points):
+        storage.save_revision_document(
+            doc_id="Tutorial_4",
+            markdown="# Tutorial 4\n",
+            intro_markdown="# Tutorial 4",
+            points=points,
+            model="deepseek-flash",
+            prompt_version="revision-document/1",
+            generated_at=NOW,
+        )
+
+    save(
+        [
+            {"title": "First point", "body_markdown": "Body one.", "page_no": 3},
+            {"title": "Second point", "body_markdown": "Body two.", "page_no": 4},
+        ]
+    )
+    detail = storage.revision_document_detail("Tutorial_4", "user-1")
+    first_id = detail["points"][0]["id"]
+    storage.set_revision_progress(
+        user_id="user-1",
+        point_id=first_id,
+        mastered=True,
+        updated_at=NOW,
+    )
+
+    save(
+        [
+            {"title": "First point", "body_markdown": "New body.", "page_no": 3},
+            {"title": "New point", "body_markdown": "Body three.", "page_no": 5},
+        ]
+    )
+
+    detail = storage.revision_document_detail("Tutorial_4", "user-1")
+    assert [point["title"] for point in detail["points"]] == [
+        "First point",
+        "New point",
+    ]
+    assert detail["points"][0]["id"] == first_id
+    assert detail["points"][0]["body_markdown"] == "New body."
+    assert detail["mastered"] == 1
+
+
 def test_an_ungenerated_document_has_no_detail(tmp_path):
     storage = _storage(tmp_path)
     _outline(storage)

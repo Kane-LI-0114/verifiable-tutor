@@ -1564,18 +1564,44 @@ class Storage:
             )
             if cursor.rowcount == 0:
                 raise LookupError(f"no revision document {doc_id!r}")
-            connection.execute(
-                "DELETE FROM revision_points WHERE doc_id = ?", (doc_id,)
-            )
+            prepared = []
             for position, point in enumerate(points):
                 title = str(point["title"]).strip()
                 point_id = hashlib.sha256(
                     f"{doc_id}\n{title}".encode("utf-8")
                 ).hexdigest()[:16]
+                prepared.append((point_id, title, point, position))
+            new_ids = {row[0] for row in prepared}
+            existing = {
+                row["id"]
+                for row in connection.execute(
+                    "SELECT id FROM revision_points WHERE doc_id = ?", (doc_id,)
+                )
+            }
+            removed = existing - new_ids
+            if removed:
+                placeholders = ", ".join("?" for _ in removed)
+                connection.execute(
+                    "DELETE FROM revision_points"
+                    f" WHERE doc_id = ? AND id IN ({placeholders})",
+                    (doc_id, *removed),
+                )
+            if existing & new_ids:
+                connection.execute(
+                    "UPDATE revision_points SET position = position + 1000000"
+                    " WHERE doc_id = ?",
+                    (doc_id,),
+                )
+            for point_id, title, point, position in prepared:
                 connection.execute(
                     "INSERT INTO revision_points"
                     " (id, doc_id, title, body_markdown, position, page_no,"
-                    "  created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "  created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    " ON CONFLICT(id) DO UPDATE SET"
+                    " title = excluded.title,"
+                    " body_markdown = excluded.body_markdown,"
+                    " position = excluded.position,"
+                    " page_no = excluded.page_no",
                     (
                         point_id,
                         doc_id,
