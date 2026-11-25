@@ -248,6 +248,13 @@ def test_the_correct_choice_is_not_always_first(tmp_path):
         "Correct",
     ]
 
+    storage.submit_practice_attempt(
+        conversation_id="practice-order",
+        attempt_no=1,
+        answers={},
+        results={},
+        submitted_at=FINISHED,
+    )
     redo = storage.start_practice_attempt(
         conversation_id="practice-order", started_at=LATER
     )
