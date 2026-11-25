@@ -58,6 +58,12 @@ OPENAPI_TAGS: list[dict[str, str]] = [
             "exists."
         ),
     },
+    {
+        "name": "revision",
+        "description": (
+            "The revision guide outline: course themes and their documents."
+        ),
+    },
 ]
 
 _SESSION_ID = "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8"
@@ -71,6 +77,10 @@ SESSION_EXAMPLE: dict[str, Any] = {
     "created_at": _CREATED_AT,
     "updated_at": _CREATED_AT,
     "message_count": 2,
+    "has_practice": False,
+    "practice_status": None,
+    "practice_best_score": None,
+    "practice_max_score": None,
 }
 CITATION_EXAMPLE: dict[str, Any] = {
     "doc_id": "course_project",
@@ -326,6 +336,20 @@ class SessionSummary(BaseModel):
     created_at: str = _ex(_CREATED_AT, "ISO-8601 UTC creation time.")
     updated_at: str = _ex(_CREATED_AT, "ISO-8601 UTC last update time.")
     message_count: int = _ex(2, "Number of stored messages.")
+    has_practice: bool = _ex(
+        False,
+        "True when the conversation carries a stored practice session; a "
+        "practice conversation without one is a legacy record.",
+    )
+    practice_status: Literal["not_started", "in_progress", "completed"] | None = _opt(
+        None, "Practice session status, decided by its first attempt."
+    )
+    practice_best_score: float | None = _opt(
+        None, "Highest practice score across attempts."
+    )
+    practice_max_score: float | None = _opt(
+        None, "Maximum total score of the practice session."
+    )
 
 
 class SessionListResponse(BaseModel):
@@ -334,6 +358,86 @@ class SessionListResponse(BaseModel):
     sessions: list[SessionSummary] = _ex(
         [SESSION_EXAMPLE], "The signed-in user's conversations, newest first."
     )
+
+
+class RevisionDocumentSummary(BaseModel):
+    doc_id: str = Field(description="Course document id.")
+    title: str | None = Field(default=None, description="Document title.")
+    filename: str | None = Field(default=None, description="Original file name.")
+    category: Literal["assignment", "lecture", "tutorial", "other"] = Field(
+        description="Category derived from the file name."
+    )
+    generated: bool = Field(
+        description="True when the review chapter has been generated."
+    )
+    total: int = Field(description="Number of knowledge points in the chapter.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
+
+
+class RevisionThemeSummary(BaseModel):
+    id: str = Field(description="Theme id.")
+    title: str = Field(description="Theme title.")
+    summary: str = Field(description="One or two sentences describing the theme.")
+    position: int = Field(description="Display order of the theme.")
+    total: int = Field(description="Knowledge points across the theme's documents.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
+    documents: list[RevisionDocumentSummary] = Field(
+        default_factory=list, description="Documents grouped under this theme."
+    )
+
+
+class RevisionTreeResponse(BaseModel):
+    total: int = Field(description="Knowledge points across the whole course.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
+    themes: list[RevisionThemeSummary] = Field(
+        default_factory=list, description="Revision themes in display order."
+    )
+
+
+class RevisionPointSummary(BaseModel):
+    id: str = Field(description="Knowledge point id.")
+    title: str = Field(description="Knowledge point heading.")
+    body_markdown: str = Field(description="Markdown body of the point.")
+    position: int = Field(description="Display order inside the document.")
+    page_no: int | None = Field(
+        default=None, description="Page the point is introduced on."
+    )
+    mastered: bool = Field(description="Whether the signed-in user marked it known.")
+
+
+class RevisionDocumentDetail(BaseModel):
+    doc_id: str = Field(description="Course document id.")
+    title: str | None = Field(default=None, description="Document title.")
+    filename: str | None = Field(default=None, description="Original file name.")
+    category: Literal["assignment", "lecture", "tutorial", "other"] = Field(
+        description="Category derived from the file name."
+    )
+    theme_id: str = Field(description="Theme the document belongs to.")
+    theme_title: str | None = Field(default=None, description="Theme title.")
+    intro_markdown: str = Field(
+        default="", description="Markdown before the first knowledge point."
+    )
+    model: str | None = Field(default=None, description="Model that wrote the chapter.")
+    generated_at: str | None = Field(
+        default=None, description="ISO-8601 UTC generation time."
+    )
+    total: int = Field(description="Number of knowledge points.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
+    points: list[RevisionPointSummary] = Field(
+        default_factory=list, description="Knowledge points in display order."
+    )
+
+
+class RevisionProgressBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mastered: bool = Field(description="Whether the point is marked as known.")
+
+
+class RevisionProgressResponse(BaseModel):
+    doc_id: str = Field(description="Document the point belongs to.")
+    total: int = Field(description="Number of knowledge points in the document.")
+    mastered: int = Field(description="Points the signed-in user marked as known.")
 
 
 class WorkStepRecord(BaseModel):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -41,7 +41,11 @@ def _conversation_or_404(storage, session_id: str, user: dict):
     response_model=SessionListResponse,
     summary="List the signed-in user's conversations",
 )
-def list_sessions(user: CurrentUser, storage: StorageDep):
+def list_sessions(
+    user: CurrentUser,
+    storage: StorageDep,
+    kind: Annotated[Literal["chat", "practice"] | None, Query()] = None,
+):
     """List the signed-in user's conversations, newest first."""
 
     sessions = [
@@ -52,8 +56,12 @@ def list_sessions(user: CurrentUser, storage: StorageDep):
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
             "message_count": row["message_count"],
+            "has_practice": bool(row["has_practice"]),
+            "practice_status": row["practice_status"],
+            "practice_best_score": row["practice_best_score"],
+            "practice_max_score": row["practice_max_score"],
         }
-        for row in storage.list_conversations(user["id"])
+        for row in storage.list_conversations(user["id"], kind=kind)
     ]
     return {"sessions": sessions}
 

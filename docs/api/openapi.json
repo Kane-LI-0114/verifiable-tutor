@@ -1918,6 +1918,151 @@
         "title": "ParsePracticeBody",
         "type": "object"
       },
+      "PracticeAnswersBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Question id to the selected choices or typed answer.",
+            "title": "Answers",
+            "type": "object"
+          }
+        },
+        "title": "PracticeAnswersBody",
+        "type": "object"
+      },
+      "PracticeAttemptRecord": {
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Answers",
+            "type": "object"
+          },
+          "attempt_no": {
+            "description": "1-based attempt number.",
+            "title": "Attempt No",
+            "type": "integer"
+          },
+          "max_score": {
+            "description": "Maximum total score of the session.",
+            "title": "Max Score",
+            "type": "number"
+          },
+          "option_orders": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Question id to the choice order shown in this attempt.",
+            "title": "Option Orders",
+            "type": "object"
+          },
+          "results": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PracticeResultBody"
+            },
+            "title": "Results",
+            "type": "object"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Total score; null while open.",
+            "title": "Score"
+          },
+          "started_at": {
+            "description": "ISO-8601 UTC time the attempt opened.",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "description": "Whether this attempt is still open or submitted.",
+            "enum": [
+              "in_progress",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO-8601 UTC submission time; null while open.",
+            "title": "Submitted At"
+          }
+        },
+        "required": [
+          "attempt_no",
+          "status",
+          "max_score",
+          "started_at"
+        ],
+        "title": "PracticeAttemptRecord",
+        "type": "object"
+      },
+      "PracticeCreateBody": {
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "description": "Course topic to generate self-test questions for.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "single-choice",
+                    "multiple-choice",
+                    "true-false",
+                    "short-answer",
+                    "code"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Question types to generate, for example [\"single-choice\"].",
+            "title": "Types"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "title": "PracticeCreateBody",
+        "type": "object"
+      },
       "PracticeGenerateBody": {
         "additionalProperties": false,
         "properties": {
@@ -1932,6 +2077,13 @@
             "anyOf": [
               {
                 "items": {
+                  "enum": [
+                    "single-choice",
+                    "multiple-choice",
+                    "true-false",
+                    "short-answer",
+                    "code"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -1948,6 +2100,108 @@
           "topic"
         ],
         "title": "PracticeGenerateBody",
+        "type": "object"
+      },
+      "PracticeQuestionRecord": {
+        "additionalProperties": true,
+        "properties": {
+          "choices": {
+            "description": "Selectable choices.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "correct_answer": {
+            "default": "",
+            "description": "Exact correct choice text for objective questions.",
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "id": {
+            "description": "Stable question id inside the session, q1..qN.",
+            "title": "Id",
+            "type": "string"
+          },
+          "knowledge_points": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Knowledge Points",
+            "type": "array"
+          },
+          "max_score": {
+            "description": "Maximum points of the question.",
+            "title": "Max Score",
+            "type": "number"
+          },
+          "question": {
+            "description": "Question stem.",
+            "title": "Question",
+            "type": "string"
+          },
+          "reference_answer": {
+            "description": "Reference answer used for grading.",
+            "title": "Reference Answer",
+            "type": "string"
+          },
+          "scoring_points": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scoring Points",
+            "type": "array"
+          },
+          "topic": {
+            "description": "Course topic the question belongs to.",
+            "title": "Topic",
+            "type": "string"
+          },
+          "type": {
+            "description": "Question type, for example single-choice.",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "topic",
+          "question",
+          "reference_answer",
+          "max_score"
+        ],
+        "title": "PracticeQuestionRecord",
+        "type": "object"
+      },
+      "PracticeResultBody": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "default": "",
+            "description": "Feedback shown to the student.",
+            "title": "Explanation",
+            "type": "string"
+          },
+          "max_score": {
+            "description": "Maximum points of the question.",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Score",
+            "type": "number"
+          },
+          "score": {
+            "description": "Points earned on the question.",
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "score",
+          "max_score"
+        ],
+        "title": "PracticeResultBody",
         "type": "object"
       },
       "PracticeRunBody": {
@@ -2004,25 +2258,78 @@
         "title": "PracticeRunBody",
         "type": "object"
       },
-      "PracticeSessionBody": {
-        "additionalProperties": false,
+      "PracticeSaveResponse": {
         "properties": {
-          "content": {
-            "description": "The rendered result, markdown.",
-            "minLength": 1,
-            "title": "Content",
+          "attempt_no": {
+            "title": "Attempt No",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "attempt_no"
+        ],
+        "title": "PracticeSaveResponse",
+        "type": "object"
+      },
+      "PracticeSessionRecord": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeAttemptRecord"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
+          "best_score": {
+            "description": "Highest total score across attempts.",
+            "title": "Best Score",
+            "type": "number"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the first attempt was submitted.",
+            "title": "Completed At"
+          },
+          "created_at": {
+            "description": "ISO-8601 UTC generation time.",
+            "title": "Created At",
             "type": "string"
           },
-          "progress": {
-            "description": "Per-topic knowledge-point progress.",
+          "id": {
+            "description": "Practice conversation id.",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_score": {
+            "description": "Sum of every question's maximum score.",
+            "title": "Max Score",
+            "type": "number"
+          },
+          "questions": {
             "items": {
-              "$ref": "#/components/schemas/TopicProgressBody"
+              "$ref": "#/components/schemas/PracticeQuestionRecord"
             },
-            "title": "Progress",
+            "title": "Questions",
             "type": "array"
           },
           "sources": {
-            "description": "The numbered course sources.",
             "items": {
               "additionalProperties": true,
               "type": "object"
@@ -2030,19 +2337,75 @@
             "title": "Sources",
             "type": "array"
           },
+          "status": {
+            "description": "Session status, decided by the first attempt only.",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sidebar title.",
+            "title": "Title"
+          },
           "topic": {
-            "description": "The topic.",
-            "maxLength": 200,
-            "minLength": 1,
+            "description": "Topic the questions were generated for.",
             "title": "Topic",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "ISO-8601 UTC last activity time.",
+            "title": "Updated At",
             "type": "string"
           }
         },
         "required": [
+          "id",
           "topic",
-          "content"
+          "status",
+          "best_score",
+          "max_score",
+          "created_at",
+          "updated_at"
         ],
-        "title": "PracticeSessionBody",
+        "title": "PracticeSessionRecord",
+        "type": "object"
+      },
+      "PracticeSubmitBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Question id to the selected choices or typed answer.",
+            "title": "Answers",
+            "type": "object"
+          },
+          "results": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PracticeResultBody"
+            },
+            "description": "Question id to its stored grading result.",
+            "title": "Results",
+            "type": "object"
+          }
+        },
+        "title": "PracticeSubmitBody",
         "type": "object"
       },
       "RegisterBody": {
@@ -2384,6 +2747,363 @@
         "title": "RetrievalResponse",
         "type": "object"
       },
+      "RevisionDocumentDetail": {
+        "properties": {
+          "category": {
+            "description": "Category derived from the file name.",
+            "enum": [
+              "assignment",
+              "lecture",
+              "tutorial",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "doc_id": {
+            "description": "Course document id.",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Original file name.",
+            "title": "Filename"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ISO-8601 UTC generation time.",
+            "title": "Generated At"
+          },
+          "intro_markdown": {
+            "default": "",
+            "description": "Markdown before the first knowledge point.",
+            "title": "Intro Markdown",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model that wrote the chapter.",
+            "title": "Model"
+          },
+          "points": {
+            "description": "Knowledge points in display order.",
+            "items": {
+              "$ref": "#/components/schemas/RevisionPointSummary"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "theme_id": {
+            "description": "Theme the document belongs to.",
+            "title": "Theme Id",
+            "type": "string"
+          },
+          "theme_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Theme title.",
+            "title": "Theme Title"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Document title.",
+            "title": "Title"
+          },
+          "total": {
+            "description": "Number of knowledge points.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id",
+          "category",
+          "theme_id",
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionDocumentDetail",
+        "type": "object"
+      },
+      "RevisionDocumentSummary": {
+        "properties": {
+          "category": {
+            "description": "Category derived from the file name.",
+            "enum": [
+              "assignment",
+              "lecture",
+              "tutorial",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "doc_id": {
+            "description": "Course document id.",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Original file name.",
+            "title": "Filename"
+          },
+          "generated": {
+            "description": "True when the review chapter has been generated.",
+            "title": "Generated",
+            "type": "boolean"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Document title.",
+            "title": "Title"
+          },
+          "total": {
+            "description": "Number of knowledge points in the chapter.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id",
+          "category",
+          "generated",
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionDocumentSummary",
+        "type": "object"
+      },
+      "RevisionPointSummary": {
+        "properties": {
+          "body_markdown": {
+            "description": "Markdown body of the point.",
+            "title": "Body Markdown",
+            "type": "string"
+          },
+          "id": {
+            "description": "Knowledge point id.",
+            "title": "Id",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Whether the signed-in user marked it known.",
+            "title": "Mastered",
+            "type": "boolean"
+          },
+          "page_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page the point is introduced on.",
+            "title": "Page No"
+          },
+          "position": {
+            "description": "Display order inside the document.",
+            "title": "Position",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Knowledge point heading.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body_markdown",
+          "position",
+          "mastered"
+        ],
+        "title": "RevisionPointSummary",
+        "type": "object"
+      },
+      "RevisionProgressBody": {
+        "additionalProperties": false,
+        "properties": {
+          "mastered": {
+            "description": "Whether the point is marked as known.",
+            "title": "Mastered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mastered"
+        ],
+        "title": "RevisionProgressBody",
+        "type": "object"
+      },
+      "RevisionProgressResponse": {
+        "properties": {
+          "doc_id": {
+            "description": "Document the point belongs to.",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Number of knowledge points in the document.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id",
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionProgressResponse",
+        "type": "object"
+      },
+      "RevisionThemeSummary": {
+        "properties": {
+          "documents": {
+            "description": "Documents grouped under this theme.",
+            "items": {
+              "$ref": "#/components/schemas/RevisionDocumentSummary"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "id": {
+            "description": "Theme id.",
+            "title": "Id",
+            "type": "string"
+          },
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "position": {
+            "description": "Display order of the theme.",
+            "title": "Position",
+            "type": "integer"
+          },
+          "summary": {
+            "description": "One or two sentences describing the theme.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "description": "Theme title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "total": {
+            "description": "Knowledge points across the theme's documents.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "position",
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionThemeSummary",
+        "type": "object"
+      },
+      "RevisionTreeResponse": {
+        "properties": {
+          "mastered": {
+            "description": "Points the signed-in user marked as known.",
+            "title": "Mastered",
+            "type": "integer"
+          },
+          "themes": {
+            "description": "Revision themes in display order.",
+            "items": {
+              "$ref": "#/components/schemas/RevisionThemeSummary"
+            },
+            "title": "Themes",
+            "type": "array"
+          },
+          "total": {
+            "description": "Knowledge points across the whole course.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "mastered"
+        ],
+        "title": "RevisionTreeResponse",
+        "type": "object"
+      },
       "SearchDocumentRecord": {
         "additionalProperties": false,
         "example": {
@@ -2643,6 +3363,7 @@
           "sessions": [
             {
               "created_at": "2026-11-02T12:00:00+00:00",
+              "has_practice": false,
               "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
               "kind": "chat",
               "message_count": 2,
@@ -2657,6 +3378,7 @@
             "example": [
               {
                 "created_at": "2026-11-02T12:00:00+00:00",
+                "has_practice": false,
                 "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
                 "kind": "chat",
                 "message_count": 2,
@@ -2807,6 +3529,7 @@
         "additionalProperties": false,
         "example": {
           "created_at": "2026-11-02T12:00:00+00:00",
+          "has_practice": false,
           "id": "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8",
           "kind": "chat",
           "message_count": 2,
@@ -2819,6 +3542,12 @@
             "example": "2026-11-02T12:00:00+00:00",
             "title": "Created At",
             "type": "string"
+          },
+          "has_practice": {
+            "description": "True when the conversation carries a stored practice session; a practice conversation without one is a legacy record.",
+            "example": false,
+            "title": "Has Practice",
+            "type": "boolean"
           },
           "id": {
             "description": "Conversation id, used as session_id in the API.",
@@ -2837,6 +3566,47 @@
             "example": 2,
             "title": "Message Count",
             "type": "integer"
+          },
+          "practice_best_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Highest practice score across attempts.",
+            "title": "Practice Best Score"
+          },
+          "practice_max_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum total score of the practice session.",
+            "title": "Practice Max Score"
+          },
+          "practice_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_started",
+                  "in_progress",
+                  "completed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Practice session status, decided by its first attempt.",
+            "title": "Practice Status"
           },
           "title": {
             "anyOf": [
@@ -2863,7 +3633,8 @@
           "kind",
           "created_at",
           "updated_at",
-          "message_count"
+          "message_count",
+          "has_practice"
         ],
         "title": "SessionSummary",
         "type": "object"
@@ -3076,38 +3847,6 @@
           "status"
         ],
         "title": "ToolCallRecord",
-        "type": "object"
-      },
-      "TopicProgressBody": {
-        "additionalProperties": false,
-        "properties": {
-          "covered_points": {
-            "description": "Knowledge points the quiz covered.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Covered Points",
-            "type": "array"
-          },
-          "mastered_points": {
-            "description": "Knowledge points answered with full marks.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Mastered Points",
-            "type": "array"
-          },
-          "topic": {
-            "description": "The topic.",
-            "minLength": 1,
-            "title": "Topic",
-            "type": "string"
-          }
-        },
-        "required": [
-          "topic"
-        ],
-        "title": "TopicProgressBody",
         "type": "object"
       },
       "TranscriptionResponse": {
@@ -4713,13 +5452,13 @@
     },
     "/api/practice/sessions": {
       "post": {
-        "description": "Persist a finished practice result as a conversation.",
-        "operationId": "save_practice_session_api_practice_sessions_post",
+        "description": "Generate the questions and persist them before the first answer.\n\nSaving at generation time is what makes a reload resume the session; an\nempty generation stores nothing so the sidebar never fills with blanks.",
+        "operationId": "create_practice_session_api_practice_sessions_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PracticeSessionBody"
+                "$ref": "#/components/schemas/PracticeCreateBody"
               }
             }
           },
@@ -4729,7 +5468,9 @@
           "201": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
               }
             },
             "description": "Successful Response"
@@ -4746,9 +5487,344 @@
               }
             },
             "description": "Validation Error"
+          },
+          "502": {
+            "description": "The model returned no usable questions."
           }
         },
-        "summary": "Save a practice session so it appears in the conversation list",
+        "summary": "Generate and save a practice session",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}": {
+      "delete": {
+        "operationId": "delete_practice_session_api_practice_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete a practice session and all of its attempts",
+        "tags": [
+          "practice"
+        ]
+      },
+      "get": {
+        "operationId": "get_practice_session_api_practice_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Load a practice session with its attempts",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts": {
+      "post": {
+        "description": "Open a new attempt; the session status stays decided by attempt one.",
+        "operationId": "start_practice_attempt_api_practice_sessions__session_id__attempts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "409": {
+            "description": "The first attempt is not submitted yet."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start another attempt",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}": {
+      "delete": {
+        "description": "Remove one attempt; the practice disappears only with its last attempt.",
+        "operationId": "delete_practice_attempt_api_practice_sessions__session_id__attempts__attempt_no__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_no",
+            "required": true,
+            "schema": {
+              "title": "Attempt No",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete one attempt, and the session when no attempt remains",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}/answers": {
+      "patch": {
+        "description": "Persist the current answers so a reload resumes the attempt.",
+        "operationId": "save_practice_answers_api_practice_sessions__session_id__attempts__attempt_no__answers_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_no",
+            "required": true,
+            "schema": {
+              "title": "Attempt No",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswersBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSaveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "409": {
+            "description": "The attempt is already submitted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Autosave the answers of one attempt",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/sessions/{session_id}/attempts/{attempt_no}/submit": {
+      "post": {
+        "description": "Store the grading result of an attempt.\n\nThe first attempt completes the session and records knowledge-point\nprogress; later attempts only contribute to the best score.",
+        "operationId": "submit_practice_attempt_api_practice_sessions__session_id__attempts__attempt_no__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attempt_no",
+            "required": true,
+            "schema": {
+              "title": "Attempt No",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeSubmitBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "409": {
+            "description": "The attempt is already submitted."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit and grade one attempt",
         "tags": [
           "practice"
         ]
@@ -4777,10 +5853,214 @@
         ]
       }
     },
+    "/api/revision": {
+      "get": {
+        "description": "Return the stored outline with the user's three-level progress.",
+        "operationId": "revision_tree_api_revision_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionTreeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "summary": "The revision guide outline",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/api/revision/docs/{doc_id}": {
+      "get": {
+        "description": "Return the chapter and the signed-in user's self-check state.",
+        "operationId": "revision_document_api_revision_docs__doc_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDocumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Unknown document or chapter not generated yet."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "One generated review chapter with its knowledge points",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/api/revision/docs/{doc_id}/markdown": {
+      "get": {
+        "description": "Return the stored chapter as a downloadable Markdown file.",
+        "operationId": "download_revision_document_api_revision_docs__doc_id__markdown_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A clean Markdown file, with no internal page markers."
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Unknown document or chapter not generated yet."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download one review chapter as Markdown",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
+    "/api/revision/points/{point_id}": {
+      "patch": {
+        "description": "Store one self-check and return the document's new counts.",
+        "operationId": "update_revision_point_api_revision_points__point_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "point_id",
+            "required": true,
+            "schema": {
+              "title": "Point Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionProgressBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionProgressResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark one knowledge point as known or unknown",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
     "/api/sessions": {
       "get": {
         "description": "List the signed-in user's conversations, newest first.",
         "operationId": "list_sessions_api_sessions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "chat",
+                    "practice"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4791,6 +6071,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "List the signed-in user's conversations",
@@ -5271,6 +6561,10 @@
     {
       "description": "Practice execution; a documented scaffold until the tacc/exec job exists.",
       "name": "practice"
+    },
+    {
+      "description": "The revision guide outline: course themes and their documents.",
+      "name": "revision"
     }
   ]
 }

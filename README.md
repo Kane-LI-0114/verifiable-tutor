@@ -28,7 +28,7 @@ This README follows the two-section structure the NSDI '27 Call for Artifacts re
 | DeepSeek API key | any active key | live chat in the end-to-end example |
 | TACC account and `tcloud` | optional | only to rerun the OCR, index, and Qwen jobs |
 
-The repository ships the material the default path needs: 16 documents, 593 page records, 612 chunk vectors, and 16 document summaries under `data/corpus/`, `data/index/`, and `data/kb/`. A fresh checkout does not rerun OCR and does not submit a TACC job.
+The repository ships the material the default path needs: 16 documents, 593 page records, 612 chunk vectors, 16 document summaries, and the generated revision guide under `data/corpus/`, `data/index/`, `data/kb/`, and `data/revision/`. On the first start the backend imports the tracked corpus and revision guide into `data/app/app.sqlite3`; later starts reuse that database. A fresh checkout does not rerun OCR, submit a TACC job, or call a model to generate the guide.
 
 ### 1. Clone and install
 
@@ -449,7 +449,8 @@ Everything marked implemented runs on the development laptop and is covered by t
 | Agent loop | implemented: two-node LangGraph, typed tools (course search, page read, DeepSeek search and fetch, span verify), ordered work-chain events, numbered sources |
 | Retrieval | implemented: FTS5 BM25 plus BGE-M3 with RRF and page deduplication; the span verifier is implemented, claim support is pending |
 | Policy gate | implemented: five states, versioned deadline registry, intent classification, decision log |
-| Practice | implemented: question generation, deterministic grading for choice questions, model grading for open and code answers |
+| Practice | implemented: generated questions persist as sessions before the first answer, unlimited paged attempts with autosave, deterministic grading for choice questions, model grading for open and code answers, and attempt-level delete |
+| Revision guide | implemented: the offline outline and per-document review chapters, the mind-map tree with three-level progress, self-check knowledge points, page anchors, and a clean Markdown download; the generated guide is tracked and loaded on first start |
 | Knowledge base | implemented: the Qwen job, record validation, the local store, and browsing; the card browser and the build console are preview pages |
 | Corpus pipeline | implemented on TACC: OCR, the BGE-M3 index, and document summaries; the artifacts are tracked |
 | Evaluation | implemented: the chunking matrix, the citation study, and the RQ2 harness |
@@ -468,12 +469,13 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/orchestrator/` | Request routing and context budget | present: two-node LangGraph loop, typed tool registry, course and web tools |
 | `src/verifiable_tutor/evidence/` | Hybrid retrieval (query plan, FTS5 and dense arms, reciprocal rank fusion) and the deterministic span verifier | present: retrieval and span verifier |
 | `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | present: question generation, deterministic and model grading |
+| `src/verifiable_tutor/revision/` | Revision guide outline, document categorisation, review chapter generation, and Markdown parsing | present: outline, chapter generator and parser |
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/eval/` | Evaluation harness | present: RQ2 self-test metrics CLI |
 | `src/verifiable_tutor/corpus/` | Page records, the page-first chunker, and the local knowledge store | present: chunker, store, pages |
 | `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state; present: chunk, request and schema validation helpers, card reader, and build lifecycle | present: helpers, cards, builds |
 | `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache, search and fetch used by the agent tools |
-| `src/verifiable_tutor/prompts/` | Model prompt texts in one editable home: the chat system prompt and the knowledge-base job template, loaded by the code that sends them | present: chat and kb prompts |
+| `src/verifiable_tutor/prompts/` | Model prompt texts in one editable home: the chat system prompt, the knowledge-base job template, and the practice and revision prompts, loaded by the code that sends them | present: chat, kb, practice, and revision prompts |
 | `src/verifiable_tutor/ui/web/` | React UI source: routes, layout, page components, preview fixtures, and Vitest tests; built assets are written to the ignored `src/verifiable_tutor/ui/static/` | present: live API wiring and preview build |
 | `tacc/serve/` | Required Qwen knowledge-base job: one submitted GPU job per document shard, records written to `USERDIR` | present: job, worker, prompt |
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |
@@ -485,7 +487,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, and recorded results; `results/` holds the citation study data, its notes, and the evaluation script | `results/`: present; `questions/` and `policy_scenarios/`: placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | present: protocol, checklist, frozen mock runs |
-| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state | `data/corpus/`, `data/index/`, and `data/kb/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
+| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/`, `data/revision/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state, and the generated revision guide | `data/corpus/`, `data/index/`, `data/kb/`, and `data/revision/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
 | `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
 | `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, the live model smoke, the API documentation build and vendor scripts, and the physical data model build script | present: scripts |

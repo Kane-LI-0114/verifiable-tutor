@@ -329,6 +329,138 @@ Foreign keys:
 
 - `user_id` -> `users.id` (ON DELETE CASCADE)
 
+### practice_sessions
+
+One generated practice session attached to a practice conversation: the structured questions, their sources, the first-attempt status, and the highest score across attempts.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `conversation_id` | TEXT | yes | PK | Practice conversation that owns this session. |
+| `topic` | TEXT | no | - | Topic the questions were generated for. |
+| `questions_json` | TEXT | no | - | JSON array of questions, each with a stable qN id. |
+| `sources_json` | TEXT | no | - | JSON array of the numbered course sources. |
+| `status` | TEXT | no | - | not_started, in_progress, or completed; only the first attempt decides it. |
+| `best_score` | REAL | no | - | Highest total score across submitted attempts. |
+| `max_score` | REAL | no | - | Sum of every question's maximum score. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC generation time. |
+| `updated_at` | TEXT | no | - | Last answer save, submission, or new attempt. |
+| `completed_at` | TEXT | yes | - | When the first attempt was submitted; null before that. |
+
+Checks:
+
+- `CHECK (status IN ('not_started', 'in_progress', 'completed'))`
+
+Foreign keys:
+
+- `conversation_id` -> `conversations.id` (ON DELETE CASCADE)
+
+### practice_attempts
+
+One row per attempt at a practice session. The first attempt decides the session status; later attempts are read-only history and can only raise the best score.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `conversation_id` | TEXT | no | PK | Practice session the attempt belongs to. |
+| `attempt_no` | INTEGER | no | PK | 1-based attempt number; 1 is the first attempt. |
+| `status` | TEXT | no | - | in_progress or completed. |
+| `answers_json` | TEXT | no | - | JSON object of question id to the selected answers. |
+| `results_json` | TEXT | no | - | JSON object of question id to its stored score and explanation. |
+| `option_order_json` | TEXT | no | - | JSON object of question id to the shuffled choice order shown in this attempt. |
+| `score` | REAL | yes | - | Total score of this attempt; null while in progress. |
+| `max_score` | REAL | no | - | Sum of every question's maximum score. |
+| `started_at` | TEXT | no | - | ISO-8601 UTC time the attempt opened. |
+| `submitted_at` | TEXT | yes | - | ISO-8601 UTC submission time; null while in progress. |
+
+Checks:
+
+- `CHECK (status IN ('in_progress', 'completed'))`
+
+Foreign keys:
+
+- `conversation_id` -> `practice_sessions.conversation_id` (ON DELETE CASCADE)
+
+### revision_themes
+
+AI-generated study themes that group the course documents for the revision guide; each document belongs to exactly one theme.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Theme id assigned by the generator (t1, t2, ...). |
+| `title` | TEXT | no | - | Short English theme title. |
+| `summary` | TEXT | no | - | One or two sentences describing the theme. |
+| `position` | INTEGER | no | - | Display order of the theme in the guide. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the outline was written. |
+| `model` | TEXT | yes | - | Model that grouped the documents. |
+| `prompt_version` | TEXT | yes | - | Outline prompt version used for the build. |
+
+### revision_documents
+
+One row per course document in the revision guide, with its theme, its file-name category, and the generated review chapter.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `doc_id` | TEXT | yes | PK | Course document placed in this theme. |
+| `theme_id` | TEXT | no | FK | Theme the document belongs to. |
+| `category` | TEXT | no | - | assignment, lecture, tutorial, or other, from the file name. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the mapping was written. |
+| `markdown` | TEXT | yes | - | Clean generated chapter; null until the document is built. |
+| `intro_markdown` | TEXT | yes | - | Markdown before the first knowledge point. |
+| `model` | TEXT | yes | - | Model that wrote the chapter. |
+| `prompt_version` | TEXT | yes | - | Document prompt version used for the build. |
+| `generated_at` | TEXT | yes | - | ISO-8601 UTC time the chapter was generated. |
+
+Checks:
+
+- `CHECK (category IN ('assignment', 'lecture', 'tutorial', 'other'))`
+
+Foreign keys:
+
+- `doc_id` -> `kb_documents.id` (ON DELETE CASCADE)
+- `theme_id` -> `revision_themes.id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_revision_documents_theme`: index on (`theme_id`)
+
+### revision_points
+
+Knowledge points parsed from one generated chapter; each row is one H2 heading and its Markdown body, with the page it came from.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Point id, a hash of the document id and the heading. |
+| `doc_id` | TEXT | no | FK | Generated document the point belongs to. |
+| `title` | TEXT | no | - | H2 heading text with the page comment removed. |
+| `body_markdown` | TEXT | no | - | Markdown between this heading and the next. |
+| `position` | INTEGER | no | - | 0-based order inside the document. |
+| `page_no` | INTEGER | yes | - | 1-based PDF page the point is introduced on; null when unknown. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the point was stored. |
+
+Foreign keys:
+
+- `doc_id` -> `revision_documents.doc_id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_revision_points_doc`: index on (`doc_id`, `position`)
+- UNIQUE (`doc_id`, `position`)
+
+### revision_progress
+
+Per-user self-check state for one knowledge point: whether the student marked it as known.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `user_id` | TEXT | no | PK | Account the self-check belongs to. |
+| `point_id` | TEXT | no | PK | Knowledge point that was checked. |
+| `mastered` | INTEGER | no | - | 1 when the student marked the point as known. |
+| `updated_at` | TEXT | no | - | ISO-8601 UTC time of the last change. |
+
+Foreign keys:
+
+- `point_id` -> `revision_points.id` (ON DELETE CASCADE)
+- `user_id` -> `users.id` (ON DELETE CASCADE)
+
 ### knowledge_builds
 
 State of one submitted Qwen knowledge-base build.
@@ -478,7 +610,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 7`.
+- Schema version: `PRAGMA user_version = 11`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

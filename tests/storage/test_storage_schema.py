@@ -18,8 +18,11 @@ from verifiable_tutor.storage import Storage
 # ADR-0017 bumps it to 4 for the ordered work-chain events, and ADR-0019
 # bumps it to 5 for the step tag on each event. Version 6 adds the soft-delete
 # stamps to the knowledge tables. Version 7 adds the numbered sources a turn
-# retrieved.
-SCHEMA_VERSION = 7
+# retrieved. Version 8 adds the stored practice sessions and their attempts.
+# Version 9 adds the per-attempt choice order. Version 10 adds the revision
+# guide outline. Version 11 adds the generated review documents, points, and
+# per-user self-check progress.
+SCHEMA_VERSION = 11
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -208,6 +211,12 @@ def test_initialize_creates_the_current_schema_on_a_fresh_database(tmp_path):
             "kb_chunks",
             "kb_chunks_fts",
             "kb_index_state",
+            "practice_sessions",
+            "practice_attempts",
+            "revision_themes",
+            "revision_documents",
+            "revision_points",
+            "revision_progress",
         } <= tables
         tool_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(tool_calls)")

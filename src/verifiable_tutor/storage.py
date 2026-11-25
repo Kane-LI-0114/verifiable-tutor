@@ -13,7 +13,9 @@ stored conversations, messages, or accounts.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import random
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -21,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 11
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -94,6 +96,84 @@ CREATE TABLE IF NOT EXISTS conversations (
 );
 CREATE INDEX IF NOT EXISTS idx_conversations_user
     ON conversations(user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS practice_sessions (
+    conversation_id TEXT PRIMARY KEY
+        REFERENCES conversations(id) ON DELETE CASCADE,
+    topic TEXT NOT NULL,
+    questions_json TEXT NOT NULL,
+    sources_json TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (
+        status IN ('not_started', 'in_progress', 'completed')
+    ),
+    best_score REAL NOT NULL DEFAULT 0,
+    max_score REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS practice_attempts (
+    conversation_id TEXT NOT NULL
+        REFERENCES practice_sessions(conversation_id) ON DELETE CASCADE,
+    attempt_no INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
+    answers_json TEXT NOT NULL DEFAULT '{}',
+    results_json TEXT NOT NULL DEFAULT '{}',
+    option_order_json TEXT NOT NULL DEFAULT '{}',
+    score REAL,
+    max_score REAL NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL,
+    submitted_at TEXT,
+    PRIMARY KEY (conversation_id, attempt_no)
+);
+
+CREATE TABLE IF NOT EXISTS revision_themes (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    model TEXT,
+    prompt_version TEXT
+);
+
+CREATE TABLE IF NOT EXISTS revision_documents (
+    doc_id TEXT PRIMARY KEY REFERENCES kb_documents(id) ON DELETE CASCADE,
+    theme_id TEXT NOT NULL REFERENCES revision_themes(id) ON DELETE CASCADE,
+    category TEXT NOT NULL CHECK (
+        category IN ('assignment', 'lecture', 'tutorial', 'other')
+    ),
+    created_at TEXT NOT NULL,
+    markdown TEXT,
+    intro_markdown TEXT,
+    model TEXT,
+    prompt_version TEXT,
+    generated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_revision_documents_theme
+    ON revision_documents(theme_id);
+
+CREATE TABLE IF NOT EXISTS revision_points (
+    id TEXT PRIMARY KEY,
+    doc_id TEXT NOT NULL REFERENCES revision_documents(doc_id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    body_markdown TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    page_no INTEGER,
+    created_at TEXT NOT NULL,
+    UNIQUE (doc_id, position)
+);
+CREATE INDEX IF NOT EXISTS idx_revision_points_doc
+    ON revision_points(doc_id, position);
+
+CREATE TABLE IF NOT EXISTS revision_progress (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    point_id TEXT NOT NULL REFERENCES revision_points(id) ON DELETE CASCADE,
+    mastered INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, point_id)
+);
 
 CREATE TABLE IF NOT EXISTS topic_progress (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -345,6 +425,62 @@ def _decode_json(value: str | None) -> Any:
     return json.loads(value)
 
 
+def _practice_session_row(row: sqlite3.Row) -> dict[str, Any]:
+    """Decode one practice session row for the API and the tests."""
+
+    return {
+        "conversation_id": row["conversation_id"],
+        "topic": row["topic"],
+        "questions": _decode_json(row["questions_json"]),
+        "sources": _decode_json(row["sources_json"]),
+        "status": row["status"],
+        "best_score": row["best_score"],
+        "max_score": row["max_score"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "completed_at": row["completed_at"],
+    }
+
+
+def _practice_attempt_row(row: sqlite3.Row) -> dict[str, Any]:
+    """Decode one practice attempt row, including its saved answers."""
+
+    return {
+        "attempt_no": row["attempt_no"],
+        "status": row["status"],
+        "answers": _decode_json(row["answers_json"]) or {},
+        "results": _decode_json(row["results_json"]) or {},
+        "option_orders": _decode_json(row["option_order_json"]) or {},
+        "score": row["score"],
+        "max_score": row["max_score"],
+        "started_at": row["started_at"],
+        "submitted_at": row["submitted_at"],
+    }
+
+
+_OBJECTIVE_TYPES = {"single-choice", "multiple-choice"}
+
+
+def _option_order(
+    questions: Sequence[Mapping[str, Any]], *, seed: str
+) -> dict[str, list[str]]:
+    """Shuffle the choices of each objective question for one attempt.
+
+    The generator tends to place the correct option first, so every answer
+    reads as A. The answers are stored as text, so shuffling here cannot break
+    grading, and each attempt gets its own stable order.
+    """
+
+    rng = random.Random(seed)
+    order: dict[str, list[str]] = {}
+    for question in questions:
+        choices = list(question.get("choices") or [])
+        if question.get("type") in _OBJECTIVE_TYPES and len(choices) > 1:
+            rng.shuffle(choices)
+            order[str(question.get("id") or "")] = choices
+    return order
+
+
 def _insert_step(
     connection: sqlite3.Connection,
     message_id: str,
@@ -369,6 +505,10 @@ def _insert_step(
             step.get("rule_id"),
         ),
     )
+
+
+class PracticeAttemptOpenError(RuntimeError):
+    """A redo cannot start while another attempt is still open."""
 
 
 class Storage:
@@ -410,6 +550,8 @@ class Storage:
             self._add_missing_message_event_columns(connection)
             self._add_missing_soft_delete_columns(connection)
             self._add_missing_conversation_kind_column(connection)
+            self._add_missing_practice_attempt_columns(connection)
+            self._add_missing_revision_document_columns(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -476,6 +618,44 @@ class Storage:
                 "ALTER TABLE conversations"
                 " ADD COLUMN kind TEXT NOT NULL DEFAULT 'chat'"
             )
+
+    @staticmethod
+    def _add_missing_practice_attempt_columns(
+        connection: sqlite3.Connection,
+    ) -> None:
+        """Add the option order a database created before version 9 lacks."""
+
+        existing = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(practice_attempts)")
+        }
+        if "option_order_json" not in existing:
+            connection.execute(
+                "ALTER TABLE practice_attempts"
+                " ADD COLUMN option_order_json TEXT NOT NULL DEFAULT '{}'"
+            )
+
+    @staticmethod
+    def _add_missing_revision_document_columns(
+        connection: sqlite3.Connection,
+    ) -> None:
+        """Add the generated document columns a database before version 11 lacks."""
+
+        existing = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(revision_documents)")
+        }
+        for name, sql_type in (
+            ("markdown", "TEXT"),
+            ("intro_markdown", "TEXT"),
+            ("model", "TEXT"),
+            ("prompt_version", "TEXT"),
+            ("generated_at", "TEXT"),
+        ):
+            if name not in existing:
+                connection.execute(
+                    f"ALTER TABLE revision_documents ADD COLUMN {name} {sql_type}"
+                )
 
     def ping(self) -> bool:
         try:
@@ -678,14 +858,811 @@ class Storage:
             ).fetchone()
         return dict(row) if row is not None else None
 
-    def list_conversations(self, user_id: str) -> list[dict[str, Any]]:
+    def list_conversations(
+        self, user_id: str, *, kind: str | None = None
+    ) -> list[dict[str, Any]]:
+        query = (
+            "SELECT c.*, (SELECT COUNT(*) FROM messages m"
+            " WHERE m.conversation_id = c.id) AS message_count,"
+            " (ps.conversation_id IS NOT NULL) AS has_practice,"
+            " ps.status AS practice_status,"
+            " ps.best_score AS practice_best_score,"
+            " ps.max_score AS practice_max_score"
+            " FROM conversations c"
+            " LEFT JOIN practice_sessions ps ON ps.conversation_id = c.id"
+            " WHERE c.user_id = ?"
+        )
+        parameters: list[Any] = [user_id]
+        if kind is not None:
+            query += " AND c.kind = ?"
+            parameters.append(kind)
+        query += " ORDER BY c.updated_at DESC, c.id"
+        with self._connect() as connection:
+            rows = connection.execute(query, tuple(parameters)).fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_conversation(self, conversation_id: str, user_id: str) -> bool:
+        """Delete one conversation and everything cascading from it."""
+
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "DELETE FROM conversations WHERE id = ? AND user_id = ?",
+                (conversation_id, user_id),
+            )
+            return cursor.rowcount > 0
+
+    # -- practice sessions -------------------------------------------------
+    def create_practice_session(
+        self,
+        *,
+        conversation_id: str,
+        user_id: str,
+        title: str | None,
+        topic: str,
+        questions: Sequence[Mapping[str, Any]],
+        sources: Sequence[Mapping[str, Any]] = (),
+        created_at: datetime,
+    ) -> dict[str, Any]:
+        """Store the generated questions and start the first attempt.
+
+        Saving at generation time is what lets a reload resume the questions,
+        so the first attempt opens in progress before any answer exists.
+        """
+
+        stored: list[dict[str, Any]] = []
+        for index, question in enumerate(questions, start=1):
+            item = dict(question)
+            item.setdefault("id", f"q{index}")
+            stored.append(item)
+        max_score = sum(float(item.get("max_score") or 0) for item in stored)
+        option_order = _option_order(stored, seed=f"{conversation_id}:1")
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO conversations"
+                " (id, user_id, title, kind, created_at, updated_at)"
+                " VALUES (?, ?, ?, 'practice', ?, ?)",
+                (
+                    conversation_id,
+                    user_id,
+                    title,
+                    iso(created_at),
+                    iso(created_at),
+                ),
+            )
+            connection.execute(
+                "INSERT INTO practice_sessions"
+                " (conversation_id, topic, questions_json, sources_json, status,"
+                "  best_score, max_score, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, 'not_started', 0, ?, ?, ?)",
+                (
+                    conversation_id,
+                    topic,
+                    json.dumps(stored),
+                    json.dumps(list(sources)),
+                    max_score,
+                    iso(created_at),
+                    iso(created_at),
+                ),
+            )
+            connection.execute(
+                "INSERT INTO practice_attempts"
+                " (conversation_id, attempt_no, status, answers_json,"
+                "  results_json, option_order_json, score, max_score, started_at)"
+                " VALUES (?, 1, 'in_progress', '{}', '{}', ?, NULL, ?, ?)",
+                (
+                    conversation_id,
+                    json.dumps(option_order),
+                    max_score,
+                    iso(created_at),
+                ),
+            )
+        return {
+            "conversation_id": conversation_id,
+            "status": "not_started",
+            "max_score": max_score,
+        }
+
+    def find_practice_session(
+        self, conversation_id: str
+    ) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM practice_sessions WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return _practice_session_row(row)
+
+    def list_practice_attempts(self, conversation_id: str) -> list[dict[str, Any]]:
         with self._connect() as connection:
             rows = connection.execute(
-                "SELECT c.*, (SELECT COUNT(*) FROM messages m"
-                " WHERE m.conversation_id = c.id) AS message_count"
-                " FROM conversations c WHERE c.user_id = ?"
-                " ORDER BY c.updated_at DESC, c.id",
+                "SELECT * FROM practice_attempts WHERE conversation_id = ?"
+                " ORDER BY attempt_no",
+                (conversation_id,),
+            ).fetchall()
+        return [_practice_attempt_row(row) for row in rows]
+
+    def find_practice_attempt(
+        self, conversation_id: str, attempt_no: int
+    ) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM practice_attempts"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (conversation_id, attempt_no),
+            ).fetchone()
+        return None if row is None else _practice_attempt_row(row)
+
+    def save_practice_answers(
+        self,
+        *,
+        conversation_id: str,
+        attempt_no: int,
+        answers: Mapping[str, Any],
+        updated_at: datetime,
+    ) -> None:
+        """Autosave the current answers and start the session if needed."""
+
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE practice_attempts SET answers_json = ?"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (
+                    json.dumps(dict(answers)),
+                    conversation_id,
+                    attempt_no,
+                ),
+            )
+            connection.execute(
+                "UPDATE practice_sessions SET status = 'in_progress',"
+                " updated_at = ? WHERE conversation_id = ?"
+                " AND status = 'not_started'",
+                (iso(updated_at), conversation_id),
+            )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(updated_at), conversation_id),
+            )
+
+    def submit_practice_attempt(
+        self,
+        *,
+        conversation_id: str,
+        attempt_no: int,
+        answers: Mapping[str, Any],
+        results: Mapping[str, Mapping[str, Any]],
+        submitted_at: datetime,
+    ) -> dict[str, Any]:
+        """Grade one attempt, and complete the session only on the first one."""
+
+        score = sum(float(result.get("score") or 0) for result in results.values())
+        with self._connect() as connection:
+            session = connection.execute(
+                "SELECT max_score FROM practice_sessions"
+                " WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if session is None:
+                raise LookupError(f"no practice session {conversation_id!r}")
+            max_score = float(session["max_score"])
+            connection.execute(
+                "UPDATE practice_attempts"
+                " SET answers_json = ?, results_json = ?, status = 'completed',"
+                "  score = ?, max_score = ?, submitted_at = ?"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (
+                    json.dumps(dict(answers)),
+                    json.dumps(dict(results)),
+                    score,
+                    max_score,
+                    iso(submitted_at),
+                    conversation_id,
+                    attempt_no,
+                ),
+            )
+            if attempt_no == 1:
+                connection.execute(
+                    "UPDATE practice_sessions"
+                    " SET status = 'completed', completed_at = ?,"
+                    "  best_score = MAX(best_score, ?), updated_at = ?"
+                    " WHERE conversation_id = ?",
+                    (
+                        iso(submitted_at),
+                        score,
+                        iso(submitted_at),
+                        conversation_id,
+                    ),
+                )
+            else:
+                connection.execute(
+                    "UPDATE practice_sessions"
+                    " SET best_score = MAX(best_score, ?), updated_at = ?"
+                    " WHERE conversation_id = ?",
+                    (score, iso(submitted_at), conversation_id),
+                )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(submitted_at), conversation_id),
+            )
+        return {"score": score, "max_score": max_score}
+
+    def start_practice_attempt(
+        self, *, conversation_id: str, started_at: datetime
+    ) -> dict[str, Any]:
+        """Open the next attempt without touching the first-attempt status."""
+
+        with self._connect() as connection:
+            session = connection.execute(
+                "SELECT max_score, questions_json FROM practice_sessions"
+                " WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if session is None:
+                raise LookupError(f"no practice session {conversation_id!r}")
+            row = connection.execute(
+                "SELECT COALESCE(MAX(attempt_no), 0) AS current"
+                " FROM practice_attempts WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            attempt_no = int(row["current"]) + 1
+            max_score = float(session["max_score"])
+            questions = _decode_json(session["questions_json"]) or []
+            option_order = _option_order(
+                questions, seed=f"{conversation_id}:{attempt_no}"
+            )
+            inserted = connection.execute(
+                "INSERT INTO practice_attempts"
+                " (conversation_id, attempt_no, status, answers_json,"
+                "  results_json, option_order_json, score, max_score, started_at)"
+                " SELECT ?, ?, 'in_progress', '{}', '{}', ?, NULL, ?, ?"
+                " WHERE NOT EXISTS ("
+                "  SELECT 1 FROM practice_attempts"
+                "  WHERE conversation_id = ? AND status = 'in_progress')",
+                (
+                    conversation_id,
+                    attempt_no,
+                    json.dumps(option_order),
+                    max_score,
+                    iso(started_at),
+                    conversation_id,
+                ),
+            )
+            if inserted.rowcount == 0:
+                raise PracticeAttemptOpenError(
+                    f"practice {conversation_id!r} already has an open attempt"
+                )
+            connection.execute(
+                "UPDATE practice_sessions SET updated_at = ?"
+                " WHERE conversation_id = ?",
+                (iso(started_at), conversation_id),
+            )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(started_at), conversation_id),
+            )
+        stored = self.find_practice_attempt(conversation_id, attempt_no)
+        assert stored is not None
+        return stored
+
+    def delete_practice_attempt(
+        self,
+        *,
+        conversation_id: str,
+        attempt_no: int,
+        updated_at: datetime,
+    ) -> dict[str, Any] | None:
+        """Delete one attempt, and the session only when none remain.
+
+        The remaining attempts keep their order and are renumbered, and the
+        earliest one decides whether the session is new, in progress, or
+        completed, so the first-attempt rule survives a deletion.
+        """
+
+        with self._connect() as connection:
+            session = connection.execute(
+                "SELECT conversation_id FROM practice_sessions"
+                " WHERE conversation_id = ?",
+                (conversation_id,),
+            ).fetchone()
+            if session is None:
+                raise LookupError(f"no practice session {conversation_id!r}")
+            connection.execute(
+                "DELETE FROM practice_attempts"
+                " WHERE conversation_id = ? AND attempt_no = ?",
+                (conversation_id, attempt_no),
+            )
+            remaining = connection.execute(
+                "SELECT attempt_no FROM practice_attempts"
+                " WHERE conversation_id = ? ORDER BY attempt_no",
+                (conversation_id,),
+            ).fetchall()
+            if not remaining:
+                connection.execute(
+                    "DELETE FROM conversations WHERE id = ?", (conversation_id,)
+                )
+                return None
+            for new_no, row in enumerate(remaining, start=1):
+                if row["attempt_no"] != new_no:
+                    connection.execute(
+                        "UPDATE practice_attempts SET attempt_no = ?"
+                        " WHERE conversation_id = ? AND attempt_no = ?",
+                        (new_no, conversation_id, row["attempt_no"]),
+                    )
+            attempts = connection.execute(
+                "SELECT * FROM practice_attempts"
+                " WHERE conversation_id = ? ORDER BY attempt_no",
+                (conversation_id,),
+            ).fetchall()
+            earliest = attempts[0]
+            if earliest["status"] == "completed":
+                status = "completed"
+                completed_at = earliest["submitted_at"]
+            else:
+                answers = _decode_json(earliest["answers_json"]) or {}
+                results = _decode_json(earliest["results_json"]) or {}
+                status = "in_progress" if (answers or results) else "not_started"
+                completed_at = None
+            best_score = max(
+                (
+                    float(attempt["score"])
+                    for attempt in attempts
+                    if attempt["status"] == "completed" and attempt["score"] is not None
+                ),
+                default=0,
+            )
+            connection.execute(
+                "UPDATE practice_sessions SET status = ?, best_score = ?,"
+                " completed_at = ?, updated_at = ? WHERE conversation_id = ?",
+                (
+                    status,
+                    best_score,
+                    completed_at,
+                    iso(updated_at),
+                    conversation_id,
+                ),
+            )
+            connection.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (iso(updated_at), conversation_id),
+            )
+        return self.find_practice_session(conversation_id)
+
+    # -- revision guide ----------------------------------------------------
+    def replace_revision_outline(
+        self,
+        *,
+        themes: Sequence[Mapping[str, Any]],
+        documents: Sequence[Mapping[str, Any]],
+        created_at: datetime,
+        model: str | None = None,
+        prompt_version: str | None = None,
+    ) -> None:
+        """Replace the whole outline; one document belongs to one theme."""
+
+        with self._connect() as connection:
+            connection.execute("DELETE FROM revision_documents")
+            connection.execute("DELETE FROM revision_themes")
+            for theme in themes:
+                connection.execute(
+                    "INSERT INTO revision_themes"
+                    " (id, title, summary, position, created_at, model,"
+                    "  prompt_version) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        theme["id"],
+                        theme["title"],
+                        theme["summary"],
+                        int(theme["position"]),
+                        iso(created_at),
+                        model,
+                        prompt_version,
+                    ),
+                )
+            for document in documents:
+                connection.execute(
+                    "INSERT INTO revision_documents"
+                    " (doc_id, theme_id, category, created_at)"
+                    " VALUES (?, ?, ?, ?)",
+                    (
+                        document["doc_id"],
+                        document["theme_id"],
+                        document["category"],
+                        iso(created_at),
+                    ),
+                )
+
+    def list_revision_tree(self, user_id: str) -> list[dict[str, Any]]:
+        """Return the outline with per-document totals and the user's progress."""
+
+        with self._connect() as connection:
+            themes = connection.execute(
+                "SELECT * FROM revision_themes ORDER BY position, id"
+            ).fetchall()
+            documents = connection.execute(
+                "SELECT d.doc_id, d.theme_id, d.category, d.markdown, doc.title,"
+                " doc.filename, COUNT(p.id) AS total,"
+                " COALESCE(SUM(CASE WHEN rp.mastered = 1 THEN 1 ELSE 0 END), 0)"
+                " AS mastered"
+                " FROM revision_documents d"
+                " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
+                " LEFT JOIN revision_points p ON p.doc_id = d.doc_id"
+                " LEFT JOIN revision_progress rp ON rp.point_id = p.id"
+                " AND rp.user_id = ?"
+                " GROUP BY d.doc_id, d.theme_id, d.category, d.markdown,"
+                " doc.title, doc.filename"
+                " ORDER BY d.category, doc.title, d.doc_id",
                 (user_id,),
+            ).fetchall()
+        by_theme: dict[str, list[dict[str, Any]]] = {}
+        for row in documents:
+            item = dict(row)
+            item["generated"] = item.pop("markdown") is not None
+            item["total"] = int(item["total"])
+            item["mastered"] = int(item["mastered"])
+            by_theme.setdefault(item.pop("theme_id"), []).append(item)
+        return [
+            {
+                "id": theme["id"],
+                "title": theme["title"],
+                "summary": theme["summary"],
+                "position": theme["position"],
+                "total": sum(doc["total"] for doc in by_theme.get(theme["id"], [])),
+                "mastered": sum(
+                    doc["mastered"] for doc in by_theme.get(theme["id"], [])
+                ),
+                "documents": by_theme.get(theme["id"], []),
+            }
+            for theme in themes
+        ]
+
+    def revision_outline_status(self) -> dict[str, Any]:
+        """Return the outline, generation, and point counts for the CLI."""
+
+        with self._connect() as connection:
+            themes = connection.execute(
+                "SELECT t.title, COUNT(d.doc_id) AS documents"
+                " FROM revision_themes t"
+                " LEFT JOIN revision_documents d ON d.theme_id = t.id"
+                " GROUP BY t.id ORDER BY t.position, t.id"
+            ).fetchall()
+            totals = connection.execute(
+                "SELECT COUNT(*) AS documents,"
+                " COALESCE(SUM(markdown IS NOT NULL), 0) AS generated"
+                " FROM revision_documents"
+            ).fetchone()
+            points = connection.execute(
+                "SELECT COUNT(*) AS points FROM revision_points"
+            ).fetchone()
+        return {
+            "themes": [dict(row) for row in themes],
+            "documents": int(totals["documents"]),
+            "generated": int(totals["generated"]),
+            "points": int(points["points"]),
+        }
+
+    def revision_snapshot(self) -> dict[str, Any]:
+        """Return a portable snapshot of the outline, chapters, and points.
+
+        The snapshot has no user data; progress stays in the local database.
+        """
+
+        with self._connect() as connection:
+            themes = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT id, title, summary, position, created_at, model,"
+                    " prompt_version FROM revision_themes ORDER BY position, id"
+                )
+            ]
+            documents = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT d.doc_id, d.theme_id, d.category, d.markdown,"
+                    " d.intro_markdown, d.model, d.prompt_version,"
+                    " d.generated_at, doc.title, doc.filename"
+                    " FROM revision_documents d"
+                    " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
+                    " ORDER BY d.doc_id"
+                )
+            ]
+            points = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT doc_id, title, body_markdown, position, page_no"
+                    " FROM revision_points ORDER BY doc_id, position"
+                )
+            ]
+        by_doc: dict[str, list[dict[str, Any]]] = {}
+        for point in points:
+            by_doc.setdefault(point.pop("doc_id"), []).append(point)
+        for document in documents:
+            document["points"] = by_doc.get(document["doc_id"], [])
+        return {
+            "schema": "vt-revision/1",
+            "themes": themes,
+            "documents": documents,
+        }
+
+    def import_revision_snapshot(
+        self,
+        payload: Mapping[str, Any],
+        *,
+        imported_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Load a tracked snapshot when the revision tables are still empty."""
+
+        if payload.get("schema") != "vt-revision/1":
+            raise ValueError("unsupported revision snapshot schema")
+        themes = payload.get("themes") or []
+        documents = payload.get("documents") or []
+        if not themes or not documents:
+            raise ValueError("the revision snapshot is empty")
+        now = iso(imported_at or datetime.now(timezone.utc))
+        with self._connect() as connection:
+            existing = connection.execute(
+                "SELECT COUNT(*) AS count FROM revision_themes"
+            ).fetchone()["count"]
+            if int(existing) > 0:
+                return {
+                    "imported": False,
+                    "themes": int(existing),
+                    "documents": 0,
+                    "points": 0,
+                }
+            known = {
+                row[0]
+                for row in connection.execute("SELECT id FROM kb_documents")
+            }
+            missing = [
+                document["doc_id"]
+                for document in documents
+                if document["doc_id"] not in known
+            ]
+            if missing:
+                raise LookupError(
+                    "the corpus is not imported: " + ", ".join(sorted(missing))
+                )
+            for theme in themes:
+                connection.execute(
+                    "INSERT INTO revision_themes"
+                    " (id, title, summary, position, created_at, model,"
+                    "  prompt_version) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        theme["id"],
+                        theme["title"],
+                        theme["summary"],
+                        int(theme["position"]),
+                        theme.get("created_at") or now,
+                        theme.get("model"),
+                        theme.get("prompt_version"),
+                    ),
+                )
+            point_count = 0
+            for document in documents:
+                connection.execute(
+                    "INSERT INTO revision_documents"
+                    " (doc_id, theme_id, category, created_at, markdown,"
+                    "  intro_markdown, model, prompt_version, generated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        document["doc_id"],
+                        document["theme_id"],
+                        document["category"],
+                        now,
+                        document.get("markdown"),
+                        document.get("intro_markdown"),
+                        document.get("model"),
+                        document.get("prompt_version"),
+                        document.get("generated_at"),
+                    ),
+                )
+                for position, point in enumerate(document.get("points") or []):
+                    title = str(point["title"]).strip()
+                    point_id = hashlib.sha256(
+                        f"{document['doc_id']}\n{title}".encode("utf-8")
+                    ).hexdigest()[:16]
+                    connection.execute(
+                        "INSERT INTO revision_points"
+                        " (id, doc_id, title, body_markdown, position, page_no,"
+                        "  created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            point_id,
+                            document["doc_id"],
+                            title,
+                            point["body_markdown"],
+                            position,
+                            point.get("page_no"),
+                            now,
+                        ),
+                    )
+                    point_count += 1
+        return {
+            "imported": True,
+            "themes": len(themes),
+            "documents": len(documents),
+            "points": point_count,
+        }
+
+    def list_revision_chunks(self, doc_id: str) -> list[dict[str, Any]]:
+        """Return the OCR chunks of one document in reading order."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT page_no, section, text FROM kb_chunks WHERE doc_id = ?"
+                " ORDER BY page_no, chunk_index",
+                (doc_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def find_revision_document(self, doc_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT d.*, doc.title, doc.filename, doc.summary,"
+                " t.title AS theme_title"
+                " FROM revision_documents d"
+                " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
+                " LEFT JOIN revision_themes t ON t.id = d.theme_id"
+                " WHERE d.doc_id = ?",
+                (doc_id,),
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def revision_document_detail(
+        self, doc_id: str, user_id: str
+    ) -> dict[str, Any] | None:
+        """Return one generated document with its points and the user's checks."""
+
+        document = self.find_revision_document(doc_id)
+        if document is None or document.get("markdown") is None:
+            return None
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT p.id, p.title, p.body_markdown, p.position, p.page_no,"
+                " COALESCE(rp.mastered, 0) AS mastered"
+                " FROM revision_points p"
+                " LEFT JOIN revision_progress rp ON rp.point_id = p.id"
+                " AND rp.user_id = ?"
+                " WHERE p.doc_id = ? ORDER BY p.position",
+                (user_id, doc_id),
+            ).fetchall()
+        points = [dict(row) for row in rows]
+        for point in points:
+            point["mastered"] = bool(point["mastered"])
+        return {
+            "document": document,
+            "points": points,
+            "total": len(points),
+            "mastered": sum(1 for point in points if point["mastered"]),
+        }
+
+    def save_revision_document(
+        self,
+        *,
+        doc_id: str,
+        markdown: str,
+        intro_markdown: str,
+        points: Sequence[Mapping[str, Any]],
+        model: str | None,
+        prompt_version: str,
+        generated_at: datetime,
+    ) -> int:
+        """Replace one generated document and its knowledge points."""
+
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE revision_documents SET markdown = ?, intro_markdown = ?,"
+                " model = ?, prompt_version = ?, generated_at = ?"
+                " WHERE doc_id = ?",
+                (
+                    markdown,
+                    intro_markdown,
+                    model,
+                    prompt_version,
+                    iso(generated_at),
+                    doc_id,
+                ),
+            )
+            if cursor.rowcount == 0:
+                raise LookupError(f"no revision document {doc_id!r}")
+            prepared = []
+            for position, point in enumerate(points):
+                title = str(point["title"]).strip()
+                point_id = hashlib.sha256(
+                    f"{doc_id}\n{title}".encode("utf-8")
+                ).hexdigest()[:16]
+                prepared.append((point_id, title, point, position))
+            new_ids = {row[0] for row in prepared}
+            existing = {
+                row["id"]
+                for row in connection.execute(
+                    "SELECT id FROM revision_points WHERE doc_id = ?", (doc_id,)
+                )
+            }
+            removed = existing - new_ids
+            if removed:
+                placeholders = ", ".join("?" for _ in removed)
+                connection.execute(
+                    "DELETE FROM revision_points"
+                    f" WHERE doc_id = ? AND id IN ({placeholders})",
+                    (doc_id, *removed),
+                )
+            if existing & new_ids:
+                connection.execute(
+                    "UPDATE revision_points SET position = position + 1000000"
+                    " WHERE doc_id = ?",
+                    (doc_id,),
+                )
+            for point_id, title, point, position in prepared:
+                connection.execute(
+                    "INSERT INTO revision_points"
+                    " (id, doc_id, title, body_markdown, position, page_no,"
+                    "  created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    " ON CONFLICT(id) DO UPDATE SET"
+                    " title = excluded.title,"
+                    " body_markdown = excluded.body_markdown,"
+                    " position = excluded.position,"
+                    " page_no = excluded.page_no",
+                    (
+                        point_id,
+                        doc_id,
+                        title,
+                        point["body_markdown"],
+                        position,
+                        point.get("page_no"),
+                        iso(generated_at),
+                    ),
+                )
+        return len(points)
+
+    def set_revision_progress(
+        self,
+        *,
+        user_id: str,
+        point_id: str,
+        mastered: bool,
+        updated_at: datetime,
+    ) -> dict[str, Any] | None:
+        """Store one self-check and return the document's new counts."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT doc_id FROM revision_points WHERE id = ?", (point_id,)
+            ).fetchone()
+            if row is None:
+                return None
+            doc_id = row["doc_id"]
+            connection.execute(
+                "INSERT INTO revision_progress"
+                " (user_id, point_id, mastered, updated_at)"
+                " VALUES (?, ?, ?, ?)"
+                " ON CONFLICT(user_id, point_id) DO UPDATE SET"
+                " mastered = excluded.mastered, updated_at = excluded.updated_at",
+                (user_id, point_id, 1 if mastered else 0, iso(updated_at)),
+            )
+            counts = connection.execute(
+                "SELECT COUNT(p.id) AS total,"
+                " COALESCE(SUM(CASE WHEN rp.mastered = 1 THEN 1 ELSE 0 END), 0)"
+                " AS mastered"
+                " FROM revision_points p"
+                " LEFT JOIN revision_progress rp ON rp.point_id = p.id"
+                " AND rp.user_id = ?"
+                " WHERE p.doc_id = ?",
+                (user_id, doc_id),
+            ).fetchone()
+        return {
+            "doc_id": doc_id,
+            "total": int(counts["total"]),
+            "mastered": int(counts["mastered"]),
+        }
+
+    def list_revision_candidates(self) -> list[dict[str, Any]]:
+        """Return the summarised documents an outline can group."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id AS doc_id, title, filename, summary FROM kb_documents"
+                " WHERE deleted_at IS NULL AND summary IS NOT NULL"
+                " AND summary <> '' ORDER BY id"
             ).fetchall()
         return [dict(row) for row in rows]
 

@@ -1,11 +1,10 @@
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import type { Me } from "@/lib/types";
 
 import { createFetchStub, jsonResponse, type StubRoute } from "./api-stub";
-import { installMemoryStorage } from "./memory-storage";
 import { renderLiveRoute } from "./render-live-route";
 
 const STUDENT: Me = {
@@ -16,6 +15,7 @@ const STUDENT: Me = {
 };
 
 const TRUE_FALSE_QUESTION = {
+  id: "q1",
   type: "true-false",
   topic: "MPI",
   question: "MPI_COMM_WORLD contains every launched process.",
@@ -28,6 +28,39 @@ const TRUE_FALSE_QUESTION = {
   knowledge_points: ["processes and ranks"],
 };
 
+const STARTED_AT = "2026-11-25T09:00:00+00:00";
+
+function session(completed = false) {
+  return {
+    id: "practice-1",
+    title: "MPI 20261125",
+    topic: "MPI",
+    status: completed ? "completed" : "not_started",
+    best_score: completed ? 1 : 0,
+    max_score: 1,
+    questions: [TRUE_FALSE_QUESTION],
+    sources: [],
+    attempts: [
+      {
+        attempt_no: 1,
+        status: completed ? "completed" : "in_progress",
+        answers: completed ? { q1: ["True"] } : {},
+        results: completed
+          ? { q1: { score: 1, max_score: 1, explanation: "Correct" } }
+          : {},
+        option_orders: {},
+        score: completed ? 1 : null,
+        max_score: 1,
+        started_at: STARTED_AT,
+        submitted_at: completed ? STARTED_AT : null,
+      },
+    ],
+    created_at: STARTED_AT,
+    updated_at: STARTED_AT,
+    completed_at: completed ? STARTED_AT : null,
+  };
+}
+
 const ROUTES: StubRoute[] = [
   { method: "GET", path: "/api/auth/me", handler: () => jsonResponse(STUDENT) },
   {
@@ -36,18 +69,23 @@ const ROUTES: StubRoute[] = [
     handler: () => jsonResponse({ sessions: [] }),
   },
   {
+    method: "GET",
+    path: "/api/practice/sessions/practice-1",
+    handler: () => jsonResponse(session()),
+  },
+  {
+    method: "PATCH",
+    path: "/api/practice/sessions/practice-1/attempts/1/answers",
+    handler: () => jsonResponse({ status: "in_progress", attempt_no: 1 }),
+  },
+  {
     method: "POST",
-    path: "/api/practice/generate",
-    handler: () =>
-      jsonResponse({ questions: [TRUE_FALSE_QUESTION], sources: [] }),
+    path: "/api/practice/sessions/practice-1/attempts/1/submit",
+    handler: () => jsonResponse(session(true)),
   },
 ];
 
 let stub: ReturnType<typeof createFetchStub> | null = null;
-
-beforeEach(() => {
-  installMemoryStorage();
-});
 
 afterEach(() => {
   stub?.restore();
@@ -60,7 +98,7 @@ describe("live practice page true/false control", () => {
     const user = userEvent.setup();
     stub = createFetchStub(ROUTES);
 
-    renderLiveRoute("/practice?topic=MPI&types=true-false");
+    renderLiveRoute("/practice/practice-1");
 
     expect(await screen.findByText("1.")).toBeInTheDocument();
     const group = await screen.findByRole("radiogroup");
@@ -83,5 +121,10 @@ describe("live practice page true/false control", () => {
 
     expect(await screen.findByText("1 of 1")).toBeInTheDocument();
     expect(screen.getByText("Correct")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        stub?.calls.filter((call) => call.method === "PATCH").length,
+      ).toBeGreaterThan(0),
+    );
   });
 });

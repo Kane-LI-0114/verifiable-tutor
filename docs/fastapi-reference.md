@@ -38,7 +38,7 @@ src/verifiable_tutor/
     chat.py          # chat turn service and trace writer
     replay.py        # recorded-trace replay
     seed.py          # instructor seeding command
-    routers/         # health, auth, chat, sessions, knowledge, corpus, voice, practice
+    routers/         # health, auth, chat, sessions, knowledge, corpus, voice, practice, revision
 ```
 
 Rules:
@@ -126,9 +126,9 @@ def create_turn(body: ChatBody, user: CurrentUser, chat: ChatDep, model: ModelDe
 
 ```python
 # api/factory.py
-from .routers import auth, chat, corpus, health, knowledge, practice, sessions, voice
+from .routers import auth, chat, corpus, health, knowledge, practice, revision, sessions, voice
 
-router_modules = [health, auth, chat, sessions, voice, knowledge, corpus, practice]
+router_modules = [health, auth, chat, sessions, voice, knowledge, corpus, practice, revision]
 for module in router_modules:
     app.include_router(module.router)
 ```
@@ -338,9 +338,21 @@ The backend exposes the surface below. Every route is covered by tests in `tests
 | `GET /api/knowledge/builds` | list builds | no | instructor |
 | `GET /api/knowledge/builds/{build_id}` | build state and result | no | instructor |
 | `GET /api/corpus/{doc_id}/pages/{page_no}.webp` | page image for source thumbnails and the knowledge preview | no | session |
-| `POST /api/practice/runs` | scaffold only: documented 503 until `tacc/exec` exists | no | session |
+| `POST /api/practice/generate` | generate self-test questions without saving | no | session |
+| `POST /api/practice/sessions` | generate and persist a practice session | no | session |
+| `GET /api/practice/sessions/{session_id}` | load a practice session with its attempts | no | session |
+| `PATCH /api/practice/sessions/{session_id}/attempts/{attempt_no}/answers` | autosave one attempt | no | session |
+| `POST /api/practice/sessions/{session_id}/attempts/{attempt_no}/submit` | grade and store one attempt | no | session |
+| `POST /api/practice/sessions/{session_id}/attempts` | start a redo after the first attempt | no | session |
+| `DELETE /api/practice/sessions/{session_id}/attempts/{attempt_no}` | delete one attempt | no | session |
+| `DELETE /api/practice/sessions/{session_id}` | delete a practice session | no | session |
+| `POST /api/practice/runs` | model grading for open and code answers | no | session |
+| `GET /api/revision` | outline with three-level progress | no | session |
+| `GET /api/revision/docs/{doc_id}` | one review chapter and its knowledge points | no | session |
+| `PATCH /api/revision/points/{point_id}` | store one self-check | no | session |
+| `GET /api/revision/docs/{doc_id}/markdown` | clean Markdown download | text/markdown | session |
 
-Deferred with no route in this pass: retrieval and citation frames, the disclosure gate and deadline registry, LangGraph orchestration, teaching and explainer, practice generation and grading, `tacc/exec` execution, the optional OpenAI-compatible interop endpoint, and the UI build. The full rationale is in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
+Deferred with no route in this pass: retrieval and citation frames, the disclosure gate and deadline registry, teaching and explainer, practice code execution, `tacc/exec` execution, the optional OpenAI-compatible interop endpoint, and the UI build. The full rationale is in [ADR-0012](adr/0012-fastapi-backend-structure-and-sessions.md).
 
 ## 6. Checklist before claiming a backend change done
 

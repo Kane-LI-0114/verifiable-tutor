@@ -33,6 +33,12 @@ SCHEMA_TABLE_ORDER = (
     "tool_calls",
     "message_events",
     "topic_progress",
+    "practice_sessions",
+    "practice_attempts",
+    "revision_themes",
+    "revision_documents",
+    "revision_points",
+    "revision_progress",
     "knowledge_builds",
     "kb_folders",
     "kb_documents",
@@ -133,6 +139,32 @@ TABLE_NOTES = {
         "Per-user knowledge-point progress per course topic: a point is "
         "covered when a practice quiz asks about it, and mastered when a "
         "later answer scores full marks. Both flags only grow."
+    ),
+    "practice_sessions": (
+        "One generated practice session attached to a practice conversation: "
+        "the structured questions, their sources, the first-attempt status, "
+        "and the highest score across attempts."
+    ),
+    "practice_attempts": (
+        "One row per attempt at a practice session. The first attempt decides "
+        "the session status; later attempts are read-only history and can only "
+        "raise the best score."
+    ),
+    "revision_themes": (
+        "AI-generated study themes that group the course documents for the "
+        "revision guide; each document belongs to exactly one theme."
+    ),
+    "revision_documents": (
+        "One row per course document in the revision guide, with its theme, "
+        "its file-name category, and the generated review chapter."
+    ),
+    "revision_points": (
+        "Knowledge points parsed from one generated chapter; each row is one "
+        "H2 heading and its Markdown body, with the page it came from."
+    ),
+    "revision_progress": (
+        "Per-user self-check state for one knowledge point: whether the "
+        "student marked it as known."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -269,6 +301,65 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "knowledge_point": "One knowledge point of that topic.",
         "covered": "1 when a practice quiz covered the point; never cleared.",
         "mastered": "1 when an answer scored full marks on it; never cleared.",
+    },
+    "practice_sessions": {
+        "conversation_id": "Practice conversation that owns this session.",
+        "topic": "Topic the questions were generated for.",
+        "questions_json": "JSON array of questions, each with a stable qN id.",
+        "sources_json": "JSON array of the numbered course sources.",
+        "status": "not_started, in_progress, or completed; only the first attempt decides it.",
+        "best_score": "Highest total score across submitted attempts.",
+        "max_score": "Sum of every question's maximum score.",
+        "created_at": "ISO-8601 UTC generation time.",
+        "updated_at": "Last answer save, submission, or new attempt.",
+        "completed_at": "When the first attempt was submitted; null before that.",
+    },
+    "practice_attempts": {
+        "conversation_id": "Practice session the attempt belongs to.",
+        "attempt_no": "1-based attempt number; 1 is the first attempt.",
+        "status": "in_progress or completed.",
+        "answers_json": "JSON object of question id to the selected answers.",
+        "results_json": "JSON object of question id to its stored score and explanation.",
+        "option_order_json": "JSON object of question id to the shuffled choice order shown in this attempt.",
+        "score": "Total score of this attempt; null while in progress.",
+        "max_score": "Sum of every question's maximum score.",
+        "started_at": "ISO-8601 UTC time the attempt opened.",
+        "submitted_at": "ISO-8601 UTC submission time; null while in progress.",
+    },
+    "revision_themes": {
+        "id": "Theme id assigned by the generator (t1, t2, ...).",
+        "title": "Short English theme title.",
+        "summary": "One or two sentences describing the theme.",
+        "position": "Display order of the theme in the guide.",
+        "created_at": "ISO-8601 UTC time the outline was written.",
+        "model": "Model that grouped the documents.",
+        "prompt_version": "Outline prompt version used for the build.",
+    },
+    "revision_documents": {
+        "doc_id": "Course document placed in this theme.",
+        "theme_id": "Theme the document belongs to.",
+        "category": "assignment, lecture, tutorial, or other, from the file name.",
+        "created_at": "ISO-8601 UTC time the mapping was written.",
+        "markdown": "Clean generated chapter; null until the document is built.",
+        "intro_markdown": "Markdown before the first knowledge point.",
+        "model": "Model that wrote the chapter.",
+        "prompt_version": "Document prompt version used for the build.",
+        "generated_at": "ISO-8601 UTC time the chapter was generated.",
+    },
+    "revision_points": {
+        "id": "Point id, a hash of the document id and the heading.",
+        "doc_id": "Generated document the point belongs to.",
+        "title": "H2 heading text with the page comment removed.",
+        "body_markdown": "Markdown between this heading and the next.",
+        "position": "0-based order inside the document.",
+        "page_no": "1-based PDF page the point is introduced on; null when unknown.",
+        "created_at": "ISO-8601 UTC time the point was stored.",
+    },
+    "revision_progress": {
+        "user_id": "Account the self-check belongs to.",
+        "point_id": "Knowledge point that was checked.",
+        "mastered": "1 when the student marked the point as known.",
+        "updated_at": "ISO-8601 UTC time of the last change.",
     },
     "knowledge_builds": {
         "id": "Build id.",

@@ -3,6 +3,7 @@ import {
   CalendarClockIcon,
   ClipboardListIcon,
   HammerIcon,
+  ListTreeIcon,
   LogOutIcon,
   MessageSquareIcon,
   PlusIcon,
@@ -13,6 +14,7 @@ import {
 import {
   useEffect,
   useRef,
+  useState,
   type ComponentType,
   type MouseEvent,
 } from "react";
@@ -91,6 +93,9 @@ function currentTitle(pathname: string, t: ReturnType<typeof useT>): string {
   }
   if (pathname.startsWith("/practice")) {
     return t.practice.title;
+  }
+  if (pathname.startsWith("/revision")) {
+    return t.revision.title;
   }
   if (pathname.startsWith("/knowledge")) {
     return t.knowledge.title;
@@ -197,6 +202,30 @@ function AppSidebar() {
     prefetchHistory,
   } = useConversations();
   const expanded = state === "expanded";
+  const [practiceFilter, setPracticeFilter] = useState<"all" | "not_started">("all");
+  const chatSessions = sessions.filter((session) => session.kind !== "practice");
+  const practiceSessions = sessions.filter(
+    (session) => session.kind === "practice",
+  );
+  const visiblePractice =
+    practiceFilter === "all"
+      ? practiceSessions
+      : practiceSessions.filter(
+          (session) => session.practice_status === "not_started",
+        );
+
+  function practiceLabel(session: (typeof sessions)[number]): string {
+    if (!session.has_practice) return t.nav.legacyPractice;
+    if (session.practice_status === "completed") {
+      return `${Math.round(session.practice_best_score ?? 0)}/${Math.round(
+        session.practice_max_score ?? 0,
+      )}`;
+    }
+    if (session.practice_status === "in_progress") {
+      return t.practice.statusInProgress;
+    }
+    return t.practice.statusNotStarted;
+  }
 
   // On a phone the navigation lives in a sheet; a destination tap has to close
   // it or the reviewer lands on a page they cannot see.
@@ -221,7 +250,8 @@ function AppSidebar() {
   }
 
   const primary: NavItem[] = [
-    { to: "/practice", label: t.nav.practice, icon: WaypointsIcon },
+    { to: "/practice", label: t.nav.practice, icon: WaypointsIcon, end: true },
+    { to: "/revision", label: t.nav.revision, icon: ListTreeIcon },
     {
       to: documentReturnPath ?? "/knowledge",
       label: t.nav.knowledge,
@@ -330,13 +360,13 @@ function AppSidebar() {
                   {t.common.retry}
                 </Button>
               </div>
-            ) : sessions.length === 0 ? (
+            ) : chatSessions.length === 0 ? (
               <p className="px-2 text-xs text-muted-foreground">
                 {t.nav.noConversations}
               </p>
             ) : (
               <SidebarMenu aria-label={t.a11y.conversations}>
-                {sessions.map((session) => (
+                {chatSessions.map((session) => (
                   <SidebarMenuItem key={session.id}>
                     <SidebarMenuButton
                       asChild
@@ -348,12 +378,85 @@ function AppSidebar() {
                         onPointerEnter={() => prefetchHistory(session.id)}
                         onFocus={() => prefetchHistory(session.id)}
                       >
-                        {session.kind === "practice" ? (
-                          <ClipboardListIcon />
-                        ) : (
-                          <MessageSquareIcon />
-                        )}
+                        <MessageSquareIcon />
                         <span>{session.title ?? session.id}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            )}
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>{t.nav.practiceGroup}</SidebarGroupLabel>
+          {expanded ? (
+            <div className="flex items-center gap-1 px-2 pb-1">
+              <button
+                type="button"
+                aria-pressed={practiceFilter === "all"}
+                onClick={() => setPracticeFilter("all")}
+                className={
+                  practiceFilter === "all"
+                    ? "rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium"
+                    : "rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground"
+                }
+              >
+                {t.nav.practiceFilterAll}
+              </button>
+              <button
+                type="button"
+                aria-pressed={practiceFilter === "not_started"}
+                onClick={() => setPracticeFilter("not_started")}
+                className={
+                  practiceFilter === "not_started"
+                    ? "rounded-sm bg-sidebar-accent px-1.5 py-0.5 text-xs font-medium"
+                    : "rounded-sm px-1.5 py-0.5 text-xs text-muted-foreground"
+                }
+              >
+                {t.nav.practiceFilterNotStarted}
+              </button>
+            </div>
+          ) : null}
+          <SidebarGroupContent>
+            {practiceSessions.length === 0 ? (
+              <p className="px-2 text-xs text-muted-foreground">
+                {t.nav.noPractice}
+              </p>
+            ) : visiblePractice.length === 0 ? (
+              <p className="px-2 text-xs text-muted-foreground">
+                {t.nav.noPractice}
+              </p>
+            ) : (
+              <SidebarMenu aria-label={t.nav.practiceGroup}>
+                {visiblePractice.map((session) => (
+                  <SidebarMenuItem key={session.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={sessionId === session.id}
+                      tooltip={session.title ?? session.id}
+                    >
+                      <NavLink
+                        to={
+                          session.has_practice
+                            ? `/practice/${session.id}`
+                            : `/chat/${session.id}`
+                        }
+                        onPointerEnter={() => prefetchHistory(session.id)}
+                        onFocus={() => prefetchHistory(session.id)}
+                      >
+                        <ClipboardListIcon />
+                        <span className="flex min-w-0 flex-1 items-center justify-between gap-1">
+                          <span className="truncate">
+                            {session.title ?? session.id}
+                          </span>
+                          {expanded ? (
+                            <span className="shrink-0 text-[10px] text-muted-foreground">
+                              {practiceLabel(session)}
+                            </span>
+                          ) : null}
+                        </span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

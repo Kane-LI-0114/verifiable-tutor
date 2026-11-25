@@ -20,6 +20,11 @@ export interface Conversation {
   created_at: string;
   updated_at: string;
   message_count: number;
+  /** Practice metadata; null or false on chat and legacy practice records. */
+  has_practice?: boolean;
+  practice_status?: "not_started" | "in_progress" | "completed" | null;
+  practice_best_score?: number | null;
+  practice_max_score?: number | null;
 }
 
 export interface ChatMessage {
