@@ -101,13 +101,6 @@ export function startPracticeAttempt(sessionId: string): Promise<PracticeSession
   );
 }
 
-export function deletePracticeSession(sessionId: string): Promise<void> {
-  return apiFetch<void>(
-    `/api/practice/sessions/${encodeURIComponent(sessionId)}`,
-    { method: "DELETE" },
-  );
-}
-
 export function deletePracticeAttempt(
   sessionId: string,
   attemptNo: number,
