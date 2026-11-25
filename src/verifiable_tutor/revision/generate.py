@@ -97,7 +97,6 @@ def build_document(
         result = adapter.chat(
             [{"role": "user", "content": _prompt(title, filename, batch)}],
             role="chat",
-            temperature=0.0,
         )
         parsed = parse_document(getattr(result, "text", "") or "")
         if not intro and parsed.intro_markdown:

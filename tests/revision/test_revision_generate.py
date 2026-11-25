@@ -14,9 +14,11 @@ class FakeAdapter:
     def __init__(self, texts) -> None:
         self.texts = list(texts)
         self.calls = 0
+        self.kwargs: list[dict] = []
 
     def chat(self, messages, **kwargs):
         self.calls += 1
+        self.kwargs.append(kwargs)
         return SimpleNamespace(text=self.texts.pop(0))
 
 
@@ -43,6 +45,7 @@ def test_one_batch_returns_a_clean_chapter():
     )
 
     assert document.batches == 1
+    assert "temperature" not in adapter.kwargs[0]
     assert document.intro_markdown == "Overview."
     assert [point.title for point in document.points] == [
         "Online softmax",

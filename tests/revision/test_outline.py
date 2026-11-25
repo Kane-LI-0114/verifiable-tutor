@@ -73,6 +73,7 @@ def test_the_outline_maps_every_document_once():
     assert [theme.id for theme in themes] == ["t1", "t2"]
     assert [theme.position for theme in themes] == [0, 1]
     assert themes[1].doc_ids == ("Tutorial_4", "Assignment_2")
+    assert "temperature" not in adapter.calls[0]
     prompt = adapter.calls[0]["messages"][0]["content"]
     assert "ACS_lecture_2_2026F" in prompt
     assert "%%DOCUMENTS%%" not in prompt

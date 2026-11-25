@@ -74,9 +74,7 @@ def build_outline(
     prompt = PROMPT.replace(
         "%%DOCUMENTS%%", json.dumps(payload, ensure_ascii=False, indent=2)
     )
-    result = adapter.chat(
-        [{"role": "user", "content": prompt}], role="chat", temperature=0.0
-    )
+    result = adapter.chat([{"role": "user", "content": prompt}], role="chat")
     data = _json_object(getattr(result, "text", "") or "")
     raw_themes = data.get("themes")
     if not isinstance(raw_themes, list) or not raw_themes:
