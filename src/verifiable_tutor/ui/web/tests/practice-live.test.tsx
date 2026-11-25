@@ -20,7 +20,7 @@ const TRUE_FALSE_QUESTION = {
   topic: "MPI",
   question: "MPI_COMM_WORLD contains every launched process.",
   choices: [],
-  answer: "True",
+  correct_answer: "True",
   reference_answer:
     "True. MPI_COMM_WORLD is the default communicator containing all launched processes.",
   scoring_points: ["Names MPI_COMM_WORLD as the default communicator"],
