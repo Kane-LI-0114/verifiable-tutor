@@ -1,0 +1,971 @@
+
+<!-- ============================================================
+     01 · COVER · SWISS-COVER-ASCII
+     ============================================================ -->
+<section class="slide dark" data-layout="SWISS-COVER-ASCII" data-slide-id="cover" data-title="Verifiable Tutor">
+  <div class="stage">
+    <div style="position:absolute;right:0;top:0;width:520px;height:1080px;background:#1447e6"></div>
+    <div class="pad" style="padding-right:600px">
+      <div class="st-chrome" style="color:rgba(255,255,255,.72)"><div>CSIT6000V / FINAL PRESENTATION / FALL 2026</div><div class="r">01 / 20</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div class="st-label" style="color:#a3a3a3">A course-grounded agent</div>
+          <h1 class="st-cover" style="color:#fff;margin:32px 0 0">Verifiable<br>Tutor</h1>
+        </div>
+        <p class="st-lead" style="color:#fafaf8;max-width:960px;margin:0 0 44px">A course-grounded agent with evidence you can check.</p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px;border-top:1px solid rgba(250,250,248,.32);padding-top:30px">
+          <div class="st-label" style="color:#fafaf8">LI Jinchuan · TIAN Yujia · XIE Yifeng</div>
+          <div class="st-label" style="color:#737373">HKUST · 2026F</div>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;right:0;top:0;width:520px;height:1080px;z-index:1;padding:72px 48px 84px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff">
+      <div class="st-label" style="color:rgba(255,255,255,.75);margin-bottom:24px">Evidence you can check</div>
+      <div style="display:flex;align-items:center;gap:20px;border-top:1px solid rgba(255,255,255,.5);padding:24px 0">
+        <span class="st-icon st-icon--48">[[icon:database]]</span><div>17 tables</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;border-top:1px solid rgba(255,255,255,.5);padding:24px 0">
+        <span class="st-icon st-icon--48">[[icon:layers]]</span><div>612 chunks</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;border-top:1px solid rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.5);padding:24px 0">
+        <span class="st-icon st-icon--48">[[icon:check]]</span><div>0 invented quotes</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 · PROBLEM & GOAL · S16 multi-card brief
+     ============================================================ -->
+<section class="slide light hero" data-layout="S16" data-slide-id="problem-goal" data-title="A study loop students can trust.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>01 / PROBLEM &amp; GOAL</div><div class="r">02 / 20</div></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:48px">
+        <div style="max-width:1120px">
+          <h1 class="st-d st-title">A study loop students<br>can trust.</h1>
+          <p class="st-lead" style="margin:28px 0 0;color:#525252">A fluent answer is not a checkable answer.</p>
+        </div>
+        <figure style="margin:0;width:400px;flex:0 0 auto">
+          <div class="st-img st-frame" style="width:400px;height:300px">
+            <img src="images/course-acs2-p09.png" data-image-slot="course-thumb-4x3" alt="Course page: Memory Wall, capacity, bandwidth and latency">
+          </div>
+          <figcaption class="st-cap">Lecture 2 · p.9</figcaption>
+        </figure>
+      </div>
+      <div style="flex:1"></div>
+      <div class="st-g3" style="margin-bottom:16px">
+        <div class="st-card st-card--line" style="height:160px">
+          <span class="st-icon st-icon--48">[[icon:book-open]]</span>
+          <div class="st-label" style="margin-top:18px">Dense lectures</div>
+        </div>
+        <div class="st-card st-card--line" style="height:160px">
+          <span class="st-icon st-icon--48">[[icon:file-text]]</span>
+          <div class="st-label" style="margin-top:18px">Practice at scale</div>
+        </div>
+        <div class="st-card st-card--line" style="height:160px">
+          <span class="st-icon st-icon--48">[[icon:shield-check]]</span>
+          <div class="st-label" style="margin-top:18px">What is allowed?</div>
+        </div>
+      </div>
+      <div class="st-g3">
+        <div class="st-card st-card--accent" style="height:160px">
+          <span class="st-icon st-icon--48">[[icon:search]]</span>
+          <div class="st-label" style="margin-top:18px">Sources you can open</div>
+        </div>
+        <div class="st-card" style="height:160px">
+          <span class="st-icon st-icon--48">[[icon:terminal]]</span>
+          <div class="st-label" style="margin-top:18px">Policy as code</div>
+        </div>
+        <div class="st-card" style="height:160px">
+          <span class="st-icon st-icon--48">[[icon:check]]</span>
+          <div class="st-label" style="margin-top:18px">Spans that pass</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 · SYSTEM · S17 system diagram
+     ============================================================ -->
+<section class="slide dark hero" data-layout="S17" data-slide-id="system" data-title="One local product. One batch backend on TACC.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>02 / SYSTEM</div><div class="r">03 / 20</div></div>
+      <h1 class="st-d st-title" style="max-width:1500px">One local product.<br>One batch backend on TACC.</h1>
+      <p class="st-lead" style="margin:24px 0 32px;color:#a3a3a3">No inbound service.</p>
+      <div style="display:grid;grid-template-columns:1fr 44px 1fr 44px 1fr 44px 1fr;align-items:stretch">
+        <div class="st-card st-card--line" style="height:320px">
+          <span class="st-icon">[[icon:layers]]</span>
+          <div class="st-label" style="margin-top:24px">React SPA</div>
+          <div style="margin-top:14px;color:#a3a3a3">Chat · practice</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">One origin</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center"><span style="width:28px;height:1px;background:currentColor;opacity:.5"></span><span style="width:8px;height:8px;background:currentColor;opacity:.6"></span></div>
+        <div class="st-card st-card--line" style="height:320px">
+          <span class="st-icon">[[icon:git-branch]]</span>
+          <div class="st-label" style="margin-top:24px">FastAPI + LangGraph</div>
+          <div style="margin-top:14px;color:#a3a3a3">API · gate</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">One process</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center"><span style="width:28px;height:1px;background:currentColor;opacity:.5"></span><span style="width:8px;height:8px;background:currentColor;opacity:.6"></span></div>
+        <div class="st-card st-card--accent" style="height:320px">
+          <span class="st-icon">[[icon:cpu]]</span>
+          <div class="st-label" style="margin-top:24px">TACC batch jobs</div>
+          <div style="margin-top:14px">OCR · index</div>
+          <div class="st-fill"></div>
+          <div class="st-label">Jobs only</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center"><span style="width:28px;height:1px;background:currentColor;opacity:.5"></span><span style="width:8px;height:8px;background:currentColor;opacity:.6"></span></div>
+        <div class="st-card st-card--line" style="height:320px">
+          <span class="st-icon">[[icon:database]]</span>
+          <div class="st-label" style="margin-top:24px">SQLite + files</div>
+          <div style="margin-top:14px;color:#a3a3a3">17 tables · vectors</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">Local-first</div>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:40px;border-top:1px solid rgba(250,250,248,.28);padding-top:28px">
+        <figure style="margin:0;width:420px;flex:0 0 auto">
+          <div class="st-img st-frame" style="width:360px;height:182px;background:#171717">
+            <img src="images/agent-workchain.png" data-image-slot="s17-inset" alt="A real turn in the work chain">
+          </div>
+        </figure>
+        <div class="st-fill"></div>
+        <div class="st-label">One turn, five steps</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     04 · DATA · S15 matrix + hero stat
+     ============================================================ -->
+<section class="slide light" data-layout="S15" data-slide-id="data" data-title="The data model makes the evidence chain durable.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>03 / DATA</div><div class="r">04 / 20</div></div>
+      <h1 class="st-d st-title" style="max-width:1320px">The data model makes<br>the evidence chain durable.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:1040px 1fr;gap:64px;margin-top:40px">
+        <div class="st-g2" style="align-content:start">
+          <div class="st-card" style="height:222px">
+            <div class="st-label">Access</div>
+            <div class="st-mono" style="margin-top:20px;line-height:1.55">users<br>verification_codes<br>login_sessions</div>
+          </div>
+          <div class="st-card" style="height:222px">
+            <div class="st-label">Conversation</div>
+            <div class="st-mono" style="margin-top:20px;line-height:1.55">conversations · messages<br>message_steps · message_events<br>tool_calls · topic_progress</div>
+          </div>
+          <div class="st-card st-card--accent" style="height:222px">
+            <div class="st-label">Bridge</div>
+            <div class="st-mono" style="margin-top:20px">message_sources</div>
+            <div style="margin-top:14px">answer to doc / page</div>
+          </div>
+          <div class="st-card" style="height:222px">
+            <div class="st-label">Knowledge</div>
+            <div class="st-mono" style="margin-top:20px;line-height:1.55">kb_documents · kb_chunks<br>kb_chunks_fts<br>knowledge_builds</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:flex;align-items:flex-end;gap:24px">
+            <div class="st-d" style="line-height:.9">17</div>
+            <div class="st-label" style="padding-bottom:14px">tables + FTS5</div>
+          </div>
+          <div style="height:1px;background:currentColor;opacity:.25;margin:24px 0 28px"></div>
+          <figure style="margin:0;flex:1;display:flex;flex-direction:column">
+            <div class="st-img st-frame st-img--contain" style="width:100%;height:400px;background:#fff">
+              <img src="images/rag-source-detail.png" data-image-slot="s15-source-pane" alt="Per-answer source pane with page rows">
+            </div>
+            <figcaption class="st-cap">Source pane · citations next</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     05 · STACK · S05 three layers
+     ============================================================ -->
+<section class="slide dark" data-layout="S05" data-slide-id="stack" data-title="A small stack with one job per layer.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>04 / STACK</div><div class="r">05 / 20</div></div>
+      <h1 class="st-d st-title">A small stack with<br>one job per layer.</h1>
+      <div class="st-g5" style="flex:1;margin-top:48px;align-content:stretch">
+        <div class="st-card st-card--line" style="height:540px">
+          <span class="st-icon st-icon--96">[[icon:layers]]</span>
+          <div class="st-label" style="margin-top:28px;color:#737373">01 Interface</div>
+          <div style="margin-top:18px">React SPA</div>
+          <div style="margin-top:12px;color:#a3a3a3">Vite · TS<br>PDF.js</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">Browser</div>
+        </div>
+        <div class="st-card st-card--line" style="height:540px">
+          <span class="st-icon st-icon--96">[[icon:terminal]]</span>
+          <div class="st-label" style="margin-top:28px;color:#737373">02 Backend</div>
+          <div style="margin-top:18px">FastAPI</div>
+          <div style="margin-top:12px;color:#a3a3a3">Python · SSE</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">One process</div>
+        </div>
+        <div class="st-card st-card--accent" style="height:540px">
+          <span class="st-icon st-icon--96">[[icon:git-branch]]</span>
+          <div class="st-label" style="margin-top:28px">03 Agent</div>
+          <div style="margin-top:18px">LangGraph</div>
+          <div style="margin-top:12px">five tools</div>
+          <div class="st-fill"></div>
+          <div class="st-label">Typed loop</div>
+        </div>
+        <div class="st-card st-card--line" style="height:540px">
+          <span class="st-icon st-icon--96">[[icon:search]]</span>
+          <div class="st-label" style="margin-top:28px;color:#737373">04 Retrieval</div>
+          <div style="margin-top:18px">FTS5 + BGE-M3</div>
+          <div style="margin-top:12px;color:#a3a3a3">BM25 + RRF</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">Local</div>
+        </div>
+        <div class="st-card st-card--line" style="height:540px">
+          <span class="st-icon st-icon--96">[[icon:cpu]]</span>
+          <div class="st-label" style="margin-top:28px;color:#737373">05 Platform</div>
+          <div style="margin-top:18px">TACC</div>
+          <div style="margin-top:12px;color:#a3a3a3">OCR + Qwen</div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">Batch jobs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     06 · AGENT · S14 loop form
+     ============================================================ -->
+<section class="slide light" data-layout="S14" data-slide-id="agent" data-title="A typed loop, not a prompt.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>05 / FUNCTIONS / AGENT</div><div class="r">06 / 20</div></div>
+      <h1 class="st-d st-title">A typed loop, not a prompt.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:1010px 1fr;gap:72px;margin-top:44px">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div class="st-card" style="height:150px;display:grid;grid-template-columns:96px 240px 1fr;align-items:center;gap:24px">
+            <span class="st-icon st-icon--48">[[icon:book-open]]</span>
+            <div class="st-label">01 Perceive</div>
+            <div>Messages + results</div>
+          </div>
+          <div class="st-card" style="height:150px;display:grid;grid-template-columns:96px 240px 1fr;align-items:center;gap:24px">
+            <span class="st-icon st-icon--48">[[icon:git-branch]]</span>
+            <div class="st-label">02 Plan</div>
+            <div>Next call</div>
+          </div>
+          <div class="st-card" style="height:150px;display:grid;grid-template-columns:96px 240px 1fr;align-items:center;gap:24px">
+            <span class="st-icon st-icon--48">[[icon:terminal]]</span>
+            <div class="st-label">03 Act</div>
+            <div>Typed arguments</div>
+          </div>
+          <div class="st-card st-card--accent" style="height:150px;display:grid;grid-template-columns:96px 240px 1fr;align-items:center;gap:24px">
+            <span class="st-icon st-icon--48">[[icon:check]]</span>
+            <div class="st-label">04 Reflect</div>
+            <div>verify_span or abstain</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div class="st-card st-card--ink" style="height:150px;align-items:center;justify-content:center">
+              <div class="st-label">AGENT</div>
+            </div>
+            <div class="st-card st-card--accent" style="height:150px;align-items:center;justify-content:center">
+              <div class="st-label">TOOLS</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:44px;margin:18px 0">
+            <span class="st-mono">CALL →</span>
+            <span class="st-mono" style="opacity:.6">← RESULT</span>
+          </div>
+          <div class="st-label">No shell</div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:20px">
+            <span class="st-chip">search_course</span>
+            <span class="st-chip">read_course_page</span>
+            <span class="st-chip">verify_span</span>
+            <span class="st-chip">web_search</span>
+            <span class="st-chip">web_fetch</span>
+          </div>
+          <div class="st-fill"></div>
+          <div class="st-rule" style="margin-bottom:20px"></div>
+          <div>Typed, bounded, visible.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     07 · AGENT DEMO · S22 image hero
+     ============================================================ -->
+<section class="slide dark" data-layout="S22" data-slide-id="agent-demo" data-title="Watch the loop work.">
+  <div class="stage">
+    <div style="position:absolute;left:0;top:0;width:1000px;height:1080px;background:#0a0a0a">
+      <div class="st-img st-img--contain" style="position:absolute;inset:32px 0 32px 0;background:#0a0a0a">
+        <img src="images/agent-workchain.png" data-image-slot="s22-hero-21x9" alt="Expanded work chain: five retrievals, two page reads, four span checks" style="object-position:center center">
+      </div>
+    </div>
+    <div class="pad" style="padding-left:1096px">
+      <div class="st-chrome"><div>06 / DEMO / AGENT</div><div class="r">07 / 20</div></div>
+      <h1 class="st-d st-title" style="max-width:700px">Watch the<br>loop work.</h1>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px">
+        <div style="display:grid;grid-template-columns:130px 1fr;align-items:baseline;gap:24px">
+          <div class="st-d" style="color:#fff;line-height:.9">5</div>
+          <div>retrieval calls</div>
+        </div>
+        <div style="display:grid;grid-template-columns:130px 1fr;align-items:baseline;gap:24px">
+          <div class="st-d" style="color:#fff;line-height:.9">2</div>
+          <div>page reads</div>
+        </div>
+        <div style="display:grid;grid-template-columns:130px 1fr;align-items:baseline;gap:24px">
+          <div class="st-d" style="color:#fff;line-height:.9">4</div>
+          <div>span checks</div>
+        </div>
+        <div class="st-rule" style="margin:8px 0"></div>
+        <div>verify_span → span verified</div>
+        <div style="color:#a3a3a3">Replayable from JSONL.</div>
+      </div>
+      <div class="st-label" style="color:#737373">Real turn · English · doc_id + page_no + exact span</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     08 · RAG OFFLINE · S02 vertical timeline + KPI
+     ============================================================ -->
+<section class="slide light" data-layout="S02" data-slide-id="rag-offline" data-title="Build the evidence base on TACC.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>07 / FUNCTIONS / RAG OFFLINE</div><div class="r">08 / 20</div></div>
+      <h1 class="st-d st-title">Build the evidence base on TACC.</h1>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:48px;align-items:stretch">
+        <div class="st-card" style="height:196px">
+          <span class="st-icon st-icon--48">[[icon:file-text]]</span>
+          <div class="st-label" style="margin-top:18px">01 / PDFs</div>
+          <div style="margin-top:8px;color:#525252">16 documents</div>
+        </div>
+        <div class="st-card st-card--ink" style="height:196px">
+          <span class="st-icon st-icon--48">[[icon:cpu]]</span>
+          <div class="st-label" style="margin-top:18px">02 / TACC OCR</div>
+          <div style="margin-top:8px;color:#d4d4d2">PaddleOCR-VL</div>
+        </div>
+        <div class="st-card" style="height:196px">
+          <span class="st-icon st-icon--48">[[icon:boxes]]</span>
+          <div class="st-label" style="margin-top:18px">03 / Chunks</div>
+          <div style="margin-top:8px;color:#525252">page-first · 450 tokens</div>
+        </div>
+        <div class="st-card" style="height:196px">
+          <span class="st-icon st-icon--48">[[icon:layers]]</span>
+          <div class="st-label" style="margin-top:18px">04 / BGE-M3</div>
+          <div style="margin-top:8px;color:#525252">612 vectors</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:40px">
+        <div>
+          <div class="st-d">16</div>
+          <div class="st-label" style="margin-top:8px">documents</div>
+        </div>
+        <div>
+          <div class="st-d">593</div>
+          <div class="st-label" style="margin-top:8px">pages</div>
+        </div>
+        <div>
+          <div class="st-d">612</div>
+          <div class="st-label" style="margin-top:8px">chunks + vectors</div>
+        </div>
+        <div>
+          <div class="st-d">16</div>
+          <div class="st-label" style="margin-top:8px">summaries</div>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:flex-end;gap:32px">
+        <figure style="margin:0">
+          <div class="st-img st-frame" style="width:260px;height:195px">
+            <img src="images/course-acs2-p09.png" data-image-slot="course-thumb-4x3" alt="Course page thumbnail, Lecture 2 page 9">
+          </div>
+          <figcaption class="st-cap">Lecture 2 · p.9</figcaption>
+        </figure>
+        <figure style="margin:0">
+          <div class="st-img st-frame" style="width:260px;height:195px">
+            <img src="images/course-tutorial4-p40.png" data-image-slot="course-thumb-4x3" alt="Course page thumbnail, Tutorial 4 page 40">
+          </div>
+          <figcaption class="st-cap">Tutorial 4 · p.40</figcaption>
+        </figure>
+        <div class="st-fill"></div>
+        <div style="max-width:560px;color:#525252">The index never runs at request time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     09 · RAG ONLINE · S17 system diagram
+     ============================================================ -->
+<section class="slide light" data-layout="S17" data-slide-id="rag-online" data-title="Retrieve pages, then let the model read.">
+  <div class="stage">
+    <div class="pad" style="padding-right:580px">
+      <div class="st-chrome"><div>08 / FUNCTIONS / RAG ONLINE</div><div class="r">09 / 20</div></div>
+      <h1 class="st-d st-title" style="max-width:1180px">Retrieve pages, then<br>let the model read.</h1>
+      <div style="display:grid;grid-template-columns:1fr 48px 1fr 48px 1fr 48px 1fr;align-items:center;margin-top:44px">
+        <div class="st-card" style="height:160px">
+          <div class="st-label">BM25</div>
+          <div style="margin-top:10px">30 candidates</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center"><span style="width:24px;height:1px;background:currentColor;opacity:.5"></span></div>
+        <div class="st-card" style="height:160px">
+          <div class="st-label">BGE-M3</div>
+          <div style="margin-top:10px">30 candidates</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center"><span style="width:24px;height:1px;background:currentColor;opacity:.5"></span></div>
+        <div class="st-card st-card--accent" style="height:160px">
+          <div class="st-label">RRF</div>
+          <div style="margin-top:10px">k=60 · page dedupe</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center"><span style="width:24px;height:1px;background:currentColor;opacity:.5"></span></div>
+        <div class="st-card" style="height:160px">
+          <div class="st-label">Tool</div>
+          <div style="margin-top:10px">read page</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:26px;margin-top:52px">
+        <div style="display:grid;grid-template-columns:340px 1fr 120px;align-items:center;gap:28px">
+          <div class="st-label">nDCG@5</div>
+          <div class="st-bar"><i style="width:84.9%"></i></div>
+          <div style="text-align:right">0.849</div>
+        </div>
+        <div style="display:grid;grid-template-columns:340px 1fr 120px;align-items:center;gap:28px">
+          <div class="st-label">hit@5</div>
+          <div class="st-bar"><i style="width:88.2%"></i></div>
+          <div style="text-align:right">0.882</div>
+        </div>
+        <div style="display:grid;grid-template-columns:340px 1fr 120px;align-items:center;gap:28px">
+          <div class="st-label">tokens@5</div>
+          <div class="st-bar"><i style="width:93.7%"></i></div>
+          <div style="text-align:right">937</div>
+        </div>
+      </div>
+      <div class="st-fill"></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid currentColor;border-color:rgba(127,127,127,.32);padding-top:24px">
+        <div><span style="color:#1447e6">source ≠ citation</span></div>
+        <div class="st-label">Two arms · 30 each · RRF · 51 test questions</div>
+      </div>
+    </div>
+    <figure style="margin:0;position:absolute;right:96px;top:72px;width:440px">
+      <div class="st-img st-frame st-img--contain" style="width:440px;height:740px;background:#fff">
+        <img src="images/rag-source-detail.png" data-image-slot="s15-source-pane" alt="Source pane detail with page rows">
+      </div>
+      <figcaption class="st-cap">Source pane · 14 pages</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================
+     10 · RAG DEMO · S15 matrix + hero stat
+     ============================================================ -->
+<section class="slide dark" data-layout="S15" data-slide-id="rag-demo" data-title="Every paragraph names its source.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>09 / DEMO / RAG</div><div class="r">10 / 20</div></div>
+      <h1 class="st-d st-title">Every paragraph names its source.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:600px 1fr;gap:64px;margin-top:32px;min-height:0">
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:36px">
+          <div><div class="st-d" style="color:#fff">14</div><div style="margin-top:8px">retrieved pages</div></div>
+          <div><div class="st-d" style="color:#fff">p.9 · p.10 · p.11</div><div style="margin-top:8px">page-exact markers</div></div>
+          <div><div class="st-d" style="color:#fff">0</div><div style="margin-top:8px">verified citations yet</div></div>
+          <div class="st-rule"></div>
+          <div style="color:#a3a3a3">A marker is a source. A citation needs a passing span.</div>
+        </div>
+        <figure style="margin:0;min-height:0;display:flex;flex-direction:column">
+          <div class="st-img st-frame" style="flex:1;min-height:0;background:#fff">
+            <img src="images/rag-source-pane.png" data-image-slot="s15-answer-pane" alt="Answer with inline markers and the source pane in marker order">
+          </div>
+          <figcaption class="st-cap">Answer and source pane · one turn</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     11 · KNOWLEDGE · S22 image hero
+     ============================================================ -->
+<section class="slide light" data-layout="S22" data-slide-id="knowledge" data-title="A conversation that lives beside the file.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>10 / FUNCTIONS / KNOWLEDGE</div><div class="r">11 / 20</div></div>
+      <h1 class="st-d st-title">A conversation that lives beside the file.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:640px 1fr;gap:64px;margin-top:32px;min-height:0">
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:34px">
+          <div style="display:grid;grid-template-columns:72px 1fr;gap:20px;align-items:start">
+            <span class="st-icon st-icon--48">[[icon:file-text]]</span>
+            <div>doc_id + page_no on every turn</div>
+          </div>
+          <div style="display:grid;grid-template-columns:72px 1fr;gap:20px;align-items:start">
+            <span class="st-icon st-icon--48">[[icon:terminal]]</span>
+            <div>The page text is not free</div>
+          </div>
+          <div style="display:grid;grid-template-columns:72px 1fr;gap:20px;align-items:start">
+            <span class="st-icon st-icon--48">[[icon:git-branch]]</span>
+            <div>Markers resolve to page URLs</div>
+          </div>
+          <div class="st-rule"></div>
+          <div style="color:#525252">The thread belongs to the file.</div>
+        </div>
+        <figure style="margin:0;min-height:0;display:flex;flex-direction:column">
+          <div class="st-img st-frame" style="flex:1;min-height:0;background:#fff">
+            <img src="images/kb-page9.png" data-image-slot="s22-hero-21x9" alt="Knowledge page: PDF page 9 open with the page chat beside it">
+          </div>
+          <figcaption class="st-cap">Lecture 2 · p.9 · page chat</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     12 · KNOWLEDGE DEMO · S15 matrix + hero stat
+     ============================================================ -->
+<section class="slide dark" data-layout="S15" data-slide-id="knowledge-demo" data-title="From a marker to the exact page.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>11 / DEMO / KNOWLEDGE</div><div class="r">12 / 20</div></div>
+      <h1 class="st-d st-title">From a marker<br>to the exact page.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:340px 1fr 1fr;gap:40px;margin-top:32px;align-items:start">
+        <figure style="margin:0">
+          <div class="st-img st-frame" style="width:100%;height:470px;background:#fff">
+            <img src="images/kb-chat-before.png" data-image-slot="s15-chat-inset" alt="Page chat answer with page markers before the click">
+          </div>
+          <figcaption class="st-cap">Answer · p.9 / p.10</figcaption>
+        </figure>
+        <figure style="margin:0">
+          <div class="st-img st-frame" style="width:100%;height:470px;background:#fff">
+            <img src="images/kb-page9-detail.png" data-image-slot="s15-before-page" alt="PDF reader on page 9 before the citation click">
+          </div>
+          <figcaption class="st-cap">Before · p.9</figcaption>
+        </figure>
+        <figure style="margin:0;position:relative">
+          <div class="st-img st-frame" style="width:100%;height:470px;background:#fff">
+            <img src="images/kb-page10-detail.png" data-image-slot="s15-after-page" alt="PDF reader on page 10 after the citation click">
+          </div>
+          <figcaption class="st-cap">After · p.10</figcaption>
+        </figure>
+      </div>
+      <div style="display:flex;align-items:center;gap:28px;margin-top:24px">
+        <div style="color:#fff">Click [3]: the PDF moves to page 10, the chat stays.</div>
+        <div class="st-fill"></div>
+        <div class="st-label" style="color:#a3a3a3">One click · exact page</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     13 · VERIFIER · S08 duo compare
+     ============================================================ -->
+<section class="slide light" data-layout="S08" data-slide-id="verifier" data-title="A source is not a citation until the span passes.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>12 / VERIFIER</div><div class="r">13 / 20</div></div>
+      <h1 class="st-d st-title" style="max-width:1480px">A source is not a citation<br>until the span passes.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1px 1fr;gap:48px;margin-top:40px">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:20px">
+            <span class="st-icon st-icon--48">[[icon:search]]</span>
+            <div class="st-label">01 Normalize</div>
+            <div style="margin-left:auto;color:#525252">whitespace</div>
+          </div>
+          <div class="st-rule"></div>
+          <div style="display:flex;align-items:center;gap:20px">
+            <span class="st-icon st-icon--48">[[icon:file-text]]</span>
+            <div class="st-label">02 Locate</div>
+            <div style="margin-left:auto;color:#525252">cited page</div>
+          </div>
+          <div class="st-rule"></div>
+          <div style="display:flex;align-items:center;gap:20px">
+            <span class="st-icon st-icon--48">[[icon:git-branch]]</span>
+            <div class="st-label">03 Repair</div>
+            <div style="margin-left:auto;color:#525252">one repair</div>
+          </div>
+          <div class="st-rule"></div>
+          <div style="display:flex;align-items:center;gap:20px">
+            <span class="st-icon st-icon--48">[[icon:x]]</span>
+            <div class="st-label">04 Abstain</div>
+            <div style="margin-left:auto;color:#525252">name the gap</div>
+          </div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#737373">Implementation · Yoga</div>
+          <figure style="margin:0;display:flex;align-items:flex-end;gap:24px">
+            <div class="st-img st-frame" style="width:220px;height:165px">
+              <img src="images/course-acs2-p09.png" data-image-slot="course-thumb-4x3" alt="Course page 9 used for the span check">
+            </div>
+            <figcaption class="st-cap">Page p.9</figcaption>
+          </figure>
+        </div>
+        <div style="background:#d4d4d2;width:1px"></div>
+        <div style="display:flex;flex-direction:column;gap:28px">
+          <div class="st-card st-card--accent" style="height:290px">
+            <div class="st-label">PASS</div>
+            <div class="st-quote" style="margin-top:22px">"PU core number doubling every ~2 years."</div>
+            <div class="st-fill"></div>
+            <div>p.9 → verified</div>
+          </div>
+          <div class="st-card st-card--line" style="height:290px">
+            <div class="st-label">FAIL</div>
+            <div class="st-quote" style="margin-top:22px">"IO-aware tiling saves HBM traffic."</div>
+            <div class="st-fill"></div>
+            <div>p.40 → abstain</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     14 · PRACTICE & POLICY · S19 four cards
+     ============================================================ -->
+<section class="slide light" data-layout="S19" data-slide-id="practice-policy" data-title="Practice and integrity.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>13 / FUNCTIONS / PRACTICE &amp; POLICY</div><div class="r">14 / 20</div></div>
+      <h1 class="st-d st-title">Practice and integrity.</h1>
+      <div class="st-g4" style="flex:1;margin-top:48px;align-content:stretch">
+        <div class="st-card st-card--line" style="height:430px">
+          <span class="st-icon st-icon--48">[[icon:file-text]]</span>
+          <div class="st-label" style="margin-top:24px">PRACTICE</div>
+          <div style="margin-top:20px;line-height:1.55">single<br>multiple<br>true / false<br>short answer<br>code</div>
+          <div class="st-fill"></div>
+        </div>
+        <div class="st-card" style="height:430px">
+          <span class="st-icon st-icon--48">[[icon:quote]]</span>
+          <div class="st-label" style="margin-top:24px">REFERENCE ANSWER</div>
+          <div style="margin-top:20px;line-height:1.55">answer + scoring points<br>page citations</div>
+          <div class="st-fill"></div>
+        </div>
+        <div class="st-card" style="height:430px">
+          <span class="st-icon st-icon--48">[[icon:shield-check]]</span>
+          <div class="st-label" style="margin-top:24px">POLICY</div>
+          <div style="margin-top:20px;line-height:1.55">pre-release<br>active<br>extension<br>post-deadline<br>unknown</div>
+          <div class="st-fill"></div>
+        </div>
+        <div class="st-card st-card--accent" style="height:430px">
+          <span class="st-icon st-icon--48">[[icon:terminal]]</span>
+          <div class="st-label" style="margin-top:24px">GATE</div>
+          <div style="margin-top:20px;line-height:1.55">refuse complete solutions<br>hint, example, concept<br>teach after deadline</div>
+          <div class="st-fill"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:24px;margin-top:32px;border-top:1px solid currentColor;border-color:rgba(127,127,127,.32);padding-top:26px">
+        <span class="st-label" style="color:#737373">Example</span>
+        <div>FlashAttention · single · 2 pts · [3]</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     15 · PRACTICE DEMO · S15 matrix + hero stat
+     ============================================================ -->
+<section class="slide dark" data-layout="S15" data-slide-id="practice-demo" data-title="Practice, then check.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>14 / DEMO / PRACTICE &amp; POLICY</div><div class="r">15 / 20</div></div>
+      <h1 class="st-d st-title">Practice, then check.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1px 820px;gap:44px;margin-top:40px">
+        <figure style="margin:0">
+          <div class="st-label" style="margin-bottom:18px;color:#a3a3a3">PRACTICE</div>
+          <div class="st-img st-frame" style="width:100%;height:560px;background:#fff">
+            <img src="images/practice-question.png" data-image-slot="s15-practice-question" alt="Generated single-choice practice question with a source marker and two points">
+          </div>
+          <figcaption class="st-cap">Topic and type → question + marker + points</figcaption>
+        </figure>
+        <div style="background:rgba(250,250,248,.28);width:1px"></div>
+        <figure style="margin:0;display:flex;flex-direction:column">
+          <div class="st-label" style="margin-bottom:18px;color:#a3a3a3">POLICY</div>
+          <div class="st-img st-frame" style="width:100%;height:220px;background:#fff">
+            <img src="images/policy-refusal.png" data-image-slot="s15-policy-refusal" alt="Assignment 3 refusal before the deadline">
+          </div>
+          <figcaption class="st-cap">Assignment 3 · due 29 Nov</figcaption>
+          <div class="st-fill"></div>
+          <div style="line-height:1.5">A complete solution is blocked before the deadline. The refusal offers concepts, a similar example, or a hint.</div>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     16 · EVALUATION · S21 tech spec
+     ============================================================ -->
+<section class="slide light" data-layout="S21" data-slide-id="evaluation" data-title="We win on coverage. We tie on grading.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>15 / EVALUATION</div><div class="r">16 / 20</div></div>
+      <h1 class="st-d st-title">We win on coverage.<br>We tie on grading.</h1>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:40px">
+        <div class="st-card st-card--accent" style="height:196px;position:relative;padding:24px 28px">
+          <span class="st-icon st-icon--48" style="position:absolute;right:24px;top:24px">[[icon:check]]</span>
+          <div class="st-label">Knowledge coverage</div>
+          <div class="st-d" style="margin-top:10px;line-height:.9">5/5 vs 3/5</div>
+        </div>
+        <div class="st-card" style="height:196px;position:relative;padding:24px 28px">
+          <span class="st-icon st-icon--48" style="position:absolute;right:24px;top:24px">[[icon:quote]]</span>
+          <div class="st-label">Invented quotes</div>
+          <div class="st-d" style="margin-top:10px;line-height:.9">0</div>
+        </div>
+        <div class="st-card" style="height:196px;position:relative;padding:24px 28px">
+          <span class="st-icon st-icon--48" style="position:absolute;right:24px;top:24px">[[icon:gauge]]</span>
+          <div class="st-label">Grading accuracy</div>
+          <div class="st-d" style="margin-top:10px;line-height:.9">10/10 all</div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;margin-top:40px">
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;border-top:2px solid #0a0a0a">
+          <div class="st-label" style="padding:10px 0;color:#737373">Practice · 10 questions</div>
+          <div class="st-label" style="padding:10px 0">Tutor</div>
+          <div class="st-label" style="padding:10px 0">Doubao</div>
+          <div class="st-label" style="padding:10px 0">Gemini</div>
+          <div class="st-label" style="padding:10px 0">Qwen</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">Grounded</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;color:#1447e6">10/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">10/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">6/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">6/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">Off-topic</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;color:#1447e6">0/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">0/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">4/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">4/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">Coverage</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;color:#1447e6">5/5</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">3/5</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">3/5</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2">3/5</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;border-bottom:2px solid #0a0a0a">Grading</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;border-bottom:2px solid #0a0a0a">10/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;border-bottom:2px solid #0a0a0a">10/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;border-bottom:2px solid #0a0a0a">10/10</div>
+          <div style="padding:8px 0;border-top:1px solid #d4d4d2;border-bottom:2px solid #0a0a0a">10/10</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px">
+          <div class="st-label" style="color:#737373">Citation study · 15 questions</div>
+          <div class="st-label">Controls: Doubao, Gemini, Qwen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     17 · FAILURE & LIMITS · S07 h-bar chart
+     ============================================================ -->
+<section class="slide light" data-layout="S07" data-slide-id="failure-limits" data-title="Tutorials are the hard slice.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>16 / FAILURE &amp; LIMITS</div><div class="r">17 / 20</div></div>
+      <h1 class="st-d st-title">Tutorials are the hard slice.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:1180px 1fr;gap:72px;margin-top:44px">
+        <div style="display:flex;flex-direction:column">
+          <div class="st-label" style="color:#737373">nDCG@5 · 51 questions</div>
+          <div style="display:flex;flex-direction:column;gap:26px;margin-top:34px">
+            <div style="display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:24px">
+              <div class="st-label">Concept</div>
+              <div class="st-bar"><i style="width:91.2%"></i></div>
+              <div style="text-align:right">0.912</div>
+            </div>
+            <div style="display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:24px">
+              <div class="st-label">Assignment</div>
+              <div class="st-bar"><i style="width:90.9%"></i></div>
+              <div style="text-align:right">0.909</div>
+            </div>
+            <div style="display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:24px">
+              <div class="st-label">Mechanism</div>
+              <div class="st-bar"><i style="width:87.5%"></i></div>
+              <div style="text-align:right">0.875</div>
+            </div>
+            <div style="display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:24px">
+              <div class="st-label">Tutorial</div>
+              <div class="st-bar"><i class="is-bad" style="width:61.7%"></i></div>
+              <div style="text-align:right">0.617</div>
+            </div>
+          </div>
+          <div class="st-rule" style="margin:40px 0 32px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+            <div>
+              <div class="st-label" style="color:#737373">Root cause</div>
+              <div style="margin-top:12px;color:#525252">Tutorial pages bundle sub-tasks.</div>
+            </div>
+            <div>
+              <div class="st-label" style="color:#737373">Lesson</div>
+              <div style="margin-top:12px;color:#525252">hit@5 0.941; nDCG interval crosses zero; 2.7× cost.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <figure style="margin:0">
+            <div class="st-img st-frame" style="width:100%;height:330px">
+              <img src="images/course-tutorial4-p40.png" data-image-slot="course-thumb-4x3" alt="Tutorial 4 page 40, the weakest retrieval slice">
+            </div>
+            <figcaption class="st-cap">Tutorial 4 · p.40</figcaption>
+          </figure>
+          <div class="st-label" style="margin-top:36px;color:#737373">Limits</div>
+          <div style="display:flex;flex-direction:column;gap:18px;margin-top:20px">
+            <div style="display:flex;align-items:center;gap:16px"><span class="st-icon st-icon--48">[[icon:quote]]</span><div>Citations persisted</div></div>
+            <div style="display:flex;align-items:center;gap:16px"><span class="st-icon st-icon--48">[[icon:terminal]]</span><div>TACC execution</div></div>
+            <div style="display:flex;align-items:center;gap:16px"><span class="st-icon st-icon--48">[[icon:boxes]]</span><div>One course</div></div>
+            <div style="display:flex;align-items:center;gap:16px"><span class="st-icon st-icon--48">[[icon:gauge]]</span><div>Instructor/TA console partial</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     18 · CONCLUSION · SWISS-CLOSING-ASCII
+     ============================================================ -->
+<section class="slide dark" data-layout="SWISS-CLOSING-ASCII" data-slide-id="conclusion" data-title="Verifiability is a system property.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>17 / CONCLUSION</div><div class="r">18 / 20</div></div>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 420px;gap:80px">
+        <div style="display:flex;flex-direction:column">
+          <h1 class="st-d st-title" style="max-width:1000px">Verifiability is<br>a system property.</h1>
+          <div style="display:flex;flex-direction:column;gap:30px;margin-top:44px">
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:24px">
+              <div class="st-label" style="color:#737373">01</div>
+              <div>Page-first retrieval<br><span style="color:#a3a3a3">beats BM25 and dense</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:24px">
+              <div class="st-label" style="color:#737373">02</div>
+              <div>Policy is code<br><span style="color:#a3a3a3">deadline changes what is revealed</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:80px 1fr;gap:24px">
+              <div class="st-label" style="color:#737373">03</div>
+              <div>Coverage and quote integrity<br><span style="color:#a3a3a3">beat three hosted assistants; grading ties</span></div>
+            </div>
+          </div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#a3a3a3">Next: console, persistence, execution, multi-course</div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:space-between;border-left:1px solid rgba(250,250,248,.28);padding-left:48px">
+          <div>
+            <h2 class="st-d" style="margin:0">Questions?</h2>
+            <div style="margin-top:24px;color:#a3a3a3">Student loop: end-to-end.</div>
+          </div>
+          <figure style="margin:0">
+            <div style="width:250px;height:250px;background:#fff;padding:16px">
+              <img src="images/qr-repo.png" data-image-slot="qr-repo" alt="Repository QR code" style="width:100%;height:100%;object-fit:contain">
+            </div>
+            <figcaption style="margin-top:16px">github.com/Kane-LI-0114/<br>verifiable-tutor</figcaption>
+          </figure>
+          <div class="st-label" style="color:#a3a3a3">LI · TIAN · XIE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+<!-- ============================================================
+     19 · APPENDIX A1 · S11 horizontal timeline
+     ============================================================ -->
+<section class="slide light" data-layout="S11" data-slide-id="appendix-a1" data-title="One question, end to end.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>APPENDIX / A1</div><div class="r">19 / 20</div></div>
+      <h1 class="st-d st-title">One question, end to end.</h1>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="display:grid;grid-template-columns:repeat(9,1fr);gap:0 8px;position:relative;margin-top:12px">
+          <div style="position:absolute;left:4%;right:4%;top:40px;height:1px;background:currentColor;opacity:.28"></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:book-open]]</div><div class="st-label st-node-label" style="margin-top:12px">SPA</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:layers]]</div><div class="st-label st-node-label" style="margin-top:12px">API</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:shield-check]]</div><div class="st-label st-node-label" style="margin-top:12px">Gate</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:git-branch]]</div><div class="st-label st-node-label" style="margin-top:12px">LangGraph</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:terminal]]</div><div class="st-label st-node-label" style="margin-top:12px">Typed<br>tools</div></div>
+          <div style="position:relative"><div class="st-icon-box" style="width:80px;height:80px;background:transparent;border:1px dashed #0a0a0a;color:#0a0a0a">[[icon:check]]</div><div class="st-label st-node-label" style="margin-top:12px">Verifier</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:cpu]]</div><div class="st-label st-node-label" style="margin-top:12px">Model</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:database]]</div><div class="st-label st-node-label" style="margin-top:12px">Store</div></div>
+          <div style="position:relative"><div class="st-icon-box st-icon-box--accent" style="width:80px;height:80px">[[icon:arrow-right]]</div><div class="st-label st-node-label" style="margin-top:12px">SSE</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:741px 1fr;gap:64px;align-items:start;margin-top:12px">
+          <figure style="margin:0">
+            <div class="st-img st-frame" style="width:741px;height:417px;background:#fff">
+              <img src="images/agent-workchain.png" data-image-slot="s11-agent-workchain" alt="Expanded work chain: search, read and verify_span calls">
+            </div>
+            <figcaption class="st-cap">One turn · every call persisted</figcaption>
+          </figure>
+          <div style="height:417px;display:flex;flex-direction:column;justify-content:space-between">
+            <div class="st-label" style="color:#737373">Evidence</div>
+            <div style="color:#525252">Five calls, two reads, four span checks.</div>
+            <div class="st-rule"></div>
+            <div class="st-label" style="color:#737373">Replayable from JSONL</div>
+          </div>
+        </div>
+        <div>
+          <div class="st-rule" style="margin-bottom:32px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;gap:48px">
+              <div style="display:flex;align-items:center;gap:16px"><span style="width:40px;height:40px;background:#1447e6"></span><div class="st-label">Shipped</div></div>
+              <div style="display:flex;align-items:center;gap:16px"><span style="width:40px;height:40px;border:1px dashed #0a0a0a"></span><div class="st-label">Planned / partial</div></div>
+            </div>
+            <div class="st-label" style="color:#737373">Every TACC step is a submitted batch job</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     20 · APPENDIX A2 · S20 stacked KPI ledger
+     ============================================================ -->
+<section class="slide dark" data-layout="S20" data-slide-id="appendix-a2" data-title="Evaluation method and TACC evidence.">
+  <div class="stage">
+    <div class="pad">
+      <div class="st-chrome"><div>APPENDIX / A2</div><div class="r">20 / 20</div></div>
+      <h1 class="st-d st-title" style="max-width:1500px">Evaluation method<br>and TACC evidence.</h1>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1px 1fr;gap:64px;margin-top:44px">
+        <div style="display:flex;flex-direction:column;gap:26px">
+          <div class="st-label" style="color:#737373">Method</div>
+          <div style="display:flex;align-items:center;gap:20px"><span class="st-icon st-icon--48">[[icon:file-text]]</span><div>Practice · 10 questions</div></div>
+          <div class="st-rule"></div>
+          <div style="display:flex;align-items:center;gap:20px"><span class="st-icon st-icon--48">[[icon:quote]]</span><div>Citation · 15 questions</div></div>
+          <div class="st-rule"></div>
+          <div style="display:flex;align-items:center;gap:20px"><span class="st-icon st-icon--48">[[icon:check]]</span><div>Grading · 10 questions</div></div>
+          <div class="st-rule"></div>
+          <div style="display:flex;align-items:center;gap:20px"><span class="st-icon st-icon--48">[[icon:gauge]]</span><div>Chunking · 51 questions</div></div>
+          <div class="st-fill"></div>
+          <div class="st-label" style="color:#a3a3a3">Two arms · 30 each · RRF k=60</div>
+        </div>
+        <div style="background:rgba(250,250,248,.28);width:1px"></div>
+        <div style="display:flex;flex-direction:column">
+          <div class="st-label" style="color:#737373">TACC · Qwen 28067</div>
+          <div style="display:flex;flex-direction:column;gap:18px;margin-top:30px">
+            <div style="display:grid;grid-template-columns:280px 1fr;align-items:baseline;gap:24px;border-bottom:1px solid rgba(250,250,248,.28);padding-bottom:20px">
+              <div class="st-d" style="color:#fff">434 s</div><div style="color:#a3a3a3">cold start</div>
+            </div>
+            <div style="display:grid;grid-template-columns:280px 1fr;align-items:baseline;gap:24px;border-bottom:1px solid rgba(250,250,248,.28);padding-bottom:20px">
+              <div class="st-d" style="color:#fff">43.9 s</div><div style="color:#a3a3a3">8-chunk build</div>
+            </div>
+            <div style="display:grid;grid-template-columns:280px 1fr;align-items:baseline;gap:24px;border-bottom:1px solid rgba(250,250,248,.28);padding-bottom:20px">
+              <div class="st-d" style="color:#fff">8 / 8</div><div style="color:#a3a3a3">valid records</div>
+            </div>
+          </div>
+          <div class="st-fill"></div>
+          <div style="color:#a3a3a3">Corpus: 16 documents · 593 pages · 612 chunks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+

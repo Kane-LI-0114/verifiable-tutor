@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Verifiable Tutor · CSIT6000V Final Presentation · Fall 2026</title>
+<link rel="stylesheet" href="assets/vendor/base.css">
+<link rel="stylesheet" href="assets/vt.css">
+</head>
+<body data-fit="canvas">
+<div class="deck">
+
+<!-- 01 · COVER -->
+<section class="slide cover dark" data-title="Verifiable Tutor">
+  <div class="cover-bg" aria-hidden="true"></div>
+  <div class="cover-inner">
+    <div class="cover-main">
+      <div class="kick">CSIT6000V / FINAL PRESENTATION / FALL 2026</div>
+      <h1 class="display cover-title">Verifiable <em>Tutor</em></h1>
+      <p class="cover-sub">A course-grounded agent with evidence you can check.</p>
+      <div class="cover-meta">
+        <div class="names">LI Jinchuan · TIAN Yujia · XIE Yifeng</div>
+        <div class="ids mono">21188271 · 21201619 · 21322152</div>
+      </div>
+    </div>
+    <aside class="cover-evidence glass">
+      <div class="panel-kicker">EVIDENCE</div>
+      <div class="ev-row">
+        <div class="ev-thumb"><img src="assets/course/acs2-p09.png" alt="Course page 9 thumbnail"></div>
+        <div><div class="evp">p.9 Memory Wall</div><div class="evn">capacity</div></div>
+      </div>
+      <div class="ev-row">
+        <div class="ev-thumb"><img src="assets/course/acs2-p10.png" alt="Course page 10 thumbnail"></div>
+        <div><div class="evp">p.10 Trends</div><div class="evn">bandwidth and latency</div></div>
+      </div>
+      <div class="ev-row">
+        <div class="ev-thumb"><img src="assets/course/tutorial4-p40.png" alt="Tutorial 4 page 40 thumbnail"></div>
+        <div><div class="evp">Tutorial 4</div><div class="evn">p.40 FlashAttention</div></div>
+      </div>
+    </aside>
+  </div>
+  <footer class="vt-foot"><span class="pg">01 / 20</span></footer>
+  <div class="notes">0:15. A tutor that can show its work. Every answer names the page it came from, and every practice question carries a reference answer.</div>
+</section>
+
+<!-- 02 · PROBLEM & GOAL -->
+<section class="slide" data-title="A study loop students can trust">
+  <header class="vt-head"><span class="kick">01 / Problem &amp; Goal</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">A study loop students can <em>trust</em>.</h2>
+  <div class="problem">
+    <div>
+      <p class="lead">A fluent answer is not a checkable answer.</p>
+      <div class="contracts">
+        <div class="contract"><img class="ico" src="assets/icons/search.svg" alt=""><div><b>Ask</b><span>Every claim names its page.</span></div></div>
+        <div class="contract"><img class="ico" src="assets/icons/quote.svg" alt=""><div><b>Practice</b><span>Questions that stay inside the course.</span></div></div>
+        <div class="contract"><img class="ico" src="assets/icons/shield-check.svg" alt=""><div><b>Policy</b><span>Know what is allowed today.</span></div></div>
+      </div>
+      <div class="beforeafter">
+        <div class="ba"><b>BEFORE</b><span>answer, trust me.</span></div>
+        <div class="ba after"><b>AFTER</b><span>answer, page, policy.</span></div>
+      </div>
+    </div>
+    <figure class="course-stack">
+      <div class="shot course-main"><img src="assets/course/acs2-p09.png" alt="Course page 9, Memory Wall"><span class="tag">p.9</span></div>
+      <div class="caption">Course material · 593 pages</div>
+    </figure>
+  </div>
+  <footer class="vt-foot"><span class="pg">02 / 20</span></footer>
+  <div class="notes">0:45. The user is a CSIT6000V student. The job is to keep up with dense material, practise at assignment scale, and know what help is allowed. The pain is that a fluent answer is not a checkable answer. We chose the task-oriented direction: measure the study loop against hosted assistants, not system efficiency.</div>
+</section>
+
+<!-- 03 · SYSTEM -->
+<section class="slide" data-title="One local product. One batch backend on TACC">
+  <header class="vt-head"><span class="kick">02 / System</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">One local product. One batch backend on <em>TACC</em>.</h2>
+  <div class="arch">
+    <section class="arch-local">
+      <div class="zone-head"><img class="ico" src="assets/icons/boxes.svg" alt=""><span>Local product</span></div>
+      <div class="node-line">
+        <div class="node">React SPA</div><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="node">FastAPI</div><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="node">LangGraph</div><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="node">SQLite</div>
+      </div>
+      <div class="node-line sub">
+        <div class="node">Accounts</div><div class="node">Gate</div><div class="node">Practice</div><div class="node">Knowledge</div>
+      </div>
+      <div class="local-chat"><img src="assets/shots/kb-chat-before.png" alt="Page chat inset"></div>
+    </section>
+    <div class="arch-side">
+      <section class="arch-zone">
+        <div class="zone-head"><img class="ico" src="assets/icons/cpu.svg" alt=""><span>External APIs</span></div>
+        <div class="node-line"><div class="node">DeepSeek</div><div class="node">MiMo</div></div>
+      </section>
+      <section class="arch-zone">
+        <div class="zone-head"><img class="ico" src="assets/icons/layers.svg" alt=""><span>TACC batch</span></div>
+        <div class="node-line"><div class="node">OCR</div><div class="node">Index</div><div class="node">Qwen KB</div></div>
+        <div class="zone-note">No inbound service.</div>
+      </section>
+    </div>
+  </div>
+  <div class="turnline">
+    <span class="tlabel">ONE TURN</span>
+    <span class="tstep">Ask</span><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+    <span class="tstep">Plan</span><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+    <span class="tstep">Act</span><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+    <span class="tstep">Verify</span><img class="arrow" src="assets/icons/arrow-right.svg" alt="">
+    <span class="tstep">Answer</span>
+  </div>
+  <footer class="vt-foot"><span class="pg">03 / 20</span></footer>
+  <div class="notes">0:45. The product runs on the laptop: React SPA, FastAPI, LangGraph, SQLite and local files. TACC is a required model-serving backend, but only through submitted batch jobs: OCR, index, and the Qwen knowledge-base job. No inbound service. The bottom strip is the one-turn flow.</div>
+</section>
+
+<!-- 04 · DATA -->
+<section class="slide" data-title="The data model makes the evidence chain durable">
+  <header class="vt-head"><span class="kick">03 / Data</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">The data model makes the evidence chain <em>durable</em>.</h2>
+  <div class="data">
+    <div class="clusters">
+      <div class="cluster">
+        <div class="cl-head"><img class="ico" src="assets/icons/database.svg" alt=""><span>Conversations</span></div>
+        <div class="tbl">conversations</div>
+        <div class="tbl">messages</div>
+        <div class="tbl">message_steps</div>
+      </div>
+      <div class="cluster hl">
+        <div class="cl-head"><img class="ico" src="assets/icons/quote.svg" alt=""><span>Evidence</span></div>
+        <div class="tbl">message_sources</div>
+        <div class="tbl">citations <span class="state">empty</span></div>
+      </div>
+      <div class="cluster">
+        <div class="cl-head"><img class="ico" src="assets/icons/book-open.svg" alt=""><span>Knowledge</span></div>
+        <div class="tbl">kb_documents</div>
+        <div class="tbl">kb_chunks</div>
+        <div class="tbl">kb_chunks_fts</div>
+      </div>
+      <div class="cluster">
+        <div class="cl-head"><img class="ico" src="assets/icons/shield-check.svg" alt=""><span>Access</span></div>
+        <div class="tbl">users</div>
+        <div class="tbl">login_sessions</div>
+      </div>
+    </div>
+    <div class="data-side">
+      <div class="crop-pane"><img src="assets/shots/rag-source-pane.png" alt="Source pane for one answer"><span class="tag">source pane</span></div>
+    </div>
+  </div>
+  <p class="data-note">17 tables + FTS5. <span class="mono">message_sources</span> bridges answer to page.</p>
+  <footer class="vt-foot"><span class="pg">04 / 20</span></footer>
+  <div class="notes">0:30. All durable state is one local SQLite database: identity, conversations and the work chain, and the knowledge store. message_sources is the bridge from an answer to a document page; citations is the verified layer we are still wiring.</div>
+</section>
+
+<!-- 05 · STACK -->
+<section class="slide" data-title="A small stack with one job per layer">
+  <header class="vt-head"><span class="kick">04 / Stack</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">A small stack with one job per <em>layer</em>.</h2>
+  <div class="stack">
+    <div class="layer">
+      <div class="idx">01</div><img class="ico" src="assets/icons/layers.svg" alt="">
+      <div class="lname">Interface</div>
+      <div class="terms"><span>React 19</span><span>AI SDK 5</span><span>PDF.js</span></div>
+      <div class="lfoot">one origin</div>
+    </div>
+    <div class="layer">
+      <div class="idx">02</div><img class="ico" src="assets/icons/boxes.svg" alt="">
+      <div class="lname">Backend</div>
+      <div class="terms"><span>FastAPI</span><span>SQLite</span><span>SSE</span></div>
+      <div class="lfoot">one process</div>
+    </div>
+    <div class="layer">
+      <div class="idx">03</div><img class="ico" src="assets/icons/git-branch.svg" alt="">
+      <div class="lname">Agent</div>
+      <div class="terms"><span>LangGraph</span><span>5 typed tools</span><span>Work chain</span></div>
+      <div class="lfoot">typed loop</div>
+    </div>
+    <div class="layer">
+      <div class="idx">04</div><img class="ico" src="assets/icons/search.svg" alt="">
+      <div class="lname">Retrieval</div>
+      <div class="terms"><span>FTS5</span><span>BGE-M3</span><span>RRF</span></div>
+      <div class="lfoot">two arms</div>
+    </div>
+    <div class="layer dark">
+      <div class="idx">05</div><img class="ico" src="assets/icons-white/cpu.png" alt="">
+      <div class="lname">Platform</div>
+      <div class="terms"><span>DeepSeek</span><span>MiMo</span><span>TACC</span></div>
+      <div class="lfoot">batch only</div>
+    </div>
+  </div>
+  <p class="stack-note">One origin. Typed loop. Local-first stores. Batch TACC.</p>
+  <footer class="vt-foot"><span class="pg">05 / 20</span></footer>
+  <div class="notes">0:25. The UI is a React SPA served by FastAPI; the agent is a typed LangGraph loop; retrieval is SQLite FTS5 plus BGE-M3; and batch model jobs run on TACC. Versions are pinned in package.json and pyproject.toml.</div>
+</section>
+
+<!-- 06 · AGENT LOOP -->
+<section class="slide" data-title="A typed loop, not a prompt">
+  <header class="vt-head"><span class="kick">05 / Functions / Agent</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">A typed loop, not a <em>prompt</em>.</h2>
+  <div class="agent-loop">
+    <div class="role">
+      <div class="top"><span class="idx">01</span><img class="ico" src="assets/icons/book-open.svg" alt=""></div>
+      <div class="rname">Perceive</div><div class="rline">Message, history, tool results.</div>
+    </div>
+    <div class="role">
+      <div class="top"><span class="idx">02</span><img class="ico" src="assets/icons/git-branch.svg" alt=""></div>
+      <div class="rname">Plan</div><div class="rline">Pick the next tool.</div>
+    </div>
+    <div class="role hl">
+      <div class="top"><span class="idx">03</span><img class="ico" src="assets/icons-white/terminal.png" alt=""></div>
+      <div class="rname">Act</div><div class="rline">Validate arguments, return JSON.</div>
+    </div>
+    <div class="role">
+      <div class="top"><span class="idx">04</span><img class="ico" src="assets/icons/shield-check.svg" alt=""></div>
+      <div class="rname">Reflect</div><div class="rline">Check quote, retry, abstain.</div>
+    </div>
+  </div>
+  <div class="tools">
+    <span class="tool-label">Tool surface</span>
+    <span class="chip">search_course</span><span class="chip">read_course_page</span><span class="chip">verify_span</span><span class="chip">web_search</span><span class="chip">web_fetch</span><span class="chip">No shell.</span>
+  </div>
+  <p class="agent-note">Every call typed, bounded, visible.</p>
+  <footer class="vt-foot"><span class="pg">06 / 20</span></footer>
+  <div class="notes">0:40. Perception is the message, history, document context, and tool results. Planning is model-driven inside the agent node, constrained by a closed tool set. Execution validates arguments and streams results. Reflection is tool-mediated: verify_span, same-model retries, abstain when evidence is missing.</div>
+</section>
+
+<!-- 07 · DEMO AGENT -->
+<section class="slide dark demo-agent" data-title="Watch the loop work">
+  <div class="bleed"><img src="assets/shots/agent-workchain.png" alt="Real turn work chain with search, read and verify_span calls"></div>
+  <header class="vt-head"><span class="kick">06 / Demo / Agent</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <div class="demo-copy">
+    <h2 class="display">Watch the <em>loop</em> work.</h2>
+    <div class="callouts">
+      <div class="callout glass"><img class="ico" src="assets/icons-white/search.png" alt=""><div class="num">5</div><div class="clabel">retrievals</div></div>
+      <div class="callout glass"><img class="ico" src="assets/icons-white/file-text.png" alt=""><div class="num">2</div><div class="clabel">page reads</div></div>
+      <div class="callout glass"><img class="ico" src="assets/icons-white/shield-check.png" alt=""><div class="num">4</div><div class="clabel">span checks</div></div>
+    </div>
+    <div class="verified glass"><span class="dotok"></span><span class="mono">span verified</span></div>
+    <p class="rag-caption">verify_span · doc_id, page_no, exact quote.</p>
+  </div>
+  <footer class="vt-foot"><span class="pg">07 / 20</span></footer>
+  <div class="notes">0:30. This is a real turn: five retrieval calls, two page reads, and four span checks. verify_span carries the doc id, page number, and exact quote. The output is span verified. Every call is persisted in the work chain and can be replayed from JSONL.</div>
+</section>
+
+<!-- 08 · RAG OFFLINE -->
+<section class="slide" data-title="Build the evidence base on TACC">
+  <header class="vt-head"><span class="kick">07 / Functions / RAG Offline</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Build the evidence base on <em>TACC</em>.</h2>
+  <div class="pipeline">
+    <div class="step"><img class="ico" src="assets/icons/file-text.svg" alt=""><span class="stname">PDFs</span></div>
+    <img class="pipe-arrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="step"><img class="ico" src="assets/icons/cpu.svg" alt=""><span class="stname">TACC OCR</span></div>
+    <img class="pipe-arrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="step"><img class="ico" src="assets/icons/layers.svg" alt=""><span class="stname">Chunk</span></div>
+    <img class="pipe-arrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="step"><img class="ico" src="assets/icons/boxes.svg" alt=""><span class="stname">BGE-M3</span></div>
+    <img class="pipe-arrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="step"><img class="ico" src="assets/icons/database.svg" alt=""><span class="stname">Local store</span></div>
+  </div>
+  <div class="offline-bottom">
+    <div class="stats">
+      <div class="stat"><div class="num">16</div><div class="slabel">documents</div></div>
+      <div class="stat"><div class="num">593</div><div class="slabel">pages</div></div>
+      <div class="stat"><div class="num">612</div><div class="slabel">chunks</div></div>
+      <div class="stat"><div class="num">16</div><div class="slabel">summaries</div></div>
+    </div>
+    <div class="thumb-pair">
+      <div class="thumb-cell"><div class="shot"><img src="assets/course/acs2-p09.png" alt="Lecture 2 page 9"><span class="tag">p.9</span></div><div class="caption">Lecture 2</div></div>
+      <div class="thumb-cell"><div class="shot"><img src="assets/course/tutorial4-p40.png" alt="Tutorial 4 page 40"><span class="tag">p.40</span></div><div class="caption">Tutorial 4</div></div>
+    </div>
+  </div>
+  <div class="design-strip">
+    <div class="dstrip"><img src="assets/icons-white/book-open.png" alt=""><span>Page is the unit</span></div>
+    <div class="dstrip"><img src="assets/icons-white/database.png" alt=""><span>No vector database</span></div>
+    <div class="dstrip"><img src="assets/icons-white/layers.png" alt=""><span>Import restores offline</span></div>
+    <div class="dstrip"><img src="assets/icons-white/search.png" alt=""><span>No request-time index</span></div>
+  </div>
+  <footer class="vt-foot"><span class="pg">08 / 20</span></footer>
+  <div class="notes">0:35. Offline, the course PDFs are parsed by a TACC OCR job, chunked page-first, embedded with BGE-M3 on TACC, and imported into the local SQLite store. The index never runs at request time. 16 documents, 593 pages, 612 chunks and vectors.</div>
+</section>
+
+<!-- 09 · RAG ONLINE -->
+<section class="slide" data-title="Retrieve pages, then let the model read">
+  <header class="vt-head"><span class="kick">08 / Functions / RAG Online</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Retrieve pages, then let the model <em>read</em>.</h2>
+  <div class="online">
+    <div class="online-left">
+      <div class="flow">
+        <div class="fnode"><img class="ico" src="assets/icons/book-open.svg" alt="">Question</div>
+        <img class="farrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="fnode"><img class="ico" src="assets/icons/search.svg" alt="">BM25 + BGE</div>
+        <img class="farrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="fnode hl"><img class="ico" src="assets/icons/git-branch.svg" alt="">RRF k=60</div>
+        <img class="farrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="fnode"><img class="ico" src="assets/icons/file-text.svg" alt="">Read page</div>
+        <img class="farrow" src="assets/icons/arrow-right.svg" alt="">
+        <div class="fnode"><img class="ico" src="assets/icons/quote.svg" alt="">Answer</div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="mlabel">nDCG@5</span><span class="track"><i style="width:84.9%"></i></span><span class="num">0.849</span></div>
+        <div class="metric"><span class="mlabel">hit@5</span><span class="track"><i style="width:88.2%"></i></span><span class="num">0.882</span></div>
+        <div class="metric"><span class="mlabel">tokens@5</span><span class="track"><i style="width:93.7%"></i></span><span class="num">937</span></div>
+      </div>
+      <p class="online-note">A source is retrieved evidence, not a citation.</p>
+    </div>
+    <div class="online-side">
+      <div class="crop-pane"><img src="assets/shots/rag-source-pane.png" alt="Per-answer source pane"><span class="tag">sources</span></div>
+    </div>
+  </div>
+  <footer class="vt-foot"><span class="pg">09 / 20</span></footer>
+  <div class="notes">0:35. Online, the model writes the tool query. FTS5 BM25 and a local BGE-M3 query embedding each return 30 candidates. RRF fuses them, and the tool returns page-anchored text with a marker. The model reads the page and checks the quote before answering.</div>
+</section>
+
+<!-- 10 · DEMO RAG -->
+<section class="slide dark demo-rag" data-title="Every paragraph names its source">
+  <div class="bleed"><img src="assets/shots/rag-source-pane.png" alt="Answer with inline markers beside the source pane"></div>
+  <header class="vt-head"><span class="kick">09 / Demo / RAG</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <div class="demo-rag-copy">
+    <h2 class="display">Every paragraph names its <em>source</em>.</h2>
+    <div class="rag-callouts">
+      <div class="rag-callout glass"><img class="ico" src="assets/icons-white/search.png" alt=""><div class="num">14</div><div class="clabel">retrieved pages</div></div>
+      <div class="rag-callout glass"><img class="ico" src="assets/icons-white/file-text.png" alt=""><div class="num">3</div><div class="clabel">page-exact markers</div></div>
+      <div class="rag-callout glass"><img class="ico" src="assets/icons-white/x.png" alt=""><div class="num failure">0</div><div class="clabel">verified citations</div></div>
+    </div>
+    <p class="rag-caption">p.9 · p.10 · p.11 · source pane</p>
+  </div>
+  <footer class="vt-foot"><span class="pg">10 / 20</span></footer>
+  <div class="notes">0:30. This is the source pane for one answer: 14 retrieved course pages in marker order. A marker opens the exact page. A source is retrieved evidence, not yet a verified citation; the verifier is the next layer.</div>
+</section>
+
+<!-- 11 · KNOWLEDGE CHAT -->
+<section class="slide" data-title="A conversation that lives beside the file">
+  <header class="vt-head"><span class="kick">10 / Functions / Knowledge</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">A conversation that lives beside the <em>file</em>.</h2>
+  <div class="kchat">
+    <div class="kchat-copy">
+      <div class="krows">
+        <div class="krow"><span class="kidx">01</span><img class="ico" src="assets/icons/file-text.svg" alt=""><div class="ktext">Every turn carries doc_id and page_no.</div></div>
+        <div class="krow"><span class="kidx">02</span><img class="ico" src="assets/icons/book-open.svg" alt=""><div class="ktext">The model must read the page.</div></div>
+        <div class="krow"><span class="kidx">03</span><img class="ico" src="assets/icons/git-branch.svg" alt=""><div class="ktext">History stays with the document.</div></div>
+      </div>
+      <p class="data-note">Page chat · Lecture 2, p.9</p>
+      <div class="kmeta mono"><span>doc_id: ACS_lecture_2_2026F</span><span>page_no: 9</span></div>
+    </div>
+    <div class="kwin">
+      <div class="kwin-bar"><i></i><i></i><i></i></div>
+      <img src="assets/shots/kb-chat-before.png" alt="Page chat answer for Lecture 2 with page markers">
+    </div>
+  </div>
+  <footer class="vt-foot"><span class="pg">11 / 20</span></footer>
+  <div class="notes">0:30. Every turn carries doc_id and page_no. The system note names the file and page but does not inject the page text; the model must call read_course_page. A citation target is a URL to that exact page, and the conversation belongs to the file.</div>
+</section>
+
+<!-- 12 · DEMO KNOWLEDGE -->
+<section class="slide dark demo-knowledge" data-title="From a marker to the exact page">
+  <header class="vt-head"><span class="kick">11 / Demo / Knowledge</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">From a marker to the exact <em>page</em>.</h2>
+  <div class="dk-grid">
+    <div class="dk-cell">
+      <div class="shot"><img src="assets/shots/kb-page9.png" alt="PDF reader on page 9 before the citation click"><span class="tag top">Open · p.9</span></div>
+    </div>
+    <div class="dk-arrow"><img class="ico" src="assets/icons/arrow-right.svg" alt=""></div>
+    <div class="dk-cell">
+      <div class="shot"><img src="assets/shots/kb-page10.png" alt="PDF reader on page 10 after the citation click"><span class="tag top">After click · p.10</span></div>
+    </div>
+  </div>
+  <p class="dk-caption">[3] moves the PDF to page 10; the chat stays.</p>
+  <footer class="vt-foot"><span class="pg">12 / 20</span></footer>
+  <div class="notes">0:30. The open file is Lecture 2, page 9. The answer cites page 9, page 10, page 11 and a cross-document page. Clicking the page-10 marker moves the PDF to page 10 while the chat stays in place.</div>
+</section>
+
+<!-- 13 · VERIFIER -->
+<section class="slide" data-title="A source is not a citation until the span passes">
+  <header class="vt-head"><span class="kick">12 / Verifier</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">A source is not a citation until the span <em>passes</em>.</h2>
+  <div class="verifier-steps">
+    <div class="vstep"><img class="ico" src="assets/icons/layers.svg" alt="">Normalize</div>
+    <img class="varrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="vstep"><img class="ico" src="assets/icons/search.svg" alt="">Locate</div>
+    <img class="varrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="vstep"><img class="ico" src="assets/icons/check.svg" alt="">Repair once</div>
+    <img class="varrow" src="assets/icons/arrow-right.svg" alt="">
+    <div class="vstep"><img class="ico" src="assets/icons/shield-check.svg" alt="">Abstain</div>
+  </div>
+  <div class="vcards">
+    <div class="vcard pass">
+      <div class="vhead"><span class="vlabel">PASS</span><img class="ico" src="assets/icons/check.svg" alt=""></div>
+      <div class="vquote">&ldquo;PU core number doubling every ~2 years.&rdquo;</div>
+      <div class="vout"><img class="ico" src="assets/icons/file-text.svg" alt=""><span>p.9 → citation</span></div>
+      <div class="shot vthumb"><img src="assets/course/acs2-p09.png" alt="Course page 9"></div>
+    </div>
+    <div class="vcard fail">
+      <div class="vhead"><span class="vlabel">FAIL</span><img class="ico" src="assets/icons/x.svg" alt=""></div>
+      <div class="vquote">&ldquo;IO-aware tiling saves HBM traffic.&rdquo;</div>
+      <div class="vout"><img class="ico" src="assets/icons/x.svg" alt=""><span>not on p.40 → abstain</span></div>
+    </div>
+  </div>
+  <p class="verifier-credit">Implementation: Yoga</p>
+  <footer class="vt-foot"><span class="pg">13 / 20</span></footer>
+  <div class="notes">0:30. The verifier normalizes whitespace and case, requires the quoted span to occur on the cited page, allows one repair round, and otherwise abstains. Pass becomes a citation; fail goes back to repair or abstention. Persisting the verified layer is the next step.</div>
+</section>
+
+<!-- 14 · PRACTICE & POLICY -->
+<section class="slide" data-title="Practice and integrity">
+  <header class="vt-head"><span class="kick">13 / Functions / Practice &amp; Policy</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Practice and <em>integrity</em>.</h2>
+  <div class="practice">
+    <div class="pcard">
+      <div class="phead"><img class="ico" src="assets/icons/flask-conical.svg" alt=""><span>Practice &amp; self-test</span></div>
+      <div class="typechips"><span class="chip">single</span><span class="chip">multiple</span><span class="chip">true/false</span><span class="chip">short</span><span class="chip">code</span></div>
+      <div class="pline">Reference answer + scoring points.</div>
+      <div class="example">FlashAttention · single choice · source [3]</div>
+      <div class="pstat"><div class="num">5</div><div class="plabel">question types</div></div>
+      <p class="pnote">Choice graded deterministically; open and code by model.</p>
+    </div>
+    <div class="pcard">
+      <div class="phead"><img class="ico" src="assets/icons/shield-check.svg" alt=""><span>Disclosure gate</span></div>
+      <div class="policy-list">
+        <div class="pstate on">pre-release</div>
+        <div class="pstate on now">active</div>
+        <div class="pstate on">extension</div>
+        <div class="pstate">post-deadline</div>
+        <div class="pstate">unknown</div>
+      </div>
+      <p class="pnote">Refuse now, teach after. Policy is code.</p>
+    </div>
+  </div>
+  <footer class="vt-foot"><span class="pg">14 / 20</span></footer>
+  <div class="notes">0:30. Practice and self-test share one question record: five types, a reference answer, scoring points, and course citations. Choice questions are graded deterministically; open and code answers are model-graded. The disclosure gate is code, with five states from a dated registry.</div>
+</section>
+
+<!-- 15 · DEMO PRACTICE & POLICY -->
+<section class="slide dark demo-practice" data-title="Practice, then check">
+  <header class="vt-head"><span class="kick">14 / Demo / Practice &amp; Policy</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Practice, then <em>check</em>.</h2>
+  <div class="dp-grid">
+    <div class="dp-left">
+      <div class="shot"><img src="assets/shots/practice-question.png" alt="Generated FlashAttention practice question"><span class="tag">FlashAttention · single choice</span></div>
+    </div>
+    <div class="dp-right">
+      <div class="dp-label">PRACTICE</div>
+      <div class="dp-cap">2 points · source marker [3]</div>
+      <div class="dp-label">POLICY</div>
+      <div class="refusal"><img src="assets/shots/policy-refusal.png" alt="Assignment 3 refusal before the deadline"></div>
+      <div class="dp-note">Assignment 3 · complete solution blocked before the deadline.</div>
+    </div>
+  </div>
+  <footer class="vt-foot"><span class="pg">15 / 20</span></footer>
+  <div class="notes">0:25. The student chooses a topic and type; the question comes from the course with a page marker. Before the deadline, a complete Assignment 3 solution is blocked and the refusal points to concepts, a similar example, or a hint.</div>
+</section>
+
+<!-- 16 · EVALUATION -->
+<section class="slide" data-title="We win on coverage. We tie on grading">
+  <header class="vt-head"><span class="kick">15 / Evaluation</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">We win on coverage. We tie on <em>grading</em>.</h2>
+  <div class="scorecards">
+    <div class="score lead"><span class="slabel"><img class="ico" src="assets/icons/gauge.svg" alt="">Knowledge coverage</span><div class="num">5/5</div></div>
+    <div class="score"><span class="slabel"><img class="ico" src="assets/icons/quote.svg" alt="">Invented quotes</span><div class="num">0</div></div>
+    <div class="score"><span class="slabel"><img class="ico" src="assets/icons/check.svg" alt="">Grading</span><div class="num">10/10</div></div>
+  </div>
+  <table class="eval-table">
+    <thead><tr><th>Practice</th><th>Tutor</th><th>Doubao</th><th>Gemini</th><th>Qwen</th></tr></thead>
+    <tbody>
+      <tr><td>Grounded</td><td class="v">10/10</td><td class="v">10/10</td><td class="v">6/10</td><td class="v">6/10</td></tr>
+      <tr><td>Coverage</td><td class="v">5/5</td><td class="v">3/5</td><td class="v">3/5</td><td class="v">3/5</td></tr>
+      <tr><td>Grading</td><td class="v">10/10</td><td class="v">10/10</td><td class="v">10/10</td><td class="v">10/10</td></tr>
+    </tbody>
+  </table>
+  <div class="citation-strip">
+    <div class="cit"><span class="cnum">0</span><span class="clab">invented quotes</span></div>
+    <div class="cit"><span class="cnum">0</span><span class="clab">false &ldquo;not in PDF&rdquo;</span></div>
+    <div class="cit"><span class="cnum">exact</span><span class="clab">page accuracy</span></div>
+  </div>
+  <p class="eval-note">10 practice questions, 3 controls. Ties stay ties.</p>
+  <footer class="vt-foot"><span class="pg">16 / 20</span></footer>
+  <div class="notes">0:35. On ten practice questions we match the best control on groundedness, lead on knowledge-point coverage, and tie on grading. In the 15-question citation study we invent no quotes and no false negatives, and page numbers are programmatic. Ties are reported as ties.</div>
+</section>
+
+<!-- 17 · FAILURE & LIMITS -->
+<section class="slide" data-title="Tutorials are the hard slice">
+  <header class="vt-head"><span class="kick">16 / Failure &amp; Limits</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Tutorials are the hard <em>slice</em>.</h2>
+  <div class="limits">
+    <div class="limits-left">
+      <p class="chart-head">Page-level nDCG@5, 51 test questions.</p>
+      <div class="chart">
+        <div class="bar-row worst"><span class="bar-label">tutorial</span><span class="bar-track"><i style="width:61.7%"></i></span><span class="num">0.617</span></div>
+        <div class="bar-row"><span class="bar-label">mechanism</span><span class="bar-track"><i style="width:87.5%"></i></span><span class="num">0.875</span></div>
+        <div class="bar-row"><span class="bar-label">assignment</span><span class="bar-track"><i style="width:90.9%"></i></span><span class="num">0.909</span></div>
+        <div class="bar-row"><span class="bar-label">concept</span><span class="bar-track"><i style="width:91.2%"></i></span><span class="num">0.912</span></div>
+      </div>
+      <p class="limits-note">Tutorial pages bundle several sub-tasks.</p>
+    </div>
+    <div class="limits-side">
+      <div class="limit-thumb"><div class="shot"><img src="assets/course/tutorial4-p40.png" alt="Tutorial 4 page 40"><span class="tag">Tutorial 4</span></div></div>
+      <div class="limits-grid">
+        <div class="limit"><img class="ico" src="assets/icons/quote.svg" alt=""><span class="ltxt">Verified citations: next</span></div>
+        <div class="limit"><img class="ico" src="assets/icons/terminal.svg" alt=""><span class="ltxt">TACC execution: next</span></div>
+        <div class="limit"><img class="ico" src="assets/icons/shield-check.svg" alt=""><span class="ltxt">Instructor/TA UI: partial</span></div>
+        <div class="limit"><img class="ico" src="assets/icons/layers.svg" alt=""><span class="ltxt">Scope: one course</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="lesson-strip">
+    <img src="assets/icons-white/gauge.png" alt="">
+    <div class="lt"><b>Lesson</b> Dual granularity raised hit@5 0.882 to 0.941; nDCG interval crossed zero; index cost 2.7×.</div>
+  </div>
+  <footer class="vt-foot"><span class="pg">17 / 20</span></footer>
+  <div class="notes">0:35. Tutorial questions retrieve worse than concept, mechanism or assignment questions. The likely cause is that tutorial pages bundle several sub-tasks into one page. Dual-granularity chunking raised hit@5 but not significantly, at 2.7 times the index cost, so we kept the page-first rule and logged it.</div>
+</section>
+
+<!-- 18 · CONCLUSION -->
+<section class="slide dark conclusion" data-title="Verifiability is a system property">
+  <header class="vt-head"><span class="kick">17 / Conclusion</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Verifiability is a system <em>property</em>.</h2>
+  <div class="conc-grid">
+    <div class="conc-left">
+      <div class="conc-list">
+        <div class="conc-item"><span class="idx">01</span><div><div class="ctitle">Page-first retrieval</div><div class="csub">beats BM25 and dense.</div></div></div>
+        <div class="conc-item"><span class="idx">02</span><div><div class="ctitle">Policy as code</div><div class="csub">deadline changes the answer.</div></div></div>
+        <div class="conc-item"><span class="idx">03</span><div><div class="ctitle">Coverage and integrity</div><div class="csub">beats three hosted assistants.</div></div></div>
+      </div>
+      <div class="conc-next">Next: instructor/TA console, citations, execution.</div>
+      <div class="conc-team">LI Jinchuan · TIAN Yujia · XIE Yifeng</div>
+    </div>
+    <aside class="conc-side">
+      <div class="qr"><img src="assets/img/qr-repo.png" alt="QR code for the Verifiable Tutor repository"></div>
+      <div class="questions">Questions</div>
+    </aside>
+  </div>
+  <footer class="vt-foot"><span class="conc-link">github.com/Kane-LI-0114/verifiable-tutor</span><span class="pg">18 / 20</span></footer>
+  <div class="notes">0:30. The page is the retrieval unit, the policy is code, and the evaluation separates grounding from grading. The student loop is end-to-end. The operator console, verifier persistence, TACC execution, and multi-course support are the next surfaces.</div>
+</section>
+
+<!-- 19 · APPENDIX A1 -->
+<section class="slide" data-title="One question, end to end">
+  <header class="vt-head"><span class="kick">Appendix / A1</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">One question, end to <em>end</em>.</h2>
+  <div class="seq-body">
+    <div class="seq">
+      <div class="seqnode"><img class="ico" src="assets/icons/book-open.svg" alt=""><span class="sname">Student</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/layers.svg" alt=""><span class="sname">React SPA</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/boxes.svg" alt=""><span class="sname">FastAPI</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/shield-check.svg" alt=""><span class="sname">Gate</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/git-branch.svg" alt=""><span class="sname">LangGraph</span></div>
+    </div>
+    <div class="seq-down"><img class="ico" src="assets/icons/arrow-right.svg" alt=""></div>
+    <div class="seq">
+      <div class="seqnode"><img class="ico" src="assets/icons/terminal.svg" alt=""><span class="sname">Tools</span></div>
+      <div class="seqnode dashed"><img class="ico" src="assets/icons/quote.svg" alt=""><span class="sname">Verifier</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/cpu.svg" alt=""><span class="sname">Model</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/database.svg" alt=""><span class="sname">Store</span></div>
+      <div class="seqnode"><img class="ico" src="assets/icons/arrow-right.svg" alt=""><span class="sname">SSE</span></div>
+    </div>
+  </div>
+  <div class="seq-legend">
+    <div class="legend-item"><span class="legend-box"></span><span>shipped</span></div>
+    <div class="legend-item"><span class="legend-box dash"></span><span>partial</span></div>
+  </div>
+  <p class="seq-note">No inbound service; TACC steps are batch jobs.</p>
+  <footer class="vt-foot"><span class="pg">19 / 20</span></footer>
+  <div class="notes">Appendix. The sequence from student to answer: SPA, API, gate, LangGraph, typed tools, verifier, model, store, and SSE. Solid is shipped; dashed is planned.</div>
+</section>
+
+<!-- 20 · APPENDIX A2 -->
+<section class="slide" data-title="Evaluation method and TACC evidence">
+  <header class="vt-head"><span class="kick">Appendix / A2</span><span class="brandmark"><i></i><i></i><i></i></span></header>
+  <h2 class="display slide-title">Evaluation method and TACC <em>evidence</em>.</h2>
+  <div class="a2">
+    <div class="a2col">
+      <div class="a2head"><img class="ico" src="assets/icons/gauge.svg" alt=""><span>Evaluation method</span></div>
+      <div class="method-rows">
+        <div class="mrow"><img class="ico" src="assets/icons/flask-conical.svg" alt=""><div><b>Practice</b><span>10 questions, 3 controls.</span></div></div>
+        <div class="mrow"><img class="ico" src="assets/icons/quote.svg" alt=""><div><b>Citation</b><span>15 questions, page and quote checked.</span></div></div>
+        <div class="mrow"><img class="ico" src="assets/icons/layers.svg" alt=""><div><b>Chunking</b><span>51 questions, page-level nDCG@5.</span></div></div>
+        <div class="mrow"><img class="ico" src="assets/icons/check.svg" alt=""><div><b>Grading</b><span>10 questions, model vs ground truth.</span></div></div>
+      </div>
+      <div class="a2note">Controls: Doubao, Gemini, Qwen.</div>
+    </div>
+    <div class="a2col">
+      <div class="a2head"><img class="ico" src="assets/icons/cpu.svg" alt=""><span>TACC / Qwen job 28067</span></div>
+      <div class="tacc-stats">
+        <div class="tstat"><div class="num">434 s</div><div class="tlabel">vLLM cold start</div></div>
+        <div class="tstat"><div class="num">43.9 s</div><div class="tlabel">8-chunk build</div></div>
+        <div class="tstat"><div class="num">8/8</div><div class="tlabel">valid records</div></div>
+      </div>
+      <div class="a2note">One shard, 8 chunks. Corpus: 16 docs, 593 pages, 612 chunks.</div>
+    </div>
+  </div>
+  <footer class="vt-foot"><span class="pg">20 / 20</span></footer>
+  <div class="notes">Appendix. Ten practice questions and fifteen citation questions against three hosted assistants. The Qwen knowledge-base job 28067 measured a 434 second cold start, 43.9 second build, and 8 of 8 valid records.</div>
+</section>
+
+</div>
+<script src="assets/vendor/runtime.js"></script>
+</body>
+</html>

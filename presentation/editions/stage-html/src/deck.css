@@ -1,0 +1,205 @@
+/* ==========================================================================
+   Verifiable Tutor · stage edition
+   Override layer for the guizang Swiss template.
+   HARD RULE: every slide shows exactly two text sizes.
+   Body 32px (16pt @1920x1080) and Display 96px (120px on the cover).
+   No label, caption, table cell, chrome or page number may use another size.
+   Layout is authored on a fixed 1920x1080 stage, then scaled to the viewport
+   so presenter previews stay pixel-accurate. At 1920x1080 the scale is 1.
+   ========================================================================== */
+
+:root{
+  --font-display:Georgia,'Times New Roman',serif;
+  --font-sans:Arial,'Helvetica Neue',Helvetica,sans-serif;
+  --font-mono:'Courier New',Courier,monospace;
+  --sans:Arial,'Helvetica Neue',Helvetica,sans-serif;
+  --sans-zh:Arial,'Helvetica Neue',Helvetica,sans-serif;
+  --mono:'Courier New',Courier,monospace;
+  --stage-paper:#fafaf8;
+  --stage-ink:#0a0a0a;
+  --stage-cobalt:#1447e6;
+  --stage-line:#d4d4d2;
+  --stage-grey:#f0f0ee;
+  --stage-graphite:#171717;
+  --stage-scale:1;
+}
+
+html,body{font-family:var(--font-sans);background:var(--paper);color:var(--ink)}
+#deck{transition:transform .62s cubic-bezier(.77,0,.175,1)}
+
+/* ---------- slide shell ---------- */
+.slide{
+  padding:0!important;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  font-size:32px;
+  line-height:1.4;
+}
+.slide.dark{background:var(--ink);color:var(--paper)}
+.slide.accent{background:var(--stage-cobalt);color:#fff}
+.slide.hero.light{background:var(--paper)}
+.slide.hero.dark{background:var(--ink)}
+
+.stage{
+  position:absolute;left:50%;top:50%;
+  width:1920px;height:1080px;
+  transform:translate(-50%,-50%) scale(var(--stage-scale,1));
+  transform-origin:center center;
+  overflow:hidden;
+  font-family:var(--font-sans);
+  font-size:32px;
+  line-height:1.4;
+}
+
+/* every text node on a slide is 32px unless it is a display element */
+.stage *{font-size:32px;font-family:var(--font-sans)}
+.stage svg{font-size:32px}
+
+.st-d,.stage .st-d{
+  font-size:96px!important;
+  font-family:var(--font-display)!important;
+  font-weight:400;
+  line-height:1.02;
+  letter-spacing:-.022em;
+}
+.st-cover,.stage .st-cover{
+  font-size:120px!important;
+  font-family:var(--font-display)!important;
+  font-weight:400;
+  line-height:1.0;
+  letter-spacing:-.026em;
+}
+.st-title{margin:0}
+.st-label,.stage .st-label{font-family:var(--font-mono)!important;letter-spacing:.1em;text-transform:uppercase;line-height:1.3}
+.st-mono,.stage .st-mono{font-family:var(--font-mono)!important;letter-spacing:.04em}
+.st-quote,.stage .st-quote{font-family:var(--font-mono)!important;line-height:1.4}
+.st-lead{max-width:1080px;line-height:1.45}
+
+/* ---------- page furniture ---------- */
+.pad{position:absolute;inset:0;padding:72px 96px 84px;display:flex;flex-direction:column}
+.pad--flush{padding:0}
+.st-chrome{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  font-family:var(--font-mono);letter-spacing:.1em;text-transform:uppercase;
+  line-height:1.25;flex:0 0 auto;margin-bottom:40px;
+}
+.st-chrome .r{white-space:nowrap;margin-left:48px}
+.st-foot{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  border-top:1px solid currentColor;border-color:rgba(127,127,127,.32);
+  padding-top:20px;margin-top:32px;flex:0 0 auto;
+}
+.st-rule{height:1px;background:currentColor;opacity:.24;width:100%}
+
+/* ---------- layout utilities ---------- */
+.st-fill{flex:1;min-height:0}
+.st-col{display:flex;flex-direction:column}
+.st-row{display:flex;align-items:center}
+.st-between{justify-content:space-between}
+.st-g2{display:grid;grid-template-columns:repeat(2,1fr);gap:32px}
+.st-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.st-g4{display:grid;grid-template-columns:repeat(4,1fr);gap:32px}
+.st-g5{display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.st-start{align-items:start}
+.st-mid{display:flex;align-items:center}
+.st-end{display:flex;align-items:flex-end}
+
+/* ---------- cards ---------- */
+.st-card{
+  background:var(--stage-grey);
+  padding:30px 32px;
+  display:flex;flex-direction:column;
+  min-width:0;
+  min-height:0;
+}
+.slide.dark .st-card{background:var(--stage-graphite)}
+.st-card--line{background:transparent;border:1px solid var(--stage-line)}
+.slide.dark .st-card--line{background:transparent;border-color:rgba(250,250,248,.28)}
+.st-card--ink{background:var(--stage-ink);color:var(--paper)}
+.st-card--accent{background:var(--stage-cobalt);color:#fff}
+.st-card--paper{background:var(--paper);color:var(--ink)}
+.st-card--paper .st-label{color:#525252}
+.st-card--accent .st-label,.st-card--ink .st-label{color:rgba(255,255,255,.72)}
+
+/* ---------- icons ---------- */
+.st-icon{display:inline-flex;align-items:center;justify-content:center}
+.st-icon svg{width:64px;height:64px;stroke-width:1.4;stroke:currentColor;fill:none;stroke-linecap:square;stroke-linejoin:round}
+.st-icon--48 svg{width:48px;height:48px}
+.st-icon--96 svg{width:96px;height:96px;stroke-width:1.1}
+.st-icon-box{width:96px;height:96px;display:flex;align-items:center;justify-content:center;background:var(--paper);color:var(--ink)}
+.slide.dark .st-icon-box{background:rgba(250,250,248,.1);color:var(--paper)}
+.st-icon-box svg{width:56px;height:56px;stroke-width:1.4;stroke:currentColor;fill:none;stroke-linecap:square;stroke-linejoin:round}
+.st-icon-box--accent{background:var(--stage-cobalt);color:#fff}
+
+/* ---------- images ---------- */
+.st-img{position:relative;overflow:hidden;background:#fff;min-width:0;min-height:0}
+.st-img img{display:block;width:100%;height:100%;object-fit:cover;object-position:center center}
+.st-img--contain img{object-fit:contain;object-position:center center}
+.st-img--top img{object-position:center top}
+.st-img--left img{object-position:left center}
+.st-frame{border:1px solid var(--stage-line)}
+.slide.dark .st-frame{border-color:rgba(250,250,248,.28)}
+.st-cap{font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;margin-top:16px}
+
+/* ---------- specific motifs ---------- */
+.st-chip{display:inline-flex;align-items:center;border:1px solid currentColor;padding:10px 18px;line-height:1.1;white-space:nowrap}
+.st-chip--solid{background:currentColor}
+.st-dotgrid{
+  background-image:radial-gradient(currentColor 1.6px,transparent 1.7px);
+  background-size:22px 22px;
+  opacity:.22;
+}
+.st-crossgrid{
+  background-image:
+    linear-gradient(currentColor 1px,transparent 1px),
+    linear-gradient(90deg,currentColor 1px,transparent 1px);
+  background-size:48px 48px;
+  opacity:.14;
+}
+.st-bar{height:36px;background:var(--stage-grey);position:relative}
+.slide.dark .st-bar{background:var(--stage-graphite)}
+.st-bar > i{position:absolute;left:0;top:0;bottom:0;background:var(--stage-cobalt);display:block}
+.st-bar > i.is-bad{background:var(--ink)}
+.slide.dark .st-bar > i.is-bad{background:var(--paper)}
+.st-tick{width:16px;height:16px;background:var(--stage-cobalt);display:inline-block;flex:0 0 auto}
+.st-num-tag{font-family:var(--font-mono);letter-spacing:.06em}
+
+/* ---------- export / print ---------- */
+body.export #nav,body.export #hint{display:none!important}
+body.export #deck{transition:none!important}
+body.export .slide{background-attachment:initial}
+
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{overflow:visible!important;width:1920px;height:auto!important;background:var(--paper)!important}
+  #deck{position:static!important;display:block!important;width:auto!important;height:auto!important;transform:none!important;transition:none!important;will-change:auto}
+  .slide{
+    display:block!important;position:relative!important;
+    width:1920px!important;height:1080px!important;min-height:1080px!important;
+    flex:none!important;overflow:hidden!important;
+    break-after:page;page-break-after:always;
+  }
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  .stage{position:absolute!important;left:0!important;top:0!important;width:1920px!important;height:1080px!important;transform:none!important;margin:0!important}
+  #nav,#hint,#overview,canvas.bg{display:none!important}
+  body.motion-ready [data-anim]{opacity:1!important;transform:none!important}
+}
+
+/* ---------- slide variant backgrounds (beat body.canvas-mode .slide) ---------- */
+html body.canvas-mode .slide.light{background:var(--paper);color:var(--ink)}
+html body.canvas-mode .slide.hero.light{background:var(--paper);color:var(--ink)}
+html body.canvas-mode .slide.dark{background:var(--ink);color:var(--paper)}
+html body.canvas-mode .slide.hero.dark{background:var(--ink);color:var(--paper)}
+html body.canvas-mode .slide.accent{background:var(--stage-cobalt);color:#fff}
+.pad{position:absolute;inset:0;padding:72px 96px 84px;display:flex;flex-direction:column;z-index:1}
+
+
+/* slide 02: 160px cards on the lead's safe-bottom layout; tighten inner padding to match */
+.slide[data-slide-id="problem-goal"] .st-card{padding:16px 24px}
+
+/* A1 timeline: 9 x 32px node labels; tracking removed so LANGGRAPH and TYPED/TOOLS stay in-cell */
+.st-node-label{letter-spacing:0}
+
+/* must beat .stage .st-label{letter-spacing:.1em} so each A1 label stays inside its 1/9 cell */
+.stage .st-node-label{letter-spacing:0}

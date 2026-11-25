@@ -1,0 +1,690 @@
+{
+  "generatedAt": "2026-11-25T09:25:37.869Z",
+  "slideCount": 20,
+  "noteCount": 20,
+  "external": [],
+  "audit": [
+    {
+      "index": 1,
+      "id": "cover",
+      "layout": "SWISS-COVER-ASCII",
+      "sizes": [
+        32,
+        120
+      ],
+      "sizeCounts": {
+        "32": 10,
+        "120": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 6,
+        "Courier New": 4,
+        "Georgia": 2
+      },
+      "words": 45,
+      "copyWords": 33,
+      "images": 0,
+      "icons": 3,
+      "brokenImages": []
+    },
+    {
+      "index": 2,
+      "id": "problem-goal",
+      "layout": "S16",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 10,
+        "96": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 3,
+        "Georgia": 2,
+        "Courier New": 7
+      },
+      "words": 44,
+      "copyWords": 30,
+      "images": 1,
+      "icons": 6,
+      "brokenImages": []
+    },
+    {
+      "index": 3,
+      "id": "system",
+      "layout": "S17",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 16,
+        "96": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 7,
+        "Georgia": 2,
+        "Courier New": 9
+      },
+      "words": 52,
+      "copyWords": 38,
+      "images": 1,
+      "icons": 4,
+      "brokenImages": []
+    },
+    {
+      "index": 4,
+      "id": "data",
+      "layout": "S15",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 19,
+        "96": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 3,
+        "Georgia": 3,
+        "Courier New": 16
+      },
+      "words": 50,
+      "copyWords": 35,
+      "images": 1,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 5,
+      "id": "stack",
+      "layout": "S05",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 23,
+        "96": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 13,
+        "Georgia": 2,
+        "Courier New": 10
+      },
+      "words": 55,
+      "copyWords": 41,
+      "images": 0,
+      "icons": 5,
+      "brokenImages": []
+    },
+    {
+      "index": 6,
+      "id": "agent",
+      "layout": "S14",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 21,
+        "96": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 12,
+        "Georgia": 1,
+        "Courier New": 9
+      },
+      "words": 48,
+      "copyWords": 34,
+      "images": 0,
+      "icons": 4,
+      "brokenImages": []
+    },
+    {
+      "index": 7,
+      "id": "agent-demo",
+      "layout": "S22",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 8,
+        "96": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 7,
+        "Georgia": 5,
+        "Courier New": 1
+      },
+      "words": 39,
+      "copyWords": 24,
+      "images": 1,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 8,
+      "id": "rag-offline",
+      "layout": "S02",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 17,
+        "96": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 7,
+        "Georgia": 5,
+        "Courier New": 10
+      },
+      "words": 62,
+      "copyWords": 43,
+      "images": 2,
+      "icons": 4,
+      "brokenImages": []
+    },
+    {
+      "index": 9,
+      "id": "rag-online",
+      "layout": "S17",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 19,
+        "96": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 10,
+        "Georgia": 2,
+        "Courier New": 9
+      },
+      "words": 55,
+      "copyWords": 39,
+      "images": 1,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 10,
+      "id": "rag-demo",
+      "layout": "S15",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 7,
+        "96": 4
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 6,
+        "Georgia": 4,
+        "Courier New": 1
+      },
+      "words": 45,
+      "copyWords": 25,
+      "images": 1,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 11,
+      "id": "knowledge",
+      "layout": "S22",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 7,
+        "96": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 6,
+        "Georgia": 1,
+        "Courier New": 1
+      },
+      "words": 45,
+      "copyWords": 30,
+      "images": 1,
+      "icons": 3,
+      "brokenImages": []
+    },
+    {
+      "index": 12,
+      "id": "knowledge-demo",
+      "layout": "S15",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 7,
+        "96": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 3,
+        "Georgia": 2,
+        "Courier New": 4
+      },
+      "words": 42,
+      "copyWords": 27,
+      "images": 3,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 13,
+      "id": "verifier",
+      "layout": "S08",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 18,
+        "96": 2
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 8,
+        "Georgia": 2,
+        "Courier New": 10
+      },
+      "words": 57,
+      "copyWords": 41,
+      "images": 1,
+      "icons": 4,
+      "brokenImages": []
+    },
+    {
+      "index": 14,
+      "id": "practice-policy",
+      "layout": "S19",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 23,
+        "96": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 18,
+        "Georgia": 1,
+        "Courier New": 5
+      },
+      "words": 55,
+      "copyWords": 42,
+      "images": 0,
+      "icons": 4,
+      "brokenImages": []
+    },
+    {
+      "index": 15,
+      "id": "practice-demo",
+      "layout": "S15",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 7,
+        "96": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 3,
+        "Georgia": 1,
+        "Courier New": 4
+      },
+      "words": 48,
+      "copyWords": 35,
+      "images": 2,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 16,
+      "id": "evaluation",
+      "layout": "S21",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 32,
+        "96": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 22,
+        "Georgia": 5,
+        "Courier New": 10
+      },
+      "words": 63,
+      "copyWords": 43,
+      "images": 0,
+      "icons": 3,
+      "brokenImages": []
+    },
+    {
+      "index": 17,
+      "id": "failure-limits",
+      "layout": "S07",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 21,
+        "96": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 12,
+        "Georgia": 1,
+        "Courier New": 9
+      },
+      "words": 54,
+      "copyWords": 41,
+      "images": 1,
+      "icons": 4,
+      "brokenImages": []
+    },
+    {
+      "index": 18,
+      "id": "conclusion",
+      "layout": "SWISS-CLOSING-ASCII",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 16,
+        "96": 3
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 11,
+        "Georgia": 3,
+        "Courier New": 5
+      },
+      "words": 54,
+      "copyWords": 42,
+      "images": 1,
+      "icons": 0,
+      "brokenImages": []
+    },
+    {
+      "index": 19,
+      "id": "appendix-a1",
+      "layout": "S11",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 19,
+        "96": 1
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 3,
+        "Georgia": 1,
+        "Courier New": 16
+      },
+      "words": 50,
+      "copyWords": 39,
+      "images": 1,
+      "icons": 9,
+      "brokenImages": []
+    },
+    {
+      "index": 20,
+      "id": "appendix-a2",
+      "layout": "S20",
+      "sizes": [
+        32,
+        96
+      ],
+      "sizeCounts": {
+        "32": 13,
+        "96": 5
+      },
+      "badSizes": [],
+      "badFamilies": [],
+      "families": {
+        "Arial": 10,
+        "Georgia": 5,
+        "Courier New": 3
+      },
+      "words": 62,
+      "copyWords": 44,
+      "images": 0,
+      "icons": 4,
+      "brokenImages": []
+    }
+  ],
+  "layout": [
+    {
+      "index": 1,
+      "id": "cover",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "st-label \"LI Jinchuan · TIAN Yujia · XIE Yifeng\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 2,
+      "id": "problem-goal",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "st-card.st-card--accent \"Sources you can open\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 3,
+      "id": "system",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "FIGURE \"\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 4,
+      "id": "data",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "FIGURE \"Source pane · citations next\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 5,
+      "id": "stack",
+      "maxBottom": 1080,
+      "safeBottom": 936,
+      "safeNode": "st-card.st-card--line \"01 Interface React SPA Vite · TSPDF.js\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 6,
+      "id": "agent",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "DIV \"Typed, bounded, visible.\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 7,
+      "id": "agent-demo",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "st-label \"Real turn · English · doc_id + page_no\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 8,
+      "id": "rag-offline",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "FIGURE \"Lecture 2 · p.9\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 9,
+      "id": "rag-online",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "st-label \"Two arms · 30 each · RRF · 51 test que\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 10,
+      "id": "rag-demo",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "FIGURE \"Answer and source pane · one turn\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 11,
+      "id": "knowledge",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "FIGURE \"Lecture 2 · p.9 · page chat\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 12,
+      "id": "knowledge-demo",
+      "maxBottom": 1080,
+      "safeBottom": 1024,
+      "safeNode": "DIV \"Click [3]: the PDF moves to page 10, t\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 13,
+      "id": "verifier",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "FIGURE \"Page p.9\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 14,
+      "id": "practice-policy",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "DIV \"FlashAttention · single · 2 pts · [3]\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 15,
+      "id": "practice-demo",
+      "maxBottom": 1080,
+      "safeBottom": 1015,
+      "safeNode": "FIGURE \"PRACTICE Topic and type → question + m\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 16,
+      "id": "evaluation",
+      "maxBottom": 1080,
+      "safeBottom": 1032,
+      "safeNode": "st-label \"Citation study · 15 questions\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 17,
+      "id": "failure-limits",
+      "maxBottom": 1080,
+      "safeBottom": 1027,
+      "safeNode": "DIV \"Instructor/TA console partial\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 18,
+      "id": "conclusion",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "st-label \"Next: console, persistence, execution,\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 19,
+      "id": "appendix-a1",
+      "maxBottom": 1080,
+      "safeBottom": 1001,
+      "safeNode": "st-label \"Shipped\"",
+      "overflow": [],
+      "overflowCount": 0
+    },
+    {
+      "index": 20,
+      "id": "appendix-a2",
+      "maxBottom": 1080,
+      "safeBottom": 996,
+      "safeNode": "st-label \"Two arms · 30 each · RRF k=60\"",
+      "overflow": [],
+      "overflowCount": 0
+    }
+  ]
+}
