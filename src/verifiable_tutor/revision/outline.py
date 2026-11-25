@@ -16,7 +16,7 @@ from .category import document_category
 
 __all__ = ["OutlineError", "RevisionTheme", "build_outline"]
 
-PROMPT_VERSION = "revision-outline/1"
+PROMPT_VERSION = "revision-outline/2"
 PROMPT = load_prompt("revision_outline")
 
 
