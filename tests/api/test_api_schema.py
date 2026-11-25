@@ -11,6 +11,7 @@ EXPECTED_TAGS = [
     "knowledge",
     "corpus",
     "practice",
+    "revision",
 ]
 
 EXPECTED_RESPONSE_MODELS = {

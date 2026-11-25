@@ -2733,6 +2733,110 @@
         "title": "RetrievalResponse",
         "type": "object"
       },
+      "RevisionDocumentSummary": {
+        "properties": {
+          "category": {
+            "description": "Category derived from the file name.",
+            "enum": [
+              "assignment",
+              "lecture",
+              "tutorial",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "doc_id": {
+            "description": "Course document id.",
+            "title": "Doc Id",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Original file name.",
+            "title": "Filename"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Document title.",
+            "title": "Title"
+          }
+        },
+        "required": [
+          "doc_id",
+          "category"
+        ],
+        "title": "RevisionDocumentSummary",
+        "type": "object"
+      },
+      "RevisionThemeSummary": {
+        "properties": {
+          "documents": {
+            "description": "Documents grouped under this theme.",
+            "items": {
+              "$ref": "#/components/schemas/RevisionDocumentSummary"
+            },
+            "title": "Documents",
+            "type": "array"
+          },
+          "id": {
+            "description": "Theme id.",
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "description": "Display order of the theme.",
+            "title": "Position",
+            "type": "integer"
+          },
+          "summary": {
+            "description": "One or two sentences describing the theme.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "description": "Theme title.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "position"
+        ],
+        "title": "RevisionThemeSummary",
+        "type": "object"
+      },
+      "RevisionTreeResponse": {
+        "properties": {
+          "themes": {
+            "description": "Revision themes in display order.",
+            "items": {
+              "$ref": "#/components/schemas/RevisionThemeSummary"
+            },
+            "title": "Themes",
+            "type": "array"
+          }
+        },
+        "title": "RevisionTreeResponse",
+        "type": "object"
+      },
       "SearchDocumentRecord": {
         "additionalProperties": false,
         "example": {
@@ -5482,6 +5586,31 @@
         ]
       }
     },
+    "/api/revision": {
+      "get": {
+        "description": "Return the stored outline as themes with their documents.",
+        "operationId": "revision_tree_api_revision_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionTreeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "summary": "The revision guide outline",
+        "tags": [
+          "revision"
+        ]
+      }
+    },
     "/api/sessions": {
       "get": {
         "description": "List the signed-in user's conversations, newest first.",
@@ -6008,6 +6137,10 @@
     {
       "description": "Practice execution; a documented scaffold until the tacc/exec job exists.",
       "name": "practice"
+    },
+    {
+      "description": "The revision guide outline: course themes and their documents.",
+      "name": "revision"
     }
   ]
 }

@@ -58,6 +58,12 @@ OPENAPI_TAGS: list[dict[str, str]] = [
             "exists."
         ),
     },
+    {
+        "name": "revision",
+        "description": (
+            "The revision guide outline: course themes and their documents."
+        ),
+    },
 ]
 
 _SESSION_ID = "6f1c2a9b8d7e4f10a1b2c3d4e5f6a7b8"
@@ -351,6 +357,31 @@ class SessionListResponse(BaseModel):
 
     sessions: list[SessionSummary] = _ex(
         [SESSION_EXAMPLE], "The signed-in user's conversations, newest first."
+    )
+
+
+class RevisionDocumentSummary(BaseModel):
+    doc_id: str = Field(description="Course document id.")
+    title: str | None = Field(default=None, description="Document title.")
+    filename: str | None = Field(default=None, description="Original file name.")
+    category: Literal["assignment", "lecture", "tutorial", "other"] = Field(
+        description="Category derived from the file name."
+    )
+
+
+class RevisionThemeSummary(BaseModel):
+    id: str = Field(description="Theme id.")
+    title: str = Field(description="Theme title.")
+    summary: str = Field(description="One or two sentences describing the theme.")
+    position: int = Field(description="Display order of the theme.")
+    documents: list[RevisionDocumentSummary] = Field(
+        default_factory=list, description="Documents grouped under this theme."
+    )
+
+
+class RevisionTreeResponse(BaseModel):
+    themes: list[RevisionThemeSummary] = Field(
+        default_factory=list, description="Revision themes in display order."
     )
 
 

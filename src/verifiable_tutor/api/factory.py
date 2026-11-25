@@ -42,6 +42,7 @@ from .routers import (
     knowledge_browse,
     practice,
     profile,
+    revision,
     sessions,
     voice,
 )
@@ -247,6 +248,7 @@ def create_app(
         corpus,
         practice,
         profile,
+        revision,
     ]
     for module in router_modules:
         app.include_router(module.router)
