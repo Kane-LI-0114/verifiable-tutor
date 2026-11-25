@@ -449,7 +449,8 @@ Everything marked implemented runs on the development laptop and is covered by t
 | Agent loop | implemented: two-node LangGraph, typed tools (course search, page read, DeepSeek search and fetch, span verify), ordered work-chain events, numbered sources |
 | Retrieval | implemented: FTS5 BM25 plus BGE-M3 with RRF and page deduplication; the span verifier is implemented, claim support is pending |
 | Policy gate | implemented: five states, versioned deadline registry, intent classification, decision log |
-| Practice | implemented: question generation, deterministic grading for choice questions, model grading for open and code answers |
+| Practice | implemented: generated questions persist as sessions before the first answer, unlimited paged attempts with autosave, deterministic grading for choice questions, model grading for open and code answers, and attempt-level delete |
+| Revision guide | implemented: the offline outline and per-document review chapters, the mind-map tree with three-level progress, self-check knowledge points, page anchors, and a clean Markdown download; the generated guide is tracked and loaded on first start |
 | Knowledge base | implemented: the Qwen job, record validation, the local store, and browsing; the card browser and the build console are preview pages |
 | Corpus pipeline | implemented on TACC: OCR, the BGE-M3 index, and document summaries; the artifacts are tracked |
 | Evaluation | implemented: the chunking matrix, the citation study, and the RQ2 harness |
@@ -468,12 +469,13 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `src/verifiable_tutor/orchestrator/` | Request routing and context budget | present: two-node LangGraph loop, typed tool registry, course and web tools |
 | `src/verifiable_tutor/evidence/` | Hybrid retrieval (query plan, FTS5 and dense arms, reciprocal rank fusion) and the deterministic span verifier | present: retrieval and span verifier |
 | `src/verifiable_tutor/practice/` | Practice pack generation and executable tests | present: question generation, deterministic and model grading |
+| `src/verifiable_tutor/revision/` | Revision guide outline, document categorisation, review chapter generation, and Markdown parsing | present: outline, chapter generator and parser |
 | `src/verifiable_tutor/teaching/` | Line-anchored explanations | placeholder (`.gitkeep`) |
 | `src/verifiable_tutor/eval/` | Evaluation harness | present: RQ2 self-test metrics CLI |
 | `src/verifiable_tutor/corpus/` | Page records, the page-first chunker, and the local knowledge store | present: chunker, store, pages |
 | `src/verifiable_tutor/knowledge/` | Knowledge-base build orchestration, record validation, local storage, and build state; present: chunk, request and schema validation helpers, card reader, and build lifecycle | present: helpers, cards, builds |
 | `src/verifiable_tutor/llm/` | Model configuration loader, unified provider adapter, and file-backed response cache; replay and mock backends pending | present: config, adapter, cache, search and fetch used by the agent tools |
-| `src/verifiable_tutor/prompts/` | Model prompt texts in one editable home: the chat system prompt and the knowledge-base job template, loaded by the code that sends them | present: chat and kb prompts |
+| `src/verifiable_tutor/prompts/` | Model prompt texts in one editable home: the chat system prompt, the knowledge-base job template, and the practice and revision prompts, loaded by the code that sends them | present: chat, kb, practice, and revision prompts |
 | `src/verifiable_tutor/ui/web/` | React UI source: routes, layout, page components, preview fixtures, and Vitest tests; built assets are written to the ignored `src/verifiable_tutor/ui/static/` | present: live API wiring and preview build |
 | `tacc/serve/` | Required Qwen knowledge-base job: one submitted GPU job per document shard, records written to `USERDIR` | present: job, worker, prompt |
 | `tacc/env-spike/` | Committed CPU spike: environment bootstrap, FTS5, and platform checks | present: spike job |

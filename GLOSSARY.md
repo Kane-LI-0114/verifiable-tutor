@@ -60,6 +60,26 @@ _Avoid_: Answer, partial solution
 A generated practice artifact that mirrors one assignment's environment, or a self-test question set over a topic: toolchain, source layout, datasets, test harness, and reference answers.
 _Avoid_: Exercise set, tutorial, sandbox
 
+**Practice session**:
+One saved practice run over a generated question set, shown as a single entry in the sidebar with its topic, status, and best score. The session stores the questions before the first answer and holds every attempt.
+_Avoid_: Practice conversation, quiz log
+
+**Attempt**:
+One submission round inside a practice session. The first attempt decides the session status; later attempts are read-only history and only raise the best score.
+_Avoid_: Retry, round, submission
+
+**Revision guide**:
+The course-level mind map of AI-generated study themes, the documents under each theme, and each document's review chapter. It is generated offline and shipped with the repository.
+_Avoid_: Study map, syllabus, knowledge tree
+
+**Review chapter**:
+The Markdown study document generated from one course PDF. Each H2 heading is a knowledge point, its body keeps the Markdown structure, and the page marker points back to the PDF.
+_Avoid_: Summary, lecture note, outline
+
+**Self-check point**:
+One knowledge point in a review chapter that a student marks as known or unknown. The per-user state feeds the document, theme, and course progress bars.
+_Avoid_: Flashcard, checklist item, mastery point
+
 **Self-test question**:
 A generated question the student answers and the agent grades. The types are single choice, multiple choice, true or false, short answer, and code. The self-test feature and the practice lab are the same capability.
 _Avoid_: Quiz item, exercise, test
