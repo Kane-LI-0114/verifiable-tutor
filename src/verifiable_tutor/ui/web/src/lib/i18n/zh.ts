@@ -286,6 +286,7 @@ export const zh: Messages = {
     scored: "已评分",
     gradingTitle: "评分",
     score: "{{score}}/{{max}}",
+    boolean: { true: "正确", false: "错误" },
     verdicts: { correct: "正确", partial: "部分正确", incorrect: "错误" },
     explanation: "解析",
     referenceAnswer: "参考答案",

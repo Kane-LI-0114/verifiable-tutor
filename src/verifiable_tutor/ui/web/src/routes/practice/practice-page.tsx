@@ -600,7 +600,7 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
                 <p className="text-sm text-muted-foreground">{t.practice.gradingTitle}</p>
               </CardContent>
             </Card>
-            {session.questions.map((question) => {
+            {session.questions.map((question, index) => {
               const result = results[question.id];
               return (
                 <Card key={question.id}>
@@ -614,8 +614,12 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
                         })}
                       </Badge>
                     </div>
-                    <CardTitle>
-                      <Markdown sources={session.sources} className="text-base font-semibold">
+                    <CardTitle className="flex items-start gap-2">
+                      <span className="text-muted-foreground">{index + 1}.</span>
+                      <Markdown
+                        sources={session.sources}
+                        className="flex-1 text-base font-semibold"
+                      >
                         {question.question}
                       </Markdown>
                     </CardTitle>
@@ -645,7 +649,7 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
           </>
         ) : (
           <>
-            {session.questions.map((question) => {
+            {session.questions.map((question, index) => {
               const choices =
                 attempt.option_orders?.[question.id] ?? question.choices;
               return (
@@ -662,14 +666,39 @@ function PracticeSessionView({ sessionId }: { sessionId: string }) {
                       )}
                     </Badge>
                   </div>
-                  <CardTitle>
-                    <Markdown sources={session.sources} className="text-base font-semibold">
+                  <CardTitle className="flex items-start gap-2">
+                    <span className="text-muted-foreground">{index + 1}.</span>
+                    <Markdown
+                      sources={session.sources}
+                      className="flex-1 text-base font-semibold"
+                    >
                       {question.question}
                     </Markdown>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {question.type === "single-choice" || question.type === "true-false" ? (
+                  {question.type === "true-false" ? (
+                    <RadioGroup
+                      className="flex flex-wrap items-center gap-6"
+                      value={answers[question.id]?.[0] ?? ""}
+                      onValueChange={(value) => updateAnswer(question, [value])}
+                      aria-label={t.practice.answer}
+                    >
+                      {(["True", "False"] as const).map((value) => (
+                        <label
+                          key={value}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <RadioGroupItem value={value} />
+                          {value === "True"
+                            ? t.practice.boolean.true
+                            : t.practice.boolean.false}
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  ) : null}
+
+                  {question.type === "single-choice" ? (
                     <RadioGroup
                       value={answers[question.id]?.[0] ?? ""}
                       onValueChange={(value) => updateAnswer(question, [value])}
