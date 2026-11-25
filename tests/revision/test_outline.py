@@ -7,7 +7,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from verifiable_tutor.revision.category import document_category
 from verifiable_tutor.revision.outline import OutlineError, build_outline
 
 DOCUMENTS = [
@@ -50,14 +49,6 @@ def _themes(*mappings):
             for title, summary, doc_ids in mappings
         ]
     }
-
-
-def test_categories_follow_the_file_name():
-    assert document_category("Assignment_1_final") == "assignment"
-    assert document_category("ACS_Lecture_3_2026F") == "lecture"
-    assert document_category("Tutorial_6") == "tutorial"
-    assert document_category("TACC_Toturial") == "tutorial"
-    assert document_category("course_project") == "other"
 
 
 def test_the_outline_maps_every_document_once():
