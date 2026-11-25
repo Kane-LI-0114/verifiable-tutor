@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">03 / DATA</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Every claim keeps its page.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">17 application tables + FTS5. One local SQLite file.</text>
+  </g>
+  <g id="db-map" data-pptx-bounds="64 184 1152 410">
+    <line x1="330" y1="200" x2="330" y2="570" stroke="#E4E4E7" stroke-width="1"/>
+    <line x1="612" y1="200" x2="612" y2="570" stroke="#E4E4E7" stroke-width="1"/>
+    <line x1="894" y1="200" x2="894" y2="570" stroke="#E4E4E7" stroke-width="1"/>
+    <use data-icon="tabler-outline/lock" x="64" y="208" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="108" y="232" font-size="21.33" font-weight="bold" fill="#09090B">ACCESS</text>
+    <text x="64" y="278" font-family="Courier New" font-size="21.33" fill="#18181B">users</text>
+    <text x="64" y="308" font-family="Courier New" font-size="21.33" fill="#18181B">login_sessions</text>
+    <text x="64" y="338" font-family="Courier New" font-size="21.33" fill="#18181B">verification_codes</text>
+    <use data-icon="tabler-outline/message-chatbot" x="340" y="208" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="384" y="232" font-size="21.33" font-weight="bold" fill="#09090B">CONVERSATION</text>
+    <text x="340" y="278" font-family="Courier New" font-size="21.33" fill="#18181B">conversations</text>
+    <text x="340" y="308" font-family="Courier New" font-size="21.33" fill="#18181B">messages</text>
+    <text x="340" y="338" font-family="Courier New" font-size="21.33" fill="#18181B">message_steps</text>
+    <text x="340" y="368" font-family="Courier New" font-size="21.33" fill="#18181B">message_events</text>
+    <text x="340" y="398" font-family="Courier New" font-size="21.33" fill="#18181B">tool_calls</text>
+    <text x="340" y="428" font-family="Courier New" font-size="21.33" font-weight="bold" fill="#1447E6">message_sources</text>
+    <use data-icon="tabler-outline/database" x="622" y="208" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="666" y="232" font-size="21.33" font-weight="bold" fill="#09090B">KNOWLEDGE / RAG</text>
+    <text x="622" y="278" font-family="Courier New" font-size="21.33" fill="#18181B">kb_folders</text>
+    <text x="622" y="308" font-family="Courier New" font-size="21.33" fill="#18181B">kb_documents</text>
+    <text x="622" y="338" font-family="Courier New" font-size="21.33" fill="#18181B">kb_chunks</text>
+    <text x="622" y="368" font-family="Courier New" font-size="21.33" fill="#18181B">kb_chunks_fts</text>
+    <text x="622" y="398" font-family="Courier New" font-size="21.33" fill="#18181B">kb_index_state</text>
+    <text x="622" y="428" font-family="Courier New" font-size="21.33" fill="#18181B">knowledge_builds</text>
+    <text x="622" y="458" font-family="Courier New" font-size="21.33" fill="#C10007">citations</text>
+    <use data-icon="tabler-outline/gauge" x="904" y="208" width="32" height="32" fill="#1447E6" stroke-width="2"/>
+    <text x="948" y="232" font-size="21.33" font-weight="bold" fill="#09090B">LEARNING</text>
+    <text x="904" y="278" font-family="Courier New" font-size="21.33" fill="#18181B">topic_progress</text>
+    <text x="904" y="330" font-size="21.33" fill="#52525B">One row per topic.</text>
+  </g>
+  <g id="bridge-band" data-pptx-bounds="64 616 1152 52">
+    <rect x="64" y="616" width="1152" height="52" fill="#F4F4F5"/>
+    <text x="84" y="650" font-size="21.33" fill="#18181B">message_sources = answer → document / page · citations = verified layer, next</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">04 / 20</text>
+  </g>
+</svg>

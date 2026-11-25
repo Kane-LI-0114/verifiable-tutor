@@ -1,0 +1,1 @@
+Each layer has one job. The interface is a React SPA built with Vite and Tailwind. FastAPI serves the API and the stream. The agent is a typed LangGraph loop. Retrieval is SQLite FTS5 plus BGE-M3, with the span verifier beside it. TACC runs PaddleOCR, the index job, and Qwen. External model and mail APIs are edges, not part of the local core.

@@ -1,0 +1,1 @@
+Tutorials are the hard slice. Their nDCG@5 is 0.617, below concept, mechanism, and assignment questions. The likely cause is that tutorial pages bundle several sub-tasks. Dual-granularity chunking raised hit@5 from 0.882 to 0.941, but the nDCG confidence interval crosses zero and the index cost is 2.7 times higher. We kept the page-first rule and logged the result.

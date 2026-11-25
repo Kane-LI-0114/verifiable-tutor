@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">16 / FAILURE &amp; LIMITS</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Tutorials are the hard slice.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">Tutorial nDCG@5 is 0.617; the fix is not free.</text>
+  </g>
+  <g id="score-bars" data-pptx-bounds="64 184 720 360">
+    <text x="64" y="210" font-size="21.33" font-weight="bold" fill="#09090B">nDCG@5 BY QUESTION TYPE</text>
+    <line x1="220" y1="232" x2="220" y2="438" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="264" font-size="21.33" fill="#18181B">Tutorial</text>
+    <rect x="220" y="246" width="105" height="26" fill="#C10007"/>
+    <text x="337" y="266" font-size="21.33" fill="#C10007">0.617</text>
+    <text x="64" y="324" font-size="21.33" fill="#18181B">Mechanism</text>
+    <rect x="220" y="306" width="315" height="26" fill="#1447E6"/>
+    <text x="547" y="326" font-size="21.33" fill="#18181B">0.875</text>
+    <text x="64" y="384" font-size="21.33" fill="#18181B">Assignment</text>
+    <rect x="220" y="366" width="344" height="26" fill="#1447E6"/>
+    <text x="576" y="386" font-size="21.33" fill="#18181B">0.909</text>
+    <text x="64" y="444" font-size="21.33" fill="#18181B">Concept</text>
+    <rect x="220" y="426" width="346" height="26" fill="#1447E6"/>
+    <text x="578" y="446" font-size="21.33" fill="#18181B">0.912</text>
+    <text x="220" y="486" font-size="21.33" fill="#52525B">0.5</text>
+    <text x="640" y="486" font-size="21.33" fill="#52525B">1.0</text>
+  </g>
+  <g id="tutorial-plate" data-pptx-bounds="808 184 408 360">
+    <rect x="830" y="200" width="340" height="255" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/course-tutorial4-p40.webp" x="830" y="200" width="340" height="255" preserveAspectRatio="xMidYMid meet"/>
+    <text x="830" y="492" font-size="21.33" fill="#52525B">Tutorial 4 / p.40</text>
+    <text x="830" y="522" font-size="21.33" fill="#52525B">many sub-tasks on one page</text>
+  </g>
+  <g id="limits" data-pptx-bounds="64 560 1152 104">
+    <line x1="64" y1="560" x2="1216" y2="560" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="590" font-size="21.33" font-weight="bold" fill="#C10007">LIMITS</text>
+    <text x="64" y="620" font-size="21.33" fill="#18181B">pages bundle sub-tasks</text>
+    <text x="340" y="590" font-size="21.33" fill="#18181B">dual 0.882 → 0.941 hit@5</text>
+    <text x="340" y="618" font-size="21.33" fill="#18181B">+0.059 · 2.7× cost</text>
+    <text x="340" y="646" font-size="21.33" fill="#18181B">nDCG CI crosses zero</text>
+    <text x="700" y="590" font-size="21.33" fill="#18181B">citations not persisted</text>
+    <text x="700" y="618" font-size="21.33" fill="#18181B">instructor/TA UI partial</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">17 / 20</text>
+  </g>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><polygon points="0,0 10,5 0,10" fill="#1447E6"/></marker>
+  </defs>
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">11 / DEMO / KNOWLEDGE</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">From marker to page 10.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">Clicking [3] moves the PDF; the chat stays in place.</text>
+  </g>
+  <g id="before-panel" data-pptx-bounds="64 184 540 430">
+    <text x="64" y="212" font-size="21.33" font-weight="bold" fill="#1447E6">BEFORE / p.9</text>
+    <rect x="64" y="226" width="500" height="338" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-knowledge-page9.png" x="64" y="226" width="500" height="338" preserveAspectRatio="xMidYMid meet"/>
+    <text x="64" y="598" font-size="21.33" fill="#52525B">Answer cites [1] p.9 and [3] p.10.</text>
+  </g>
+  <g id="transition" data-pptx-bounds="604 380 32 40">
+    <line x1="604" y1="400" x2="636" y2="400" stroke="#1447E6" stroke-width="3" marker-end="url(#arrow)"/>
+  </g>
+  <g id="after-panel" data-pptx-bounds="636 184 540 430">
+    <text x="636" y="212" font-size="21.33" font-weight="bold" fill="#1447E6">AFTER / p.10</text>
+    <rect x="636" y="226" width="400" height="354" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-knowledge-page10-detail.png" x="636" y="226" width="400" height="354" preserveAspectRatio="xMidYMid meet"/>
+    <text x="1060" y="260" font-size="21.33" fill="#18181B">PDF</text>
+    <text x="1060" y="292" font-size="21.33" fill="#18181B">moves</text>
+    <text x="1060" y="350" font-size="21.33" fill="#18181B">chat</text>
+    <text x="1060" y="382" font-size="21.33" fill="#18181B">stays</text>
+    <text x="636" y="598" font-size="21.33" fill="#52525B">The target is a URL to the exact page.</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">12 / 20</text>
+  </g>
+</svg>

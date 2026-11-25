@@ -1,12 +1,21 @@
 # Final presentation deck
 
-The final CSIT6000V presentation for **Verifiable Tutor**, 18 main slides plus 2 appendix slides.
+The final CSIT6000V presentation for **Verifiable Tutor**, 18 main slides plus 2 appendix slides. Two editions are kept.
+
+## A edition: pptxgenjs
 
 - **Deck:** `CSIT6000V_VerifiableTutor_Final_2026F.pptx`
 - **PDF:** `CSIT6000V_VerifiableTutor_Final_2026F.pdf`
 - **Source branch:** `presentation/final-deck`, based on `main@2b2b3a8`
-- **Format:** 16:9, static, no animation; PDF is the submitted artifact.
-- **Language:** English throughout, including speaker notes and demo screenshots.
+
+## B edition: ppt-master native deck
+
+- **Deck:** `CSIT6000V_VerifiableTutor_B_2026F.pptx`
+- **PDF:** `CSIT6000V_VerifiableTutor_B_2026F.pdf`
+- **Source and build notes:** `ppt-master/README.md`
+- **Difference:** hand-authored SVG pages compiled to native DrawingML, with Georgia / Arial / Courier New, 16pt body, 40pt page titles, real UI and course-page evidence.
+
+Both editions use 16:9, static pages, English throughout, and the same 18+2 content. The PDF is the submitted artifact.
 
 ## Build
 

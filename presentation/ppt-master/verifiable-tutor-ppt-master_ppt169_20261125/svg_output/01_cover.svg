@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="cover" font-family="Arial">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><polygon points="0,0 10,5 0,10" fill="#52525B"/></marker>
+  </defs>
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#09090B"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="40" x2="1216" y2="40" stroke="#26262A" stroke-width="1"/>
+  <g id="cover-title" data-pptx-bounds="64 80 540 400">
+    <text x="64" y="112" font-size="21.33" fill="#A1A1AA" letter-spacing="1.5">CSIT6000V / FINAL / FALL 2026</text>
+    <text x="64" y="218" font-family="Georgia" font-size="85.33" fill="#FAFAFA">Verifiable</text>
+    <text x="64" y="306" font-family="Georgia" font-size="85.33" fill="#FAFAFA">Tutor</text>
+    <line x1="64" y1="340" x2="168" y2="340" stroke="#1447E6" stroke-width="4"/>
+    <text x="64" y="386" font-size="21.33" fill="#D4D4D8">Every answer names its page.</text>
+    <text x="64" y="416" font-size="21.33" fill="#D4D4D8">Every practice item carries a reference.</text>
+  </g>
+  <g id="cover-image" data-pptx-bounds="636 100 580 400">
+    <rect x="636" y="110" width="580" height="342" fill="#FFFFFF" stroke="#3F3F46" stroke-width="1"/>
+    <image href="../images/ui-rag-source-pane.png" x="636" y="110" width="580" height="342" preserveAspectRatio="xMidYMid meet"/>
+    <text x="636" y="478" font-size="21.33" fill="#A1A1AA">RAG source pane / 14 course pages</text>
+  </g>
+  <g id="cover-metrics" data-pptx-bounds="64 500 1152 90">
+    <line x1="64" y1="500" x2="1216" y2="500" stroke="#26262A" stroke-width="1"/>
+    <text x="64" y="542" font-size="21.33" font-weight="bold" fill="#FAFAFA">5 retrieval calls</text>
+    <text x="64" y="570" font-size="21.33" fill="#A1A1AA">one real turn</text>
+    <text x="472" y="542" font-size="21.33" font-weight="bold" fill="#FAFAFA">2 page reads</text>
+    <text x="472" y="570" font-size="21.33" fill="#A1A1AA">page-anchored context</text>
+    <text x="880" y="542" font-size="21.33" font-weight="bold" fill="#FAFAFA">4 span checks</text>
+    <text x="880" y="570" font-size="21.33" fill="#A1A1AA">one verified span</text>
+  </g>
+  <g id="cover-team" data-pptx-bounds="64 610 1152 80">
+    <text x="64" y="646" font-size="21.33" fill="#E4E4E7">LI Jinchuan · TIAN Yujia · XIE Yifeng</text>
+    <text x="64" y="674" font-size="21.33" fill="#A1A1AA">21188271 · 21201619 · 21322152</text>
+    <text x="1216" y="646" text-anchor="end" font-size="21.33" fill="#A1A1AA">Advanced AI Computing and Systems · Fall 2026</text>
+    <text x="1216" y="674" text-anchor="end" font-size="21.33" fill="#A1A1AA">01 / 20</text>
+  </g>
+</svg>

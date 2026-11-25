@@ -1,0 +1,1 @@
+This is the full path for one question. The SPA sends the task, FastAPI owns the origin, the policy gate allows or refuses, LangGraph runs the loop, and the typed tools read and verify. The result goes through the model adapter into SQLite and JSONL, then back over SSE. The citation store is dashed because persistence is still planned, not shipped.

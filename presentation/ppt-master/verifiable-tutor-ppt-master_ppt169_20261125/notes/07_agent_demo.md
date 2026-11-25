@@ -1,0 +1,1 @@
+Here is one real turn. Five retrieval calls, two page reads, and four verify_span calls. The expanded call carries the document id, page nine, and the exact quote; the output is span verified. That is the loop doing evidence work, not just generating prose. The work chain and trace are stored, so this is replayable rather than a one-off recording.

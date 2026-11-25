@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">14 / DEMO / PRACTICE &amp; POLICY</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">A question, then a refusal.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">A real practice item, and a real policy refusal.</text>
+  </g>
+  <g id="practice-demo" data-pptx-bounds="64 184 720 440">
+    <text x="64" y="212" font-size="21.33" font-weight="bold" fill="#1447E6">PRACTICE</text>
+    <rect x="64" y="226" width="540" height="399" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-practice-question.png" x="64" y="226" width="540" height="399" preserveAspectRatio="xMidYMid meet"/>
+    <text x="624" y="260" font-size="21.33" fill="#18181B">FlashAttention</text>
+    <text x="624" y="292" font-size="21.33" fill="#18181B">single choice</text>
+    <text x="624" y="324" font-size="21.33" fill="#18181B">[3] marker</text>
+    <text x="624" y="356" font-size="21.33" fill="#18181B">2 points</text>
+  </g>
+  <g id="policy-demo" data-pptx-bounds="808 184 408 440">
+    <text x="808" y="212" font-size="21.33" font-weight="bold" fill="#C10007">POLICY</text>
+    <rect x="808" y="226" width="380" height="144" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-policy-refusal.png" x="808" y="226" width="380" height="144" preserveAspectRatio="xMidYMid meet"/>
+    <text x="808" y="410" font-size="21.33" fill="#18181B">Complete Assignment 3</text>
+    <text x="808" y="442" font-size="21.33" fill="#18181B">solution refused before</text>
+    <text x="808" y="474" font-size="21.33" fill="#18181B">2026-11-29.</text>
+    <text x="808" y="526" font-size="21.33" fill="#52525B">Offers concepts,</text>
+    <text x="808" y="554" font-size="21.33" fill="#52525B">example, hint.</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">15 / 20</text>
+  </g>
+</svg>

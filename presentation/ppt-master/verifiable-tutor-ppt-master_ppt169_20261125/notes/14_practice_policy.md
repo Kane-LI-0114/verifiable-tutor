@@ -1,0 +1,1 @@
+Practice and permission are different guardrails. Practice has five question types, a reference answer, scoring points, and page markers; choice questions are graded deterministically, while open and code answers use the model. The disclosure gate has five states from a dated registry and is enforced server-side. Before the deadline, a complete Assignment 3 solution is refused.

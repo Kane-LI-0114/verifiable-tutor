@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">12 / VERIFIER</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">A source is not a citation.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">A quoted span must occur on the cited page.</text>
+  </g>
+  <g id="verifier-steps" data-pptx-bounds="64 184 540 420">
+    <use data-icon="tabler-outline/scan" x="64" y="204" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="220" font-size="21.33" font-weight="bold" fill="#09090B">NORMALIZE</text>
+    <text x="116" y="248" font-size="21.33" fill="#18181B">whitespace and case</text>
+    <use data-icon="tabler-outline/zoom-scan" x="64" y="290" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="306" font-size="21.33" font-weight="bold" fill="#09090B">LOCATE</text>
+    <text x="116" y="334" font-size="21.33" fill="#18181B">quoted span on the cited page</text>
+    <use data-icon="tabler-outline/git-branch" x="64" y="376" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="392" font-size="21.33" font-weight="bold" fill="#09090B">REPAIR ONCE</text>
+    <text x="116" y="420" font-size="21.33" fill="#18181B">one bounded retry</text>
+    <use data-icon="tabler-outline/shield-check" x="64" y="462" width="36" height="36" fill="#1447E6" stroke-width="2"/>
+    <text x="116" y="478" font-size="21.33" font-weight="bold" fill="#09090B">CITATION / ABSTAIN</text>
+    <text x="116" y="506" font-size="21.33" fill="#18181B">pass or no answer</text>
+    <line x1="64" y1="544" x2="604" y2="544" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="580" font-size="21.33" fill="#52525B">Persisting the verified layer is next.</text>
+  </g>
+  <g id="verifier-evidence" data-pptx-bounds="640 184 576 420">
+    <rect x="640" y="200" width="360" height="270" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/course-lecture2-p09.webp" x="640" y="200" width="360" height="270" preserveAspectRatio="xMidYMid meet"/>
+    <rect x="700" y="314" width="238" height="34" fill="#1447E6" fill-opacity="0.14" stroke="#1447E6" stroke-width="1"/>
+    <text x="1020" y="224" font-size="21.33" font-weight="bold" fill="#09090B">PASS</text>
+    <text x="1020" y="256" font-size="21.33" fill="#18181B">exact quote</text>
+    <text x="1020" y="284" font-size="21.33" fill="#18181B">on p.9</text>
+    <text x="640" y="510" font-size="21.33" font-weight="bold" fill="#09090B">FAIL</text>
+    <text x="640" y="542" font-size="21.33" fill="#18181B">missing span</text>
+    <text x="640" y="570" font-size="21.33" fill="#18181B">repair once, then abstain</text>
+  </g>
+  <g id="verdict" data-pptx-bounds="64 616 1152 52">
+    <line x1="64" y1="616" x2="1216" y2="616" stroke="#1447E6" stroke-width="3"/>
+    <text x="64" y="654" font-size="21.33" fill="#09090B">PASS → citation · FAIL → repair or abstain</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">13 / 20</text>
+  </g>
+</svg>

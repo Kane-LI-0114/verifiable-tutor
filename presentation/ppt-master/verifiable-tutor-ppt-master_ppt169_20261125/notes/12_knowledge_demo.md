@@ -1,0 +1,1 @@
+The open file is Lecture 2, page nine. The answer cites page nine and page ten. Clicking the page-ten marker moves the PDF to page ten while the chat stays in place. The target is a URL to that exact page. This is the interaction that makes a citation usable for study rather than just decorative.

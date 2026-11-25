@@ -1,0 +1,1 @@
+All durable state is one local SQLite file: seventeen application tables plus FTS5. The table that matters for this talk is message_sources, the bridge from an answer to a document page. The knowledge cluster holds the corpus and the index state. The citations table exists but is empty; it is the verified layer we are still wiring, and the deck labels it as next.

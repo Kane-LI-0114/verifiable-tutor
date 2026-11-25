@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">08 / FUNCTIONS / RAG ONLINE</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Retrieve pages, then verify.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">The model writes the query; retrieval returns pages.</text>
+  </g>
+  <g id="retrieval-flow" data-pptx-bounds="64 184 760 240">
+    <text x="64" y="212" font-size="21.33" font-weight="bold" fill="#1447E6">01</text>
+    <text x="116" y="212" font-size="21.33" font-weight="bold" fill="#09090B">QUERY</text>
+    <text x="300" y="212" font-size="21.33" fill="#18181B">model writes the tool query</text>
+    <line x1="64" y1="228" x2="824" y2="228" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="260" font-size="21.33" font-weight="bold" fill="#1447E6">02</text>
+    <text x="116" y="260" font-size="21.33" font-weight="bold" fill="#09090B">FTS5 + BGE-M3</text>
+    <text x="300" y="260" font-size="21.33" fill="#18181B">30 candidates each</text>
+    <line x1="64" y1="276" x2="824" y2="276" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="308" font-size="21.33" font-weight="bold" fill="#1447E6">03</text>
+    <text x="116" y="308" font-size="21.33" font-weight="bold" fill="#09090B">RRF</text>
+    <text x="300" y="308" font-size="21.33" fill="#18181B">fuse the two ranked lists</text>
+    <line x1="64" y1="324" x2="824" y2="324" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="356" font-size="21.33" font-weight="bold" fill="#1447E6">04</text>
+    <text x="116" y="356" font-size="21.33" font-weight="bold" fill="#09090B">READ + VERIFY</text>
+    <text x="300" y="356" font-size="21.33" fill="#18181B">page text, then span check</text>
+    <line x1="64" y1="372" x2="824" y2="372" stroke="#E4E4E7" stroke-width="1"/>
+    <text x="64" y="404" font-size="21.33" font-weight="bold" fill="#1447E6">05</text>
+    <text x="116" y="404" font-size="21.33" font-weight="bold" fill="#09090B">ANSWER</text>
+    <text x="300" y="404" font-size="21.33" fill="#18181B">page marker, not a loose quote</text>
+  </g>
+  <g id="metrics" data-pptx-bounds="64 440 760 180">
+    <text x="64" y="472" font-size="21.33" font-weight="bold" fill="#09090B">RETRIEVAL</text>
+    <text x="64" y="524" font-family="Georgia" font-size="53.33" fill="#1447E6">0.849</text>
+    <text x="64" y="556" font-size="21.33" fill="#52525B">nDCG@5</text>
+    <text x="318" y="524" font-family="Georgia" font-size="53.33" fill="#1447E6">0.882</text>
+    <text x="318" y="556" font-size="21.33" fill="#52525B">hit@5</text>
+    <text x="548" y="524" font-family="Georgia" font-size="53.33" fill="#1447E6">937</text>
+    <text x="548" y="556" font-size="21.33" fill="#52525B">tokens@5</text>
+    <text x="64" y="594" font-size="21.33" fill="#52525B">16 documents · 612 chunks</text>
+  </g>
+  <g id="source-inset" data-pptx-bounds="860 184 356 440">
+    <rect x="880" y="200" width="160" height="304" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-rag-source-detail.png" x="880" y="200" width="160" height="304" preserveAspectRatio="xMidYMid meet"/>
+    <text x="1060" y="228" font-size="21.33" font-weight="bold" fill="#09090B">SOURCE</text>
+    <text x="1060" y="260" font-size="21.33" fill="#18181B">page</text>
+    <text x="1060" y="292" font-size="21.33" fill="#18181B">marker</text>
+    <text x="1060" y="324" font-size="21.33" fill="#18181B">quote</text>
+    <text x="880" y="548" font-size="21.33" fill="#52525B">marker order, not confidence</text>
+    <text x="880" y="580" font-size="21.33" fill="#52525B">source ≠ citation</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">09 / 20</text>
+  </g>
+</svg>

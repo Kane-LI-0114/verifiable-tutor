@@ -1,0 +1,1 @@
+This is the source pane for one answer: fourteen course pages in marker order. A marker opens the exact page. The important distinction is that a source is retrieved evidence, not yet a citation. The verifier is a separate layer; the marker alone does not prove that the quoted span occurs on the page.

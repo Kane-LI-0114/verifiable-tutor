@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" data-pptx-page-role="content" font-family="Arial">
+  <rect id="bg" data-pptx-role="background" x="0" y="0" width="1280" height="720" fill="#FAFAFA"/>
+  <line id="top-rule" data-pptx-role="decoration" x1="64" y1="32" x2="1216" y2="32" stroke="#E4E4E7" stroke-width="1"/>
+  <g id="header" data-pptx-bounds="64 40 1152 132">
+    <text x="64" y="64" font-size="21.33" font-weight="bold" fill="#1447E6" letter-spacing="1">06 / DEMO / AGENT</text>
+    <text x="64" y="122" font-family="Georgia" font-size="53.33" fill="#09090B">Watch the loop verify a span.</text>
+    <text x="64" y="158" font-size="21.33" fill="#52525B">doc_id ACS_lecture_2_2026F · page 9 · exact quote.</text>
+  </g>
+  <g id="workchain" data-pptx-bounds="64 184 820 420">
+    <rect x="64" y="190" width="520" height="411" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+    <image href="../images/ui-agent-workchain.png" x="64" y="190" width="520" height="411" preserveAspectRatio="xMidYMid meet"/>
+    <text x="604" y="228" font-size="21.33" font-weight="bold" fill="#09090B">ONE TURN</text>
+    <text x="604" y="264" font-size="21.33" fill="#18181B">5 retrieval calls</text>
+    <text x="604" y="300" font-size="21.33" fill="#18181B">2 page reads</text>
+    <text x="604" y="336" font-size="21.33" fill="#18181B">4 verify_span calls</text>
+    <text x="604" y="390" font-size="21.33" fill="#52525B">The expanded call is the</text>
+    <text x="604" y="418" font-size="21.33" fill="#52525B">fourth check.</text>
+  </g>
+  <g id="callout-numbers" data-pptx-bounds="900 184 316 420">
+    <text x="900" y="250" font-family="Georgia" font-size="53.33" fill="#1447E6">5</text>
+    <text x="948" y="250" font-size="21.33" fill="#18181B">retrieval calls</text>
+    <text x="900" y="350" font-family="Georgia" font-size="53.33" fill="#1447E6">2</text>
+    <text x="948" y="350" font-size="21.33" fill="#18181B">page reads</text>
+    <text x="900" y="450" font-family="Georgia" font-size="53.33" fill="#1447E6">4</text>
+    <text x="948" y="450" font-size="21.33" fill="#18181B">span checks</text>
+    <text x="900" y="520" font-size="21.33" fill="#52525B">one span verified</text>
+  </g>
+  <g id="result-band" data-pptx-bounds="64 616 1152 52">
+    <line x1="64" y1="616" x2="1216" y2="616" stroke="#1447E6" stroke-width="3"/>
+    <text x="64" y="654" font-size="21.33" font-weight="bold" fill="#09090B">OUTPUT: span verified</text>
+  </g>
+  <g id="footer" data-pptx-bounds="64 674 1152 38">
+    <text x="64" y="700" font-size="21.33" fill="#52525B">Verifiable Tutor / CSIT6000V</text>
+    <text x="1216" y="700" text-anchor="end" font-size="21.33" fill="#52525B">07 / 20</text>
+  </g>
+</svg>

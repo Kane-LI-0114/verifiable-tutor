@@ -1,0 +1,1 @@
+On ten practice questions we tie the best baseline on groundedness at ten out of ten, lead on knowledge-point coverage at five out of five versus three out of five, and tie on grading at ten out of ten. In the fifteen-question citation study we invent no quotes and report no false not-in-PDF cases. Page numbers are programmatic. Ties are reported as ties, not folded into a win.
