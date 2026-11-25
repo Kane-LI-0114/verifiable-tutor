@@ -17,6 +17,7 @@ import { NotFoundPage } from "@/routes/not-found-page";
 import { PracticePage } from "@/routes/practice/practice-page";
 import { ProfilePage } from "@/routes/profile/profile-page";
 import { RevisionPage } from "@/routes/revision/revision-page";
+import { RevisionDetailPage } from "@/routes/revision/revision-detail-page";
 
 export const routes: RouteObject[] = [
   {
@@ -46,6 +47,7 @@ export const routes: RouteObject[] = [
           { path: "practice", element: <PracticePage /> },
           { path: "practice/:sessionId", element: <PracticePage /> },
           { path: "revision", element: <RevisionPage /> },
+          { path: "revision/docs/:docId", element: <RevisionDetailPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "knowledge", element: <KnowledgePage /> },
           { path: "knowledge/docs/:docId", element: <DocumentPage /> },

@@ -4,8 +4,10 @@ import {
   ChevronRightIcon,
   Loader2Icon,
 } from "lucide-react";
+import { Link } from "react-router";
 
 import { PageEmpty, PageError, PageHeader } from "@/components/layout/page-states";
+import { Progress } from "@/components/ui/progress";
 import {
   getRevisionTree,
   type RevisionCategory,
@@ -37,6 +39,9 @@ interface DocumentNode {
   doc_id: string;
   title: string | null;
   category: RevisionCategory;
+  generated: boolean;
+  total: number;
+  mastered: number;
   y: number;
 }
 
@@ -69,6 +74,9 @@ function layoutMap(
       doc_id: document.doc_id,
       title: document.title,
       category: document.category,
+      generated: document.generated,
+      total: document.total,
+      mastered: document.mastered,
       y: docsTop + index * (H_DOC + GAP_DOC) + H_DOC / 2,
     }));
     const blockBottom = documents.length
@@ -95,6 +103,7 @@ function curve(x1: number, y1: number, x2: number, y2: number): string {
 export function RevisionPage() {
   const t = useT();
   const [themes, setThemes] = useState<RevisionTheme[]>([]);
+  const [totals, setTotals] = useState({ total: 0, mastered: 0 });
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [heights, setHeights] = useState<Record<string, number>>({});
@@ -105,6 +114,7 @@ export function RevisionPage() {
     getRevisionTree()
       .then((body) => {
         setThemes(body.themes);
+        setTotals({ total: body.total, mastered: body.mastered });
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
@@ -168,125 +178,188 @@ export function RevisionPage() {
             description={t.revision.emptyBody}
           />
         ) : (
-          <div className="overflow-auto rounded-xl border bg-muted/20 p-2">
-            <div
-              className="relative"
-              style={{ width: map.width, height: map.height }}
-            >
-              <svg
-                width={map.width}
-                height={map.height}
-                className="absolute inset-0"
-                aria-hidden="true"
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground">
+                {t.revision.courseProgress}
+              </span>
+              <Progress
+                value={
+                  totals.total > 0
+                    ? (totals.mastered / totals.total) * 100
+                    : 0
+                }
+                className="max-w-64"
+              />
+              <span className="tabular-nums text-muted-foreground">
+                {totals.mastered}/{totals.total}
+              </span>
+            </div>
+
+            <div className="overflow-auto rounded-xl border bg-muted/20 p-2">
+              <div
+                className="relative"
+                style={{ width: map.width, height: map.height }}
               >
-                {map.themes.map((node) => (
-                  <path
-                    key={`${node.theme.id}-root`}
-                    d={curve(COL_ROOT + W_ROOT, map.rootY, COL_THEME, node.y)}
-                    fill="none"
-                    strokeWidth={1.5}
-                    className="stroke-slate-300"
-                  />
-                ))}
-                {map.themes.flatMap((node) => {
-                  const trunk = COL_THEME + 24;
-                  const bottom = node.y + node.height / 2;
-                  return node.documents.map((document) => (
+                <svg
+                  width={map.width}
+                  height={map.height}
+                  className="absolute inset-0"
+                  aria-hidden="true"
+                >
+                  {map.themes.map((node) => (
                     <path
-                      key={`${node.theme.id}-${document.doc_id}`}
-                      d={`M ${trunk} ${bottom} L ${trunk} ${document.y} L ${COL_DOC} ${document.y}`}
+                      key={`${node.theme.id}-root`}
+                      d={curve(COL_ROOT + W_ROOT, map.rootY, COL_THEME, node.y)}
                       fill="none"
                       strokeWidth={1.5}
                       className="stroke-slate-300"
                     />
-                  ));
+                  ))}
+                  {map.themes.flatMap((node) => {
+                    const trunk = COL_THEME + 24;
+                    const bottom = node.y + node.height / 2;
+                    return node.documents.map((document) => (
+                      <path
+                        key={`${node.theme.id}-${document.doc_id}`}
+                        d={`M ${trunk} ${bottom} L ${trunk} ${document.y} L ${COL_DOC} ${document.y}`}
+                        fill="none"
+                        strokeWidth={1.5}
+                        className="stroke-slate-300"
+                      />
+                    ));
+                  })}
+                </svg>
+
+                <div
+                  className="absolute flex flex-col justify-center rounded-xl bg-primary px-4 text-primary-foreground shadow-md"
+                  style={{
+                    left: COL_ROOT,
+                    top: map.rootY - H_ROOT / 2,
+                    width: W_ROOT,
+                    height: H_ROOT,
+                  }}
+                >
+                  <span className="truncate text-sm font-semibold">
+                    {t.app.course}
+                  </span>
+                  <span className="truncate text-xs opacity-80">
+                    {t.revision.title}
+                  </span>
+                </div>
+
+                {map.themes.map((node) => {
+                  const isCollapsed = collapsed.has(node.theme.id);
+                  return (
+                    <button
+                      key={node.theme.id}
+                      ref={(element) => {
+                        themeRefs.current[node.theme.id] = element;
+                      }}
+                      type="button"
+                      aria-expanded={!isCollapsed}
+                      onClick={() => toggle(node.theme.id)}
+                      className="absolute flex items-start gap-2 rounded-lg border bg-background p-4 text-left shadow-sm transition-colors hover:bg-accent/40"
+                      style={{
+                        left: COL_THEME,
+                        top: node.y - node.height / 2,
+                        width: W_THEME,
+                      }}
+                    >
+                      {isCollapsed ? (
+                        <ChevronRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronDownIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-base font-semibold">
+                          {node.theme.title}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          {node.theme.summary}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 flex-col items-end gap-1">
+                        <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground">
+                          {node.theme.documents.length}
+                        </span>
+                        <Progress
+                          value={
+                            node.theme.total > 0
+                              ? (node.theme.mastered / node.theme.total) * 100
+                              : 0
+                          }
+                          className="w-20"
+                        />
+                        <span className="text-[10px] tabular-nums text-muted-foreground">
+                          {node.theme.mastered}/{node.theme.total}
+                        </span>
+                      </span>
+                    </button>
+                  );
                 })}
-              </svg>
 
-              <div
-                className="absolute flex flex-col justify-center rounded-xl bg-primary px-4 text-primary-foreground shadow-md"
-                style={{
-                  left: COL_ROOT,
-                  top: map.rootY - H_ROOT / 2,
-                  width: W_ROOT,
-                  height: H_ROOT,
-                }}
-              >
-                <span className="truncate text-sm font-semibold">
-                  {t.app.course}
-                </span>
-                <span className="truncate text-xs opacity-80">
-                  {t.revision.title}
-                </span>
+                {map.themes.flatMap((node) =>
+                  node.documents.map((document) => {
+                    const className =
+                      "absolute flex items-center gap-2 rounded-md border bg-background px-3 shadow-sm" +
+                      (document.generated
+                        ? " transition-colors hover:bg-accent/40"
+                        : "");
+                    const content = (
+                      <>
+                        <span
+                          className={`size-2.5 shrink-0 rounded-full ${CATEGORY_DOT[document.category]}`}
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm">
+                          {document.title ?? document.doc_id}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {t.revision.categories[document.category]}
+                        </span>
+                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                          {document.generated
+                            ? `${document.mastered}/${document.total}`
+                            : t.revision.notGenerated}
+                        </span>
+                      </>
+                    );
+                    if (document.generated) {
+                      return (
+                        <Link
+                          key={document.doc_id}
+                          to={`/revision/docs/${document.doc_id}`}
+                          className={className}
+                          style={{
+                            left: COL_DOC,
+                            top: document.y - H_DOC / 2,
+                            width: W_DOC,
+                            height: H_DOC,
+                          }}
+                        >
+                          {content}
+                        </Link>
+                      );
+                    }
+                    return (
+                      <div
+                        key={document.doc_id}
+                        aria-disabled="true"
+                        className={className}
+                        style={{
+                          left: COL_DOC,
+                          top: document.y - H_DOC / 2,
+                          width: W_DOC,
+                          height: H_DOC,
+                        }}
+                      >
+                        {content}
+                      </div>
+                    );
+                  }),
+                )}
               </div>
-
-              {map.themes.map((node) => {
-                const isCollapsed = collapsed.has(node.theme.id);
-                return (
-                  <button
-                    key={node.theme.id}
-                    ref={(element) => {
-                      themeRefs.current[node.theme.id] = element;
-                    }}
-                    type="button"
-                    aria-expanded={!isCollapsed}
-                    onClick={() => toggle(node.theme.id)}
-                    className="absolute flex items-start gap-2 rounded-lg border bg-background p-4 text-left shadow-sm transition-colors hover:bg-accent/40"
-                    style={{
-                      left: COL_THEME,
-                      top: node.y - node.height / 2,
-                      width: W_THEME,
-                    }}
-                  >
-                    {isCollapsed ? (
-                      <ChevronRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    ) : (
-                      <ChevronDownIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-base font-semibold">
-                        {node.theme.title}
-                      </span>
-                      <span className="mt-1 block text-sm text-muted-foreground">
-                        {node.theme.summary}
-                      </span>
-                    </span>
-                    <span className="shrink-0 rounded-full bg-muted px-1.5 text-xs text-muted-foreground">
-                      {node.theme.documents.length}
-                    </span>
-                  </button>
-                );
-              })}
-
-              {map.themes.flatMap((node) =>
-                node.documents.map((document) => (
-                  <div
-                    key={document.doc_id}
-                    aria-disabled="true"
-                    className="absolute flex items-center gap-2 rounded-md border bg-background px-3 shadow-sm"
-                    style={{
-                      left: COL_DOC,
-                      top: document.y - H_DOC / 2,
-                      width: W_DOC,
-                      height: H_DOC,
-                    }}
-                  >
-                    <span
-                      className={`size-2.5 shrink-0 rounded-full ${CATEGORY_DOT[document.category]}`}
-                      aria-hidden="true"
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      {document.title ?? document.doc_id}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {t.revision.categories[document.category]}
-                    </span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {t.revision.notGenerated}
-                    </span>
-                  </div>
-                )),
-              )}
             </div>
           </div>
         )}

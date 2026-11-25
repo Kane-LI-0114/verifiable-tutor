@@ -358,6 +358,11 @@ export const en = {
     emptyBody: "Run the revision build script to create the outline.",
     loadError: "Could not load the revision guide.",
     notGenerated: "Not generated",
+    courseProgress: "Course progress",
+    download: "Download .md",
+    openPage: "Open page {{page}}",
+    back: "Back to the guide",
+    detailLoadError: "Could not load this review document.",
     categories: {
       assignment: "Assignment",
       lecture: "Lecture",

@@ -345,6 +345,11 @@ export const zh: Messages = {
     emptyBody: "运行复习指南构建脚本后，大纲会显示在这里。",
     loadError: "无法加载复习指南。",
     notGenerated: "未生成",
+    courseProgress: "课程进度",
+    download: "下载 .md",
+    openPage: "打开第 {{page}} 页",
+    back: "返回复习指南",
+    detailLoadError: "无法加载这份复习文档。",
     categories: {
       assignment: "作业",
       lecture: "讲座",
