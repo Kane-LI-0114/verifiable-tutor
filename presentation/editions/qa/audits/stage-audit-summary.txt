@@ -1,0 +1,415 @@
+{
+  "deck": "/Users/lijinchuan/Documents/HKUST/CSIT6000V/project/verifiable-tutor/presentation/editions/stage-html/index.html",
+  "slideCount": 20,
+  "externalResources": [],
+  "externalAttrs": [],
+  "externalCss": [],
+  "cjkAll": 0,
+  "fontStacks": [
+    "Arial, \"Helvetica Neue\", Helvetica, sans-serif",
+    "\"Courier New\", Courier, monospace",
+    "Georgia, \"Times New Roman\", serif"
+  ],
+  "perSlide": [
+    {
+      "i": 1,
+      "id": "cover",
+      "sizes": [
+        32,
+        120
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 30,
+      "words": 39,
+      "img": 0,
+      "svg": 3,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 0,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 2,
+      "id": "problem-goal",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 29,
+      "words": 40,
+      "img": 1,
+      "svg": 6,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 3,
+      "id": "system",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 32,
+      "words": 44,
+      "img": 1,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 4,
+      "id": "data",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 28,
+      "words": 41,
+      "img": 1,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 5,
+      "id": "stack",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 36,
+      "words": 48,
+      "img": 0,
+      "svg": 5,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 13.3,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 6,
+      "id": "agent",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 31,
+      "words": 42,
+      "img": 0,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 7,
+      "id": "agent-demo",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 19,
+      "words": 31,
+      "img": 1,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 0,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 8,
+      "id": "rag-offline",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 35,
+      "words": 51,
+      "img": 2,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 9,
+      "id": "rag-online",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 33,
+      "words": 46,
+      "img": 1,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 10,
+      "id": "rag-demo",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 24,
+      "words": 39,
+      "img": 1,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 11,
+      "id": "knowledge",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 27,
+      "words": 39,
+      "img": 1,
+      "svg": 3,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 12,
+      "id": "knowledge-demo",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 22,
+      "words": 34,
+      "img": 3,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 5.2,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 13,
+      "id": "verifier",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 38,
+      "words": 52,
+      "img": 1,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 14,
+      "id": "practice-policy",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 37,
+      "words": 46,
+      "img": 0,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 15,
+      "id": "practice-demo",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 31,
+      "words": 40,
+      "img": 2,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 6,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 16,
+      "id": "evaluation",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 41,
+      "words": 59,
+      "img": 0,
+      "svg": 3,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 4.4,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 17,
+      "id": "failure-limits",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 39,
+      "words": 49,
+      "img": 1,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 4.9,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 18,
+      "id": "conclusion",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 40,
+      "words": 50,
+      "img": 1,
+      "svg": 0,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 19,
+      "id": "appendix-a1",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 37,
+      "words": 46,
+      "img": 1,
+      "svg": 9,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.3,
+      "cjk": 0,
+      "notes": 0
+    },
+    {
+      "i": 20,
+      "id": "appendix-a2",
+      "sizes": [
+        32,
+        96
+      ],
+      "ok": true,
+      "badSizes": 0,
+      "badFamilies": 0,
+      "bodyWords": 35,
+      "words": 50,
+      "img": 0,
+      "svg": 4,
+      "broken": 0,
+      "oob": 0,
+      "blankPct": 7.8,
+      "cjk": 0,
+      "notes": 0
+    }
+  ]
+}

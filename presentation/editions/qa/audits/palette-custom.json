@@ -1,0 +1,851 @@
+{
+  "perSlide": [
+    {
+      "index": 1,
+      "colors": {
+        "#FAFAFA": {
+          "count": 55,
+          "props": {
+            "color": 31,
+            "border": 24
+          }
+        },
+        "#1447E6": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#171717": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 3,
+          "props": {
+            "background": 3
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "colors": {
+        "#09090B": {
+          "count": 39,
+          "props": {
+            "color": 37,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 19,
+          "props": {
+            "border": 19
+          }
+        },
+        "#1447E6": {
+          "count": 5,
+          "props": {
+            "color": 3,
+            "background": 1,
+            "border": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 6,
+          "props": {
+            "background": 6
+          }
+        },
+        "#FAFAFA": {
+          "count": 5,
+          "props": {
+            "color": 1,
+            "border": 4
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "colors": {
+        "#09090B": {
+          "count": 47,
+          "props": {
+            "color": 45,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 70,
+          "props": {
+            "border": 70
+          }
+        },
+        "#1447E6": {
+          "count": 3,
+          "props": {
+            "color": 2,
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 17,
+          "props": {
+            "background": 17
+          }
+        },
+        "#FAFAFA": {
+          "count": 11,
+          "props": {
+            "color": 11
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "colors": {
+        "#09090B": {
+          "count": 43,
+          "props": {
+            "color": 41,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 18,
+          "props": {
+            "border": 18
+          }
+        },
+        "#1447E6": {
+          "count": 8,
+          "props": {
+            "color": 2,
+            "background": 2,
+            "border": 4
+          }
+        },
+        "#FFFFFF": {
+          "count": 4,
+          "props": {
+            "background": 4
+          }
+        },
+        "#C10007": {
+          "count": 1,
+          "props": {
+            "color": 1
+          }
+        },
+        "#FAFAFA": {
+          "count": 1,
+          "props": {
+            "color": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "colors": {
+        "#09090B": {
+          "count": 44,
+          "props": {
+            "color": 42,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 22,
+          "props": {
+            "border": 22
+          }
+        },
+        "#1447E6": {
+          "count": 7,
+          "props": {
+            "color": 6,
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 4,
+          "props": {
+            "background": 4
+          }
+        },
+        "#FAFAFA": {
+          "count": 10,
+          "props": {
+            "color": 9,
+            "border": 1
+          }
+        },
+        "#171717": {
+          "count": 5,
+          "props": {
+            "background": 1,
+            "border": 4
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "colors": {
+        "#09090B": {
+          "count": 35,
+          "props": {
+            "color": 33,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 38,
+          "props": {
+            "border": 38
+          }
+        },
+        "#1447E6": {
+          "count": 6,
+          "props": {
+            "color": 5,
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 9,
+          "props": {
+            "background": 9
+          }
+        },
+        "#FAFAFA": {
+          "count": 6,
+          "props": {
+            "color": 6
+          }
+        },
+        "#171717": {
+          "count": 5,
+          "props": {
+            "background": 1,
+            "border": 4
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "colors": {
+        "#FAFAFA": {
+          "count": 57,
+          "props": {
+            "color": 30,
+            "border": 25,
+            "background": 2
+          }
+        },
+        "#FFFFFF": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#E5E5E5": {
+          "count": 1,
+          "props": {
+            "border": 1
+          }
+        },
+        "#1447E6": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        },
+        "#171717": {
+          "count": 4,
+          "props": {
+            "background": 4
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "colors": {
+        "#09090B": {
+          "count": 53,
+          "props": {
+            "color": 51,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 30,
+          "props": {
+            "border": 30
+          }
+        },
+        "#1447E6": {
+          "count": 7,
+          "props": {
+            "color": 2,
+            "background": 1,
+            "border": 4
+          }
+        },
+        "#FFFFFF": {
+          "count": 7,
+          "props": {
+            "background": 7
+          }
+        },
+        "#FAFAFA": {
+          "count": 26,
+          "props": {
+            "color": 15,
+            "border": 11
+          }
+        },
+        "#0A0A0A": {
+          "count": 3,
+          "props": {
+            "background": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 9,
+      "colors": {
+        "#09090B": {
+          "count": 48,
+          "props": {
+            "color": 43,
+            "background": 5
+          }
+        },
+        "#E5E5E5": {
+          "count": 22,
+          "props": {
+            "border": 22
+          }
+        },
+        "#1447E6": {
+          "count": 13,
+          "props": {
+            "color": 4,
+            "background": 5,
+            "border": 4
+          }
+        },
+        "#FFFFFF": {
+          "count": 5,
+          "props": {
+            "background": 5
+          }
+        },
+        "#FAFAFA": {
+          "count": 1,
+          "props": {
+            "color": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 10,
+      "colors": {
+        "#FAFAFA": {
+          "count": 49,
+          "props": {
+            "color": 26,
+            "border": 21,
+            "background": 2
+          }
+        },
+        "#FFFFFF": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#E5E5E5": {
+          "count": 1,
+          "props": {
+            "border": 1
+          }
+        },
+        "#1447E6": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#171717": {
+          "count": 3,
+          "props": {
+            "background": 3
+          }
+        },
+        "#C10007": {
+          "count": 1,
+          "props": {
+            "color": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 11,
+      "colors": {
+        "#09090B": {
+          "count": 29,
+          "props": {
+            "color": 27,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 10,
+          "props": {
+            "border": 10
+          }
+        },
+        "#1447E6": {
+          "count": 6,
+          "props": {
+            "color": 5,
+            "background": 1
+          }
+        },
+        "#FAFAFA": {
+          "count": 4,
+          "props": {
+            "color": 3,
+            "background": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        },
+        "#D4D4D8": {
+          "count": 3,
+          "props": {
+            "background": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 12,
+      "colors": {
+        "#FAFAFA": {
+          "count": 37,
+          "props": {
+            "color": 22,
+            "background": 2,
+            "border": 13
+          }
+        },
+        "#E5E5E5": {
+          "count": 9,
+          "props": {
+            "border": 9
+          }
+        },
+        "#1447E6": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        },
+        "#0A0A0A": {
+          "count": 3,
+          "props": {
+            "background": 3
+          }
+        }
+      }
+    },
+    {
+      "index": 13,
+      "colors": {
+        "#09090B": {
+          "count": 40,
+          "props": {
+            "color": 38,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 30,
+          "props": {
+            "border": 30
+          }
+        },
+        "#1447E6": {
+          "count": 7,
+          "props": {
+            "color": 3,
+            "background": 2,
+            "border": 2
+          }
+        },
+        "#FFFFFF": {
+          "count": 7,
+          "props": {
+            "background": 7
+          }
+        },
+        "#C10007": {
+          "count": 4,
+          "props": {
+            "border": 2,
+            "color": 1,
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 14,
+      "colors": {
+        "#09090B": {
+          "count": 31,
+          "props": {
+            "color": 29,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 32,
+          "props": {
+            "border": 32
+          }
+        },
+        "#1447E6": {
+          "count": 9,
+          "props": {
+            "color": 8,
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 7,
+          "props": {
+            "background": 7
+          }
+        },
+        "#FAFAFA": {
+          "count": 1,
+          "props": {
+            "color": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 15,
+      "colors": {
+        "#FAFAFA": {
+          "count": 37,
+          "props": {
+            "color": 22,
+            "background": 2,
+            "border": 13
+          }
+        },
+        "#E5E5E5": {
+          "count": 5,
+          "props": {
+            "border": 5
+          }
+        },
+        "#1447E6": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        },
+        "#0A0A0A": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        }
+      }
+    },
+    {
+      "index": 16,
+      "colors": {
+        "#09090B": {
+          "count": 50,
+          "props": {
+            "color": 48,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 30,
+          "props": {
+            "border": 30
+          }
+        },
+        "#1447E6": {
+          "count": 9,
+          "props": {
+            "color": 3,
+            "background": 2,
+            "border": 4
+          }
+        },
+        "#FFFFFF": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        },
+        "#FAFAFA": {
+          "count": 12,
+          "props": {
+            "color": 10,
+            "border": 2
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 17,
+      "colors": {
+        "#09090B": {
+          "count": 55,
+          "props": {
+            "color": 49,
+            "background": 6
+          }
+        },
+        "#E5E5E5": {
+          "count": 22,
+          "props": {
+            "border": 22
+          }
+        },
+        "#1447E6": {
+          "count": 3,
+          "props": {
+            "color": 2,
+            "background": 1
+          }
+        },
+        "#C10007": {
+          "count": 2,
+          "props": {
+            "color": 1,
+            "background": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 5,
+          "props": {
+            "background": 5
+          }
+        },
+        "#FFFFFF": {
+          "count": 5,
+          "props": {
+            "background": 5
+          }
+        },
+        "#FAFAFA": {
+          "count": 9,
+          "props": {
+            "color": 5,
+            "border": 4
+          }
+        }
+      }
+    },
+    {
+      "index": 18,
+      "colors": {
+        "#FAFAFA": {
+          "count": 47,
+          "props": {
+            "color": 35,
+            "background": 2,
+            "border": 10
+          }
+        },
+        "#E5E5E5": {
+          "count": 1,
+          "props": {
+            "border": 1
+          }
+        },
+        "#1447E6": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        },
+        "#0A0A0A": {
+          "count": 1,
+          "props": {
+            "background": 1
+          }
+        }
+      }
+    },
+    {
+      "index": 19,
+      "colors": {
+        "#09090B": {
+          "count": 65,
+          "props": {
+            "color": 51,
+            "background": 2,
+            "border": 12
+          }
+        },
+        "#E5E5E5": {
+          "count": 38,
+          "props": {
+            "border": 38
+          }
+        },
+        "#1447E6": {
+          "count": 3,
+          "props": {
+            "color": 2,
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 10,
+          "props": {
+            "background": 10
+          }
+        }
+      }
+    },
+    {
+      "index": 20,
+      "colors": {
+        "#09090B": {
+          "count": 46,
+          "props": {
+            "color": 44,
+            "background": 2
+          }
+        },
+        "#E5E5E5": {
+          "count": 15,
+          "props": {
+            "border": 15
+          }
+        },
+        "#1447E6": {
+          "count": 9,
+          "props": {
+            "color": 8,
+            "background": 1
+          }
+        },
+        "#FFFFFF": {
+          "count": 2,
+          "props": {
+            "background": 2
+          }
+        }
+      }
+    }
+  ]
+}

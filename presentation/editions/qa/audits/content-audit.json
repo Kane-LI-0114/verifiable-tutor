@@ -1,0 +1,1692 @@
+{
+  "decks": {
+    "v2": {
+      "deck": "v2",
+      "source": "presentation/editions/v2-pptx/CSIT6000V_VerifiableTutor_v2.pptx",
+      "slideCount": 20,
+      "issues": [
+        "fact 8/8 not in visible slide text"
+      ],
+      "titles": [
+        {
+          "index": 1,
+          "expected": "Verifiable Tutor",
+          "got": "Verifiable Tutor",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 2,
+          "expected": "A study loop students can trust",
+          "got": "A study loop students can trust.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 3,
+          "expected": "One local product. One batch backend on TACC",
+          "got": "One local product. One batch backend on TACC.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 4,
+          "expected": "The data model makes the evidence chain durable",
+          "got": "The data model makes the evidence chain durable.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 5,
+          "expected": "A small stack with one job per layer",
+          "got": "A small stack with one job per layer.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 6,
+          "expected": "A typed loop, not a prompt",
+          "got": "A typed loop, not a prompt.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 7,
+          "expected": "Watch the loop work",
+          "got": "Watch the loop work.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 8,
+          "expected": "Build the evidence base on TACC",
+          "got": "Build the evidence base on TACC.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 9,
+          "expected": "Retrieve pages, then let the model read",
+          "got": "Retrieve pages, then let the model read.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 10,
+          "expected": "Every paragraph names its source",
+          "got": "Every paragraph names its source.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 11,
+          "expected": "A conversation that lives beside the file",
+          "got": "A conversation that lives beside the file.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 12,
+          "expected": "From a marker to the exact page",
+          "got": "From a marker to the exact page.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 13,
+          "expected": "A source is not a citation until the span passes",
+          "got": "A source is not a citation until the span passes.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 14,
+          "expected": "Practice and integrity",
+          "got": "Practice and integrity.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 15,
+          "expected": "Practice, then check",
+          "got": "Practice, then check.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 16,
+          "expected": "We win on coverage. We tie on grading",
+          "got": "We win on coverage. We tie on grading.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 17,
+          "expected": "Tutorials are the hard slice",
+          "got": "Tutorials are the hard slice.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 18,
+          "expected": "Verifiability is a system property",
+          "got": "Verifiability is a system property.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 19,
+          "expected": "One question, end to end",
+          "got": "One question, end to end.",
+          "titleAttr": "",
+          "ok": true
+        },
+        {
+          "index": 20,
+          "expected": "Evaluation method and TACC evidence",
+          "got": "Evaluation method and TACC evidence.",
+          "titleAttr": "",
+          "ok": true
+        }
+      ],
+      "facts": {
+        "17 tables": {
+          "slides": [
+            4
+          ],
+          "notes": []
+        },
+        "16 documents": {
+          "slides": [
+            1,
+            2,
+            8,
+            20
+          ],
+          "notes": [
+            8
+          ]
+        },
+        "593 pages": {
+          "slides": [
+            1,
+            2,
+            8,
+            20
+          ],
+          "notes": [
+            8
+          ]
+        },
+        "612 chunks": {
+          "slides": [
+            8,
+            20
+          ],
+          "notes": [
+            8
+          ]
+        },
+        "nDCG 0.849": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "hit 0.882": {
+          "slides": [
+            9,
+            17
+          ],
+          "notes": []
+        },
+        "937 tokens": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "10/10": {
+          "slides": [
+            16
+          ],
+          "notes": []
+        },
+        "5/5": {
+          "slides": [
+            16
+          ],
+          "notes": []
+        },
+        "0.617": {
+          "slides": [
+            17
+          ],
+          "notes": []
+        },
+        "434 s": {
+          "slides": [
+            17,
+            20
+          ],
+          "notes": [
+            20
+          ]
+        },
+        "43.9 s": {
+          "slides": [
+            20
+          ],
+          "notes": [
+            20
+          ]
+        },
+        "8/8": {
+          "slides": [],
+          "notes": []
+        }
+      },
+      "instructor": {
+        "visible": [
+          18
+        ],
+        "ta": [
+          18
+        ],
+        "notes_instructor": [],
+        "notes_ta": []
+      },
+      "yoga": [
+        13
+      ],
+      "cjk": [],
+      "numbers": [
+        {
+          "token": "0",
+          "slide": 10,
+          "context": "etrieved pages exact page numbers 0 verified citations Verifiable Tut"
+        },
+        {
+          "token": "0/10",
+          "slide": 16,
+          "context": "d 10/10 10/10 6/10 6/10 Off-topic 0/10 0/10 4/10 4/10 Coverage 5/5 3/5 3"
+        },
+        {
+          "token": "0.617",
+          "slide": 17,
+          "context": "nt 0.909 mechanism 0.875 tutorial 0.617 0.617 tutorial nDCG@5 Tutorial 4"
+        },
+        {
+          "token": "0.849",
+          "slide": 9,
+          "context": "Tools typed tools Answer markers 0.849 nDCG@5 0.882 hit@5 937 tokens@5 C"
+        },
+        {
+          "token": "0.875",
+          "slide": 17,
+          "context": "0.912 assignment 0.909 mechanism 0.875 tutorial 0.617 0.617 tutorial nDC"
+        },
+        {
+          "token": "0.882",
+          "slide": 9,
+          "context": "tools Answer markers 0.849 nDCG@5 0.882 hit@5 937 tokens@5 Chunking study"
+        },
+        {
+          "token": "0.909",
+          "slide": 17,
+          "context": "estions. concept 0.912 assignment 0.909 mechanism 0.875 tutorial 0.617 0."
+        },
+        {
+          "token": "0.912",
+          "slide": 17,
+          "context": "G@5 on 51 test questions. concept 0.912 assignment 0.909 mechanism 0.875"
+        },
+        {
+          "token": "0.941",
+          "slide": 17,
+          "context": "Dual granularity: hit@5 0.882 to 0.941, no nDCG gain, 2.7 times index co"
+        },
+        {
+          "token": "01",
+          "slide": 1,
+          "context": "6 documents  ·  593 pages indexed 01 / 20"
+        },
+        {
+          "token": "1",
+          "slide": 4,
+          "context": "· steps 6 knowledge chunks · docs 1 learning topic_progress message_s"
+        },
+        {
+          "token": "02",
+          "slide": 2,
+          "context": "ed Verifiable Tutor  /  CSIT6000V 02 / 20"
+        },
+        {
+          "token": "2",
+          "slide": 1,
+          "context": "l 2026 A REAL COURSE PAGE Lecture 2  ·  Memory Wall  ·  p.9 16 docume"
+        },
+        {
+          "token": "2.7",
+          "slide": 17,
+          "context": "t@5 0.882 to 0.941, no nDCG gain, 2.7 times index cost. We kept page_fi"
+        },
+        {
+          "token": "03",
+          "slide": 3,
+          "context": "s. Verifiable Tutor  /  CSIT6000V 03 / 20"
+        },
+        {
+          "token": "3",
+          "slide": 4,
+          "context": "ble. 17 application tables + FTS5 3 access tables users · sessions 5"
+        },
+        {
+          "token": "3/5",
+          "slide": 16,
+          "context": "0/10 0/10 4/10 4/10 Coverage 5/5 3/5 3/5 3/5 Grading 10/10 10/10 10/10"
+        },
+        {
+          "token": "04",
+          "slide": 4,
+          "context": "e. Verifiable Tutor  /  CSIT6000V 04 / 20"
+        },
+        {
+          "token": "4",
+          "slide": 7,
+          "context": "s 2 pages read page 9 and page 10 4 span checks doc_id, page_no, exac"
+        },
+        {
+          "token": "4/10",
+          "slide": 16,
+          "context": "/10 6/10 6/10 Off-topic 0/10 0/10 4/10 4/10 Coverage 5/5 3/5 3/5 3/5 Gra"
+        },
+        {
+          "token": "05",
+          "slide": 5,
+          "context": "d. Verifiable Tutor  /  CSIT6000V 05 / 20"
+        },
+        {
+          "token": "5",
+          "slide": 4,
+          "context": "3 access tables users · sessions 5 conversation messages · steps 6 k"
+        },
+        {
+          "token": "5/5",
+          "slide": 16,
+          "context": "opic 0/10 0/10 4/10 4/10 Coverage 5/5 3/5 3/5 3/5 Grading 10/10 10/10 1"
+        },
+        {
+          "token": "06",
+          "slide": 6,
+          "context": "y. Verifiable Tutor  /  CSIT6000V 06 / 20"
+        },
+        {
+          "token": "6",
+          "slide": 4,
+          "context": "s 5 conversation messages · steps 6 knowledge chunks · docs 1 learnin"
+        },
+        {
+          "token": "6/10",
+          "slide": 16,
+          "context": "Gemini Qwen Grounded 10/10 10/10 6/10 6/10 Off-topic 0/10 0/10 4/10 4/1"
+        },
+        {
+          "token": "07",
+          "slide": 7,
+          "context": "d. Verifiable Tutor  /  CSIT6000V 07 / 20"
+        },
+        {
+          "token": "08",
+          "slide": 8,
+          "context": "e. Verifiable Tutor  /  CSIT6000V 08 / 20"
+        },
+        {
+          "token": "8",
+          "slide": 20,
+          "context": "8067 434 s vLLM cold start 43.9 s 8-chunk build 8 / 8 valid records O"
+        },
+        {
+          "token": "8/10",
+          "slide": 16,
+          "context": "10/10 10/10 10/10 Citations 10/10 8/10 10/10 9/10 5/5 vs 3/5 coverage 0"
+        },
+        {
+          "token": "09",
+          "slide": 9,
+          "context": "s. Verifiable Tutor  /  CSIT6000V 09 / 20"
+        },
+        {
+          "token": "9",
+          "slide": 1,
+          "context": "nt with evidence you can check. p.9 p.10 p.11 Every answer names its"
+        },
+        {
+          "token": "9/10",
+          "slide": 16,
+          "context": "10/10 Citations 10/10 8/10 10/10 9/10 5/5 vs 3/5 coverage 0 invented qu"
+        },
+        {
+          "token": "10",
+          "slide": 1,
+          "context": "ith evidence you can check. p.9 p.10 p.11 Every answer names its page."
+        },
+        {
+          "token": "10/10",
+          "slide": 16,
+          "context": "Tutor Doubao Gemini Qwen Grounded 10/10 10/10 6/10 6/10 Off-topic 0/10 0/"
+        },
+        {
+          "token": "11",
+          "slide": 1,
+          "context": "vidence you can check. p.9 p.10 p.11 Every answer names its page. LI J"
+        },
+        {
+          "token": "12",
+          "slide": 12,
+          "context": "4. Verifiable Tutor  /  CSIT6000V 12 / 20"
+        },
+        {
+          "token": "13",
+          "slide": 13,
+          "context": "t. Verifiable Tutor  /  CSIT6000V 13 / 20"
+        },
+        {
+          "token": "14",
+          "slide": 4,
+          "context": "citations = verified layer, next 14 retrieved pages in marker order m"
+        },
+        {
+          "token": "15",
+          "slide": 15,
+          "context": "t. Verifiable Tutor  /  CSIT6000V 15 / 20"
+        },
+        {
+          "token": "16",
+          "slide": 1,
+          "context": "Lecture 2  ·  Memory Wall  ·  p.9 16 documents  ·  593 pages indexed 0"
+        },
+        {
+          "token": "17",
+          "slide": 4,
+          "context": "makes the evidence chain durable. 17 application tables + FTS5 3 acces"
+        },
+        {
+          "token": "18",
+          "slide": 18,
+          "context": "ng Verifiable Tutor  /  CSIT6000V 18 / 20"
+        },
+        {
+          "token": "19",
+          "slide": 5,
+          "context": "cal-first stores. Interface React 19  ·  Vite  ·  TypeScript  ·  Tailw"
+        },
+        {
+          "token": "20",
+          "slide": 1,
+          "context": "uments  ·  593 pages indexed 01 / 20"
+        },
+        {
+          "token": "30",
+          "slide": 9,
+          "context": "uestion student turn Two arms top 30 each RRF k=60 Tools typed tools A"
+        },
+        {
+          "token": "40",
+          "slide": 13,
+          "context": "ling saves HBM traffic.\" not on p.40 → repair → abstain citations tabl"
+        },
+        {
+          "token": "43.9",
+          "slide": 20,
+          "context": "n job 28067 434 s vLLM cold start 43.9 s 8-chunk build 8 / 8 valid recor"
+        },
+        {
+          "token": "51",
+          "slide": 9,
+          "context": "it@5 937 tokens@5 Chunking study: 51 questions. Marker: retrieved page"
+        },
+        {
+          "token": "60",
+          "slide": 5,
+          "context": "trieval BGE-M3  ·  BM25  ·  RRF k=60 LOCAL Platform DeepSeek  ·  MiMo"
+        },
+        {
+          "token": "74",
+          "slide": 12,
+          "context": "can cross documents: Lecture 3, p.74. Verifiable Tutor  /  CSIT6000V 1"
+        },
+        {
+          "token": "0114",
+          "slide": 18,
+          "context": "ourse support. github.com/Kane-LI-0114 verifiable-tutor Questions? LI Ji"
+        },
+        {
+          "token": "354",
+          "slide": 8,
+          "context": "aries Page is the retrieval unit. 354 of 365 pages are one chunk at 450"
+        },
+        {
+          "token": "365",
+          "slide": 8,
+          "context": "age is the retrieval unit. 354 of 365 pages are one chunk at 450 tokens"
+        },
+        {
+          "token": "434",
+          "slide": 17,
+          "context": "tations next exec next one course 434 s start Verifiable Tutor  /  CSIT"
+        },
+        {
+          "token": "450",
+          "slide": 8,
+          "context": "TACC OCR PaddleOCR-VL Page chunks 450-token pages BGE-M3 612 vectors SQ"
+        },
+        {
+          "token": "593",
+          "slide": 1,
+          "context": "ory Wall  ·  p.9 16 documents  ·  593 pages indexed 01 / 20"
+        },
+        {
+          "token": "612",
+          "slide": 8,
+          "context": "age chunks 450-token pages BGE-M3 612 vectors SQLite local store 16 doc"
+        },
+        {
+          "token": "937",
+          "slide": 9,
+          "context": "markers 0.849 nDCG@5 0.882 hit@5 937 tokens@5 Chunking study: 51 quest"
+        },
+        {
+          "token": "2026",
+          "slide": 1,
+          "context": "6000V / FINAL PRESENTATION / FALL 2026 Verifiable Tutor A course-grounde"
+        },
+        {
+          "token": "28067",
+          "slide": 20,
+          "context": "page-level nDCG@5 TACC / Qwen job 28067 434 s vLLM cold start 43.9 s 8-ch"
+        },
+        {
+          "token": "21188271",
+          "slide": 1,
+          "context": "uan  ·  TIAN Yujia  ·  XIE Yifeng 21188271  ·  21201619  ·  21322152 Advance"
+        },
+        {
+          "token": "21201619",
+          "slide": 1,
+          "context": "Yujia  ·  XIE Yifeng 21188271  ·  21201619  ·  21322152 Advanced AI Computin"
+        },
+        {
+          "token": "21322152",
+          "slide": 1,
+          "context": "Yifeng 21188271  ·  21201619  ·  21322152 Advanced AI Computing and Systems"
+        }
+      ],
+      "notes": [],
+      "notesPresent": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    "stage": {
+      "deck": "stage",
+      "source": "presentation/editions/stage-html/index.html",
+      "slideCount": 20,
+      "issues": [
+        "fact 8/8 not in visible slide text",
+        "missing speaker notes on slides [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]"
+      ],
+      "titles": [
+        {
+          "index": 1,
+          "expected": "Verifiable Tutor",
+          "got": "Verifiable",
+          "titleAttr": "Verifiable Tutor",
+          "ok": true
+        },
+        {
+          "index": 2,
+          "expected": "A study loop students can trust",
+          "got": "A study loop students",
+          "titleAttr": "A study loop students can trust.",
+          "ok": true
+        },
+        {
+          "index": 3,
+          "expected": "One local product. One batch backend on TACC",
+          "got": "One local product.",
+          "titleAttr": "One local product. One batch backend on TACC.",
+          "ok": true
+        },
+        {
+          "index": 4,
+          "expected": "The data model makes the evidence chain durable",
+          "got": "The data model makes",
+          "titleAttr": "The data model makes the evidence chain durable.",
+          "ok": true
+        },
+        {
+          "index": 5,
+          "expected": "A small stack with one job per layer",
+          "got": "A small stack with",
+          "titleAttr": "A small stack with one job per layer.",
+          "ok": true
+        },
+        {
+          "index": 6,
+          "expected": "A typed loop, not a prompt",
+          "got": "A typed loop, not a prompt.",
+          "titleAttr": "A typed loop, not a prompt.",
+          "ok": true
+        },
+        {
+          "index": 7,
+          "expected": "Watch the loop work",
+          "got": "Watch the",
+          "titleAttr": "Watch the loop work.",
+          "ok": true
+        },
+        {
+          "index": 8,
+          "expected": "Build the evidence base on TACC",
+          "got": "Build the evidence base on TACC.",
+          "titleAttr": "Build the evidence base on TACC.",
+          "ok": true
+        },
+        {
+          "index": 9,
+          "expected": "Retrieve pages, then let the model read",
+          "got": "Retrieve pages, then",
+          "titleAttr": "Retrieve pages, then let the model read.",
+          "ok": true
+        },
+        {
+          "index": 10,
+          "expected": "Every paragraph names its source",
+          "got": "Every paragraph names its source.",
+          "titleAttr": "Every paragraph names its source.",
+          "ok": true
+        },
+        {
+          "index": 11,
+          "expected": "A conversation that lives beside the file",
+          "got": "A conversation that lives beside the file.",
+          "titleAttr": "A conversation that lives beside the file.",
+          "ok": true
+        },
+        {
+          "index": 12,
+          "expected": "From a marker to the exact page",
+          "got": "From a marker",
+          "titleAttr": "From a marker to the exact page.",
+          "ok": true
+        },
+        {
+          "index": 13,
+          "expected": "A source is not a citation until the span passes",
+          "got": "A source is not a citation",
+          "titleAttr": "A source is not a citation until the span passes.",
+          "ok": true
+        },
+        {
+          "index": 14,
+          "expected": "Practice and integrity",
+          "got": "Practice and integrity.",
+          "titleAttr": "Practice and integrity.",
+          "ok": true
+        },
+        {
+          "index": 15,
+          "expected": "Practice, then check",
+          "got": "Practice, then check.",
+          "titleAttr": "Practice, then check.",
+          "ok": true
+        },
+        {
+          "index": 16,
+          "expected": "We win on coverage. We tie on grading",
+          "got": "We win on coverage.",
+          "titleAttr": "We win on coverage. We tie on grading.",
+          "ok": true
+        },
+        {
+          "index": 17,
+          "expected": "Tutorials are the hard slice",
+          "got": "Tutorials are the hard slice.",
+          "titleAttr": "Tutorials are the hard slice.",
+          "ok": true
+        },
+        {
+          "index": 18,
+          "expected": "Verifiability is a system property",
+          "got": "Verifiability is",
+          "titleAttr": "Verifiability is a system property.",
+          "ok": true
+        },
+        {
+          "index": 19,
+          "expected": "One question, end to end",
+          "got": "One question, end to end.",
+          "titleAttr": "One question, end to end.",
+          "ok": true
+        },
+        {
+          "index": 20,
+          "expected": "Evaluation method and TACC evidence",
+          "got": "Evaluation method",
+          "titleAttr": "Evaluation method and TACC evidence.",
+          "ok": true
+        }
+      ],
+      "facts": {
+        "17 tables": {
+          "slides": [
+            1,
+            3,
+            4
+          ],
+          "notes": []
+        },
+        "16 documents": {
+          "slides": [
+            8,
+            20
+          ],
+          "notes": []
+        },
+        "593 pages": {
+          "slides": [
+            8,
+            20
+          ],
+          "notes": []
+        },
+        "612 chunks": {
+          "slides": [
+            1,
+            8,
+            20
+          ],
+          "notes": []
+        },
+        "nDCG 0.849": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "hit 0.882": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "937 tokens": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "10/10": {
+          "slides": [
+            16
+          ],
+          "notes": []
+        },
+        "5/5": {
+          "slides": [
+            16
+          ],
+          "notes": []
+        },
+        "0.617": {
+          "slides": [
+            17
+          ],
+          "notes": []
+        },
+        "434 s": {
+          "slides": [
+            20
+          ],
+          "notes": []
+        },
+        "43.9 s": {
+          "slides": [
+            20
+          ],
+          "notes": []
+        },
+        "8/8": {
+          "slides": [],
+          "notes": []
+        }
+      },
+      "instructor": {
+        "visible": [
+          17
+        ],
+        "ta": [
+          17
+        ],
+        "notes_instructor": [],
+        "notes_ta": []
+      },
+      "yoga": [
+        13
+      ],
+      "cjk": [],
+      "numbers": [
+        {
+          "token": "0",
+          "slide": 1,
+          "context": "ou can check 17 tables 612 chunks 0 invented quotes"
+        },
+        {
+          "token": "0/10",
+          "slide": 16,
+          "context": "d 10/10 10/10 6/10 6/10 Off-topic 0/10 0/10 4/10 4/10 Coverage 5/5 3/5 3"
+        },
+        {
+          "token": "0.617",
+          "slide": 17,
+          "context": "nt 0.909 Mechanism 0.875 Tutorial 0.617 Root cause Tutorial pages bundle"
+        },
+        {
+          "token": "0.849",
+          "slide": 9,
+          "context": "page dedupe Tool read page nDCG@5 0.849 hit@5 0.882 tokens@5 937 source ≠"
+        },
+        {
+          "token": "0.875",
+          "slide": 17,
+          "context": "0.912 Assignment 0.909 Mechanism 0.875 Tutorial 0.617 Root cause Tutoria"
+        },
+        {
+          "token": "0.882",
+          "slide": 9,
+          "context": "Tool read page nDCG@5 0.849 hit@5 0.882 tokens@5 937 source ≠ citation Tw"
+        },
+        {
+          "token": "0.909",
+          "slide": 17,
+          "context": "uestions Concept 0.912 Assignment 0.909 Mechanism 0.875 Tutorial 0.617 Ro"
+        },
+        {
+          "token": "0.912",
+          "slide": 17,
+          "context": "ce. nDCG@5 · 51 questions Concept 0.912 Assignment 0.909 Mechanism 0.875"
+        },
+        {
+          "token": "0.941",
+          "slide": 17,
+          "context": "es bundle sub-tasks. Lesson hit@5 0.941; nDCG interval crosses zero; 2.7×"
+        },
+        {
+          "token": "01",
+          "slide": 1,
+          "context": "/ FINAL PRESENTATION / FALL 2026 01 / 20 A course-grounded agent Veri"
+        },
+        {
+          "token": "02",
+          "slide": 2,
+          "context": "01 / PROBLEM & GOAL 02 / 20 A study loop students can tr"
+        },
+        {
+          "token": "2",
+          "slide": 2,
+          "context": "s not a checkable answer. Lecture 2 · p.9 Dense lectures Practice at"
+        },
+        {
+          "token": "2.7",
+          "slide": 17,
+          "context": ".941; nDCG interval crosses zero; 2.7× cost. Tutorial 4 · p.40 Limits C"
+        },
+        {
+          "token": "03",
+          "slide": 3,
+          "context": "02 / SYSTEM 03 / 20 One local product. One batch"
+        },
+        {
+          "token": "3",
+          "slide": 12,
+          "context": "Before · p.9 After · p.10 Click [3]: the PDF moves to page 10, the c"
+        },
+        {
+          "token": "3/5",
+          "slide": 16,
+          "context": "rading. Knowledge coverage 5/5 vs 3/5 Invented quotes 0 Grading accurac"
+        },
+        {
+          "token": "04",
+          "slide": 4,
+          "context": "03 / DATA 04 / 20 The data model makes the evi"
+        },
+        {
+          "token": "4",
+          "slide": 7,
+          "context": "k. 5 retrieval calls 2 page reads 4 span checks verify_span → span ve"
+        },
+        {
+          "token": "4/10",
+          "slide": 16,
+          "context": "/10 6/10 6/10 Off-topic 0/10 0/10 4/10 4/10 Coverage 5/5 3/5 3/5 3/5 Gra"
+        },
+        {
+          "token": "05",
+          "slide": 5,
+          "context": "04 / STACK 05 / 20 A small stack with one job p"
+        },
+        {
+          "token": "5",
+          "slide": 7,
+          "context": "GENT 07 / 20 Watch the loop work. 5 retrieval calls 2 page reads 4 sp"
+        },
+        {
+          "token": "5/5",
+          "slide": 16,
+          "context": "ie on grading. Knowledge coverage 5/5 vs 3/5 Invented quotes 0 Grading"
+        },
+        {
+          "token": "06",
+          "slide": 6,
+          "context": "05 / FUNCTIONS / AGENT 06 / 20 A typed loop, not a prompt."
+        },
+        {
+          "token": "6/10",
+          "slide": 16,
+          "context": "Gemini Qwen Grounded 10/10 10/10 6/10 6/10 Off-topic 0/10 0/10 4/10 4/1"
+        },
+        {
+          "token": "07",
+          "slide": 7,
+          "context": "06 / DEMO / AGENT 07 / 20 Watch the loop work. 5 retri"
+        },
+        {
+          "token": "08",
+          "slide": 8,
+          "context": "07 / FUNCTIONS / RAG OFFLINE 08 / 20 Build the evidence base on T"
+        },
+        {
+          "token": "8",
+          "slide": 20,
+          "context": "wen 28067 434 s cold start 43.9 s 8-chunk build 8 / 8 valid records C"
+        },
+        {
+          "token": "09",
+          "slide": 9,
+          "context": "08 / FUNCTIONS / RAG ONLINE 09 / 20 Retrieve pages, then let the"
+        },
+        {
+          "token": "9",
+          "slide": 2,
+          "context": "a checkable answer. Lecture 2 · p.9 Dense lectures Practice at scale"
+        },
+        {
+          "token": "10",
+          "slide": 10,
+          "context": "09 / DEMO / RAG 10 / 20 Every paragraph names its so"
+        },
+        {
+          "token": "10/10",
+          "slide": 16,
+          "context": "nvented quotes 0 Grading accuracy 10/10 all Practice · 10 questions Tutor"
+        },
+        {
+          "token": "11",
+          "slide": 10,
+          "context": "14 retrieved pages p.9 · p.10 · p.11 page-exact markers 0 verified cit"
+        },
+        {
+          "token": "12",
+          "slide": 12,
+          "context": "11 / DEMO / KNOWLEDGE 12 / 20 From a marker to the exact p"
+        },
+        {
+          "token": "13",
+          "slide": 13,
+          "context": "12 / VERIFIER 13 / 20 A source is not a citation u"
+        },
+        {
+          "token": "14",
+          "slide": 9,
+          "context": "· 51 test questions Source pane · 14 pages"
+        },
+        {
+          "token": "15",
+          "slide": 15,
+          "context": "14 / DEMO / PRACTICE & POLICY 15 / 20 Practice, then check. PRACTI"
+        },
+        {
+          "token": "16",
+          "slide": 8,
+          "context": "evidence base on TACC. 01 / PDFs 16 documents 02 / TACC OCR PaddleOCR"
+        },
+        {
+          "token": "17",
+          "slide": 1,
+          "context": "ST · 2026F Evidence you can check 17 tables 612 chunks 0 invented quot"
+        },
+        {
+          "token": "18",
+          "slide": 18,
+          "context": "17 / CONCLUSION 18 / 20 Verifiability is a system pr"
+        },
+        {
+          "token": "19",
+          "slide": 19,
+          "context": "APPENDIX / A1 19 / 20 One question, end to end. SP"
+        },
+        {
+          "token": "20",
+          "slide": 1,
+          "context": "NAL PRESENTATION / FALL 2026 01 / 20 A course-grounded agent Verifiabl"
+        },
+        {
+          "token": "29",
+          "slide": 15,
+          "context": "points POLICY Assignment 3 · due 29 Nov A complete solution is blocke"
+        },
+        {
+          "token": "30",
+          "slide": 9,
+          "context": "es, then let the model read. BM25 30 candidates BGE-M3 30 candidates R"
+        },
+        {
+          "token": "40",
+          "slide": 8,
+          "context": "es Lecture 2 · p.9 Tutorial 4 · p.40 The index never runs at request t"
+        },
+        {
+          "token": "43.9",
+          "slide": 20,
+          "context": "ACC · Qwen 28067 434 s cold start 43.9 s 8-chunk build 8 / 8 valid recor"
+        },
+        {
+          "token": "51",
+          "slide": 9,
+          "context": "tation Two arms · 30 each · RRF · 51 test questions Source pane · 14 p"
+        },
+        {
+          "token": "60",
+          "slide": 9,
+          "context": "idates BGE-M3 30 candidates RRF k=60 · page dedupe Tool read page nDCG"
+        },
+        {
+          "token": "0114",
+          "slide": 18,
+          "context": "p: end-to-end. github.com/Kane-LI-0114/ verifiable-tutor LI · TIAN · XIE"
+        },
+        {
+          "token": "434",
+          "slide": 20,
+          "context": "each · RRF k=60 TACC · Qwen 28067 434 s cold start 43.9 s 8-chunk build"
+        },
+        {
+          "token": "450",
+          "slide": 8,
+          "context": "leOCR-VL 03 / Chunks page-first · 450 tokens 04 / BGE-M3 612 vectors 16"
+        },
+        {
+          "token": "593",
+          "slide": 8,
+          "context": "/ BGE-M3 612 vectors 16 documents 593 pages 612 chunks + vectors 16 sum"
+        },
+        {
+          "token": "612",
+          "slide": 1,
+          "context": "Evidence you can check 17 tables 612 chunks 0 invented quotes"
+        },
+        {
+          "token": "937",
+          "slide": 9,
+          "context": "nDCG@5 0.849 hit@5 0.882 tokens@5 937 source ≠ citation Two arms · 30 e"
+        },
+        {
+          "token": "2026",
+          "slide": 1,
+          "context": "6000V / FINAL PRESENTATION / FALL 2026 01 / 20 A course-grounded agent V"
+        },
+        {
+          "token": "28067",
+          "slide": 20,
+          "context": "· 30 each · RRF k=60 TACC · Qwen 28067 434 s cold start 43.9 s 8-chunk b"
+        }
+      ],
+      "notes": [],
+      "notesPresent": []
+    },
+    "custom": {
+      "deck": "custom",
+      "source": "presentation/editions/custom-html/index.html",
+      "slideCount": 20,
+      "issues": [],
+      "titles": [
+        {
+          "index": 1,
+          "expected": "Verifiable Tutor",
+          "got": "Verifiable",
+          "titleAttr": "Verifiable Tutor",
+          "ok": true
+        },
+        {
+          "index": 2,
+          "expected": "A study loop students can trust",
+          "got": "A study loop students can",
+          "titleAttr": "A study loop students can trust",
+          "ok": true
+        },
+        {
+          "index": 3,
+          "expected": "One local product. One batch backend on TACC",
+          "got": "One local product. One batch backend on",
+          "titleAttr": "One local product. One batch backend on TACC",
+          "ok": true
+        },
+        {
+          "index": 4,
+          "expected": "The data model makes the evidence chain durable",
+          "got": "The data model makes the evidence chain",
+          "titleAttr": "The data model makes the evidence chain durable",
+          "ok": true
+        },
+        {
+          "index": 5,
+          "expected": "A small stack with one job per layer",
+          "got": "A small stack with one job per",
+          "titleAttr": "A small stack with one job per layer",
+          "ok": true
+        },
+        {
+          "index": 6,
+          "expected": "A typed loop, not a prompt",
+          "got": "A typed loop, not a",
+          "titleAttr": "A typed loop, not a prompt",
+          "ok": true
+        },
+        {
+          "index": 7,
+          "expected": "Watch the loop work",
+          "got": "Watch the",
+          "titleAttr": "Watch the loop work",
+          "ok": true
+        },
+        {
+          "index": 8,
+          "expected": "Build the evidence base on TACC",
+          "got": "Build the evidence base on",
+          "titleAttr": "Build the evidence base on TACC",
+          "ok": true
+        },
+        {
+          "index": 9,
+          "expected": "Retrieve pages, then let the model read",
+          "got": "Retrieve pages, then let the model",
+          "titleAttr": "Retrieve pages, then let the model read",
+          "ok": true
+        },
+        {
+          "index": 10,
+          "expected": "Every paragraph names its source",
+          "got": "Every paragraph names its",
+          "titleAttr": "Every paragraph names its source",
+          "ok": true
+        },
+        {
+          "index": 11,
+          "expected": "A conversation that lives beside the file",
+          "got": "A conversation that lives beside the",
+          "titleAttr": "A conversation that lives beside the file",
+          "ok": true
+        },
+        {
+          "index": 12,
+          "expected": "From a marker to the exact page",
+          "got": "From a marker to the exact",
+          "titleAttr": "From a marker to the exact page",
+          "ok": true
+        },
+        {
+          "index": 13,
+          "expected": "A source is not a citation until the span passes",
+          "got": "A source is not a citation until the span",
+          "titleAttr": "A source is not a citation until the span passes",
+          "ok": true
+        },
+        {
+          "index": 14,
+          "expected": "Practice and integrity",
+          "got": "Practice and",
+          "titleAttr": "Practice and integrity",
+          "ok": true
+        },
+        {
+          "index": 15,
+          "expected": "Practice, then check",
+          "got": "Practice, then",
+          "titleAttr": "Practice, then check",
+          "ok": true
+        },
+        {
+          "index": 16,
+          "expected": "We win on coverage. We tie on grading",
+          "got": "We win on coverage. We tie on",
+          "titleAttr": "We win on coverage. We tie on grading",
+          "ok": true
+        },
+        {
+          "index": 17,
+          "expected": "Tutorials are the hard slice",
+          "got": "Tutorials are the hard",
+          "titleAttr": "Tutorials are the hard slice",
+          "ok": true
+        },
+        {
+          "index": 18,
+          "expected": "Verifiability is a system property",
+          "got": "Verifiability is a system",
+          "titleAttr": "Verifiability is a system property",
+          "ok": true
+        },
+        {
+          "index": 19,
+          "expected": "One question, end to end",
+          "got": "One question, end to",
+          "titleAttr": "One question, end to end",
+          "ok": true
+        },
+        {
+          "index": 20,
+          "expected": "Evaluation method and TACC evidence",
+          "got": "Evaluation method and TACC",
+          "titleAttr": "Evaluation method and TACC evidence",
+          "ok": true
+        }
+      ],
+      "facts": {
+        "17 tables": {
+          "slides": [
+            4
+          ],
+          "notes": []
+        },
+        "16 documents": {
+          "slides": [
+            8,
+            20
+          ],
+          "notes": [
+            8
+          ]
+        },
+        "593 pages": {
+          "slides": [
+            2,
+            8,
+            20
+          ],
+          "notes": [
+            8
+          ]
+        },
+        "612 chunks": {
+          "slides": [
+            8,
+            20
+          ],
+          "notes": [
+            8
+          ]
+        },
+        "nDCG 0.849": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "hit 0.882": {
+          "slides": [
+            9,
+            17
+          ],
+          "notes": []
+        },
+        "937 tokens": {
+          "slides": [
+            9
+          ],
+          "notes": []
+        },
+        "10/10": {
+          "slides": [
+            16
+          ],
+          "notes": []
+        },
+        "5/5": {
+          "slides": [
+            16
+          ],
+          "notes": []
+        },
+        "0.617": {
+          "slides": [
+            17
+          ],
+          "notes": []
+        },
+        "434 s": {
+          "slides": [
+            20
+          ],
+          "notes": [
+            20
+          ]
+        },
+        "43.9 s": {
+          "slides": [
+            20
+          ],
+          "notes": [
+            20
+          ]
+        },
+        "8/8": {
+          "slides": [
+            20
+          ],
+          "notes": []
+        }
+      },
+      "instructor": {
+        "visible": [
+          17,
+          18
+        ],
+        "ta": [
+          17,
+          18
+        ],
+        "notes_instructor": [],
+        "notes_ta": []
+      },
+      "yoga": [
+        13
+      ],
+      "cjk": [],
+      "numbers": [
+        {
+          "token": "0",
+          "slide": 10,
+          "context": "rieved pages 3 page-exact markers 0 verified citations p.9 · p.10 · p"
+        },
+        {
+          "token": "0.617",
+          "slide": 17,
+          "context": "CG@5, 51 test questions. tutorial 0.617 mechanism 0.875 assignment 0.909"
+        },
+        {
+          "token": "0.849",
+          "slide": 9,
+          "context": "RRF k=60 Read page Answer nDCG@5 0.849 hit@5 0.882 tokens@5 937 A source"
+        },
+        {
+          "token": "0.875",
+          "slide": 17,
+          "context": "estions. tutorial 0.617 mechanism 0.875 assignment 0.909 concept 0.912 Tu"
+        },
+        {
+          "token": "0.882",
+          "slide": 9,
+          "context": "ad page Answer nDCG@5 0.849 hit@5 0.882 tokens@5 937 A source is retrieve"
+        },
+        {
+          "token": "0.909",
+          "slide": 17,
+          "context": "0.617 mechanism 0.875 assignment 0.909 concept 0.912 Tutorial pages bund"
+        },
+        {
+          "token": "0.912",
+          "slide": 17,
+          "context": "sm 0.875 assignment 0.909 concept 0.912 Tutorial pages bundle several sub"
+        },
+        {
+          "token": "0.941",
+          "slide": 17,
+          "context": "granularity raised hit@5 0.882 to 0.941; nDCG interval crossed zero; inde"
+        },
+        {
+          "token": "01",
+          "slide": 1,
+          "context": "cy Tutorial 4 p.40 FlashAttention 01 / 20"
+        },
+        {
+          "token": "02",
+          "slide": 2,
+          "context": ". p.9 Course material · 593 pages 02 / 20"
+        },
+        {
+          "token": "2",
+          "slide": 7,
+          "context": "Watch the loop work. 5 retrievals 2 page reads 4 span checks span ver"
+        },
+        {
+          "token": "2.7",
+          "slide": 17,
+          "context": "interval crossed zero; index cost 2.7×. 17 / 20"
+        },
+        {
+          "token": "03",
+          "slide": 3,
+          "context": "E TURN Ask Plan Act Verify Answer 03 / 20"
+        },
+        {
+          "token": "3",
+          "slide": 10,
+          "context": "s its source . 14 retrieved pages 3 page-exact markers 0 verified cit"
+        },
+        {
+          "token": "3/5",
+          "slide": 16,
+          "context": "0/10 10/10 6/10 6/10 Coverage 5/5 3/5 3/5 3/5 Grading 10/10 10/10 10/10"
+        },
+        {
+          "token": "04",
+          "slide": 4,
+          "context": "e_sources bridges answer to page. 04 / 20"
+        },
+        {
+          "token": "4",
+          "slide": 1,
+          "context": "ds bandwidth and latency Tutorial 4 p.40 FlashAttention 01 / 20"
+        },
+        {
+          "token": "05",
+          "slide": 5,
+          "context": "etrieval FTS5 BGE-M3 RRF two arms 05 Platform DeepSeek MiMo TACC batch"
+        },
+        {
+          "token": "5",
+          "slide": 5,
+          "context": "er . 01 Interface React 19 AI SDK 5 PDF.js one origin 02 Backend Fast"
+        },
+        {
+          "token": "5/5",
+          "slide": 16,
+          "context": "e on grading . Knowledge coverage 5/5 Invented quotes 0 Grading 10/10 P"
+        },
+        {
+          "token": "06",
+          "slide": 6,
+          "context": "ery call typed, bounded, visible. 06 / 20"
+        },
+        {
+          "token": "6/10",
+          "slide": 16,
+          "context": "Gemini Qwen Grounded 10/10 10/10 6/10 6/10 Coverage 5/5 3/5 3/5 3/5 Gra"
+        },
+        {
+          "token": "07",
+          "slide": 7,
+          "context": "n · doc_id, page_no, exact quote. 07 / 20"
+        },
+        {
+          "token": "08",
+          "slide": 8,
+          "context": "res offline No request-time index 08 / 20"
+        },
+        {
+          "token": "8",
+          "slide": 20,
+          "context": "8067 434 s vLLM cold start 43.9 s 8-chunk build 8/8 valid records One"
+        },
+        {
+          "token": "8/8",
+          "slide": 20,
+          "context": "M cold start 43.9 s 8-chunk build 8/8 valid records One shard, 8 chunks"
+        },
+        {
+          "token": "09",
+          "slide": 9,
+          "context": "evidence, not a citation. sources 09 / 20"
+        },
+        {
+          "token": "9",
+          "slide": 1,
+          "context": "· 21201619 · 21322152 EVIDENCE p.9 Memory Wall capacity p.10 Trends"
+        },
+        {
+          "token": "10",
+          "slide": 1,
+          "context": "IDENCE p.9 Memory Wall capacity p.10 Trends bandwidth and latency Tuto"
+        },
+        {
+          "token": "10/10",
+          "slide": 16,
+          "context": "age 5/5 Invented quotes 0 Grading 10/10 Practice Tutor Doubao Gemini Qwen"
+        },
+        {
+          "token": "11",
+          "slide": 10,
+          "context": "verified citations p.9 · p.10 · p.11 · source pane 10 / 20"
+        },
+        {
+          "token": "12",
+          "slide": 12,
+          "context": "e PDF to page 10; the chat stays. 12 / 20"
+        },
+        {
+          "token": "13",
+          "slide": 13,
+          "context": "40 → abstain Implementation: Yoga 13 / 20"
+        },
+        {
+          "token": "14",
+          "slide": 10,
+          "context": "very paragraph names its source . 14 retrieved pages 3 page-exact mark"
+        },
+        {
+          "token": "15",
+          "slide": 15,
+          "context": "tion blocked before the deadline. 15 / 20"
+        },
+        {
+          "token": "16",
+          "slide": 8,
+          "context": "TACC OCR Chunk BGE-M3 Local store 16 documents 593 pages 612 chunks 16"
+        },
+        {
+          "token": "17",
+          "slide": 4,
+          "context": "users login_sessions source pane 17 tables + FTS5. message_sources br"
+        },
+        {
+          "token": "18",
+          "slide": 18,
+          "context": "com/Kane-LI-0114/verifiable-tutor 18 / 20"
+        },
+        {
+          "token": "19",
+          "slide": 5,
+          "context": "ob per layer . 01 Interface React 19 AI SDK 5 PDF.js one origin 02 Bac"
+        },
+        {
+          "token": "20",
+          "slide": 1,
+          "context": "torial 4 p.40 FlashAttention 01 / 20"
+        },
+        {
+          "token": "40",
+          "slide": 1,
+          "context": "andwidth and latency Tutorial 4 p.40 FlashAttention 01 / 20"
+        },
+        {
+          "token": "43.9",
+          "slide": 20,
+          "context": "n job 28067 434 s vLLM cold start 43.9 s 8-chunk build 8/8 valid records"
+        },
+        {
+          "token": "51",
+          "slide": 17,
+          "context": "e hard slice . Page-level nDCG@5, 51 test questions. tutorial 0.617 me"
+        },
+        {
+          "token": "60",
+          "slide": 9,
+          "context": "read . Question BM25 + BGE RRF k=60 Read page Answer nDCG@5 0.849 hit"
+        },
+        {
+          "token": "0114",
+          "slide": 18,
+          "context": "feng Questions github.com/Kane-LI-0114/verifiable-tutor 18 / 20"
+        },
+        {
+          "token": "434",
+          "slide": 20,
+          "context": "mini, Qwen. TACC / Qwen job 28067 434 s vLLM cold start 43.9 s 8-chunk"
+        },
+        {
+          "token": "593",
+          "slide": 2,
+          "context": "ge, policy. p.9 Course material · 593 pages 02 / 20"
+        },
+        {
+          "token": "612",
+          "slide": 8,
+          "context": "ocal store 16 documents 593 pages 612 chunks 16 summaries p.9 Lecture 2"
+        },
+        {
+          "token": "937",
+          "slide": 9,
+          "context": "nDCG@5 0.849 hit@5 0.882 tokens@5 937 A source is retrieved evidence, n"
+        },
+        {
+          "token": "2026",
+          "slide": 1,
+          "context": "6000V / FINAL PRESENTATION / FALL 2026 Verifiable Tutor A course-grounde"
+        },
+        {
+          "token": "28067",
+          "slide": 20,
+          "context": "ao, Gemini, Qwen. TACC / Qwen job 28067 434 s vLLM cold start 43.9 s 8-ch"
+        },
+        {
+          "token": "21188271",
+          "slide": 1,
+          "context": "inchuan · TIAN Yujia · XIE Yifeng 21188271 · 21201619 · 21322152 EVIDENCE p."
+        },
+        {
+          "token": "21201619",
+          "slide": 1,
+          "context": "IAN Yujia · XIE Yifeng 21188271 · 21201619 · 21322152 EVIDENCE p.9 Memory Wa"
+        },
+        {
+          "token": "21322152",
+          "slide": 1,
+          "context": "XIE Yifeng 21188271 · 21201619 · 21322152 EVIDENCE p.9 Memory Wall capacity"
+        }
+      ],
+      "notes": [],
+      "notesPresent": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    }
+  }
+}

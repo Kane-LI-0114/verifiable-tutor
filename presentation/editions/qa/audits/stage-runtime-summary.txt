@@ -1,0 +1,11 @@
+{
+  "ready": true,
+  "slides": 20,
+  "notes": 20,
+  "external": [],
+  "initial": 0,
+  "afterRight": 1,
+  "afterRight2": 2,
+  "afterLeft": 1
+}
+STAGE RUNTIME CHECK PASS: 20 slides, 20 notes, arrow/End navigation, no external resources
