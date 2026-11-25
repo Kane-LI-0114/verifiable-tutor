@@ -371,8 +371,12 @@ export function PracticePage() {
                         })}
                       </Badge>
                     </div>
-                    <CardTitle>
-                      <Markdown sources={sources} className="text-base font-semibold">
+                    <CardTitle className="flex items-start gap-2">
+                      <span className="text-muted-foreground">{index + 1}.</span>
+                      <Markdown
+                        sources={sources}
+                        className="flex-1 text-base font-semibold"
+                      >
                         {question.question}
                       </Markdown>
                     </CardTitle>
@@ -414,14 +418,47 @@ export function PracticePage() {
                       )}
                     </Badge>
                   </div>
-                  <CardTitle>
-                    <Markdown sources={sources} className="text-base font-semibold">
+                  <CardTitle className="flex items-start gap-2">
+                    <span className="text-muted-foreground">{index + 1}.</span>
+                    <Markdown
+                      sources={sources}
+                      className="flex-1 text-base font-semibold"
+                    >
                       {question.question}
                     </Markdown>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {question.type === "single-choice" || question.type === "true-false" ? (
+                  {question.type === "true-false" ? (
+                    <RadioGroup
+                      className="flex flex-wrap items-center gap-6"
+                      value={answers[index] ?? ""}
+                      onValueChange={(value) =>
+                        setAnswers((current) => ({ ...current, [index]: value }))
+                      }
+                      aria-label={t.practice.answer}
+                    >
+                      {(["True", "False"] as const).map((value) => {
+                        const optionId = `true-false-${index}-${value.toLowerCase()}`;
+                        return (
+                          <Field
+                            key={value}
+                            orientation="horizontal"
+                            className="w-auto"
+                          >
+                            <RadioGroupItem id={optionId} value={value} />
+                            <FieldLabel htmlFor={optionId}>
+                              {value === "True"
+                                ? t.practice.boolean.true
+                                : t.practice.boolean.false}
+                            </FieldLabel>
+                          </Field>
+                        );
+                      })}
+                    </RadioGroup>
+                  ) : null}
+
+                  {question.type === "single-choice" ? (
                     <RadioGroup
                       value={answers[index] ?? ""}
                       onValueChange={(value) =>
