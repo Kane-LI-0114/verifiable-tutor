@@ -54,6 +54,17 @@ def test_a_missing_page_comment_is_allowed():
     assert parsed.points[0].page_no is None
 
 
+def test_a_page_comment_inside_a_body_is_removed():
+    parsed = parse_document(
+        "Overview <!-- page: 2 -->\n\n"
+        "## A point <!-- page: 3 -->\n\nBody <!-- page: 4 --> stays.\n"
+    )
+
+    assert parsed.intro_markdown == "Overview"
+    assert parsed.points[0].body_markdown == "Body  stays."
+    assert "<!-- page:" not in parsed.markdown
+
+
 def test_a_document_without_points_is_rejected():
     with pytest.raises(DocumentError, match="no knowledge points"):
         parse_document("Only an introduction.")

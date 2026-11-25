@@ -21,6 +21,7 @@ __all__ = [
 ]
 
 PAGE_COMMENT = re.compile(r"\s*<!--\s*page:\s*(\d+)\s*-->\s*")
+PAGE_COMMENT_ONLY = re.compile(r"<!--\s*page:\s*\d+\s*-->")
 HEADING = re.compile(r"^##[ \t]+(.+?)\s*$")
 
 
@@ -77,10 +78,11 @@ def parse_document(text: str) -> ParsedDocument:
         key = _normalise(title)
         if key and key not in seen:
             seen.add(key)
+            body = PAGE_COMMENT_ONLY.sub("", "\n".join(body_lines)).strip()
             points.append(
                 RevisionPoint(
                     title=title,
-                    body_markdown="\n".join(body_lines).strip(),
+                    body_markdown=body,
                     page_no=page_no,
                 )
             )
@@ -111,7 +113,7 @@ def parse_document(text: str) -> ParsedDocument:
     if not points:
         raise DocumentError("the document has no knowledge points")
 
-    intro = "\n".join(intro_lines).strip()
+    intro = PAGE_COMMENT_ONLY.sub("", "\n".join(intro_lines)).strip()
     return ParsedDocument(
         intro_markdown=intro,
         points=tuple(points),
