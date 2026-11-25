@@ -17,6 +17,12 @@ from ..schemas import (
 router = APIRouter(tags=["revision"])
 
 
+class MarkdownResponse(Response):
+    """A downloadable Markdown document with a documented media type."""
+
+    media_type = "text/markdown"
+
+
 @router.get(
     "/api/revision",
     response_model=RevisionTreeResponse,
@@ -94,6 +100,7 @@ def update_revision_point(
 
 @router.get(
     "/api/revision/docs/{doc_id}/markdown",
+    response_class=MarkdownResponse,
     summary="Download one review chapter as Markdown",
     responses={
         200: {
@@ -115,8 +122,7 @@ def download_revision_document(
     title = document.get("title") or doc_id
     body = f"# {title}\n\n{document['markdown']}"
     safe = re.sub(r"[^A-Za-z0-9._-]+", "_", doc_id) or "revision"
-    return Response(
+    return MarkdownResponse(
         content=body,
-        media_type="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="{safe}.md"'},
     )

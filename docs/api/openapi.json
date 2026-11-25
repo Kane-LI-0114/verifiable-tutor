@@ -2038,6 +2038,13 @@
             "anyOf": [
               {
                 "items": {
+                  "enum": [
+                    "single-choice",
+                    "multiple-choice",
+                    "true-false",
+                    "short-answer",
+                    "code"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -2070,6 +2077,13 @@
             "anyOf": [
               {
                 "items": {
+                  "enum": [
+                    "single-choice",
+                    "multiple-choice",
+                    "true-false",
+                    "short-answer",
+                    "code"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -5931,9 +5945,6 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
-              },
               "text/markdown": {
                 "schema": {
                   "type": "string"

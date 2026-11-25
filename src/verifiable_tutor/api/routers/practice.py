@@ -25,6 +25,14 @@ from ...prompts import load_prompt
 
 router = APIRouter(tags=["practice"])
 
+PracticeQuestionType = Literal[
+    "single-choice",
+    "multiple-choice",
+    "true-false",
+    "short-answer",
+    "code",
+]
+
 
 class PracticeRunBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -75,7 +83,7 @@ class PracticeGenerateBody(BaseModel):
         max_length=200,
         description="Course topic to generate self-test questions for.",
     )
-    types: list[str] | None = Field(
+    types: list[PracticeQuestionType] | None = Field(
         default=None,
         description="Question types to generate, for example [\"single-choice\", \"code\"].",
     )
@@ -111,7 +119,7 @@ class PracticeCreateBody(BaseModel):
         max_length=200,
         description="Course topic to generate self-test questions for.",
     )
-    types: list[str] | None = Field(
+    types: list[PracticeQuestionType] | None = Field(
         default=None,
         description="Question types to generate, for example [\"single-choice\"].",
     )

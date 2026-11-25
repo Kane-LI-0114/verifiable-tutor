@@ -175,6 +175,18 @@ def test_a_redo_cannot_start_before_the_first_attempt_is_submitted(agent_api):
     assert response.status_code == 409
 
 
+def test_an_unknown_question_type_is_rejected(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    _script_questions(agent_api)
+
+    response = agent_api.client.post(
+        "/api/practice/sessions",
+        json={"topic": "MPI", "types": ["essay"]},
+    )
+
+    assert response.status_code == 422
+
+
 def test_a_second_redo_cannot_start_while_one_is_open(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     body = _create(agent_api)
