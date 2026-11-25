@@ -50,6 +50,7 @@ from .schemas import OPENAPI_TAGS
 from ..settings import AppSettings, ensure_runtime_directories, load_settings
 from ..storage import Storage
 from ..trace import SessionTrace, utc_now
+from ..bootstrap import bootstrap_content
 
 AdapterFactory = Callable[[], Any]
 
@@ -141,6 +142,7 @@ def create_app(
         ensure_runtime_directories(resolved)
         database = storage or Storage(resolved.database_path)
         database.initialize()
+        bootstrap_content(database, resolved.repo_root, database.path)
         database.fail_interrupted_builds(updated_at=resolved_clock())
         app.state.settings = resolved
         app.state.storage = database

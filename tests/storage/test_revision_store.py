@@ -188,3 +188,66 @@ def test_an_ungenerated_document_has_no_detail(tmp_path):
 
     assert storage.revision_document_detail("Tutorial_4", "user-1") is None
 
+
+def test_a_snapshot_round_trips_without_user_progress(tmp_path):
+    source = _storage(tmp_path)
+    _outline(source)
+    source.save_revision_document(
+        doc_id="Tutorial_4",
+        markdown="# Tutorial 4\n\n## First point\n\nBody one.\n",
+        intro_markdown="# Tutorial 4",
+        points=[
+            {"title": "First point", "body_markdown": "Body one.", "page_no": 3}
+        ],
+        model="deepseek-flash",
+        prompt_version="revision-document/2",
+        generated_at=NOW,
+    )
+    source_detail = source.revision_document_detail("Tutorial_4", "user-1")
+    assert source_detail is not None
+    source.set_revision_progress(
+        user_id="user-1",
+        point_id=source_detail["points"][0]["id"],
+        mastered=True,
+        updated_at=NOW,
+    )
+    snapshot = source.revision_snapshot()
+
+    target = Storage(tmp_path / "target.sqlite3")
+    target.initialize()
+    with target.connect() as connection:
+        for doc_id, filename in (
+            ("Tutorial_4", "Tutorial_4.pdf"),
+            ("ACS_lecture_2_2026F", "ACS_lecture_2_2026F.pdf"),
+            ("course_project", "course_project.pdf"),
+        ):
+            connection.execute(
+                "INSERT INTO kb_documents"
+                " (id, title, filename, pdf_sha256, page_count, pdf_path, status,"
+                "  created_at, updated_at, summary)"
+                " VALUES (?, ?, ?, ?, 10, ?, 'ready', ?, ?, ?)",
+                (
+                    doc_id,
+                    doc_id,
+                    filename,
+                    f"sha-{doc_id}",
+                    f"data/{filename}",
+                    NOW.isoformat(),
+                    NOW.isoformat(),
+                    f"Summary of {doc_id}",
+                ),
+            )
+    result = target.import_revision_snapshot(snapshot, imported_at=NOW)
+
+    assert result == {"imported": True, "themes": 2, "documents": 3, "points": 1}
+    detail = target.revision_document_detail("Tutorial_4", "user-1")
+    assert detail is not None
+    assert detail["total"] == 1
+    assert detail["mastered"] == 0
+    assert detail["document"]["markdown"].startswith("# Tutorial 4")
+    assert target.list_revision_tree("user-1")[0]["total"] == 1
+
+    again = target.import_revision_snapshot(snapshot, imported_at=NOW)
+    assert again["imported"] is False
+
+

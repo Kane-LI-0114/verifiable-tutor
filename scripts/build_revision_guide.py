@@ -41,6 +41,8 @@ from verifiable_tutor.revision.outline import (  # noqa: E402
 from verifiable_tutor.settings import load_settings  # noqa: E402
 from verifiable_tutor.storage import Storage  # noqa: E402
 
+SNAPSHOT_PATH = ROOT / "data" / "revision" / "guide.json"
+
 
 def _model() -> tuple[ModelAdapter, str]:
     resolved = load_model_config(
@@ -187,6 +189,44 @@ def _documents(storage: Storage, doc_ids: list[str], *, dry_run: bool) -> int:
     return 0
 
 
+def _export(storage: Storage) -> int:
+    payload = storage.revision_snapshot()
+    SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SNAPSHOT_PATH.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    points = sum(len(document.get("points") or []) for document in payload["documents"])
+    print(
+        f"wrote {len(payload['themes'])} themes, {len(payload['documents'])}"
+        f" documents, {points} points to {SNAPSHOT_PATH.relative_to(ROOT)}"
+    )
+    return 0
+
+
+def _import(storage: Storage) -> int:
+    if not SNAPSHOT_PATH.is_file():
+        print(f"no snapshot at {SNAPSHOT_PATH}", file=sys.stderr)
+        return 1
+    payload = json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
+    try:
+        result = storage.import_revision_snapshot(payload)
+    except LookupError as exc:
+        print(f"{exc}; run scripts/ingest_corpus.py import first", file=sys.stderr)
+        return 1
+    except ValueError as exc:
+        print(f"snapshot rejected: {exc}", file=sys.stderr)
+        return 1
+    if result["imported"]:
+        print(
+            f"imported {result['themes']} themes, {result['documents']}"
+            f" documents, {result['points']} points"
+        )
+    else:
+        print("the revision tables already have content; nothing imported")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -202,6 +242,8 @@ def main(argv: list[str] | None = None) -> int:
     documents.add_argument(
         "--dry-run", action="store_true", help="list the chunks, call no model"
     )
+    sub.add_parser("export", help="write the tracked revision snapshot")
+    sub.add_parser("import", help="load the tracked revision snapshot")
     args = parser.parse_args(argv)
 
     settings = load_settings()
@@ -211,7 +253,11 @@ def main(argv: list[str] | None = None) -> int:
         return _status(storage)
     if args.command == "outline":
         return _outline(storage, dry_run=args.dry_run)
-    return _documents(storage, args.doc, dry_run=args.dry_run)
+    if args.command == "docs":
+        return _documents(storage, args.doc, dry_run=args.dry_run)
+    if args.command == "export":
+        return _export(storage)
+    return _import(storage)
 
 
 if __name__ == "__main__":

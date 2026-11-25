@@ -1328,6 +1328,149 @@ class Storage:
             "points": int(points["points"]),
         }
 
+    def revision_snapshot(self) -> dict[str, Any]:
+        """Return a portable snapshot of the outline, chapters, and points.
+
+        The snapshot has no user data; progress stays in the local database.
+        """
+
+        with self._connect() as connection:
+            themes = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT id, title, summary, position, created_at, model,"
+                    " prompt_version FROM revision_themes ORDER BY position, id"
+                )
+            ]
+            documents = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT d.doc_id, d.theme_id, d.category, d.markdown,"
+                    " d.intro_markdown, d.model, d.prompt_version,"
+                    " d.generated_at, doc.title, doc.filename"
+                    " FROM revision_documents d"
+                    " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
+                    " ORDER BY d.doc_id"
+                )
+            ]
+            points = [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT doc_id, title, body_markdown, position, page_no"
+                    " FROM revision_points ORDER BY doc_id, position"
+                )
+            ]
+        by_doc: dict[str, list[dict[str, Any]]] = {}
+        for point in points:
+            by_doc.setdefault(point.pop("doc_id"), []).append(point)
+        for document in documents:
+            document["points"] = by_doc.get(document["doc_id"], [])
+        return {
+            "schema": "vt-revision/1",
+            "themes": themes,
+            "documents": documents,
+        }
+
+    def import_revision_snapshot(
+        self,
+        payload: Mapping[str, Any],
+        *,
+        imported_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Load a tracked snapshot when the revision tables are still empty."""
+
+        if payload.get("schema") != "vt-revision/1":
+            raise ValueError("unsupported revision snapshot schema")
+        themes = payload.get("themes") or []
+        documents = payload.get("documents") or []
+        if not themes or not documents:
+            raise ValueError("the revision snapshot is empty")
+        now = iso(imported_at or datetime.now(timezone.utc))
+        with self._connect() as connection:
+            existing = connection.execute(
+                "SELECT COUNT(*) AS count FROM revision_themes"
+            ).fetchone()["count"]
+            if int(existing) > 0:
+                return {
+                    "imported": False,
+                    "themes": int(existing),
+                    "documents": 0,
+                    "points": 0,
+                }
+            known = {
+                row[0]
+                for row in connection.execute("SELECT id FROM kb_documents")
+            }
+            missing = [
+                document["doc_id"]
+                for document in documents
+                if document["doc_id"] not in known
+            ]
+            if missing:
+                raise LookupError(
+                    "the corpus is not imported: " + ", ".join(sorted(missing))
+                )
+            for theme in themes:
+                connection.execute(
+                    "INSERT INTO revision_themes"
+                    " (id, title, summary, position, created_at, model,"
+                    "  prompt_version) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        theme["id"],
+                        theme["title"],
+                        theme["summary"],
+                        int(theme["position"]),
+                        theme.get("created_at") or now,
+                        theme.get("model"),
+                        theme.get("prompt_version"),
+                    ),
+                )
+            point_count = 0
+            for document in documents:
+                connection.execute(
+                    "INSERT INTO revision_documents"
+                    " (doc_id, theme_id, category, created_at, markdown,"
+                    "  intro_markdown, model, prompt_version, generated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        document["doc_id"],
+                        document["theme_id"],
+                        document["category"],
+                        now,
+                        document.get("markdown"),
+                        document.get("intro_markdown"),
+                        document.get("model"),
+                        document.get("prompt_version"),
+                        document.get("generated_at"),
+                    ),
+                )
+                for position, point in enumerate(document.get("points") or []):
+                    title = str(point["title"]).strip()
+                    point_id = hashlib.sha256(
+                        f"{document['doc_id']}\n{title}".encode("utf-8")
+                    ).hexdigest()[:16]
+                    connection.execute(
+                        "INSERT INTO revision_points"
+                        " (id, doc_id, title, body_markdown, position, page_no,"
+                        "  created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            point_id,
+                            document["doc_id"],
+                            title,
+                            point["body_markdown"],
+                            position,
+                            point.get("page_no"),
+                            now,
+                        ),
+                    )
+                    point_count += 1
+        return {
+            "imported": True,
+            "themes": len(themes),
+            "documents": len(documents),
+            "points": point_count,
+        }
+
     def list_revision_chunks(self, doc_id: str) -> list[dict[str, Any]]:
         """Return the OCR chunks of one document in reading order."""
 
