@@ -1,6 +1,6 @@
 # Three final deck editions
 
-This branch adds three presentation editions of the same 20-page Verifiable Tutor story. The `ppt-master` edition is built in another conversation and is not part of this branch.
+This branch adds three presentation editions of the same 20-page Verifiable Tutor story. The `ppt-master` B edition was built in another conversation and is committed separately at `d0a15c6`; it is not part of this QA scope.
 
 All three are **PASS** in `qa/qa-report.md` after the final stage re-audit on 2026-11-25.
 
@@ -65,4 +65,4 @@ The root agent commits after QA. Builder directories do not commit.
 
 ## Do not touch
 
-`presentation/ppt-master/` and `presentation/ppt-master-sources/` belong to another conversation. They are untracked here and are not part of this branch.
+`presentation/ppt-master/` and the top-level `CSIT6000V_VerifiableTutor_B_2026F.*` files belong to the other conversation and its `d0a15c6` commit. Do not edit or QA them as part of this branch's three-edition work.
