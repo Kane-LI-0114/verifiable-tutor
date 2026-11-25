@@ -28,7 +28,7 @@ This README follows the two-section structure the NSDI '27 Call for Artifacts re
 | DeepSeek API key | any active key | live chat in the end-to-end example |
 | TACC account and `tcloud` | optional | only to rerun the OCR, index, and Qwen jobs |
 
-The repository ships the material the default path needs: 16 documents, 593 page records, 612 chunk vectors, and 16 document summaries under `data/corpus/`, `data/index/`, and `data/kb/`. A fresh checkout does not rerun OCR and does not submit a TACC job.
+The repository ships the material the default path needs: 16 documents, 593 page records, 612 chunk vectors, 16 document summaries, and the generated revision guide under `data/corpus/`, `data/index/`, `data/kb/`, and `data/revision/`. On the first start the backend imports the tracked corpus and revision guide into `data/app/app.sqlite3`; later starts reuse that database. A fresh checkout does not rerun OCR, submit a TACC job, or call a model to generate the guide.
 
 ### 1. Clone and install
 
@@ -485,7 +485,7 @@ All paths are repository-relative. Planned roles are statements of intent, not d
 | `tacc/client/` | TACC CPU job for the offline evaluation harness | placeholder (`.gitkeep`) |
 | `benchmarks/questions/`, `benchmarks/policy_scenarios/`, `benchmarks/results/` | Course questions, policy scenarios, and recorded results; `results/` holds the citation study data, its notes, and the evaluation script | `results/`: present; `questions/` and `policy_scenarios/`: placeholder (`.gitkeep`) |
 | `benchmarks/self_test/` | Self-test generation and grading benchmark data for RQ2 | present: protocol, checklist, frozen mock runs |
-| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state | `data/corpus/`, `data/index/`, and `data/kb/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
+| `data/corpus/`, `data/index/`, `data/caches/`, `data/kb/`, `data/revision/` | Course PDFs, OCR output and page images, dense plus BM25 index, the document-summary snapshot, cached embeddings and retrieval snapshots, knowledge-base records and build state, and the generated revision guide | `data/corpus/`, `data/index/`, `data/kb/`, and `data/revision/` are tracked; `data/app/` and `data/caches/` are gitignored runtime state |
 | `models/` | Local model weights: BGE-M3 for query embedding, downloaded at setup and read through `embedding.model_path` in `config/models.yaml` | present: local weights, gitignored |
 | `config/` | Runtime configuration: `models.yaml` owns provider endpoints, model ids, roles, request parameters, cache, and embedding settings; `knowledge.yaml` owns Qwen job resources, shard size, prompt version, paths, and polling; `app.yaml` owns the allowed registration domains, cookie flags, local data paths, and replay speed | present: model, knowledge, and app config |
 | `scripts/` | Utility scripts: TACC bootstrap, submit helper, shared OCR stage helpers, the local PDF parse request interface, the local knowledge-base driver, the live model smoke, the API documentation build and vendor scripts, and the physical data model build script | present: scripts |
