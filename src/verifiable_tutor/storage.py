@@ -507,6 +507,10 @@ def _insert_step(
     )
 
 
+class PracticeAttemptOpenError(RuntimeError):
+    """A redo cannot start while another attempt is still open."""
+
+
 class Storage:
     """Repository for the local SQLite database."""
 
@@ -1107,19 +1111,27 @@ class Storage:
             option_order = _option_order(
                 questions, seed=f"{conversation_id}:{attempt_no}"
             )
-            connection.execute(
+            inserted = connection.execute(
                 "INSERT INTO practice_attempts"
                 " (conversation_id, attempt_no, status, answers_json,"
                 "  results_json, option_order_json, score, max_score, started_at)"
-                " VALUES (?, ?, 'in_progress', '{}', '{}', ?, NULL, ?, ?)",
+                " SELECT ?, ?, 'in_progress', '{}', '{}', ?, NULL, ?, ?"
+                " WHERE NOT EXISTS ("
+                "  SELECT 1 FROM practice_attempts"
+                "  WHERE conversation_id = ? AND status = 'in_progress')",
                 (
                     conversation_id,
                     attempt_no,
                     json.dumps(option_order),
                     max_score,
                     iso(started_at),
+                    conversation_id,
                 ),
             )
+            if inserted.rowcount == 0:
+                raise PracticeAttemptOpenError(
+                    f"practice {conversation_id!r} already has an open attempt"
+                )
             connection.execute(
                 "UPDATE practice_sessions SET updated_at = ?"
                 " WHERE conversation_id = ?",

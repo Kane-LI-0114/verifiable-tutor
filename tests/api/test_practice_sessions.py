@@ -175,6 +175,27 @@ def test_a_redo_cannot_start_before_the_first_attempt_is_submitted(agent_api):
     assert response.status_code == 409
 
 
+def test_a_second_redo_cannot_start_while_one_is_open(agent_api):
+    agent_api.create_active_account("alice@ust.hk")
+    body = _create(agent_api)
+    agent_api.client.post(
+        f"/api/practice/sessions/{body['id']}/attempts/1/submit",
+        json={"answers": {}, "results": {}},
+    )
+
+    first = agent_api.client.post(
+        f"/api/practice/sessions/{body['id']}/attempts"
+    )
+    assert first.status_code == 201
+    second = agent_api.client.post(
+        f"/api/practice/sessions/{body['id']}/attempts"
+    )
+
+    assert second.status_code == 409
+    session = agent_api.client.get(f"/api/practice/sessions/{body['id']}").json()
+    assert [attempt["attempt_no"] for attempt in session["attempts"]] == [1, 2]
+
+
 def test_sessions_list_carries_the_practice_status_and_can_filter(agent_api):
     agent_api.create_active_account("alice@ust.hk")
     practice = _create(agent_api)

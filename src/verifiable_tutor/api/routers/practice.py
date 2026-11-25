@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import ChatDep, ClockDep, CurrentUser, ModelDep, StorageDep
 from ...policy.deadline import load_deadlines
+from ...storage import PracticeAttemptOpenError
 from ...policy.guard import guard
 from ...practice.grading import grade_answer
 from ...prompts import load_prompt
@@ -435,7 +436,15 @@ def start_practice_attempt(
         raise HTTPException(
             status_code=409, detail="submit the first attempt before a redo"
         )
-    storage.start_practice_attempt(conversation_id=session_id, started_at=clock())
+    try:
+        storage.start_practice_attempt(
+            conversation_id=session_id, started_at=clock()
+        )
+    except PracticeAttemptOpenError:
+        raise HTTPException(
+            status_code=409,
+            detail="finish the open attempt before starting another",
+        )
     return _session_payload(storage, conversation)
 
 
