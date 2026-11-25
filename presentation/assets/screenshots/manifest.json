@@ -1,0 +1,173 @@
+{
+  "commit": "2b2b3a8",
+  "viewport": "1600x1000 @2x",
+  "language": "en",
+  "captured_at": "2026-11-25T15:44:30+08:00",
+  "assets": [
+    {
+      "name": "agent-workchain",
+      "source": "agent-workchain-raw.png",
+      "crop": [
+        1090,
+        170,
+        2590,
+        1345
+      ],
+      "output": "agent-workchain.png",
+      "size": [
+        1556,
+        1231
+      ]
+    },
+    {
+      "name": "rag-source-pane",
+      "source": "rag-source-pane-raw.png",
+      "crop": [
+        500,
+        170,
+        3200,
+        1740
+      ],
+      "output": "rag-source-pane.png",
+      "size": [
+        2756,
+        1626
+      ]
+    },
+    {
+      "name": "rag-answer-detail",
+      "source": "rag-source-pane-raw.png",
+      "crop": [
+        500,
+        170,
+        2500,
+        1500
+      ],
+      "output": "rag-answer-detail.png",
+      "size": [
+        2056,
+        1386
+      ]
+    },
+    {
+      "name": "rag-source-detail",
+      "source": "rag-source-pane-raw.png",
+      "crop": [
+        2500,
+        120,
+        3200,
+        1500
+      ],
+      "output": "rag-source-detail.png",
+      "size": [
+        756,
+        1436
+      ]
+    },
+    {
+      "name": "kb-page9",
+      "source": "kb-page9-raw.png",
+      "crop": [
+        480,
+        90,
+        3200,
+        1910
+      ],
+      "output": "kb-page9.png",
+      "size": [
+        2776,
+        1876
+      ]
+    },
+    {
+      "name": "kb-page10",
+      "source": "kb-page10-raw.png",
+      "crop": [
+        480,
+        90,
+        3200,
+        1910
+      ],
+      "output": "kb-page10.png",
+      "size": [
+        2776,
+        1876
+      ]
+    },
+    {
+      "name": "kb-chat-before",
+      "source": "kb-page9-raw.png",
+      "crop": [
+        2410,
+        140,
+        3180,
+        1250
+      ],
+      "output": "kb-chat-before.png",
+      "size": [
+        826,
+        1166
+      ]
+    },
+    {
+      "name": "kb-page9-detail",
+      "source": "kb-page9-raw.png",
+      "crop": [
+        480,
+        80,
+        2320,
+        1700
+      ],
+      "output": "kb-page9-detail.png",
+      "size": [
+        1896,
+        1676
+      ]
+    },
+    {
+      "name": "kb-page10-detail",
+      "source": "kb-page10-raw.png",
+      "crop": [
+        480,
+        80,
+        2320,
+        1700
+      ],
+      "output": "kb-page10-detail.png",
+      "size": [
+        1896,
+        1676
+      ]
+    },
+    {
+      "name": "practice-question",
+      "source": "practice-question-raw.png",
+      "crop": [
+        990,
+        285,
+        2720,
+        1550
+      ],
+      "output": "practice-question.png",
+      "size": [
+        1786,
+        1321
+      ]
+    },
+    {
+      "name": "policy-refusal",
+      "source": "policy-refusal-raw.png",
+      "crop": [
+        1180,
+        85,
+        2630,
+        600
+      ],
+      "output": "policy-refusal.png",
+      "size": [
+        1506,
+        571
+      ]
+    }
+  ]
+}
