@@ -348,8 +348,6 @@ export const en = {
     saved: "Saved",
     prevAttempt: "Previous attempt",
     nextAttempt: "Next attempt",
-    legacyHint:
-      "This practice record was saved before practice sessions were stored. Open it from the chat list.",
   },
   revision: {
     title: "Revision guide",

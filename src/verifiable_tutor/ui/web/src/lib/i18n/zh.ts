@@ -337,7 +337,6 @@ export const zh: Messages = {
     saved: "已保存",
     prevAttempt: "上一次",
     nextAttempt: "下一次",
-    legacyHint: "这次练习保存于新结构上线之前，请从会话列表打开。",
   },
   revision: {
     title: "复习指南",
