@@ -21,6 +21,7 @@ from ...policy.deadline import load_deadlines
 from ...storage import PracticeAttemptOpenError
 from ...policy.guard import guard
 from ...practice.grading import grade_answer
+from ...practice.sessions import UnknownQuestionError, submit_attempt
 from ...prompts import load_prompt
 
 router = APIRouter(tags=["practice"])
@@ -370,51 +371,27 @@ def submit_practice_attempt(
     _attempt_or_409(storage, session_id, attempt_no)
     session = storage.find_practice_session(session_id)
     assert session is not None
-    questions = session["questions"]
-    known = {question["id"] for question in questions}
-    unknown = (set(body.answers) | set(body.results)) - known
-    if unknown:
-        raise HTTPException(
-            status_code=400,
-            detail=f"unknown question ids: {', '.join(sorted(unknown))}",
+    try:
+        submit_attempt(
+            storage=storage,
+            session_id=session_id,
+            topic=session["topic"],
+            questions=session["questions"],
+            attempt_no=attempt_no,
+            answers=body.answers,
+            results={
+                question_id: {
+                    "score": result.score,
+                    "max_score": result.max_score,
+                    "explanation": result.explanation,
+                }
+                for question_id, result in body.results.items()
+            },
+            user_id=user["id"],
+            submitted_at=clock(),
         )
-
-    results: dict[str, dict] = {}
-    for question in questions:
-        stored = body.results.get(question["id"])
-        results[question["id"]] = {
-            "score": float(stored.score) if stored is not None else 0.0,
-            "max_score": float(question["max_score"]),
-            "explanation": stored.explanation if stored is not None else "",
-        }
-
-    storage.submit_practice_attempt(
-        conversation_id=session_id,
-        attempt_no=attempt_no,
-        answers=body.answers,
-        results=results,
-        submitted_at=clock(),
-    )
-
-    if attempt_no == 1:
-        by_topic: dict[str, dict[str, set[str]]] = {}
-        for question in questions:
-            topic = question.get("topic") or session["topic"]
-            entry = by_topic.setdefault(
-                topic, {"covered": set(), "mastered": set()}
-            )
-            entry["covered"].update(question.get("knowledge_points") or [])
-            if float(results[question["id"]]["score"]) >= float(
-                question["max_score"]
-            ):
-                entry["mastered"].update(question.get("knowledge_points") or [])
-        for topic, entry in by_topic.items():
-            storage.record_progress(
-                user_id=user["id"],
-                topic=topic,
-                covered_points=sorted(entry["covered"]),
-                mastered_points=sorted(entry["mastered"]),
-            )
+    except UnknownQuestionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     refreshed = storage.find_conversation(session_id)
     assert refreshed is not None
