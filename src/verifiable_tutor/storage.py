@@ -13,6 +13,7 @@ stored conversations, messages, or accounts.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 import sqlite3
@@ -22,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 # The turn-metadata columns added to ``messages`` by schema version 1. They are
 # appended after ``created_at`` so a fresh database and an upgraded database
@@ -143,10 +144,36 @@ CREATE TABLE IF NOT EXISTS revision_documents (
     category TEXT NOT NULL CHECK (
         category IN ('assignment', 'lecture', 'tutorial', 'other')
     ),
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    markdown TEXT,
+    intro_markdown TEXT,
+    model TEXT,
+    prompt_version TEXT,
+    generated_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_revision_documents_theme
     ON revision_documents(theme_id);
+
+CREATE TABLE IF NOT EXISTS revision_points (
+    id TEXT PRIMARY KEY,
+    doc_id TEXT NOT NULL REFERENCES revision_documents(doc_id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    body_markdown TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    page_no INTEGER,
+    created_at TEXT NOT NULL,
+    UNIQUE (doc_id, position)
+);
+CREATE INDEX IF NOT EXISTS idx_revision_points_doc
+    ON revision_points(doc_id, position);
+
+CREATE TABLE IF NOT EXISTS revision_progress (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    point_id TEXT NOT NULL REFERENCES revision_points(id) ON DELETE CASCADE,
+    mastered INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, point_id)
+);
 
 CREATE TABLE IF NOT EXISTS topic_progress (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -520,6 +547,7 @@ class Storage:
             self._add_missing_soft_delete_columns(connection)
             self._add_missing_conversation_kind_column(connection)
             self._add_missing_practice_attempt_columns(connection)
+            self._add_missing_revision_document_columns(connection)
             connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     @staticmethod
@@ -602,6 +630,28 @@ class Storage:
                 "ALTER TABLE practice_attempts"
                 " ADD COLUMN option_order_json TEXT NOT NULL DEFAULT '{}'"
             )
+
+    @staticmethod
+    def _add_missing_revision_document_columns(
+        connection: sqlite3.Connection,
+    ) -> None:
+        """Add the generated document columns a database before version 11 lacks."""
+
+        existing = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(revision_documents)")
+        }
+        for name, sql_type in (
+            ("markdown", "TEXT"),
+            ("intro_markdown", "TEXT"),
+            ("model", "TEXT"),
+            ("prompt_version", "TEXT"),
+            ("generated_at", "TEXT"),
+        ):
+            if name not in existing:
+                connection.execute(
+                    f"ALTER TABLE revision_documents ADD COLUMN {name} {sql_type}"
+                )
 
     def ping(self) -> bool:
         try:
@@ -1209,22 +1259,34 @@ class Storage:
                     ),
                 )
 
-    def list_revision_tree(self) -> list[dict[str, Any]]:
-        """Return the outline as themes with their documents, in display order."""
+    def list_revision_tree(self, user_id: str) -> list[dict[str, Any]]:
+        """Return the outline with per-document totals and the user's progress."""
 
         with self._connect() as connection:
             themes = connection.execute(
                 "SELECT * FROM revision_themes ORDER BY position, id"
             ).fetchall()
             documents = connection.execute(
-                "SELECT d.doc_id, d.theme_id, d.category, doc.title, doc.filename"
+                "SELECT d.doc_id, d.theme_id, d.category, d.markdown, doc.title,"
+                " doc.filename, COUNT(p.id) AS total,"
+                " COALESCE(SUM(CASE WHEN rp.mastered = 1 THEN 1 ELSE 0 END), 0)"
+                " AS mastered"
                 " FROM revision_documents d"
                 " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
-                " ORDER BY d.category, doc.title, d.doc_id"
+                " LEFT JOIN revision_points p ON p.doc_id = d.doc_id"
+                " LEFT JOIN revision_progress rp ON rp.point_id = p.id"
+                " AND rp.user_id = ?"
+                " GROUP BY d.doc_id, d.theme_id, d.category, d.markdown,"
+                " doc.title, doc.filename"
+                " ORDER BY d.category, doc.title, d.doc_id",
+                (user_id,),
             ).fetchall()
         by_theme: dict[str, list[dict[str, Any]]] = {}
         for row in documents:
             item = dict(row)
+            item["generated"] = item.pop("markdown") is not None
+            item["total"] = int(item["total"])
+            item["mastered"] = int(item["mastered"])
             by_theme.setdefault(item.pop("theme_id"), []).append(item)
         return [
             {
@@ -1232,10 +1294,185 @@ class Storage:
                 "title": theme["title"],
                 "summary": theme["summary"],
                 "position": theme["position"],
+                "total": sum(doc["total"] for doc in by_theme.get(theme["id"], [])),
+                "mastered": sum(
+                    doc["mastered"] for doc in by_theme.get(theme["id"], [])
+                ),
                 "documents": by_theme.get(theme["id"], []),
             }
             for theme in themes
         ]
+
+    def revision_outline_status(self) -> dict[str, Any]:
+        """Return the outline, generation, and point counts for the CLI."""
+
+        with self._connect() as connection:
+            themes = connection.execute(
+                "SELECT t.title, COUNT(d.doc_id) AS documents"
+                " FROM revision_themes t"
+                " LEFT JOIN revision_documents d ON d.theme_id = t.id"
+                " GROUP BY t.id ORDER BY t.position, t.id"
+            ).fetchall()
+            totals = connection.execute(
+                "SELECT COUNT(*) AS documents,"
+                " COALESCE(SUM(markdown IS NOT NULL), 0) AS generated"
+                " FROM revision_documents"
+            ).fetchone()
+            points = connection.execute(
+                "SELECT COUNT(*) AS points FROM revision_points"
+            ).fetchone()
+        return {
+            "themes": [dict(row) for row in themes],
+            "documents": int(totals["documents"]),
+            "generated": int(totals["generated"]),
+            "points": int(points["points"]),
+        }
+
+    def list_revision_chunks(self, doc_id: str) -> list[dict[str, Any]]:
+        """Return the OCR chunks of one document in reading order."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT page_no, section, text FROM kb_chunks WHERE doc_id = ?"
+                " ORDER BY page_no, chunk_index",
+                (doc_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def find_revision_document(self, doc_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT d.*, doc.title, doc.filename, doc.summary,"
+                " t.title AS theme_title"
+                " FROM revision_documents d"
+                " LEFT JOIN kb_documents doc ON doc.id = d.doc_id"
+                " LEFT JOIN revision_themes t ON t.id = d.theme_id"
+                " WHERE d.doc_id = ?",
+                (doc_id,),
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def revision_document_detail(
+        self, doc_id: str, user_id: str
+    ) -> dict[str, Any] | None:
+        """Return one generated document with its points and the user's checks."""
+
+        document = self.find_revision_document(doc_id)
+        if document is None or document.get("markdown") is None:
+            return None
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT p.id, p.title, p.body_markdown, p.position, p.page_no,"
+                " COALESCE(rp.mastered, 0) AS mastered"
+                " FROM revision_points p"
+                " LEFT JOIN revision_progress rp ON rp.point_id = p.id"
+                " AND rp.user_id = ?"
+                " WHERE p.doc_id = ? ORDER BY p.position",
+                (user_id, doc_id),
+            ).fetchall()
+        points = [dict(row) for row in rows]
+        for point in points:
+            point["mastered"] = bool(point["mastered"])
+        return {
+            "document": document,
+            "points": points,
+            "total": len(points),
+            "mastered": sum(1 for point in points if point["mastered"]),
+        }
+
+    def save_revision_document(
+        self,
+        *,
+        doc_id: str,
+        markdown: str,
+        intro_markdown: str,
+        points: Sequence[Mapping[str, Any]],
+        model: str | None,
+        prompt_version: str,
+        generated_at: datetime,
+    ) -> int:
+        """Replace one generated document and its knowledge points."""
+
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE revision_documents SET markdown = ?, intro_markdown = ?,"
+                " model = ?, prompt_version = ?, generated_at = ?"
+                " WHERE doc_id = ?",
+                (
+                    markdown,
+                    intro_markdown,
+                    model,
+                    prompt_version,
+                    iso(generated_at),
+                    doc_id,
+                ),
+            )
+            if cursor.rowcount == 0:
+                raise LookupError(f"no revision document {doc_id!r}")
+            connection.execute(
+                "DELETE FROM revision_points WHERE doc_id = ?", (doc_id,)
+            )
+            for position, point in enumerate(points):
+                title = str(point["title"]).strip()
+                point_id = hashlib.sha256(
+                    f"{doc_id}\n{title}".encode("utf-8")
+                ).hexdigest()[:16]
+                connection.execute(
+                    "INSERT INTO revision_points"
+                    " (id, doc_id, title, body_markdown, position, page_no,"
+                    "  created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        point_id,
+                        doc_id,
+                        title,
+                        point["body_markdown"],
+                        position,
+                        point.get("page_no"),
+                        iso(generated_at),
+                    ),
+                )
+        return len(points)
+
+    def set_revision_progress(
+        self,
+        *,
+        user_id: str,
+        point_id: str,
+        mastered: bool,
+        updated_at: datetime,
+    ) -> dict[str, Any] | None:
+        """Store one self-check and return the document's new counts."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT doc_id FROM revision_points WHERE id = ?", (point_id,)
+            ).fetchone()
+            if row is None:
+                return None
+            doc_id = row["doc_id"]
+            connection.execute(
+                "INSERT INTO revision_progress"
+                " (user_id, point_id, mastered, updated_at)"
+                " VALUES (?, ?, ?, ?)"
+                " ON CONFLICT(user_id, point_id) DO UPDATE SET"
+                " mastered = excluded.mastered, updated_at = excluded.updated_at",
+                (user_id, point_id, 1 if mastered else 0, iso(updated_at)),
+            )
+            counts = connection.execute(
+                "SELECT COUNT(p.id) AS total,"
+                " COALESCE(SUM(CASE WHEN rp.mastered = 1 THEN 1 ELSE 0 END), 0)"
+                " AS mastered"
+                " FROM revision_points p"
+                " LEFT JOIN revision_progress rp ON rp.point_id = p.id"
+                " AND rp.user_id = ?"
+                " WHERE p.doc_id = ?",
+                (user_id, doc_id),
+            ).fetchone()
+        return {
+            "doc_id": doc_id,
+            "total": int(counts["total"]),
+            "mastered": int(counts["mastered"]),
+        }
 
     def list_revision_candidates(self) -> list[dict[str, Any]]:
         """Return the summarised documents an outline can group."""

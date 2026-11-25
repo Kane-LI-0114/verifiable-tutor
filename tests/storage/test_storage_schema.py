@@ -20,8 +20,9 @@ from verifiable_tutor.storage import Storage
 # stamps to the knowledge tables. Version 7 adds the numbered sources a turn
 # retrieved. Version 8 adds the stored practice sessions and their attempts.
 # Version 9 adds the per-attempt choice order. Version 10 adds the revision
-# guide outline.
-SCHEMA_VERSION = 10
+# guide outline. Version 11 adds the generated review documents, points, and
+# per-user self-check progress.
+SCHEMA_VERSION = 11
 
 LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -214,6 +215,8 @@ def test_initialize_creates_the_current_schema_on_a_fresh_database(tmp_path):
             "practice_attempts",
             "revision_themes",
             "revision_documents",
+            "revision_points",
+            "revision_progress",
         } <= tables
         tool_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(tool_calls)")

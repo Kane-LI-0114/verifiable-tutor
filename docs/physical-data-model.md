@@ -395,7 +395,7 @@ AI-generated study themes that group the course documents for the revision guide
 
 ### revision_documents
 
-One row per course document in the revision guide, with its theme and its file-name category used for the tree colours.
+One row per course document in the revision guide, with its theme, its file-name category, and the generated review chapter.
 
 | Column | Type | Null | Key | Notes |
 |---|---|---|---|---|
@@ -403,6 +403,11 @@ One row per course document in the revision guide, with its theme and its file-n
 | `theme_id` | TEXT | no | FK | Theme the document belongs to. |
 | `category` | TEXT | no | - | assignment, lecture, tutorial, or other, from the file name. |
 | `created_at` | TEXT | no | - | ISO-8601 UTC time the mapping was written. |
+| `markdown` | TEXT | yes | - | Clean generated chapter; null until the document is built. |
+| `intro_markdown` | TEXT | yes | - | Markdown before the first knowledge point. |
+| `model` | TEXT | yes | - | Model that wrote the chapter. |
+| `prompt_version` | TEXT | yes | - | Document prompt version used for the build. |
+| `generated_at` | TEXT | yes | - | ISO-8601 UTC time the chapter was generated. |
 
 Checks:
 
@@ -416,6 +421,45 @@ Foreign keys:
 Indexes:
 
 - `idx_revision_documents_theme`: index on (`theme_id`)
+
+### revision_points
+
+Knowledge points parsed from one generated chapter; each row is one H2 heading and its Markdown body, with the page it came from.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `id` | TEXT | yes | PK | Point id, a hash of the document id and the heading. |
+| `doc_id` | TEXT | no | FK | Generated document the point belongs to. |
+| `title` | TEXT | no | - | H2 heading text with the page comment removed. |
+| `body_markdown` | TEXT | no | - | Markdown between this heading and the next. |
+| `position` | INTEGER | no | - | 0-based order inside the document. |
+| `page_no` | INTEGER | yes | - | 1-based PDF page the point is introduced on; null when unknown. |
+| `created_at` | TEXT | no | - | ISO-8601 UTC time the point was stored. |
+
+Foreign keys:
+
+- `doc_id` -> `revision_documents.doc_id` (ON DELETE CASCADE)
+
+Indexes:
+
+- `idx_revision_points_doc`: index on (`doc_id`, `position`)
+- UNIQUE (`doc_id`, `position`)
+
+### revision_progress
+
+Per-user self-check state for one knowledge point: whether the student marked it as known.
+
+| Column | Type | Null | Key | Notes |
+|---|---|---|---|---|
+| `user_id` | TEXT | no | PK | Account the self-check belongs to. |
+| `point_id` | TEXT | no | PK | Knowledge point that was checked. |
+| `mastered` | INTEGER | no | - | 1 when the student marked the point as known. |
+| `updated_at` | TEXT | no | - | ISO-8601 UTC time of the last change. |
+
+Foreign keys:
+
+- `point_id` -> `revision_points.id` (ON DELETE CASCADE)
+- `user_id` -> `users.id` (ON DELETE CASCADE)
 
 ### knowledge_builds
 
@@ -566,7 +610,7 @@ Checks:
 
 ## Runtime facts
 
-- Schema version: `PRAGMA user_version = 10`.
+- Schema version: `PRAGMA user_version = 11`.
 - Database file: `data/app/app.sqlite3`, configured in
   `config/app.yaml`; it is runtime state and is not committed.
 - Connections: short-lived, WAL journal mode, `PRAGMA foreign_keys = ON`.

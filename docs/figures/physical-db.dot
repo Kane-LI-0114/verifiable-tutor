@@ -169,6 +169,28 @@ digraph physical_data_model {
       <TR><TD ALIGN="LEFT">theme_id</TD><TD ALIGN="LEFT">FK</TD></TR>
       <TR><TD ALIGN="LEFT">category</TD><TD ALIGN="LEFT"></TD></TR>
       <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">markdown</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">intro_markdown</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">model</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">prompt_version</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">generated_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  revision_points [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>revision_points</B></TD></TR>
+      <TR><TD ALIGN="LEFT">id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">doc_id</TD><TD ALIGN="LEFT">FK</TD></TR>
+      <TR><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">body_markdown</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">position</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">page_no</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"></TD></TR>
+    </TABLE>>];
+  revision_progress [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
+      <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>revision_progress</B></TD></TR>
+      <TR><TD ALIGN="LEFT">user_id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">point_id</TD><TD ALIGN="LEFT">PK</TD></TR>
+      <TR><TD ALIGN="LEFT">mastered</TD><TD ALIGN="LEFT"></TD></TR>
+      <TR><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"></TD></TR>
     </TABLE>>];
   knowledge_builds [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="white">
       <TR><TD BGCOLOR="#e6e6e6" COLSPAN="2"><B>knowledge_builds</B></TD></TR>
@@ -260,6 +282,9 @@ digraph physical_data_model {
   practice_sessions -> practice_attempts [label="conversation_id"];
   kb_documents -> revision_documents [label="doc_id"];
   revision_themes -> revision_documents [label="theme_id"];
+  revision_documents -> revision_points [label="doc_id"];
+  revision_points -> revision_progress [label="point_id"];
+  users -> revision_progress [label="user_id"];
   users -> knowledge_builds [label="user_id"];
   kb_folders -> kb_folders [label="parent_id"];
   kb_folders -> kb_documents [label="folder_id"];

@@ -12,6 +12,14 @@ NOW = datetime(2026, 11, 25, 9, 0, tzinfo=timezone.utc)
 def _storage(tmp_path) -> Storage:
     storage = Storage(tmp_path / "app.sqlite3")
     storage.initialize()
+    storage.create_user(
+        user_id="user-1",
+        email="alice@ust.hk",
+        password_hash="hash",
+        role="student",
+        status="active",
+        created_at=NOW,
+    )
     with storage.connect() as connection:
         for doc_id, filename in (
             ("Tutorial_4", "Tutorial_4.pdf"),
@@ -76,7 +84,7 @@ def test_the_outline_lists_themes_in_order_with_their_documents(tmp_path):
     storage = _storage(tmp_path)
     _outline(storage)
 
-    themes = storage.list_revision_tree()
+    themes = storage.list_revision_tree("user-1")
 
     assert [theme["title"] for theme in themes] == [
         "Attention and FlashAttention",
@@ -112,7 +120,7 @@ def test_replacing_the_outline_removes_the_previous_one(tmp_path):
         prompt_version="revision-outline/1",
     )
 
-    themes = storage.list_revision_tree()
+    themes = storage.list_revision_tree("user-1")
     assert len(themes) == 1
     assert [doc["doc_id"] for doc in themes[0]["documents"]] == ["Tutorial_4"]
 
@@ -128,3 +136,55 @@ def test_candidates_are_the_summarised_documents(tmp_path):
         "course_project",
     }
     assert candidates[0]["summary"]
+
+
+def test_generated_points_and_progress_reach_the_tree(tmp_path):
+    storage = _storage(tmp_path)
+    _outline(storage)
+
+    saved = storage.save_revision_document(
+        doc_id="Tutorial_4",
+        markdown="# Tutorial 4\n\n## First point\n\nBody one.\n\n## Second point\n\nBody two.\n",
+        intro_markdown="# Tutorial 4",
+        points=[
+            {"title": "First point", "body_markdown": "Body one.", "page_no": 3},
+            {"title": "Second point", "body_markdown": "Body two.", "page_no": 4},
+        ],
+        model="deepseek-flash",
+        prompt_version="revision-document/1",
+        generated_at=NOW,
+    )
+    assert saved == 2
+
+    detail = storage.revision_document_detail("Tutorial_4", "user-1")
+    assert detail is not None
+    assert detail["total"] == 2
+    assert detail["mastered"] == 0
+    assert [point["page_no"] for point in detail["points"]] == [3, 4]
+
+    updated = storage.set_revision_progress(
+        user_id="user-1",
+        point_id=detail["points"][0]["id"],
+        mastered=True,
+        updated_at=NOW,
+    )
+    assert updated == {"doc_id": "Tutorial_4", "total": 2, "mastered": 1}
+
+    themes = storage.list_revision_tree("user-1")
+    attention = next(theme for theme in themes if theme["id"] == "attention")
+    document = next(
+        doc for doc in attention["documents"] if doc["doc_id"] == "Tutorial_4"
+    )
+    assert document["generated"] is True
+    assert document["total"] == 2
+    assert document["mastered"] == 1
+    assert attention["total"] == 2
+    assert attention["mastered"] == 1
+
+
+def test_an_ungenerated_document_has_no_detail(tmp_path):
+    storage = _storage(tmp_path)
+    _outline(storage)
+
+    assert storage.revision_document_detail("Tutorial_4", "user-1") is None
+

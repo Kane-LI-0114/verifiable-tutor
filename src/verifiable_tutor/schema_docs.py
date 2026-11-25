@@ -37,6 +37,8 @@ SCHEMA_TABLE_ORDER = (
     "practice_attempts",
     "revision_themes",
     "revision_documents",
+    "revision_points",
+    "revision_progress",
     "knowledge_builds",
     "kb_folders",
     "kb_documents",
@@ -153,8 +155,16 @@ TABLE_NOTES = {
         "revision guide; each document belongs to exactly one theme."
     ),
     "revision_documents": (
-        "One row per course document in the revision guide, with its theme and "
-        "its file-name category used for the tree colours."
+        "One row per course document in the revision guide, with its theme, "
+        "its file-name category, and the generated review chapter."
+    ),
+    "revision_points": (
+        "Knowledge points parsed from one generated chapter; each row is one "
+        "H2 heading and its Markdown body, with the page it came from."
+    ),
+    "revision_progress": (
+        "Per-user self-check state for one knowledge point: whether the "
+        "student marked it as known."
     ),
     "knowledge_builds": "State of one submitted Qwen knowledge-base build.",
     "kb_folders": (
@@ -330,6 +340,26 @@ COLUMN_NOTES: dict[str, dict[str, str]] = {
         "theme_id": "Theme the document belongs to.",
         "category": "assignment, lecture, tutorial, or other, from the file name.",
         "created_at": "ISO-8601 UTC time the mapping was written.",
+        "markdown": "Clean generated chapter; null until the document is built.",
+        "intro_markdown": "Markdown before the first knowledge point.",
+        "model": "Model that wrote the chapter.",
+        "prompt_version": "Document prompt version used for the build.",
+        "generated_at": "ISO-8601 UTC time the chapter was generated.",
+    },
+    "revision_points": {
+        "id": "Point id, a hash of the document id and the heading.",
+        "doc_id": "Generated document the point belongs to.",
+        "title": "H2 heading text with the page comment removed.",
+        "body_markdown": "Markdown between this heading and the next.",
+        "position": "0-based order inside the document.",
+        "page_no": "1-based PDF page the point is introduced on; null when unknown.",
+        "created_at": "ISO-8601 UTC time the point was stored.",
+    },
+    "revision_progress": {
+        "user_id": "Account the self-check belongs to.",
+        "point_id": "Knowledge point that was checked.",
+        "mastered": "1 when the student marked the point as known.",
+        "updated_at": "ISO-8601 UTC time of the last change.",
     },
     "knowledge_builds": {
         "id": "Build id.",
