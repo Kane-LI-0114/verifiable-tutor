@@ -7,12 +7,17 @@ dropped. The page comments never reach the stored Markdown.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 from ..prompts import load_prompt
-from .document import DocumentError, RevisionPoint, clean_markdown, parse_document
+from .document import (
+    DocumentError,
+    RevisionPoint,
+    clean_markdown,
+    normalise_heading,
+    parse_document,
+)
 
 __all__ = ["GeneratedDocument", "build_document"]
 
@@ -27,10 +32,6 @@ class GeneratedDocument:
     points: tuple[RevisionPoint, ...]
     markdown: str
     batches: int
-
-
-def _key(title: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
 
 
 def _batches(
@@ -102,7 +103,7 @@ def build_document(
         if not intro and parsed.intro_markdown:
             intro = parsed.intro_markdown
         for point in parsed.points:
-            key = _key(point.title)
+            key = normalise_heading(point.title)
             if not key or key in seen:
                 continue
             seen.add(key)

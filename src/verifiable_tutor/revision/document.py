@@ -17,6 +17,7 @@ __all__ = [
     "ParsedDocument",
     "RevisionPoint",
     "clean_markdown",
+    "normalise_heading",
     "parse_document",
 ]
 
@@ -43,7 +44,9 @@ class ParsedDocument:
     markdown: str
 
 
-def _normalise(title: str) -> str:
+def normalise_heading(title: str) -> str:
+    """Fold a heading to the key used for duplicate detection."""
+
     return re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
 
 
@@ -75,7 +78,7 @@ def parse_document(text: str) -> ParsedDocument:
         nonlocal title, page_no, body_lines
         if title is None:
             return
-        key = _normalise(title)
+        key = normalise_heading(title)
         if key and key not in seen:
             seen.add(key)
             body = PAGE_COMMENT_ONLY.sub("", "\n".join(body_lines)).strip()
