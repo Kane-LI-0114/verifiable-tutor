@@ -1,0 +1,68 @@
+Verifiable Tutor v2 PPTX audit
+generated: 2026-11-25 16:48:58 CST
+
+=== PDF page count / size ===
+Pages:           20
+Page size:       960.009 x 540 pts
+
+=== PDF fonts (must be Georgia / Arial / Courier New only) ===
+name                                 type              encoding         emb sub uni object ID
+------------------------------------ ----------------- ---------------- --- --- --- ---------
+BAAAAA+Arial-BoldMT                  TrueType          WinAnsi          yes yes yes   1478  0
+CAAAAA+Georgia                       TrueType          WinAnsi          yes yes yes   1468  0
+DAAAAA+ArialMT                       TrueType          WinAnsi          yes yes yes   1473  0
+EAAAAA+CourierNewPSMT                TrueType          WinAnsi          yes yes yes   1463  0
+
+=== PPTX audit ===
+PPTX fonts: ['Arial', 'Courier New', 'Georgia']
+PPTX font parts: {'ppt/slides/slide3.xml': ['Arial', 'Georgia'], 'ppt/slides/slide2.xml': ['Arial', 'Georgia'], 'ppt/slides/slide1.xml': ['Arial', 'Georgia'], 'ppt/slides/slide5.xml': ['Arial', 'Georgia'], 'ppt/slides/slide4.xml': ['Arial', 'Courier New', 'Georgia'], 'ppt/slides/slide6.xml': ['Arial', 'Courier New', 'Georgia'], 'ppt/slides/slide7.xml': ['Arial', 'Georgia'], 'ppt/slides/slide16.xml': ['Arial', 'Georgia'], 'ppt/slides/slide17.xml': ['Arial', 'Georgia'], 'ppt/slides/slide15.xml': ['Arial', 'Georgia'], 'ppt/slides/slide14.xml': ['Arial', 'Courier New', 'Georgia'], 'ppt/slides/slide10.xml': ['Arial', 'Georgia'], 'ppt/slides/slide11.xml': ['Arial', 'Courier New', 'Georgia'], 'ppt/slides/slide13.xml': ['Arial', 'Courier New', 'Georgia'], 'ppt/slides/slide12.xml': ['Arial', 'Georgia'], 'ppt/slides/slide20.xml': ['Arial', 'Georgia'], 'ppt/slides/slide19.xml': ['Arial', 'Georgia'], 'ppt/slides/slide18.xml': ['Arial', 'Courier New', 'Georgia'], 'ppt/slides/slide9.xml': ['Arial', 'Georgia'], 'ppt/slides/slide8.xml': ['Arial', 'Georgia']}
+
+Per slide:
+ pg sizes(1/100pt)     fonts                      prose visual
+  1 [1600, 6400]       Arial,Georgia                 43 course page thumbnail + evidence chips
+  2 [1600, 4000]       Arial,Georgia                 44 course page thumbnail + 3 icons
+  3 [1600, 4000]       Arial,Georgia                 45 architecture icon cluster + flow
+  4 [1600, 4000]       Arial,Courier New,Georgia     39 source pane screenshot + 4 icons
+  5 [1600, 4000]       Arial,Georgia                 42 5 layer icons + stack diagram
+  6 [1600, 4000]       Arial,Courier New,Georgia     45 4 icons + agent/tools loop diagram
+  7 [1600, 4000]       Arial,Georgia                 32 large work-chain screenshot + ratio stats
+  8 [1600, 4000]       Arial,Georgia                 45 course thumbnails + pipeline icons + 4 stat figures
+  9 [1600, 4000]       Arial,Georgia                 42 retrieval flow icons + 3 metric figures
+ 10 [1600, 4000]       Arial,Georgia                 22 large answer screenshot + source pane screenshot
+ 11 [1600, 4000]       Arial,Courier New,Georgia     42 page-chat screenshot + 3 step icons
+ 12 [1600, 4000]       Arial,Georgia                 23 before/after course thumbnails + chat screenshot
+ 13 [1600, 4000]       Arial,Courier New,Georgia     45 pass/fail cards + course page thumbnail + 4 icons
+ 14 [1600, 4000]       Arial,Courier New,Georgia     43 practice card + policy ladder + 2 icons
+ 15 [1600, 4000]       Arial,Georgia                 36 practice screenshot + policy refusal screenshot
+ 16 [1600, 4000]       Arial,Georgia                 36 comparison table + 3 scorecards + 3 icons
+ 17 [1600, 4000]       Arial,Georgia                 44 bar chart + tutorial thumbnail + 4 limit icons
+ 18 [1600, 4000]       Arial,Courier New,Georgia     44 3 icons + QR code
+ 19 [1600, 4000]       Arial,Georgia                 40 9-step icon sequence + legend
+ 20 [1600, 4000]       Arial,Georgia                 37 method list + TACC stat figures + 2 icons
+
+size violations: []
+font violations: []
+palette violations: []
+prose > 45: []
+
+Bottom fill (last significant content row above footer):
+  page  1: last content y=745/825  bottom blank   9.7%
+  page  2: last content y=730/825  bottom blank  11.5%
+  page  3: last content y=745/825  bottom blank   9.7%
+  page  4: last content y=734/825  bottom blank  11.0%
+  page  5: last content y=749/825  bottom blank   9.2%
+  page  6: last content y=741/825  bottom blank  10.2%
+  page  7: last content y=755/825  bottom blank   8.5%
+  page  8: last content y=750/825  bottom blank   9.1%
+  page  9: last content y=721/825  bottom blank  12.6%
+  page 10: last content y=755/825  bottom blank   8.5%
+  page 11: last content y=745/825  bottom blank   9.7%
+  page 12: last content y=731/825  bottom blank  11.4%
+  page 13: last content y=748/825  bottom blank   9.3%
+  page 14: last content y=715/825  bottom blank  13.3%
+  page 15: last content y=743/825  bottom blank   9.9%
+  page 16: last content y=717/825  bottom blank  13.1%
+  page 17: last content y=739/825  bottom blank  10.4%
+  page 18: last content y=745/825  bottom blank   9.7%
+  page 19: last content y=733/825  bottom blank  11.2%
+  page 20: last content y=726/825  bottom blank  12.0%
